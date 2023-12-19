@@ -1,0 +1,13 @@
+tensorflow
+ml-collections
+matplotlib
+tensorflow-datasets
+tensorflow-addons
+tensorflow-text
+tensorflow_gan
+pycocotools
+scikit-image
+einops
+pandas
+paramparse
+opencv-python
