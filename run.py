@@ -474,6 +474,7 @@ def main(unused_argv):
                 cfg.model_dir = f'{cfg.model_dir}-{cfg.train.suffix}'
 
             cfg.model_dir = os.path.join('log', cfg.model_dir)
+        print(f'saving trained model to: {cfg.model_dir}')
 
         # assert cfg.model_dir, "model_dir must be provided for training"
 

@@ -7,6 +7,7 @@
 - [train](#train_)
     - [resnet-640       @ train](#resnet_640___trai_n_)
         - [g2_16_53       @ resnet-640/train](#g2_16_53___resnet_640_train_)
+            - [dist        @ g2_16_53/resnet-640/train](#dist___g2_16_53_resnet_640_trai_n_)
 - [eval](#eva_l_)
     - [resnet-640       @ eval](#resnet_640___eval_)
         - [mninstmot       @ resnet-640/eval](#mninstmot___resnet_640_eva_l_)
@@ -44,6 +45,9 @@ python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_1.json
 <a id="g2_16_53___resnet_640_train_"></a>
 ### g2_16_53       @ resnet-640/train-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py  --json=train,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-6,dist-0,dbg-1,dyn-1,suffix-train-dist0
+<a id="dist___g2_16_53_resnet_640_trai_n_"></a>
+####dist        @ g2_16_53/resnet-640/train-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py  --json=train,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-1,dbg-0,dyn-0,suffix-train-dist1
 
 <a id="eva_l_"></a>
 # eval
