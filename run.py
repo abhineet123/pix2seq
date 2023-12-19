@@ -296,11 +296,11 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             progress = cur_step / float(train_steps) * 100
             eta = (train_steps - cur_step) / steps_per_sec / 60.
             cur_epoch += 1
-            print(f'Completed: epoch {cur_epoch} / {cfg.train.epochs} ({progress:.2f}%), ETA {eta:.2f} mins')
+            logging.info(f'Completed: epoch {cur_epoch} / {cfg.train.epochs} ({progress:.2f}%), ETA {eta:.2f} mins')
             trainer.reset()
-        print('###########################################')
-        print('Training complete...')
-        print('###########################################')
+        logging.info('###########################################')
+        logging.info('Training complete...')
+        logging.info('###########################################')
 
 
 def load_cfg_pt(cfg):
