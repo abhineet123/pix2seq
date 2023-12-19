@@ -267,7 +267,7 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             strategy is needed to get the num_replicas_in_sync to divide the gradient and compute its mean
             """
             train_step = lambda xs, ts=tasks: trainer.train_step(xs, ts, strategy)
-            progbar = tf.keras.utils.Progbar(steps_per_epoch)
+            progbar = tf.keras.utils.Progbar(train_steps)
 
             for _ in tf.range(train_steps):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
