@@ -132,6 +132,7 @@ def get_config(config_str=None):
         ),
 
         train=D(
+            suffix='',
             batch_size=32,
             epochs=40,
             steps=0,  # set to >0 to override epochs.

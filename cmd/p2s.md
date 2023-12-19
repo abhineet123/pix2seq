@@ -43,7 +43,7 @@ python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_1.json
 ## resnet-640       @ train-->p2s
 <a id="g2_16_53___resnet_640_train_"></a>
 ### g2_16_53       @ resnet-640/train-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --json=train,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-2,dist-0,dbg-1,dyn-1
+python3 run.py --cfg=configs/config_det_ipsc.py  --json=train,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-2,dist-0,dbg-1,dyn-1,suffix-train-dist2
 
 <a id="eva_l_"></a>
 # eval

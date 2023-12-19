@@ -249,6 +249,8 @@ def perform_evaluation(cfg, dataset, task, eval_steps, ckpt, strategy,
 
 def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                      strategy, model_lib, tf):
+    if cfg.pretrained:
+        cfg.model.pretrained_ckpt = cfg.pretrained
     """Main training logic."""
     with strategy.scope():
         # Setup training elements.
@@ -468,9 +470,12 @@ def main(unused_argv):
                 pretrained_name = os.path.basename(cfg.pretrained)
                 cfg.model_dir = f'{pretrained_name}_{cfg.model_dir}'
 
+            if cfg.train.suffix:
+                cfg.model_dir = f'{cfg.model_dir}-{cfg.train.suffix}'
+
             cfg.model_dir = os.path.join('log', cfg.model_dir)
 
-        assert cfg.model_dir, "model_dir must be provided for training"
+        # assert cfg.model_dir, "model_dir must be provided for training"
 
     # config_cmd_args = [k for k in dir(FLAGS) if k.startswith('cfg.')]
     # config_cmd_dict = {
