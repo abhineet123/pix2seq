@@ -269,14 +269,15 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             train_step = lambda xs, ts=tasks: trainer.train_step(xs, ts, strategy)
             progbar = tf.keras.utils.Progbar(steps_per_epoch)
 
-            for step_id in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
+            for _ in tf.range(train_steps):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
-                progbar.update(step_id.numpy())  # This will update the progress bar graph.
+                progbar.update(cfg.train.batch_size)
 
         global_step = trainer.optimizer.iterations
         cur_step = global_step.numpy()
         timestamp = time.time()
+        cur_epoch = 0
         while cur_step < train_steps:
             with summary_writer.as_default():
                 train_multiple_steps(data_iterators, tasks)
@@ -287,25 +288,19 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                 timestamp = time.time()
                 with tf.name_scope('train'):
                     for metric_name, metric_val in trainer.metrics.items():
-                        tf.summary.scalar(
-                            metric_name, metric_val.result().numpy(), global_step)
-                    tf.summary.scalar(
-                        'learning_rate',
-                        trainer.learning_rate(tf.cast(global_step, dtype=tf.float32)),
-                        global_step)
-                    tf.summary.scalar(
-                        'steps_per_sec',
-                        steps_per_sec,
-                        global_step)
+                        tf.summary.scalar(metric_name, metric_val.result().numpy(), global_step)
+                    lr = trainer.learning_rate(tf.cast(global_step, dtype=tf.float32))
+                    tf.summary.scalar('lr', lr, global_step)
+                    tf.summary.scalar('steps_per_sec', steps_per_sec, global_step)
                 summary_writer.flush()
             progress = cur_step / float(train_steps) * 100
             eta = (train_steps - cur_step) / steps_per_sec / 60.
-            logging.info('Completed: epoch {} / {} steps ({:.2f}%), ETA {:.2f} mins'.format(
-                cur_step, train_steps, progress, eta))
+            cur_epoch += 1
+            print(f'Completed: epoch {cur_epoch} / {cfg.train.epochs} ({progress:.2f}%), ETA {eta:.2f} mins')
             trainer.reset()
-        logging.info('###########################################')
-        logging.info('Training complete...')
-        logging.info('###########################################')
+        print('###########################################')
+        print('Training complete...')
+        print('###########################################')
 
 
 def load_cfg_pt(cfg):
@@ -392,6 +387,7 @@ flags.DEFINE_list('json', [], 'list of config json file to override settings fro
 flags.DEFINE_string('cluster', 'cluster.json', 'cluster_cfg')
 flags.DEFINE_string('json_root', 'configs/json', 'relative path of the folder containing the optional json files')
 flags.DEFINE_integer('worker_id', 0, 'worker id for multi-machine training')
+
 
 def main(unused_argv):
     # params = Params()
