@@ -460,6 +460,8 @@ def main(unused_argv):
 
     if cfg.eager:
         tf.config.run_functions_eagerly(True)
+    else:
+        tf.config.run_functions_eagerly(False)
 
     strategy = utils.build_strategy(cfg.dist, cfg.use_tpu, cfg.master)
 
