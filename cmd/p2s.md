@@ -51,12 +51,15 @@ python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist0,resnet-640,i
 python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist1,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-1,dbg-0,dyn-0
 <a id="dist_2___g2_16_53_resnet_640_trai_n_"></a>
 #### dist-2       @ g2_16_53/resnet-640/train-->p2s
-__{local}__
-python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-2,dbg-0,dyn-0,local-0
-python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-2,dbg-0,dyn-0,local-1
-__{ge}__
-python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-2,dbg-0,dyn-0,ge-0
-python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-2,dbg-0,dyn-0,ge-1
+``local``  
+python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-2,dbg-1,dyn-0,local-0
+
+python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-2,dbg-1,dyn-0,local-1
+
+``ge``  
+python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-2,dbg-1,dyn-0,ge-0
+
+python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-12,dist-2,dbg-1,dyn-0,ge-1
 
 <a id="eva_l_"></a>
 # eval

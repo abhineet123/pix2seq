@@ -17,6 +17,7 @@
     - [resnet_640       @ pretrained](#resnet_640___pretrained_)
     - [vit_b       @ pretrained](#vit_b___pretrained_)
     - [vit_l       @ pretrained](#vit_l___pretrained_)
+- [bugs](#bug_s_)
 
 <!-- /MarkdownTOC -->
 
@@ -38,7 +39,6 @@ sudo apt install python3\.10
 sudo apt upgrade
 sudo apt dist-upgrade
 sudo do-release-upgrade
-
 
 python3.8 -m pip install virtualenv virtualenvwrapper
 
@@ -77,7 +77,6 @@ https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&D
 cuda 12.2 for tf 2.15:
 https://developer.nvidia.com/cuda-12-2-2-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_local
 12.x for tensorflow 2.15 and 11.x for tensorflow 2.10
-
 
 <a id="ubuntu22_04___tensorflow_install_"></a>
 ### ubuntu22.04       @ tensorflow/install-->p2s_setup
@@ -168,5 +167,14 @@ gsutil -m cp   "gs://pix2seq/coco_det_finetune/vit_b_640x640/checkpoint"   "gs:/
 gsutil -m cp -r "gs://pix2seq/coco_det_finetune/vit_l_1024x1024"  "gs://pix2seq/coco_det_finetune/vit_l_1333x1333"  "gs://pix2seq/coco_det_finetune/vit_l_640x640"  .
 
 gsutil -m cp -r "gs://pix2seq/coco_det_finetune/vit_l_1024x1024" .
+
+<a id="bug_s_"></a>
+# bugs
+``Collective ops is aborted by: failed to connect to all addresses``
+probably something to do with the dataset loader
+https://github.com/tensorflow/tensorflow/issues/39122
+https://github.com/tensorflow/tensorflow/issues/39099
+
+
 
 
