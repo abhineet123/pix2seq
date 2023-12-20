@@ -1,3 +1,6 @@
 {
-  "mode": "train"
+  "mode": "train",
+  "train": {
+	"suffix": "$0$"
+}  
 }

@@ -402,38 +402,13 @@ def main(unused_argv):
     cfg.training = cfg.mode == TRAIN
 
     if cfg.dist == 2:
-        cluster_cfg_path = os.path.join(FLAGS.json_root, FLAGS.cluster)
-        with open(cluster_cfg_path, 'r') as f:
-            tf_config = json.loads(f.read())
-        tf_config["task"]["index"] = FLAGS.worker_id
-        # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+        tf_config = cfg.dist2.to_dict()
         os.environ.pop('TF_CONFIG', None)
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
 
     import tensorflow as tf
 
-    """
-    all these unused imports needed to register the various modules
-    """
-    from data import datasets  # pylint: disable=unused-import
-    from data import transforms  # pylint: disable=unused-import
-    from metrics import coco_metrics  # pylint: disable=unused-import
-    from models import ar_model  # pylint: disable=unused-import
-    from models import image_ar_model  # pylint: disable=unused-import
-    from models import image_diffusion_model  # pylint: disable=unused-import
-    # from models import latent_diffusion_model  # pylint: disable=unused-import
-    from models import video_diffusion_model  # pylint: disable=unused-import
-    from models import image_discrete_diffusion_model  # pylint: disable=unused-import
-    from models import model as model_lib
-    from models import panoptic_diffusion  # pylint: disable=unused-import
-    # pylint: disable=unused-import
-    from tasks import captioning
-    # from tasks import image_generation
-    from tasks import instance_segmentation
-    # from tasks import keypoint_detection
-    from tasks import object_detection
-    # pylint: enable=unused-import
-    from tasks import task as task_lib
+    strategy = utils.build_strategy(cfg.dist, cfg.use_tpu, cfg.master)
 
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
@@ -459,7 +434,31 @@ def main(unused_argv):
     else:
         tf.config.run_functions_eagerly(False)
 
-    strategy = utils.build_strategy(cfg.dist, cfg.use_tpu, cfg.master)
+
+    """
+    all these unused imports needed to register the various modules
+    """
+    from data import datasets  # pylint: disable=unused-import
+    from data import transforms  # pylint: disable=unused-import
+    from metrics import coco_metrics  # pylint: disable=unused-import
+    from models import ar_model  # pylint: disable=unused-import
+    from models import image_ar_model  # pylint: disable=unused-import
+    from models import image_diffusion_model  # pylint: disable=unused-import
+    # from models import latent_diffusion_model  # pylint: disable=unused-import
+    from models import video_diffusion_model  # pylint: disable=unused-import
+    from models import image_discrete_diffusion_model  # pylint: disable=unused-import
+    from models import model as model_lib
+    from models import panoptic_diffusion  # pylint: disable=unused-import
+    # pylint: disable=unused-import
+    from tasks import captioning
+    # from tasks import image_generation
+    from tasks import instance_segmentation
+    # from tasks import keypoint_detection
+    from tasks import object_detection
+    # pylint: enable=unused-import
+    from tasks import task as task_lib
+
+
 
     if cfg.training:
         if not cfg.model_dir:
