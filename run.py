@@ -429,7 +429,7 @@ def main(unused_argv):
             """
             logical_gpus = tf.config.list_logical_devices('GPU')
             print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-            
+
     tf.config.set_soft_device_placement(True)
 
     import utils
@@ -471,15 +471,18 @@ def main(unused_argv):
 
     if cfg.training:
         if not cfg.model_dir:
-            cfg.model_dir = f'{cfg.dataset.train_name}_batch_{cfg.train.batch_size}'
+            model_dir_name = f'{cfg.dataset.train_name}_batch_{cfg.train.batch_size}'
             if cfg.pretrained:
                 pretrained_name = os.path.basename(cfg.pretrained)
-                cfg.model_dir = f'{pretrained_name}_{cfg.model_dir}'
+                model_dir_name = f'{pretrained_name}_{model_dir_name}'
 
             if cfg.train.suffix:
-                cfg.model_dir = f'{cfg.model_dir}-{cfg.train.suffix}'
+                model_dir_name = f'{model_dir_name}-{cfg.train.suffix}'
 
-            cfg.model_dir = os.path.join('log', cfg.model_dir)
+            if not cfg.dist == 2 and cfg.dist2.task.index > 0:
+                model_dir_name = f'{model_dir_name}-worker-{cfg.dist2.task.index}'
+
+            cfg.model_dir = os.path.join('log', model_dir_name)
         print(f'saving trained model to: {cfg.model_dir}')
 
         # assert cfg.model_dir, "model_dir must be provided for training"
