@@ -408,6 +408,7 @@ def main(unused_argv):
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
 
     import tensorflow as tf
+    tf.get_logger().setLevel('ERROR')
 
     strategy = utils.build_strategy(cfg.dist, cfg.use_tpu, cfg.master)
 
@@ -425,7 +426,6 @@ def main(unused_argv):
     tf.config.set_soft_device_placement(True)
 
     # tf.logging.set_verbosity(tf.logging.ERROR)
-    tf.get_logger().setLevel('ERROR')
 
     if cfg.debug:
         tf.data.experimental.enable_debug_mode()
