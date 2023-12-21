@@ -36,18 +36,14 @@ from absl import logging
 import ml_collections
 from ml_collections.config_flags import config_flags
 
-import utils
-from data import dataset as dataset_lib
-
-from configs import dataset_configs
-from configs import transform_configs
-
 
 # import paramparse
 def build_tasks_and_datasets(
         cfg: ml_collections.ConfigDict,
         training: bool,
-        task_lib, tf):
+        task_lib):
+    from data import dataset as dataset_lib
+
     """Build tasks and datasets.
 
     Args:
@@ -341,7 +337,9 @@ def load_cfg_pt(cfg):
     image_size
     """
     image_size = cfg.task.image_size
+
     if cfg.task.name == 'object_detection':
+        from configs import transform_configs
         train_transforms_fn = transform_configs.get_object_detection_train_transforms
         eval_transforms_fn = transform_configs.get_object_detection_eval_transforms
     else:
@@ -414,17 +412,24 @@ def main(unused_argv):
     tf.get_logger().setLevel('ERROR')
 
     gpus = tf.config.list_physical_devices('GPU')
-    if gpus:
-        if cfg.dyn_ram:
-            try:
-                for gpu in gpus:
-                    tf.config.experimental.set_memory_growth(gpu, True)
-            except RuntimeError as e:
-                raise e
-        logical_gpus = tf.config.list_logical_devices('GPU')
-        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-
+    if cfg.dist != 2:
+        """
+        some weird and annoying conflicts between MultiWorkerMirroredStrategy init and gpu setup
+        resulting in catch-22 type situation where strategy must be inited before gpu setup and 
+        gpu setup cannot be done after strategy init
+        """
+        if gpus:
+            if cfg.dyn_ram:
+                try:
+                    for gpu in gpus:
+                        tf.config.experimental.set_memory_growth(gpu, True)
+                except RuntimeError as e:
+                    raise e
+            logical_gpus = tf.config.list_logical_devices('GPU')
+            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
     tf.config.set_soft_device_placement(True)
+
+    import utils
 
     strategy = utils.build_strategy(cfg.dist, cfg.use_tpu, cfg.master)
 
@@ -483,6 +488,7 @@ def main(unused_argv):
     utils.log_cfg(cfg)
 
     if cfg.dataset.name.startswith('ipsc'):
+        from configs import dataset_configs
         name_to_num = dataset_configs.IPSC_NAME_TO_NUM
         root_dir = cfg.dataset.root_dir
         train_name = cfg.dataset.train_name
@@ -508,7 +514,7 @@ def main(unused_argv):
             cfg.datasets = [cfg.dataset]
 
         """dataset is simply the last dataset"""
-        tasks, dses, dataset = build_tasks_and_datasets(cfg, cfg.training, task_lib, tf)
+        tasks, dses, dataset = build_tasks_and_datasets(cfg, cfg.training, task_lib)
 
         # Calculate steps stuff using last task info (assuming all tasks the same.)
         train_steps = utils.get_train_steps(
