@@ -435,7 +435,6 @@ def main(unused_argv):
     else:
         tf.config.run_functions_eagerly(False)
 
-
     """
     all these unused imports needed to register the various modules
     """
@@ -458,8 +457,6 @@ def main(unused_argv):
     from tasks import object_detection
     # pylint: enable=unused-import
     from tasks import task as task_lib
-
-
 
     if cfg.training:
         if not cfg.model_dir:
