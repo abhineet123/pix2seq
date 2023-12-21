@@ -19,7 +19,7 @@ import copy
 
 from configs import dataset_configs
 from configs import transform_configs
-from configs.config_base import architecture_config_map
+from configs.config_base import architecture_config_map, base_config
 from configs.config_base import D
 
 
@@ -79,17 +79,6 @@ def get_config(config_str=None):
         dataset_list.append(dataset_config)
 
     config = D(
-        mode="train",
-        use_tpu=0,
-        dist=0,
-        master=None,
-        eager=1,
-        dyn_ram=1,
-        debug=1,
-
-        model_dir='',
-        pretrained='',
-
         dataset=dataset_list[0],
         datasets=dataset_list,
 
@@ -157,6 +146,8 @@ def get_config(config_str=None):
     # Update model with architecture variant.
     for key, value in architecture_config_map[encoder_variant].items():
         config.model[key] = value
+
+    config.update(base_config)
 
     return config
 

@@ -402,6 +402,9 @@ def main(unused_argv):
 
     cfg.training = cfg.mode == TRAIN
 
+    if cfg.gpu:
+        os.environ['CUDA_VISIBLE_DEVICES'] = cfg.gpu
+        
     if cfg.dist == 2:
         tf_config = cfg.dist2.to_dict()
         os.environ.pop('TF_CONFIG', None)

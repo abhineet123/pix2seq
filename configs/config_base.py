@@ -21,6 +21,20 @@ import ml_collections
 def D(**kwargs):
   return ml_collections.ConfigDict(initial_dictionary=kwargs)
 
+base_config = D(
+        mode="train",
+        use_tpu=0,
+        dist=0,
+        master=None,
+        eager=1,
+        dyn_ram=1,
+        debug=1,
+        gpu='',
+
+        model_dir='',
+        pretrained=''
+)
+
 
 architecture_config_map = {
     'vit-b': D(
