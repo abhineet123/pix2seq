@@ -479,7 +479,7 @@ def main(unused_argv):
             if cfg.train.suffix:
                 model_dir_name = f'{model_dir_name}-{cfg.train.suffix}'
 
-            if not cfg.dist == 2 and cfg.dist2.task.index > 0:
+            if cfg.dist == 2 and cfg.dist2.task.index > 0:
                 model_dir_name = f'{model_dir_name}-worker-{cfg.dist2.task.index}'
 
             cfg.model_dir = os.path.join('log', model_dir_name)
