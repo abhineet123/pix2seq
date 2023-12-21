@@ -309,7 +309,7 @@ def load_cfg_pt(cfg):
 
     assert os.path.isfile(pt_cfg_filepath), f"non-existent pretrained cfg json: {pt_cfg_filepath}"
 
-    print(f'loading pretrained cfg from {pt_cfg_filepath}')
+    print(f'loading pretrained model cfg from {pt_cfg_filepath}')
     with open(pt_cfg_filepath, 'r') as f:
         cfg_pt = json.loads(f.read())
 
