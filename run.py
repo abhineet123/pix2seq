@@ -413,21 +413,23 @@ def main(unused_argv):
     tf.get_logger().setLevel('ERROR')
 
     gpus = tf.config.list_physical_devices('GPU')
-    if cfg.dist != 2:
-        """
-        some weird and annoying conflicts between MultiWorkerMirroredStrategy init and gpu setup
-        resulting in catch-22 type situation where strategy must be inited before gpu setup and 
-        gpu setup cannot be done after strategy init
-        """
-        if gpus:
-            if cfg.dyn_ram:
-                try:
-                    for gpu in gpus:
-                        tf.config.experimental.set_memory_growth(gpu, True)
-                except RuntimeError as e:
-                    raise e
+
+    if gpus:
+        if cfg.dyn_ram:
+            try:
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+            except RuntimeError as e:
+                raise e
+        if cfg.dist != 2:
+            """
+            some weird and annoying conflicts between MultiWorkerMirroredStrategy init and gpu setup
+            resulting in catch-22 type situation where strategy must be inited before gpu setup and 
+            gpu setup cannot be done after strategy init
+            """
             logical_gpus = tf.config.list_logical_devices('GPU')
             print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+            
     tf.config.set_soft_device_placement(True)
 
     import utils
