@@ -269,7 +269,7 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
                 tf.print(f'done step {step_id}')
-                progbar.update(cfg.train.batch_size)
+                progbar.add(cfg.train.batch_size)
 
         global_step = trainer.optimizer.iterations
         cur_step = global_step.numpy()
