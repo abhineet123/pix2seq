@@ -413,8 +413,6 @@ def main(unused_argv):
     import tensorflow as tf
     tf.get_logger().setLevel('ERROR')
 
-    strategy = utils.build_strategy(cfg.dist, cfg.use_tpu, cfg.master)
-
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
         if cfg.dyn_ram:
@@ -427,6 +425,8 @@ def main(unused_argv):
         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
 
     tf.config.set_soft_device_placement(True)
+
+    strategy = utils.build_strategy(cfg.dist, cfg.use_tpu, cfg.master)
 
     # tf.logging.set_verbosity(tf.logging.ERROR)
 
