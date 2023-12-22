@@ -272,10 +272,11 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
-                step_id += 1
                 progbar.add(1)
                 if not cfg.eager:
-                    tf.print(f'done step {int(step_id)}/{int(steps_per_epoch)}')
+                    step_id += 1
+                    step_id_val = step_id.eval()
+                    tf.print(f'done step {int(step_id_val)}/{int(steps_per_epoch)}')
 
 
         global_step = trainer.optimizer.iterations
