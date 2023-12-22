@@ -268,7 +268,7 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             """
             train_steps = num_samples * num_epochs / batch_size
             """
-            temp=tf.TensorArray(size=1, dynamic_size=True, dtype=tf.int32)
+            # temp=tf.TensorArray(size=1, dynamic_size=True, dtype=tf.int32)
             progbar = None
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(steps_per_epoch)
@@ -279,9 +279,9 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
                 if cfg.eager:
                     progbar.add(1)
-                else:
-                    temp = temp.write(i, 1)
-                    tf.print(f'done step {int(temp.size())}')
+                # else:
+                #     temp = temp.write(i, 1)
+                #     tf.print(f'done step {int(temp.size())}')
                 # if not cfg.eager:
                 #     step_id += 1
                 #     with tf.Session():
