@@ -268,16 +268,20 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             """
             train_steps = num_samples * num_epochs / batch_size
             """
+            temp=tf.TensorArray(size=1, dynamic_size=True)
             progbar = None
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(steps_per_epoch)
             # step_id = tf.constant(0)
             tf.print(f'Training epoch {epoch} with {steps_per_epoch} steps...')
-            for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
+            for i in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
                 if cfg.eager:
                     progbar.add(1)
+                else:
+                    temp = temp.write(i, 1)
+                    tf.print(f'done step {int(temp.size())}')
                 # if not cfg.eager:
                 #     step_id += 1
                 #     with tf.Session():
