@@ -292,11 +292,11 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
         cur_step = global_step.numpy()
         timestamp = time.time()
         cur_epoch = 0
+        if not cfg.eager:
+            print('compiling graph...')
         while cur_step < train_steps:
             cur_epoch += 1
             with summary_writer.as_default():
-                if not cfg.eager:
-                    print('compiling graph...')
                 train_multiple_steps(data_iterators, tasks, cur_epoch)
                 trainer.check_checkpoint_restored()
                 cur_step = global_step.numpy()
