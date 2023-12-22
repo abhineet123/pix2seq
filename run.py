@@ -257,12 +257,13 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
         summary_writer = tf.summary.create_file_writer(cfg.model_dir)
 
         @tf.function
-        def train_multiple_steps(data_iterators, tasks):
+        def train_multiple_steps(data_iterators, tasks, epoch):
             """
             ts=tasks is just the default value for arg ts
             strategy is needed to get the num_replicas_in_sync to divide the gradient and compute its mean
             """
             train_step = lambda xs, ts=tasks: trainer.train_step(xs, ts, strategy)
+
 
             """
             train_steps = num_samples * num_epochs / batch_size
@@ -271,6 +272,7 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(steps_per_epoch)
             # step_id = tf.constant(0)
+            tf.print(f'Training epoch {epoch} with {steps_per_epoch} steps...')
             for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
@@ -289,8 +291,7 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
         while cur_step < train_steps:
             cur_epoch += 1
             with summary_writer.as_default():
-                print(f'Running epoch {cur_epoch}...')
-                train_multiple_steps(data_iterators, tasks)
+                train_multiple_steps(data_iterators, tasks, cur_epoch)
                 trainer.check_checkpoint_restored()
                 cur_step = global_step.numpy()
                 trainer.checkpoint_manager.save(cur_step)
