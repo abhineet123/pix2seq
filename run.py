@@ -275,9 +275,10 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                 progbar.add(1)
                 if not cfg.eager:
                     step_id += 1
-                    step_id_val = step_id.eval()
+                    with tf.Session():
+                        step_id_val = step_id.eval()
                     tf.print(f'done step {int(step_id_val)}/{int(steps_per_epoch)}')
-                    
+
         global_step = trainer.optimizer.iterations
         cur_step = global_step.numpy()
         timestamp = time.time()
