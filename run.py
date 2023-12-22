@@ -312,7 +312,7 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                 summary_writer.flush()
             progress = cur_step / float(train_steps) * 100
             eta = (train_steps - cur_step) / steps_per_sec / 60.
-            logging.info(f'Completed steps {cur_step} / {train_steps} ({progress:.2f}%), ETA {eta:.2f} mins')
+            print(f'Completed steps {cur_step} / {train_steps} ({progress:.2f}%), ETA {eta:.2f} mins')
             trainer.reset()
         logging.info('###########################################')
         logging.info('Training complete...')
