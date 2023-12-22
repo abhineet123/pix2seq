@@ -268,12 +268,12 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             train_steps = num_samples * num_epochs / batch_size
             """
 
-            progbar = tf.keras.utils.Progbar(train_steps)
-            for step_id in tf.range(train_steps):  # using tf.range prevents unroll.
+            progbar = tf.keras.utils.Progbar(steps_per_epoch)
+            for step_id in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
                 if not cfg.eager:
-                    tf.print(f'done step {int(step_id)}/{int(train_steps)}')
+                    tf.print(f'done step {int(step_id)}/{int(steps_per_epoch)}')
                 progbar.add(cfg.train.batch_size)
 
         global_step = trainer.optimizer.iterations
@@ -282,10 +282,6 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
         # cur_epoch = 0
         while cur_step < train_steps:
             with summary_writer.as_default():
-                """
-                all epochs are run in this single function call so it is not clear
-                why there is another while loop enclosing this call
-                 """
                 train_multiple_steps(data_iterators, tasks)
                 trainer.check_checkpoint_restored()
                 cur_step = global_step.numpy()
