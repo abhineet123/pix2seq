@@ -264,6 +264,10 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             """
             train_step = lambda xs, ts=tasks: trainer.train_step(xs, ts, strategy)
 
+            """
+            train_steps = num_samples * num_epochs / batch_size
+            """
+
             progbar = tf.keras.utils.Progbar(train_steps)
             for step_id in tf.range(train_steps):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
@@ -275,9 +279,13 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
         global_step = trainer.optimizer.iterations
         cur_step = global_step.numpy()
         timestamp = time.time()
-        cur_epoch = 0
+        # cur_epoch = 0
         while cur_step < train_steps:
             with summary_writer.as_default():
+                """
+                all epochs are run in this single function call so it is not clear
+                why there is another while loop enclosing this call
+                 """
                 train_multiple_steps(data_iterators, tasks)
                 trainer.check_checkpoint_restored()
                 cur_step = global_step.numpy()
@@ -293,8 +301,8 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                 summary_writer.flush()
             progress = cur_step / float(train_steps) * 100
             eta = (train_steps - cur_step) / steps_per_sec / 60.
-            cur_epoch += 1
-            logging.info(f'Completed: epoch {cur_epoch} / {cfg.train.epochs} ({progress:.2f}%), ETA {eta:.2f} mins')
+            # cur_epoch += 1
+            logging.info(f'Completed steps {cur_step} / {train_steps} ({progress:.2f}%), ETA {eta:.2f} mins')
             trainer.reset()
         logging.info('###########################################')
         logging.info('Training complete...')

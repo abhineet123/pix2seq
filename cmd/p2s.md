@@ -57,9 +57,9 @@ python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,i
 python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-4,dist-2,dbg-0,dyn-1,local-1,gpu-1
 
 ``xe``  
-python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-4,dist-2,dbg-1,dyn-0,xe-0,gpu-0
+python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-3,dist-2,dbg-1,dyn-0,xe-0,gpu-0
 
-python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-4,dist-2,dbg-1,dyn-0,xe-1,gpu-0
+python3 run.py --cfg=configs/config_det_ipsc.py  --json=train-dist2,resnet-640,ipsc-g2_16_53-train,ipsc-g2_0_15-val,batch-3,dist-2,dbg-1,dyn-0,xe-1,gpu-0
 
 <a id="eva_l_"></a>
 # eval

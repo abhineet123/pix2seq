@@ -426,9 +426,12 @@ def build_strategy(dist, use_tpu, master):
 
 def get_train_steps(dataset, train_steps, train_epochs, train_batch_size):
     """Determine the number of training steps."""
+    if train_steps:
+        return train_steps
     num_train_examples = dataset.num_train_examples
-    return train_steps or (
-            num_train_examples * train_epochs // train_batch_size + 1)
+    train_steps = num_train_examples * train_epochs // train_batch_size + 1
+    return train_steps
+
 
 
 def get_eval_steps(dataset, eval_steps, eval_batch_size):
