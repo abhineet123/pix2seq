@@ -277,9 +277,9 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                 if not cfg.eager:
                     # progbar.add(cfg.train.batch_size)
                     progbar.update()
-                else:
-                    step_id += 1
-                    tf.print(f'done step {int(step_id)}/{int(steps_per_epoch)}')
+                # else:
+                step_id += 1
+                tf.print(f'done step {int(step_id)}/{int(steps_per_epoch)}')
 
 
         global_step = trainer.optimizer.iterations
