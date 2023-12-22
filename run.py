@@ -267,24 +267,29 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             """
             train_steps = num_samples * num_epochs / batch_size
             """
-            progbar = tf.keras.utils.Progbar(steps_per_epoch)
-            step_id = tf.constant(0)
+            progbar = None
+            if cfg.eager:
+                progbar = tf.keras.utils.Progbar(steps_per_epoch)
+            # step_id = tf.constant(0)
             for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
-                progbar.add(1)
-                if not cfg.eager:
-                    step_id += 1
-                    with tf.Session():
-                        step_id_val = step_id.eval()
-                    tf.print(f'done step {int(step_id_val)}/{int(steps_per_epoch)}')
+                if cfg.eager:
+                    progbar.add(1)
+                # if not cfg.eager:
+                #     step_id += 1
+                #     with tf.Session():
+                #         step_id_val = step_id.eval()
+                #     tf.print(f'done step {int(step_id_val)}/{int(steps_per_epoch)}')
 
         global_step = trainer.optimizer.iterations
         cur_step = global_step.numpy()
         timestamp = time.time()
-        # cur_epoch = 0
+        cur_epoch = 0
         while cur_step < train_steps:
+            cur_epoch += 1
             with summary_writer.as_default():
+                print(f'Running epoch {cur_epoch}...')
                 train_multiple_steps(data_iterators, tasks)
                 trainer.check_checkpoint_restored()
                 cur_step = global_step.numpy()
@@ -300,7 +305,6 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                 summary_writer.flush()
             progress = cur_step / float(train_steps) * 100
             eta = (train_steps - cur_step) / steps_per_sec / 60.
-            # cur_epoch += 1
             logging.info(f'Completed steps {cur_step} / {train_steps} ({progress:.2f}%), ETA {eta:.2f} mins')
             trainer.reset()
         logging.info('###########################################')
