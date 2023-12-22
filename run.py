@@ -273,7 +273,7 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
                 step_id += 1
-                progbar.update(step_id)
+                progbar.add(1)
                 if not cfg.eager:
                     tf.print(f'done step {int(step_id)}/{int(steps_per_epoch)}')
 
