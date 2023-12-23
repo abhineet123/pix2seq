@@ -19,22 +19,45 @@ import ml_collections
 
 
 def D(**kwargs):
-  return ml_collections.ConfigDict(initial_dictionary=kwargs)
+    return ml_collections.ConfigDict(initial_dictionary=kwargs)
+
 
 base_config = D(
-        mode="train",
-        use_tpu=0,
-        dist=0,
-        master=None,
-        eager=1,
-        dyn_ram=1,
-        debug=1,
-        gpu='',
+    mode="train",
+    use_tpu=0,
+    dist=0,
+    master=None,
+    eager=1,
+    dyn_ram=1,
+    debug=1,
+    gpu='',
 
-        model_dir='',
-        pretrained=''
+    model_dir='',
+    pretrained='',
+
+    train=D(
+        suffix='',
+        batch_size=32,
+        epochs=40,
+        steps=0,  # set to >0 to override epochs.
+        checkpoint_epochs=1,
+        checkpoint_steps=0,  # set to >0 to override checkpoint_epochs.
+        keep_checkpoint_max=2,
+        loss_type='xent',
+    ),
+
+    eval=D(
+        pt=1,
+        suffix='',
+        save_vis=1,
+        save_csv=1,
+        tag='eval',
+        checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
+        # checkpoint_dir=get_coco_finetuned_checkpoint(encoder_variant, image_size[0]),
+        batch_size=1,  # needs to be divisible by total eval examples.
+        steps=0,  # 0 means eval over full validation set.
+    ),
 )
-
 
 architecture_config_map = {
     'vit-b': D(

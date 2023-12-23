@@ -264,7 +264,6 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
             """
             train_step = lambda xs, ts=tasks: trainer.train_step(xs, ts, strategy)
 
-
             """
             train_steps = num_samples * num_epochs / batch_size
             """
@@ -319,15 +318,12 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
         logging.info('###########################################')
 
 
-def load_cfg_pt(cfg):
-    if not cfg.pretrained:
-        return
-
-    pt_cfg_filepath = os.path.join(cfg.pretrained, 'config.json')
+def load_cfg_from_model(cfg, model_dir, cmd_cfg):
+    pt_cfg_filepath = os.path.join(model_dir, 'config.json')
 
     assert os.path.isfile(pt_cfg_filepath), f"non-existent pretrained cfg json: {pt_cfg_filepath}"
 
-    print(f'loading pretrained model cfg from {pt_cfg_filepath}')
+    print(f'loading model cfg from {pt_cfg_filepath}')
     with open(pt_cfg_filepath, 'r') as f:
         cfg_pt = json.loads(f.read())
 
@@ -378,33 +374,106 @@ def load_cfg_pt(cfg):
         else:
             task.train_transforms = train_transforms_fn(image_size, task.max_instances_per_image)
 
+    if cmd_cfg:
+        cfg.update(cmd_cfg)
 
-def load_cfg_json(cfg, json_list, json_root):
+
+MAX_JSON_VARS = 10
+
+
+def load_cfg_from_json5(json_list, json_root):
+    all_cfg = ml_collections.ConfigDict()
     for json_data in json_list:
         json_vars = json_data.split('-')
-        json_path = json_vars[0] + '.json'
+        json_path = json_vars[0] + '.json5'
         if json_root:
             json_path = os.path.join(json_root, json_path)
 
         assert os.path.isfile(json_path), f"non-existent cfg json: {json_path}"
-
         # print(f'loading json cfg from {json_path}')
         with open(json_path, 'r') as f:
             json_str = f.read()
         for var_id, json_var in enumerate(json_vars[1:]):
-            json_str = json_str.replace(f'${var_id}$', json_var)
+            var_id_ = var_id
+            # if ':' in json_var:
+            #     var_id_, json_var = json_var.split(':')
+            """optional vars"""
+            json_str = json_str.replace(f'$${var_id_}$$', json_var)
+            """compulsory vars"""
+            json_str = json_str.replace(f'${var_id_}$', json_var)
 
-        cfg_json = ml_collections.ConfigDict(json.loads(json_str))
-        cfg.update(cfg_json)
+        """
+        remove lines with under specified optional vars
+        json5 is needed to deal with trailing commas
+        """
+        json_lines = json_str.splitlines()
+        valid_line_ids = []
+        for line_id, json_line in enumerate(json_lines):
+            if any(f'$${var_id}$$' in json_line for var_id in range(MAX_JSON_VARS)):
+                continue
+            valid_line_ids.append(line_id)
+        json_str = '\n'.join(json_lines[i] for i in valid_line_ids)
+
+        import json5
+
+        json_dict = json5.loads(json_str)
+        cfg_json = ml_collections.ConfigDict(json_dict)
+        all_cfg.update(cfg_json)
+    return all_cfg
 
 
 TRAIN = 'train'
 EVAL = 'eval'
 config_flags.DEFINE_config_file('cfg', 'path/to/config/file.py', 'The config file.', lock_config=False)
-flags.DEFINE_list('json', [], 'list of config json file to override settings from default and pretrained configs')
+flags.DEFINE_list('j5', [], 'list of config json5 files to override settings from default and pretrained configs')
 flags.DEFINE_string('cluster', 'cluster.json', 'cluster_cfg')
-flags.DEFINE_string('json_root', 'configs/json', 'relative path of the folder containing the optional json files')
+flags.DEFINE_string('j5_root', 'configs/json', 'relative path of the folder containing the optional json files')
 flags.DEFINE_integer('worker_id', 0, 'worker id for multi-machine training')
+
+
+def load_cfg(cfg, FLAGS):
+    cmd_cfg = load_cfg_from_json5(FLAGS.j5, FLAGS.j5_root)
+    if cfg.pretrained:
+        load_cfg_from_model(cfg, cfg.pretrained, cmd_cfg)
+
+    if not cfg.model_dir:
+        if cfg.eval.pt:
+            assert cfg.pretrained, "cfg.pretrained must be provided for pretrained model eval"
+
+            cfg.model_dir = cfg.pretrained.replace('pretrained', 'log')
+        else:
+            model_dir_name = f'{cfg.dataset.train_name}_batch_{cfg.train.batch_size}'
+            if cfg.pretrained:
+                pretrained_name = os.path.basename(cfg.pretrained)
+                model_dir_name = f'{pretrained_name}_{model_dir_name}'
+
+            if cfg.train.suffix:
+                model_dir_name = f'{model_dir_name}-{cfg.train.suffix}'
+
+            if cfg.dist == 2 and cfg.dist2.task.index > 0:
+                model_dir_name = f'{model_dir_name}-worker-{cfg.dist2.task.index}'
+
+            cfg.model_dir = os.path.join('log', model_dir_name)
+
+    cfg.training = cfg.mode == TRAIN
+
+    if cfg.training:
+        print(f'saving trained model to: {cfg.model_dir}')
+    else:
+        print(f'loading trained model from: {cfg.model_dir}')
+        if not cfg.eval.pt:
+            load_cfg_from_model(cfg, cfg.model_dir, cmd_cfg)
+
+    # config_cmd_args = [k for k in dir(FLAGS) if k.startswith('cfg.')]
+    # config_cmd_dict = {
+    #     k: getattr(FLAGS, k) for k in dir(FLAGS) if k.startswith('cfg.')
+    # }
+    if cfg.dataset.name.startswith('ipsc'):
+        from configs.dataset_configs import ipsc_post_process
+        ipsc_post_process(cfg.dataset)
+
+    import utils
+    utils.log_cfg(cfg)
 
 
 def main(unused_argv):
@@ -413,11 +482,7 @@ def main(unused_argv):
     FLAGS = flags.FLAGS
     cfg = FLAGS.cfg
 
-    load_cfg_json(cfg, FLAGS.json, FLAGS.json_root)
-    load_cfg_pt(cfg)
-    load_cfg_json(cfg, FLAGS.json, FLAGS.json_root)
-
-    cfg.training = cfg.mode == TRAIN
+    load_cfg(cfg, FLAGS)
 
     if cfg.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = cfg.gpu
@@ -487,49 +552,6 @@ def main(unused_argv):
     # pylint: enable=unused-import
     from tasks import task as task_lib
 
-    if cfg.training:
-        if not cfg.model_dir:
-            model_dir_name = f'{cfg.dataset.train_name}_batch_{cfg.train.batch_size}'
-            if cfg.pretrained:
-                pretrained_name = os.path.basename(cfg.pretrained)
-                model_dir_name = f'{pretrained_name}_{model_dir_name}'
-
-            if cfg.train.suffix:
-                model_dir_name = f'{model_dir_name}-{cfg.train.suffix}'
-
-            if cfg.dist == 2 and cfg.dist2.task.index > 0:
-                model_dir_name = f'{model_dir_name}-worker-{cfg.dist2.task.index}'
-
-            cfg.model_dir = os.path.join('log', model_dir_name)
-        print(f'saving trained model to: {cfg.model_dir}')
-
-        # assert cfg.model_dir, "model_dir must be provided for training"
-
-    # config_cmd_args = [k for k in dir(FLAGS) if k.startswith('cfg.')]
-    # config_cmd_dict = {
-    #     k: getattr(FLAGS, k) for k in dir(FLAGS) if k.startswith('cfg.')
-    # }
-    utils.log_cfg(cfg)
-
-    if cfg.dataset.name.startswith('ipsc'):
-        from configs import dataset_configs
-        name_to_num = dataset_configs.IPSC_NAME_TO_NUM
-        root_dir = cfg.dataset.root_dir
-        train_name = cfg.dataset.train_name
-        val_name = cfg.dataset.val_name
-
-        cfg.dataset.train_num_examples = name_to_num[train_name]
-        cfg.dataset.eval_num_examples = name_to_num[val_name]
-
-        cfg.dataset.train_filename_for_metrics = f'{train_name}.json'
-        cfg.dataset.val_filename_for_metrics = f'{val_name}.json'
-
-        cfg.dataset.train_file_pattern = os.path.join(root_dir, 'tfrecord', train_name + '*')
-        cfg.dataset.val_file_pattern = os.path.join(root_dir, 'tfrecord', val_name + '*')
-
-        cfg.dataset.category_names_path = os.path.join(root_dir, cfg.dataset.val_filename_for_metrics)
-        cfg.dataset.coco_annotations_dir_for_metrics = root_dir
-
     with strategy.scope():
         # Allow cfg override: for eval, only take one task and one dataset.
         if 'tasks' not in cfg or len(cfg.tasks) == 1 or not cfg.training:
@@ -560,12 +582,14 @@ def main(unused_argv):
         assert len(tasks) == 1, 'Only one task is accepted in eval.'
 
         checkpoint_dir = cfg.eval.get('checkpoint_dir', None)
+
+        assert cfg.model_dir, "cfg.model_dir must be provided"
+
         if not checkpoint_dir:
-            if cfg.model_dir:
-                checkpoint_dir = cfg.model_dir
-            else:
+            if cfg.eval.pt:
                 checkpoint_dir = cfg.pretrained
-                cfg.model_dir = cfg.pretrained.replace('pretrained', 'log')
+            else:
+                checkpoint_dir = cfg.model_dir
 
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=1):

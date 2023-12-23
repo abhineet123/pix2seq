@@ -8,6 +8,7 @@ tensorflow_gan
 pycocotools
 scikit-image
 einops
+json5
 pandas
 paramparse
 opencv-python

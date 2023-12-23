@@ -119,28 +119,6 @@ def get_config(config_str=None):
             learning_rate_schedule='linear',
             learning_rate_scaling='none',
         ),
-
-        train=D(
-            suffix='',
-            batch_size=32,
-            epochs=40,
-            steps=0,  # set to >0 to override epochs.
-            checkpoint_epochs=1,
-            checkpoint_steps=0,  # set to >0 to override checkpoint_epochs.
-            keep_checkpoint_max=3,
-            loss_type='xent',
-        ),
-
-        eval=D(
-            suffix='',
-            save_vis=1,
-            save_csv=1,
-            tag='eval',
-            checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
-            # checkpoint_dir=get_coco_finetuned_checkpoint(encoder_variant, image_size[0]),
-            batch_size=1,  # needs to be divisible by total eval examples.
-            steps=0,  # 0 means eval over full validation set.
-        ),
     )
 
     # Update model with architecture variant.
