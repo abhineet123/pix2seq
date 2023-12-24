@@ -507,7 +507,7 @@ def main(unused_argv):
             print(f'{interface}: {ip}')
             try:
                 worker_idx = worker_ip_addresses.index(ip)
-            except IndexError:
+            except ValueError:
                 continue
             else:
                 tf_config['task']['index'] = worker_idx
