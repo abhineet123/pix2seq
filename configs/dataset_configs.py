@@ -59,16 +59,16 @@ def ipsc_post_process(dataset_cfg):
     name_to_num = IPSC_NAME_TO_NUM
     root_dir = dataset_cfg.root_dir
     train_name = dataset_cfg.train_name
-    val_name = dataset_cfg.val_name
+    eval_name = dataset_cfg.eval_name
 
     dataset_cfg.train_num_examples = name_to_num[train_name]
-    dataset_cfg.eval_num_examples = name_to_num[val_name]
+    dataset_cfg.eval_num_examples = name_to_num[eval_name]
 
     dataset_cfg.train_filename_for_metrics = f'{train_name}.json'
-    dataset_cfg.val_filename_for_metrics = f'{val_name}.json'
+    dataset_cfg.val_filename_for_metrics = f'{eval_name}.json'
 
     dataset_cfg.train_file_pattern = os.path.join(root_dir, 'tfrecord', train_name + '*')
-    dataset_cfg.val_file_pattern = os.path.join(root_dir, 'tfrecord', val_name + '*')
+    dataset_cfg.val_file_pattern = os.path.join(root_dir, 'tfrecord', eval_name + '*')
 
     dataset_cfg.category_names_path = os.path.join(root_dir, dataset_cfg.val_filename_for_metrics)
     dataset_cfg.coco_annotations_dir_for_metrics = root_dir
@@ -78,13 +78,13 @@ def get_ipsc_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
 
     train_name = 'ext_reorg_roi_g2_0_53'
-    val_name = 'ext_reorg_roi_g2_16_53'
+    eval_name = 'ext_reorg_roi_g2_16_53'
 
     return D(
         name='ipsc_object_detection',
         root_dir=root_dir,
         train_name=train_name,
-        val_name=val_name,
+        eval_name=eval_name,
         train_split='train',
         eval_split='validation',
         label_shift=0,

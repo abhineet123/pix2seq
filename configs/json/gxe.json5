@@ -1,5 +1,6 @@
 {
-  "train": {
+	"dist": 2,
+	"train": {
 	"suffix": ["gxe",],
 	},
 	"dist2": {
