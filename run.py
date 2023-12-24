@@ -504,7 +504,12 @@ def main(unused_argv):
         interfaces = ni.interfaces()
         for interface in interfaces:
             ifaddresses = ni.ifaddresses(interface)
-            ip = ifaddresses[ni.AF_INET][0]['addr']
+            try:
+                ip = ifaddresses[ni.AF_INET][0]['addr']
+            except KeyError:
+                keys = list(ifaddresses.keys())
+                ip = ifaddresses[keys[0]][0]['addr']
+
             print(f'{interface}: {ip}')
             try:
                 worker_idx = worker_ip_addresses.index(ip)
