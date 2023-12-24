@@ -184,7 +184,7 @@ def main(unused_argv):
 
         import eval
         for ckpt in tf.train.checkpoints_iterator(
-                checkpoint_dir, min_interval_secs=1, timeout=1):
+                checkpoint_dir, min_interval_secs=1, timeout=5):
             result = eval.run(cfg, dses[0], tasks[0], eval_steps, ckpt, strategy,
                                         model_lib, tf)
             if result['global_step'] >= train_steps:

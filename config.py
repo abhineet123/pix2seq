@@ -79,7 +79,7 @@ def build_tasks_and_datasets(
     return tasks, mixed_datasets, ds
 
 
-def load_from_model(cfg, model_dir, cmd_cfg):
+def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
     pt_cfg_filepath = os.path.join(model_dir, 'config.json')
 
     assert os.path.isfile(pt_cfg_filepath), f"non-existent model cfg json: {pt_cfg_filepath}"
@@ -103,11 +103,13 @@ def load_from_model(cfg, model_dir, cmd_cfg):
 
     cfg_model = ml_collections.ConfigDict(cfg_model)
 
-    cfg.model.update(cfg_model.model)
-    cfg.task.update(cfg_model.task)
-    cfg.train.update(cfg_model.train)
-    cfg.optimization.update(cfg_model.optimization)
-
+    if pt:
+        cfg.model.update(cfg_model.model)
+        cfg.task.update(cfg_model.task)
+        cfg.train.update(cfg_model.train)
+        cfg.optimization.update(cfg_model.optimization)
+    else:
+        cfg.update(cfg_model)
     """
     hack to deal with independently defined target_size setting in tasks.eval_transforms even though it should match 
     image_size
@@ -233,10 +235,10 @@ def load(FLAGS):
     cfg.training = cfg.mode == TRAIN
 
     if cfg.model_dir:
-        load_from_model(cfg, cfg.model_dir, cmd_cfg)
+        load_from_model(cfg, cfg.model_dir, cmd_cfg, pt=False)
     else:
         if cfg.pretrained:
-            load_from_model(cfg, cfg.pretrained, cmd_cfg)
+            load_from_model(cfg, cfg.pretrained, cmd_cfg, pt=True)
 
         if not cfg.training and cfg.eval.pt:
             assert cfg.pretrained, "cfg.pretrained must be provided for pretrained model eval"
