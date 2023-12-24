@@ -518,10 +518,11 @@ def main(unused_argv):
             else:
                 print(f'found worker_idx: {worker_idx}')
                 tf_config['task']['index'] = worker_idx
-                exit()
+                # exit()
                 break
         else:
-            raise AssertionError(f'No match found between worker_ip_addresses: {worker_ip_addresses} '
+            raise AssertionError(f'No match found between '
+                                 f'worker_ip_addresses:\n{worker_ip_addresses} '
                                  f'and self_ip_addresses:\n{self_ip_addresses}')
 
         os.environ.pop('TF_CONFIG', None)
