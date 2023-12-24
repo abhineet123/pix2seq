@@ -502,6 +502,7 @@ def main(unused_argv):
 
         import netifaces as ni
         interfaces = ni.interfaces()
+        self_ip_addresses = ''
         for interface in interfaces:
             ifaddresses = ni.ifaddresses(interface)
             try:
@@ -509,11 +510,10 @@ def main(unused_argv):
             except KeyError:
                 keys = list(ifaddresses.keys())
                 ip = ifaddresses[keys[0]][0]['addr']
-
-            print(f'{interface}: {ip}')
             try:
                 worker_idx = worker_ip_addresses.index(ip)
             except ValueError:
+                self_ip_addresses += f'{interface}: {ip}\n'
                 continue
             else:
                 print(f'found worker_idx: {worker_idx}')
@@ -521,6 +521,7 @@ def main(unused_argv):
                 exit()
                 break
         else:
+            print(f'self_ip_addresses:\n{self_ip_addresses}')
             raise AssertionError(f'No matching ip address found in worker_ip_addresses: {worker_ip_addresses}')
 
         os.environ.pop('TF_CONFIG', None)
