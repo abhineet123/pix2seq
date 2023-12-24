@@ -503,7 +503,8 @@ def main(unused_argv):
         import netifaces as ni
         interfaces = ni.interfaces()
         for interface in interfaces:
-            ip = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+            ifaddresses = ni.ifaddresses(interface)
+            ip = ifaddresses[ni.AF_INET][0]['addr']
             print(f'{interface}: {ip}')
             try:
                 worker_idx = worker_ip_addresses.index(ip)
