@@ -522,8 +522,8 @@ def main(unused_argv):
                 break
         else:
             raise AssertionError(f'No match found between '
-                                 f'worker_ip_addresses:\n{worker_ip_addresses} '
-                                 f'and self_ip_addresses:\n{self_ip_addresses}')
+                                 f'worker_ip_addresses:\n{worker_ip_addresses}\n'
+                                 f'and self_ip_addresses:\n{self_ip_addresses}\n')
 
         os.environ.pop('TF_CONFIG', None)
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
