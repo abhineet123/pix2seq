@@ -512,6 +512,7 @@ def main(unused_argv):
             else:
                 print(f'found worker_idx: {worker_idx}')
                 tf_config['task']['index'] = worker_idx
+                exit()
                 break
         else:
             raise AssertionError(f'No matching ip address found in worker_ip_addresses: {worker_ip_addresses}')
