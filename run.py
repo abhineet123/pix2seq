@@ -521,8 +521,8 @@ def main(unused_argv):
                 exit()
                 break
         else:
-            print(f'self_ip_addresses:\n{self_ip_addresses}')
-            raise AssertionError(f'No matching ip address found in worker_ip_addresses: {worker_ip_addresses}')
+            raise AssertionError(f'No match found between worker_ip_addresses: {worker_ip_addresses} '
+                                 f'and self_ip_addresses:\n{self_ip_addresses}')
 
         os.environ.pop('TF_CONFIG', None)
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
