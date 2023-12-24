@@ -523,7 +523,7 @@ def main(unused_argv):
         else:
             raise AssertionError(f'No matching ip address found\n'
                                  f'worker_ip_addresses:\n{worker_ip_addresses}\n'
-                                 f'self_ip_addresses:\n{self_ip_addresses}\n')
+                                 f'self_ip_addresses:\n{self_ip_addresses}')
 
         os.environ.pop('TF_CONFIG', None)
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
