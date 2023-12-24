@@ -5,5 +5,5 @@
   },
   "train": {
     "batch_size": $0$
-  }
+  }  
 }
