@@ -234,7 +234,7 @@ class TFRecordDataset(Dataset):
         if training or self.config.eval_split == 'train':
             file_pattern = self.config.train_file_pattern
         else:
-            file_pattern = self.config.val_file_pattern
+            file_pattern = self.config.eval_file_pattern
         dataset = tf.data.Dataset.list_files(file_pattern, shuffle=training)
         dataset = dataset.interleave(
             self.dataset_cls, cycle_length=32, deterministic=not training,

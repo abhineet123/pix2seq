@@ -31,7 +31,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     # timestamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
 
     # out_csv_dir_name = "csv"
-    # val_json = config.val_filename_for_metrics
+    # val_json = config.eval_filename_for_metrics
     # ckpt_dir = os.path.dirname(ckpt)
     ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
     json_name = os.path.splitext(os.path.basename(cfg.dataset.val_filename_for_metrics))[0]

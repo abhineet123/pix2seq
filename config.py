@@ -82,31 +82,31 @@ def build_tasks_and_datasets(
 def load_from_model(cfg, model_dir, cmd_cfg):
     pt_cfg_filepath = os.path.join(model_dir, 'config.json')
 
-    assert os.path.isfile(pt_cfg_filepath), f"non-existent pretrained cfg json: {pt_cfg_filepath}"
+    assert os.path.isfile(pt_cfg_filepath), f"non-existent model cfg json: {pt_cfg_filepath}"
 
     print(f'loading model cfg from {pt_cfg_filepath}')
     with open(pt_cfg_filepath, 'r') as f:
-        cfg_pt = json.loads(f.read())
+        cfg_model = json.loads(f.read())
 
     """
     hack to deal with type mismatches between variables in the config py files and those in the 
     config json files accompanying the pre-trained models
     ConfigDict does not allow type override so type changes must be done in ordinary dict
     """
-    image_size = cfg_pt['model']['image_size']
+    image_size = cfg_model['model']['image_size']
     if isinstance(image_size, int):
-        cfg_pt['model']['image_size'] = (image_size, image_size)
+        cfg_model['model']['image_size'] = (image_size, image_size)
 
-    image_size = cfg_pt['task']['image_size']
+    image_size = cfg_model['task']['image_size']
     if isinstance(image_size, int):
-        cfg_pt['task']['image_size'] = (image_size, image_size)
+        cfg_model['task']['image_size'] = (image_size, image_size)
 
-    cfg_pt = ml_collections.ConfigDict(cfg_pt)
+    cfg_model = ml_collections.ConfigDict(cfg_model)
 
-    cfg.model.update(cfg_pt.model)
-    cfg.task.update(cfg_pt.task)
-    cfg.train.update(cfg_pt.train)
-    cfg.optimization.update(cfg_pt.optimization)
+    cfg.model.update(cfg_model.model)
+    cfg.task.update(cfg_model.task)
+    cfg.train.update(cfg_model.train)
+    cfg.optimization.update(cfg_model.optimization)
 
     """
     hack to deal with independently defined target_size setting in tasks.eval_transforms even though it should match 
@@ -173,11 +173,15 @@ def load_from_json5(json_list, json_root):
 
         """named vars"""
         for named_json_var in NAMED_JSON_VARS:
-            json_var_val = all_json_dict[named_json_var]
-            json_str = json_str.replace(f'${named_json_var}$', json_var_val)
+            try:
+                json_var_val = all_json_dict[named_json_var]
+            except KeyError:
+                pass
+            else:
+                json_str = json_str.replace(f'${named_json_var}$', json_var_val)
 
-        if not json_vars:
-            continue
+        # if not json_vars:
+        #     continue
 
         """combined vars for cases where bvar may have a separator as part of it"""
         cmb_json_vars = '-'.join(json_vars)
@@ -198,6 +202,11 @@ def load_from_json5(json_list, json_root):
         for line_id, json_line in enumerate(json_lines):
             if any(f'$${var_id}$$' in json_line for var_id in range(MAX_JSON_VARS)):
                 continue
+            if any(f'${var_id}$' in json_line for var_id in range(MAX_JSON_VARS)):
+                raise AssertionError(f'{json_name}: unsubstituted position variable found in {json_line}')
+            if any(f'${var}$' in json_line for var in NAMED_JSON_VARS):
+                raise AssertionError(f'{json_name}: unsubstituted named variable found in {json_line}')
+
             valid_line_ids.append(line_id)
         json_str = '\n'.join(json_lines[i] for i in valid_line_ids)
 
@@ -210,6 +219,7 @@ def load_from_json5(json_list, json_root):
         # print()
 
     all_cfg = ml_collections.ConfigDict(all_json_dict)
+
     return all_cfg
 
 
@@ -227,7 +237,7 @@ def load(FLAGS):
     else:
         if cfg.pretrained:
             load_from_model(cfg, cfg.pretrained, cmd_cfg)
-            
+
         if not cfg.training and cfg.eval.pt:
             assert cfg.pretrained, "cfg.pretrained must be provided for pretrained model eval"
 

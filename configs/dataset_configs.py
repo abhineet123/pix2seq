@@ -39,13 +39,13 @@ COCO_ANNOTATIONS_DIR = '/tmp/coco_annotations'
 
 _shared_coco_dataset_config = D(
     # train_file_pattern=COCO_TRAIN_TFRECORD_PATTERN,
-    # val_file_pattern=COCO_VAL_TFRECORD_PATTERN,
+    # eval_file_pattern=COCO_VAL_TFRECORD_PATTERN,
     train_num_examples=118287,
     eval_num_examples=5000,
     train_split='train',
     eval_split='validation',
     # Directory of annotations used by the metrics.
-    # Also need to set train_filename_for_metrics and val_filename_for_metrics.
+    # Also need to set train_filename_for_metrics and eval_filename_for_metrics.
     # If unset, groundtruth annotations should be specified via
     # record_groundtruth.
     coco_annotations_dir_for_metrics=COCO_ANNOTATIONS_DIR,
@@ -65,12 +65,12 @@ def ipsc_post_process(dataset_cfg):
     dataset_cfg.eval_num_examples = name_to_num[eval_name]
 
     dataset_cfg.train_filename_for_metrics = f'{train_name}.json'
-    dataset_cfg.val_filename_for_metrics = f'{eval_name}.json'
+    dataset_cfg.eval_filename_for_metrics = f'{eval_name}.json'
 
     dataset_cfg.train_file_pattern = os.path.join(root_dir, 'tfrecord', train_name + '*')
-    dataset_cfg.val_file_pattern = os.path.join(root_dir, 'tfrecord', eval_name + '*')
+    dataset_cfg.eval_file_pattern = os.path.join(root_dir, 'tfrecord', eval_name + '*')
 
-    dataset_cfg.category_names_path = os.path.join(root_dir, dataset_cfg.val_filename_for_metrics)
+    dataset_cfg.category_names_path = os.path.join(root_dir, dataset_cfg.eval_filename_for_metrics)
     dataset_cfg.coco_annotations_dir_for_metrics = root_dir
 
 
@@ -98,7 +98,7 @@ dataset_configs = {
         D(
             name='coco/2017_object_detection',
             train_filename_for_metrics='instances_train2017.json',
-            val_filename_for_metrics='instances_val2017.json',
+            eval_filename_for_metrics='instances_val2017.json',
             category_names_path=os.path.join(
                 _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
                 'instances_val2017.json'),
@@ -108,7 +108,7 @@ dataset_configs = {
         D(
             name='coco/2017_instance_segmentation',
             train_filename_for_metrics='instances_train2017.json',
-            val_filename_for_metrics='instances_val2017.json',
+            eval_filename_for_metrics='instances_val2017.json',
             category_names_path=os.path.join(
                 _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
                 'instances_val2017.json'),
@@ -118,7 +118,7 @@ dataset_configs = {
         D(
             name='coco/2017_keypoint_detection',
             train_filename_for_metrics='person_keypoints_train2017.json',
-            val_filename_for_metrics='person_keypoints_val2017.json',
+            eval_filename_for_metrics='person_keypoints_val2017.json',
             category_names_path=os.path.join(
                 _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
                 'person_keypoints_val2017.json'),
@@ -127,6 +127,6 @@ dataset_configs = {
     'coco/2017_captioning':
         D(name='coco/2017_captioning',
           train_filename_for_metrics='captions_train2017_eval_compatible.json',
-          val_filename_for_metrics='captions_val2017_eval_compatible.json',
+          eval_filename_for_metrics='captions_val2017_eval_compatible.json',
           **_shared_coco_dataset_config),
 }

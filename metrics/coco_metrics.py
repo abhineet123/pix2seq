@@ -458,7 +458,7 @@ def get_annotations_path_for_metrics(config):  # pylint: disable=missing-functio
       config.dataset.eval_split)
   filename = (
       config.dataset.get('train_filename_for_metrics')
-      if split == 'train' else config.dataset.get('val_filename_for_metrics'))
+      if split == 'train' else config.dataset.get('eval_filename_for_metrics'))
 
   return os.path.join(annotations_dir, filename)
 
