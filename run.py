@@ -510,6 +510,7 @@ def main(unused_argv):
             except ValueError:
                 continue
             else:
+                print(f'found worker_idx: {worker_idx}')
                 tf_config['task']['index'] = worker_idx
                 break
         else:

@@ -10,6 +10,7 @@
         - [wsl-gpu       @ tensorflow/install](#wsl_gpu___tensorflow_install_)
         - [ubuntu22.04       @ tensorflow/install](#ubuntu22_04___tensorflow_install_)
         - [all       @ tensorflow/install](#all___tensorflow_install_)
+    - [netifaces       @ install](#netifaces___instal_l_)
 - [soft-links](#soft_link_s_)
 - [pretrained](#pretraine_d_)
     - [install_gcloud       @ pretrained](#install_gcloud___pretrained_)
@@ -124,6 +125,10 @@ python3 -c "import tensorflow as tf; print(tf.sysconfig.get_build_info())"
 python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
 ```
 
+<a id="netifaces___instal_l_"></a>
+## netifaces       @ install-->p2s_setup
+sudo apt-get install python3.10-dev
+pip install netifaces
 
 <a id="soft_link_s_"></a>
 # soft-links
