@@ -87,22 +87,19 @@ python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ips
 
 <a id="xe___dist_2_g2_16_53_resnet_640_"></a>
 #### xe       @ dist-2/g2_16_53/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-32,dist-2,dbg-0,dyn-1,xe-0
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-32,dist-2,dbg-0,dyn-1,xe
 
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-32,dist-2,dbg-0,dyn-1,xe-1
 <a id="eval___xe_dist_2_g2_16_53_resnet_64_0_"></a>
 ##### eval       @ xe/dist-2/g2_16_53/resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-32,dist-0,dbg-1,dyn-1,eval,batch_e-16,save-vis-1,save-csv-1
 
 <a id="gx___dist_2_g2_16_53_resnet_640_"></a>
 #### gx       @ dist-2/g2_16_53/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-36,dist-2,dbg-0,dyn-1,gx-0
-
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-36,dist-2,dbg-0,dyn-1,gx-1
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-36,dist-2,dbg-0,dyn-1,gx
 
 <a id="gxe___dist_2_g2_16_53_resnet_640_"></a>
 #### gxe       @ dist-2/g2_16_53/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-48,dist-2,dbg-0,dyn-0,gx
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-48,dist-2,dbg-0,dyn-0,gxe
 
 
 <a id="resnet_1333_"></a>

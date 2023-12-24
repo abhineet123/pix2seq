@@ -144,7 +144,8 @@ def perform_evaluation(cfg, dataset, task, eval_steps, ckpt, strategy,
     if cfg.eval.save_csv:
         csv_dir_name = f'csv'
         if cfg.eval.suffix:
-            csv_dir_name = f'{csv_dir_name}-{cfg.eval.suffix}'
+            suffix = '-'.join(cfg.eval.suffix)
+            csv_dir_name = f'{csv_dir_name}-{suffix}'
         out_csv_dir = os.path.join(out_dir, csv_dir_name)
         print(f'\nwriting csv files to: {out_csv_dir}\n')
         os.makedirs(out_csv_dir, exist_ok=True)
@@ -299,7 +300,8 @@ def perform_training(cfg, datasets, tasks, train_steps, steps_per_epoch, num_tra
                 train_multiple_steps(data_iterators, tasks)
                 trainer.check_checkpoint_restored()
                 cur_step = global_step.numpy()
-                trainer.checkpoint_manager.save(cur_step)
+                if cfg.dist != 2 or cfg.worker_idx == 0:
+                    trainer.checkpoint_manager.save(cur_step)
                 steps_per_sec = steps_per_epoch / (time.time() - timestamp)
                 timestamp = time.time()
                 with tf.name_scope('train'):
@@ -382,7 +384,20 @@ MAX_JSON_VARS = 10
 
 
 def load_cfg_from_json5(json_list, json_root):
-    all_cfg = ml_collections.ConfigDict()
+    import collections
+
+    def update(orig_dict, new_dict):
+        for key, val in new_dict.iteritems():
+            if isinstance(val, collections.Mapping):
+                tmp = update(orig_dict.get(key, {}), val)
+                orig_dict[key] = tmp
+            elif isinstance(val, list):
+                orig_dict[key] = (orig_dict.get(key, []) + val)
+            else:
+                orig_dict[key] = new_dict[key]
+        return orig_dict
+
+    all_json_dict = {}
     for json_data in json_list:
         json_vars = json_data.split('-')
         json_path = json_vars[0] + '.json5'
@@ -417,8 +432,9 @@ def load_cfg_from_json5(json_list, json_root):
         import json5
 
         json_dict = json5.loads(json_str)
-        cfg_json = ml_collections.ConfigDict(json_dict)
-        all_cfg.update(cfg_json)
+        all_json_dict = update(all_json_dict, json_dict)
+
+    all_cfg = ml_collections.ConfigDict(all_json_dict)
     return all_cfg
 
 
@@ -452,7 +468,8 @@ def load_cfg(cfg, FLAGS):
                 model_dir_name = f'{pretrained_name}_{model_dir_name}'
 
             if cfg.train.suffix:
-                model_dir_name = f'{model_dir_name}-{cfg.train.suffix}'
+                suffix = '-'.join(cfg.train.suffix)
+                model_dir_name = f'{model_dir_name}-{suffix}'
 
             if cfg.dist == 2 and cfg.dist2.task.index > 0:
                 model_dir_name = f'{model_dir_name}-worker-{cfg.dist2.task.index}'
@@ -512,6 +529,8 @@ def main(unused_argv):
                 ip = ifaddresses[keys[0]][0]['addr']
             try:
                 worker_idx = worker_ip_addresses.index(ip)
+                cfg.worker_idx = worker_idx
+
             except ValueError:
                 self_ip_addresses += f'{interface}: {ip}\n'
                 continue
