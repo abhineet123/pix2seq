@@ -433,11 +433,15 @@ flags.DEFINE_integer('worker_id', 0, 'worker id for multi-machine training')
 
 def load_cfg(cfg, FLAGS):
     cmd_cfg = load_cfg_from_json5(FLAGS.j5, FLAGS.j5_root)
+
+    cfg.update(cmd_cfg)
+    cfg.training = cfg.mode == TRAIN
+
     if cfg.pretrained:
         load_cfg_from_model(cfg, cfg.pretrained, cmd_cfg)
 
     if not cfg.model_dir:
-        if cfg.eval.pt:
+        if not cfg.training and cfg.eval.pt:
             assert cfg.pretrained, "cfg.pretrained must be provided for pretrained model eval"
 
             cfg.model_dir = cfg.pretrained.replace('pretrained', 'log')
@@ -454,8 +458,6 @@ def load_cfg(cfg, FLAGS):
                 model_dir_name = f'{model_dir_name}-worker-{cfg.dist2.task.index}'
 
             cfg.model_dir = os.path.join('log', model_dir_name)
-
-    cfg.training = cfg.mode == TRAIN
 
     if cfg.training:
         print(f'saving trained model to: {cfg.model_dir}')
