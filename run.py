@@ -521,7 +521,7 @@ def main(unused_argv):
                 # exit()
                 break
         else:
-            raise AssertionError(f'No match found between '
+            raise AssertionError(f'No matching ip address found\n'
                                  f'worker_ip_addresses:\n{worker_ip_addresses}\n'
                                  f'and self_ip_addresses:\n{self_ip_addresses}\n')
 
