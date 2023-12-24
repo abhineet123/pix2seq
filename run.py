@@ -491,6 +491,30 @@ def main(unused_argv):
 
     if cfg.dist == 2:
         tf_config = cfg.dist2.to_dict()
+
+        worker_ip_addresses = [node.split(':')[0] for node in tf_config['cluster']['worker']]
+
+        # import socket
+        # hostname = socket.gethostname()
+        # IPAddr = socket.gethostbyname(hostname)
+        # print("Your Computer Name is:" + hostname)
+        # print("Your Computer IP Address is:" + IPAddr)
+
+        import netifaces as ni
+        interfaces = ni.interfaces()
+        for interface in interfaces:
+            ip = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+            print(f'{interface}: {ip}')
+            try:
+                worker_idx = worker_ip_addresses.index(ip)
+            except IndexError:
+                continue
+            else:
+                tf_config['task']['index'] = worker_idx
+                break
+        else:
+            raise AssertionError(f'No matching ip address found in worker_ip_addresses: {worker_ip_addresses}')
+
         os.environ.pop('TF_CONFIG', None)
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
 

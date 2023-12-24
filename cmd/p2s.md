@@ -102,11 +102,11 @@ python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ips
 
 <a id="gxe2___dist_2_g2_16_53_resnet_640_"></a>
 #### gxe2       @ dist-2/g2_16_53/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-48,dist-2,dbg-1,dyn-1,gxe2-0
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-48,dist-2,dbg-0,dyn-0,gxe2-0
 
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-48,dist-2,dbg-1,dyn-1,gxe2-1
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-48,dist-2,dbg-0,dyn-0,gxe2-1
 
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-48,dist-2,dbg-1,dyn-1,gxe2-2
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train-dist2,resnet-640,ipsc-train-g2_16_53,ipsc-val-g2_0_15,batch-48,dist-2,dbg-0,dyn-0,gxe2-2
 
 
 <a id="resnet_1333_"></a>

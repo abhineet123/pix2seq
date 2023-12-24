@@ -9,6 +9,7 @@ pycocotools
 scikit-image
 einops
 json5
+netifaces
 pandas
 paramparse
 opencv-python
