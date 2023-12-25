@@ -37,6 +37,7 @@ flags.DEFINE_string('j5_root', 'configs/json', 'relative path of the folder cont
 flags.DEFINE_integer('worker_id', 0, 'worker id for multi-machine training')
 FLAGS = flags.FLAGS
 
+
 def get_worker_id(tf_config):
     worker_ip_addresses = [node.split(':')[0] for node in tf_config['cluster']['worker']]
 
@@ -65,6 +66,8 @@ def get_worker_id(tf_config):
         raise AssertionError(f'No matching ip address found\n'
                              f'worker_ip_addresses:\n{worker_ip_addresses}\n'
                              f'self_ip_addresses:\n{self_ip_addresses}')
+
+
 def main(unused_argv):
     # params = Params()
     # paramparse.process(params)
@@ -166,7 +169,7 @@ def main(unused_argv):
     if cfg.training:
         import train
         train.run(cfg, dses, tasks, train_steps, checkpoint_steps,
-                         dataset.num_train_examples, strategy, model_lib, tf)
+                  dataset.num_train_examples, strategy, model_lib, tf)
     else:
         # For eval, only one task and one dataset is passed in.
         assert len(dses) == 1, 'Only one dataset is accepted in eval.'
@@ -178,18 +181,24 @@ def main(unused_argv):
 
         if not checkpoint_dir:
             if cfg.eval.pt:
+                assert cfg.pretrained, "pretrained dir must be provided for pretrained model eval"
+
                 checkpoint_dir = cfg.pretrained
             else:
+                assert cfg.model_dir, "model dir must be provided for trained model eval"
+
                 checkpoint_dir = cfg.model_dir
 
         import eval
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):
             result = eval.run(cfg, dses[0], tasks[0], eval_steps, ckpt, strategy,
-                                        model_lib, tf)
+                              model_lib, tf)
             if result['global_step'] >= train_steps:
                 logging.info('Eval complete. Exiting...')
                 break
+        else:
+            raise AssertionError(f'no checkpoints found in {checkpoint_dir}')
 
 
 if __name__ == '__main__':

@@ -86,22 +86,43 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
 
     print(f'loading model cfg from {pt_cfg_filepath}')
     with open(pt_cfg_filepath, 'r') as f:
-        cfg_model = json.loads(f.read())
+        cfg_dict = json.loads(f.read())
 
     """
     hack to deal with type mismatches between variables in the config py files and those in the 
     config json files accompanying the pre-trained models
     ConfigDict does not allow type override so type changes must be done in ordinary dict
     """
-    image_size = cfg_model['model']['image_size']
+    image_size = cfg_dict['model']['image_size']
     if isinstance(image_size, int):
-        cfg_model['model']['image_size'] = (image_size, image_size)
+        cfg_dict['model']['image_size'] = (image_size, image_size)
 
-    image_size = cfg_model['task']['image_size']
+    image_size = cfg_dict['task']['image_size']
     if isinstance(image_size, int):
-        cfg_model['task']['image_size'] = (image_size, image_size)
+        cfg_dict['task']['image_size'] = (image_size, image_size)
 
+    def convert_dict(in_dict):
+        for key, val in in_dict.items():
+            if isinstance(val, list):
+                in_dict[key] = convert_list(val)
+            elif isinstance(val, dict):
+                in_dict[key] = convert_dict(val)
+        in_dict = ml_collections.ConfigDict(in_dict)
+        return in_dict
+
+    def convert_list(in_list):
+        for idx, val in enumerate(in_list):
+            if isinstance(val, list):
+                in_list[idx] = convert_list(val)
+            elif isinstance(val, dict):
+                in_list[idx] = convert_dict(val)
+        return in_list
+
+    """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts"""
+    cfg_model = convert_dict(cfg_dict)
     cfg_model = ml_collections.ConfigDict(cfg_model)
+
+    # status = isinstance(cfg_model, collections.abc.Mapping)
 
     if pt:
         cfg.model.update(cfg_model.model)
@@ -121,7 +142,7 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
         train_transforms_fn = transform_configs.get_object_detection_train_transforms
         eval_transforms_fn = transform_configs.get_object_detection_eval_transforms
     else:
-        raise AssertionError('unsupported task: {cfg.task.name}')
+        raise AssertionError(f'unsupported task: {cfg.task.name}')
 
     for task in cfg.tasks:
         try:
@@ -144,12 +165,11 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
 def load_from_json5(json_list, json_root):
     import collections
 
-    """ml_collections.ConfigDict supports recursive updating for direct but not for list so this 
+    """ml_collections.ConfigDict supports recursive updating for dict but not for list so this 
     function is needed for distributed list specification to work"""
-
     def update(orig_dict, new_dict):
         for key, val in new_dict.items():
-            if isinstance(val, collections.abc.Mapping):
+            if isinstance(val, dict):
                 tmp = update(orig_dict.get(key, {}), val)
                 orig_dict[key] = tmp
             elif isinstance(val, list):
@@ -175,17 +195,16 @@ def load_from_json5(json_list, json_root):
 
         """named vars"""
         for named_json_var in NAMED_JSON_VARS:
-            try:
-                json_var_val = all_json_dict[named_json_var]
-            except KeyError:
-                pass
-            else:
-                json_str = json_str.replace(f'${named_json_var}$', json_var_val)
+            rep_str = f'${named_json_var}$'
+            if rep_str not in json_str:
+                continue
+            json_var_val = all_json_dict[named_json_var]
+            json_str = json_str.replace(rep_str, json_var_val)
 
         # if not json_vars:
         #     continue
 
-        """combined vars for cases where bvar may have a separator as part of it"""
+        """combined vars for cases where var may have a separator as part of it"""
         cmb_json_vars = '-'.join(json_vars)
         json_str = json_str.replace('$*$', cmb_json_vars)
 
@@ -232,7 +251,7 @@ def load(FLAGS):
 
     cfg.update(cmd_cfg)
 
-    cfg.training = cfg.mode == TRAIN
+    cmd_cfg.training = cfg.training = cfg.mode == TRAIN
 
     if cfg.model_dir:
         load_from_model(cfg, cfg.model_dir, cmd_cfg, pt=False)
