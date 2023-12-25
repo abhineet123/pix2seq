@@ -107,6 +107,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         logging.info('Finished eval in %.2f mins', (time.time() - start_time) / 60.)
 
     if cfg.eval.save_csv:
+        import pandas as pd
         csv_columns = [
             "ImageID", "LabelName",
             "XMin", "XMax", "YMin", "YMax", "Confidence",
