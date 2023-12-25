@@ -34,7 +34,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     # val_json = config.eval_filename_for_metrics
     # ckpt_dir = os.path.dirname(ckpt)
     ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
-    json_name = os.path.splitext(os.path.basename(cfg.dataset.val_filename_for_metrics))[0]
+    json_name = os.path.splitext(os.path.basename(cfg.dataset.eval_filename_for_metrics))[0]
     out_dir = os.path.join(cfg.model_dir, f'{ckpt_name}-{json_name}')
 
     out_csv_dir = out_vis_dir = None
