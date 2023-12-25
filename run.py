@@ -76,6 +76,7 @@ def main(unused_argv):
     cfg = config.load(FLAGS)
 
     if cfg.gpu:
+        print(f'setting CUDA_VISIBLE_DEVICES to {cfg.gpu}')
         os.environ['CUDA_VISIBLE_DEVICES'] = cfg.gpu
 
     if cfg.dist == 2:
