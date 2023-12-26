@@ -195,9 +195,8 @@ def main(unused_argv):
                 checkpoint_dir, min_interval_secs=1, timeout=5):
             result = eval.run(cfg, dses[0], tasks[0], eval_steps, ckpt, strategy,
                               model_lib, tf)
-            if result['global_step'] >= train_steps:
-                logging.info('Eval complete. Exiting...')
-                break
+            logging.info('Eval complete. Exiting...')
+            break
         else:
             raise AssertionError(f'no checkpoints found in {checkpoint_dir}')
 

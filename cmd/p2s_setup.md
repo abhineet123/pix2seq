@@ -18,6 +18,7 @@
     - [resnet_640       @ pretrained](#resnet_640___pretrained_)
     - [vit_b       @ pretrained](#vit_b___pretrained_)
     - [vit_l       @ pretrained](#vit_l___pretrained_)
+- [secondary ethernet](#secondary_ethernet_)
 - [bugs](#bug_s_)
 
 <!-- /MarkdownTOC -->
@@ -172,6 +173,18 @@ gsutil -m cp   "gs://pix2seq/coco_det_finetune/vit_b_640x640/checkpoint"   "gs:/
 gsutil -m cp -r "gs://pix2seq/coco_det_finetune/vit_l_1024x1024"  "gs://pix2seq/coco_det_finetune/vit_l_1333x1333"  "gs://pix2seq/coco_det_finetune/vit_l_640x640"  .
 
 gsutil -m cp -r "gs://pix2seq/coco_det_finetune/vit_l_1024x1024" .
+
+<a id="secondary_ethernet_"></a>
+# secondary ethernet
+```
+sudo ip route del 192.168.177.0/24
+sudo ip route add 192.168.177.0/24 dev enp8s0 metric 1
+sudo ip route add 192.168.177.0/24 dev enp6s0 metric 1
+sudo ip route add 192.168.177.0/24 dev enp6s0 metric 1
+
+sudo apt install ethtool
+sudo apt install bmon
+```
 
 <a id="bug_s_"></a>
 # bugs
