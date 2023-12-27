@@ -117,7 +117,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():
             if not csv_rows:
                 print(f'{csv_seq_name}: no csv data found')
-                continue
+                # continue
             out_csv_name = f"{csv_seq_name}.csv"
             out_csv_path = os.path.join(out_csv_dir, out_csv_name)
             # print(f'{csv_seq_name} :: saving csv to {out_csv_path}')
