@@ -269,7 +269,7 @@ def load(FLAGS):
 
             cfg.model_dir = cfg.pretrained.replace('pretrained', 'log')
         else:
-            model_dir_name = f'{cfg.dataset.train_name}_batch_{cfg.train.batch_size}'
+            model_dir_name = f'{cfg.dataset.train_name}'
             if cfg.pretrained:
                 pretrained_name = os.path.basename(cfg.pretrained)
                 model_dir_name = f'{pretrained_name}_{model_dir_name}'
@@ -277,7 +277,7 @@ def load(FLAGS):
             if cfg.train.suffix:
                 print(f'cfg.train.suffix: {cfg.train.suffix}')
 
-                exit()
+                # exit()
 
                 suffix = '-'.join(cfg.train.suffix)
                 model_dir_name = f'{model_dir_name}-{suffix}'
