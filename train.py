@@ -57,8 +57,8 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 train_multiple_steps(data_iterators, tasks)
                 trainer.check_checkpoint_restored()
                 cur_step = global_step.numpy()
-                if cfg.dist != 2 or cfg.worker_idx == 0:
-                    trainer.checkpoint_manager.save(cur_step)
+                # if cfg.dist != 2 or cfg.worker_idx == 0:
+                trainer.checkpoint_manager.save(cur_step)
                 steps_per_sec = steps_per_epoch / (time.time() - timestamp)
                 timestamp = time.time()
                 with tf.name_scope('train'):
