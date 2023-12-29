@@ -163,9 +163,7 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
 
 
 def load_from_json5(json_list, json_root):
-    import collections
-
-    """ml_collections.ConfigDict supports recursive updating for dict but not for list so this 
+    """ml_collections.ConfigDict supports recursive updating for dict but not for list so this
     function is needed for distributed list specification to work"""
     def update(orig_dict, new_dict):
         for key, val in new_dict.items():
@@ -195,7 +193,7 @@ def load_from_json5(json_list, json_root):
 
         """named vars"""
         for named_json_var in NAMED_JSON_VARS:
-            rep_str = f'${named_json_var}$'
+            rep_str = f'%{named_json_var}%'
             if rep_str not in json_str:
                 continue
             json_var_val = all_json_dict[named_json_var]
@@ -206,31 +204,38 @@ def load_from_json5(json_list, json_root):
 
         """combined vars for cases where var may have a separator as part of it"""
         cmb_json_vars = '-'.join(json_vars)
-        json_str = json_str.replace('$*$', cmb_json_vars)
+        json_str = json_str.replace('%*%', cmb_json_vars)
 
         for var_id, json_var in enumerate(json_vars):
             """optional vars"""
-            json_str = json_str.replace(f'$${var_id}$$', json_var)
+            json_str = json_str.replace(f'%{var_id}%', json_var)
             """compulsory vars"""
-            json_str = json_str.replace(f'${var_id}$', json_var)
+            json_str = json_str.replace(f'%{var_id}%', json_var)
 
         """
         remove lines with under specified optional vars
-        json5 is needed to deal with trailing commas
         """
         json_lines = json_str.splitlines()
         valid_line_ids = []
         for line_id, json_line in enumerate(json_lines):
-            if any(f'$${var_id}$$' in json_line for var_id in range(MAX_JSON_VARS)):
-                continue
-            if any(f'${var_id}$' in json_line for var_id in range(MAX_JSON_VARS)):
+            is_valid = True
+            if any(f'%%{var_id}%%' in json_line for var_id in range(MAX_JSON_VARS)):
+                """remove %% for subsequent comparison to work"""
+                json_line = json_line.replace('%%', '$$')
+                is_valid = False
+            if any(f'%{var_id}%' in json_line for var_id in range(MAX_JSON_VARS)):
                 raise AssertionError(f'{json_name}: unsubstituted position variable found in {json_line}')
-            if any(f'${var}$' in json_line for var in NAMED_JSON_VARS):
+            if any(f'%{var}%' in json_line for var in NAMED_JSON_VARS):
                 raise AssertionError(f'{json_name}: unsubstituted named variable found in {json_line}')
 
-            valid_line_ids.append(line_id)
+            if is_valid:
+                valid_line_ids.append(line_id)
+
         json_str = '\n'.join(json_lines[i] for i in valid_line_ids)
 
+        """
+        json5 is needed to deal with trailing commas
+        """
         import json5
 
         json_dict = json5.loads(json_str)

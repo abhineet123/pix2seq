@@ -1,5 +1,5 @@
 {
   "dataset": {
-    "$mode$_name": "ext_reorg_roi_$0$",
+    "%mode%_name": "ext_reorg_roi_%0%",
   }
 }
