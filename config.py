@@ -278,8 +278,8 @@ def load(FLAGS):
                 suffix = '-'.join(cfg.train.suffix)
                 model_dir_name = f'{model_dir_name}-{suffix}'
 
-            if cfg.dist == 2 and cfg.dist2.task.index > 0:
-                model_dir_name = f'{model_dir_name}-worker-{cfg.dist2.task.index}'
+            if cfg.dist == 2 and cfg.tf_config.task.index > 0:
+                model_dir_name = f'{model_dir_name}-worker-{cfg.tf_config.task.index}'
 
             cfg.model_dir = os.path.join('log', model_dir_name)
 
