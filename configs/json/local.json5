@@ -1,5 +1,5 @@
 {
-"dist2": {
+"tf_config": {
 	"cluster": {
 		"worker": ["localhost:12345", "localhost:56789"]
 	},
