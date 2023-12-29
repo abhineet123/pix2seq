@@ -178,9 +178,12 @@ gsutil -m cp -r "gs://pix2seq/coco_det_finetune/vit_l_1024x1024" .
 # secondary ethernet
 ```
 sudo ip route del 192.168.177.0/24
+GRS:
+sudo ip route add 192.168.177.0/24 dev enp6s0 metric 1
+X99:
 sudo ip route add 192.168.177.0/24 dev enp8s0 metric 1
-sudo ip route add 192.168.177.0/24 dev enp6s0 metric 1
-sudo ip route add 192.168.177.0/24 dev enp6s0 metric 1
+E5G
+sudo ip route add 192.168.177.0/24 dev enp0s25 metric 1
 
 sudo apt install ethtool
 sudo apt install bmon

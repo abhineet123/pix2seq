@@ -275,6 +275,8 @@ def load(FLAGS):
                 model_dir_name = f'{pretrained_name}_{model_dir_name}'
 
             if cfg.train.suffix:
+                print(f'cfg.train.suffix: {cfg.train.suffix}')
+
                 suffix = '-'.join(cfg.train.suffix)
                 model_dir_name = f'{model_dir_name}-{suffix}'
 
