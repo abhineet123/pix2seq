@@ -160,6 +160,12 @@ def main(unused_argv):
         train_steps = utils.get_train_steps(
             dataset, cfg.train.steps, cfg.train.epochs,
             cfg.train.batch_size)
+
+        print(f'cfg.train.steps: {cfg.train.steps}')
+        print(f'cfg.train.epochs: {cfg.train.epochs}')
+        print(f'cfg.train.batch_size: {cfg.train.batch_size}')
+        print(f'train_steps: {train_steps}')
+
         eval_steps = utils.get_eval_steps(
             dataset, cfg.eval.steps, cfg.eval.batch_size)
         checkpoint_steps = utils.get_checkpoint_steps(
