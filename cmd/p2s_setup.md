@@ -186,7 +186,15 @@ E5G
 sudo ip route add 192.168.177.0/24 dev enp0s25 metric 1
 
 sudo apt install ethtool
+sudo ethtool enp6s0
+sudo ethtool enp8s0
+sudo ethtool enp0s25
+
+
 sudo apt install bmon
+bmon -p enp6s0
+bmon -p enp8s0
+bmon -p enp0s25
 ```
 
 <a id="bug_s_"></a>

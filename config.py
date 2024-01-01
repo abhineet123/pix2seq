@@ -101,25 +101,25 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
     if isinstance(image_size, int):
         cfg_dict['task']['image_size'] = (image_size, image_size)
 
-    def convert_dict(in_dict):
+    """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts or vice versa"""
+    def from_dict(in_dict):
         for key, val in in_dict.items():
             if isinstance(val, list):
-                in_dict[key] = convert_list(val)
+                in_dict[key] = from_list(val)
             elif isinstance(val, dict):
-                in_dict[key] = convert_dict(val)
+                in_dict[key] = from_dict(val)
         in_dict = ml_collections.ConfigDict(in_dict)
         return in_dict
 
-    def convert_list(in_list):
+    def from_list(in_list):
         for idx, val in enumerate(in_list):
             if isinstance(val, list):
-                in_list[idx] = convert_list(val)
+                in_list[idx] = from_list(val)
             elif isinstance(val, dict):
-                in_list[idx] = convert_dict(val)
+                in_list[idx] = from_dict(val)
         return in_list
 
-    """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts"""
-    cfg_model = convert_dict(cfg_dict)
+    cfg_model = from_dict(cfg_dict)
     cfg_model = ml_collections.ConfigDict(cfg_model)
 
     # status = isinstance(cfg_model, collections.abc.Mapping)
@@ -304,5 +304,32 @@ def load(FLAGS):
 
     import utils
     utils.log_cfg(cfg)
+
+    import paramparse
+
+
+    """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts or vice versa"""
+    def to_dict(in_dict):
+        for key, val in in_dict.items():
+            if isinstance(val, list):
+                in_dict[key] = to_list(val)
+            elif isinstance(val, ml_collections.ConfigDict):
+                in_dict[key] = to_dict(val)
+        in_dict = in_dict.to_dict()
+        return in_dict
+
+    def to_list(in_list):
+        for idx, val in enumerate(in_list):
+            if isinstance(val, list):
+                in_list[idx] = to_list(val)
+            elif isinstance(val, ml_collections.ConfigDict):
+                in_list[idx] = to_dict(val)
+        return in_list
+
+    cfg_dict = to_dict(cfg)
+    from config_params import ConfigParams
+    cfg_class = ConfigParams()
+    # paramparse.from_dict(cfg_dict, class_name='ConfigParams2', add_help=False, add_init=False)
+    exit()
 
     return cfg
