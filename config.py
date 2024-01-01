@@ -326,10 +326,10 @@ def load(FLAGS):
                 in_list[idx] = to_dict(val)
         return in_list
 
-    cfg_dict = to_dict(cfg)
-    from config_params import ConfigParams
-    cfg_class = ConfigParams()
+    # cfg_dict = to_dict(cfg)
+    # from config_params import ConfigParams
+    # cfg_class = ConfigParams()
     # paramparse.from_dict(cfg_dict, class_name='ConfigParams2', add_help=False, add_init=False)
-    exit()
+    # exit()
 
     return cfg
