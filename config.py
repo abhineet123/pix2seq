@@ -259,6 +259,7 @@ def load(FLAGS):
     cmd_cfg.training = cfg.training = cfg.mode == TRAIN
 
     if cfg.model_dir:
+        assert not cfg.eval.pt, "pre-trained evaluation should be turned off if custom model directory is specified"
         load_from_model(cfg, cfg.model_dir, cmd_cfg, pt=False)
     else:
         if cfg.pretrained:
