@@ -41,6 +41,9 @@ FLAGS = flags.FLAGS
 def get_worker_id(tf_config):
     worker_ip_addresses = [node.split(':')[0] for node in tf_config['cluster']['worker']]
 
+    assert len(worker_ip_addresses) == len(set(worker_ip_addresses)), \
+        "worker ID resolution cannot work with duplicate IP addresses"
+
     import netifaces as ni
     interfaces = ni.interfaces()
     self_ip_addresses = ''
@@ -81,7 +84,8 @@ def main(unused_argv):
 
     if cfg.dist == 2:
         tf_config = cfg.tf_config.to_dict()
-        get_worker_id(tf_config)
+        if tf_config['task']['index'] < 0:
+            get_worker_id(tf_config)
 
         os.environ.pop('TF_CONFIG', None)
         os.environ['TF_CONFIG'] = json.dumps(tf_config)

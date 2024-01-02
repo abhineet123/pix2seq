@@ -3,6 +3,6 @@
   "cluster": {
 	"worker": ["192.168.177.1:12345", "192.168.177.3:34567"]
   },
-  "task": {"type": "worker", "index": 0}
+  "task": {"type": "worker", "index": -1}
 }
 }
