@@ -1,6 +1,6 @@
 {
   "train": {
-	scratch: 1,
+	pt: 0,
 	"suffix": ['scratch',],
 	},
 }

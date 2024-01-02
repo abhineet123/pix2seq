@@ -1,9 +1,11 @@
 from absl import logging
 import time
 
+
 def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
-                     strategy, model_lib, tf):
-    if cfg.pretrained and not cfg.train.scratch:
+        strategy, model_lib, tf):
+    if cfg.train.pt:
+        assert cfg.pretrained, "cfg.pretrained must be provided to load pt and continue training from pretrained model"
         cfg.model.pretrained_ckpt = cfg.pretrained
     """Main training logic."""
     with strategy.scope():

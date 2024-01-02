@@ -37,7 +37,7 @@ base_config = D(
 
     train=D(
         suffix=[],
-        scratch=0,
+        pt=1,
         batch_size=32,
         epochs=500,
         steps=0,  # set to >0 to override epochs.
