@@ -157,7 +157,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eva
 
 <a id="g2_16_53___resnet_133_3_"></a>
 ## g2_16_53       @ resnet-1333-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-1333,ipsc-g2_16_53,batch-6,dbg-1,dyn-1
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-1333,ipsc-g2_16_53,batch-6,dbg-1,dyn-1,dist-0
 
 <a id="resnet_c4_640_"></a>
 # resnet_c4-640 
