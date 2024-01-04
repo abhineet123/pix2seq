@@ -20,6 +20,12 @@
     - [vit_l       @ pretrained](#vit_l___pretrained_)
 - [secondary ethernet](#secondary_ethernet_)
 - [bugs](#bug_s_)
+- [tfrecord](#tfrecor_d_)
+    - [ipsc       @ tfrecord](#ipsc___tfrecord_)
+        - [ext_reorg_roi_g2_16_53       @ ipsc/tfrecord](#ext_reorg_roi_g2_16_53___ipsc_tfrecor_d_)
+        - [ext_reorg_roi_g2_0_1       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_1___ipsc_tfrecor_d_)
+        - [ext_reorg_roi_g2_0_15       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_15___ipsc_tfrecor_d_)
+        - [ext_reorg_roi_g2_0_37       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_37___ipsc_tfrecor_d_)
 
 <!-- /MarkdownTOC -->
 
@@ -204,6 +210,22 @@ probably something to do with the dataset loader
 https://github.com/tensorflow/tensorflow/issues/39122
 https://github.com/tensorflow/tensorflow/issues/39099
 
-
+<a id="tfrecor_d_"></a>
+# tfrecord
+<a id="ipsc___tfrecord_"></a>
+## ipsc       @ tfrecord-->p2s_setup
+python3 data/scripts/create_ipsc_tfrecord.py
+<a id="ext_reorg_roi_g2_16_53___ipsc_tfrecor_d_"></a>
+### ext_reorg_roi_g2_16_53       @ ipsc/tfrecord-->p2s_setup
+python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_16_53.json --n_proc=0
+<a id="ext_reorg_roi_g2_0_1___ipsc_tfrecor_d_"></a>
+### ext_reorg_roi_g2_0_1       @ ipsc/tfrecord-->p2s_setup
+python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_1.json --n_proc=0
+<a id="ext_reorg_roi_g2_0_15___ipsc_tfrecor_d_"></a>
+### ext_reorg_roi_g2_0_15       @ ipsc/tfrecord-->p2s_setup
+python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_15.json --n_proc=0
+<a id="ext_reorg_roi_g2_0_37___ipsc_tfrecor_d_"></a>
+### ext_reorg_roi_g2_0_37       @ ipsc/tfrecord-->p2s_setup
+python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_37.json --n_proc=0
 
 
