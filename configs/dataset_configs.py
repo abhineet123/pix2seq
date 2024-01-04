@@ -28,7 +28,7 @@ IPSC_NAME_TO_NUM = dict(
     ext_reorg_roi_g2_54_126=2263,
     ext_reorg_roi_g2_0_1=62,
     ext_reorg_roi_g2_0_15=496,
-    ext_reorg_roi_g2_0_38=1209,
+    ext_reorg_roi_g2_0_37=1178,
 )
 
 # Generate tfrecords for the dataset using data/scripts/create_coco_tfrecord.py
