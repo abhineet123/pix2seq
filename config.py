@@ -102,6 +102,7 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
         cfg_dict['task']['image_size'] = (image_size, image_size)
 
     """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts or vice versa"""
+
     def from_dict(in_dict):
         for key, val in in_dict.items():
             if isinstance(val, list):
@@ -165,6 +166,7 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
 def load_from_json5(json_list, json_root):
     """ml_collections.ConfigDict supports recursive updating for dict but not for list so this
     function is needed for distributed list specification to work"""
+
     def update(orig_dict, new_dict):
         for key, val in new_dict.items():
             if isinstance(val, dict):
@@ -260,6 +262,7 @@ def load(FLAGS):
 
     if cfg.model_dir:
         assert not cfg.eval.pt, "pre-trained evaluation should be turned off if custom model directory is specified"
+        """load config from manually specified model_dirs"""
         load_from_model(cfg, cfg.model_dir, cmd_cfg, pt=False)
     else:
         if cfg.pretrained:
@@ -270,6 +273,7 @@ def load(FLAGS):
 
             cfg.model_dir = cfg.pretrained.replace('pretrained', 'log')
         else:
+            """construct model_dir name from params"""
             model_dir_name = f'{cfg.dataset.train_name}'
             if cfg.pretrained:
                 pretrained_name = os.path.basename(cfg.pretrained)
@@ -277,9 +281,6 @@ def load(FLAGS):
 
             if cfg.train.suffix:
                 print(f'cfg.train.suffix: {cfg.train.suffix}')
-
-                # exit()
-
                 suffix = '-'.join(cfg.train.suffix)
                 model_dir_name = f'{model_dir_name}-{suffix}'
 
@@ -287,13 +288,19 @@ def load(FLAGS):
             #     model_dir_name = f'{model_dir_name}-worker-{cfg.tf_config.task.index}'
 
             cfg.model_dir = os.path.join('log', model_dir_name)
+        if not cfg.training and not cfg.eval.pt:
+            """load config from model_dir constructed from params"""
+            load_from_model(cfg, cfg.model_dir, cmd_cfg)
 
     if cfg.training:
+        if cfg.train.pt:
+            print(f'loading pretrained model from: {cfg.pretrained}')
         print(f'saving trained model to: {cfg.model_dir}')
     else:
-        print(f'loading trained model from: {cfg.model_dir}')
-        if not cfg.eval.pt:
-            load_from_model(cfg, cfg.model_dir, cmd_cfg)
+        if cfg.eval.pt:
+            print(f'loading pretrained model from: {cfg.pretrained}')
+        else:
+            print(f'loading trained model from: {cfg.model_dir}')
 
     # config_cmd_args = [k for k in dir(FLAGS) if k.startswith('cfg.')]
     # config_cmd_dict = {
@@ -306,10 +313,8 @@ def load(FLAGS):
     import utils
     utils.log_cfg(cfg)
 
-    import paramparse
-
-
     """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts or vice versa"""
+
     def to_dict(in_dict):
         for key, val in in_dict.items():
             if isinstance(val, list):
@@ -327,6 +332,7 @@ def load(FLAGS):
                 in_list[idx] = to_dict(val)
         return in_list
 
+    # import paramparse
     # cfg_dict = to_dict(cfg)
     # from config_params import ConfigParams
     # cfg_class = ConfigParams()
