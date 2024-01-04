@@ -1,11 +1,5 @@
 <!-- MarkdownTOC -->
 
-- [tfrecord](#tfrecor_d_)
-    - [ipsc       @ tfrecord](#ipsc___tfrecord_)
-        - [ext_reorg_roi_g2_16_53       @ ipsc/tfrecord](#ext_reorg_roi_g2_16_53___ipsc_tfrecor_d_)
-        - [ext_reorg_roi_g2_0_1       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_1___ipsc_tfrecor_d_)
-        - [ext_reorg_roi_g2_0_15       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_15___ipsc_tfrecor_d_)
-        - [ext_reorg_roi_g2_0_37       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_37___ipsc_tfrecor_d_)
 - [resnet-640](#resnet_64_0_)
     - [pt       @ resnet-640](#pt___resnet_640_)
         - [on-mninstmot       @ pt/resnet-640](#on_mninstmot___pt_resnet_64_0_)
@@ -30,6 +24,8 @@
         - [gxe       @ g2_16_53/resnet-640](#gxe___g2_16_53_resnet_64_0_)
             - [on-g2_0_15       @ gxe/g2_16_53/resnet-640](#on_g2_0_15___gxe_g2_16_53_resnet_64_0_)
             - [on-g2_54_126       @ gxe/g2_16_53/resnet-640](#on_g2_54_126___gxe_g2_16_53_resnet_64_0_)
+    - [g2_0_37       @ resnet-640](#g2_0_37___resnet_640_)
+        - [batch_6       @ g2_0_37/resnet-640](#batch_6___g2_0_37_resnet_640_)
 - [resnet-1333](#resnet_1333_)
     - [pt       @ resnet-1333](#pt___resnet_133_3_)
         - [on-g2_0_1       @ pt/resnet-1333](#on_g2_0_1___pt_resnet_1333_)
@@ -45,23 +41,6 @@
 
 <!-- /MarkdownTOC -->
 
-<a id="tfrecor_d_"></a>
-# tfrecord
-<a id="ipsc___tfrecord_"></a>
-## ipsc       @ tfrecord-->p2s
-python3 data/scripts/create_ipsc_tfrecord.py
-<a id="ext_reorg_roi_g2_16_53___ipsc_tfrecor_d_"></a>
-### ext_reorg_roi_g2_16_53       @ ipsc/tfrecord-->p2s
-python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_16_53.json --n_proc=0
-<a id="ext_reorg_roi_g2_0_1___ipsc_tfrecor_d_"></a>
-### ext_reorg_roi_g2_0_1       @ ipsc/tfrecord-->p2s
-python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_1.json --n_proc=0
-<a id="ext_reorg_roi_g2_0_15___ipsc_tfrecor_d_"></a>
-### ext_reorg_roi_g2_0_15       @ ipsc/tfrecord-->p2s
-python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_15.json --n_proc=0
-<a id="ext_reorg_roi_g2_0_37___ipsc_tfrecor_d_"></a>
-### ext_reorg_roi_g2_0_37       @ ipsc/tfrecord-->p2s
-python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_37.json --n_proc=0
 
 <a id="resnet_64_0_"></a>
 # resnet-640 
@@ -148,6 +127,12 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eva
 #### on-g2_54_126       @ gxe/g2_16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_16_53-batch_48-gxe,ipsc-g2_54_126,batch-32,save-vis-1,dist-1
 
+<a id="g2_0_37___resnet_640_"></a>
+## g2_0_37       @ resnet-640-->p2s
+<a id="batch_6___g2_0_37_resnet_640_"></a>
+### batch_6       @ g2_0_37/resnet-640-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-g2_0_37,batch-8,dbg-1,dyn-1
+
 <a id="resnet_1333_"></a>
 # resnet-1333 
 <a id="pt___resnet_133_3_"></a>
@@ -161,7 +146,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eva
 
 <a id="g2_16_53___resnet_133_3_"></a>
 ## g2_16_53       @ resnet-1333-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-1333,ipsc-g2_16_53,batch-6,dbg-1,dyn-1,dist-0
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-1333,ipsc-g2_16_53,batch-2,dbg-1,dyn-1
 
 <a id="resnet_c4_640_"></a>
 # resnet_c4-640 
