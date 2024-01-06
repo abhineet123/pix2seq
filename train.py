@@ -19,7 +19,7 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
         @tf.function
         def train_multiple_steps(data_iterators, tasks):
             """
-            ts=tasks is just the default value for arg ts
+            ts=tasks is just specifying the default value for optional arg ts
             strategy is needed to get the num_replicas_in_sync to divide the gradient and compute its mean
             """
             train_step = lambda xs, ts=tasks: trainer.train_step(xs, ts, strategy)
