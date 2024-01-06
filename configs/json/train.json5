@@ -7,6 +7,6 @@
 	"eval": {
 		"pt": 0,
 	}, 
-    epochs: 1000,
+    epochs: 2000,
 
 }
