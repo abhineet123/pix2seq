@@ -32,10 +32,10 @@ from tasks.visualization import vis_utils
 import tensorflow as tf
 
 
-@task_lib.TaskRegistry.register('object_detection')
-class TaskObjectDetection(task_lib.Task):
+@task_lib.TaskRegistry.register('video_detection')
+class TaskVideoDetection(task_lib.Task):
     """
-    Object detection task with coco metric evaluation.
+    video detection task with coco metric evaluation.
     """
 
     def __init__(self,
