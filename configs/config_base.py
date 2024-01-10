@@ -57,6 +57,7 @@ base_config = D(
         # checkpoint_dir=get_coco_finetuned_checkpoint(encoder_variant, image_size[0]),
         batch_size=1,  # needs to be divisible by total eval examples.
         steps=0,  # 0 means eval over full validation set.
+        min_score_thresh=0.1,
     ),
 )
 

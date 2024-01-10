@@ -89,6 +89,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,
                 summary_tag=eval_tag,
+                min_score_thresh=cfg.eval.min_score_thresh,
                 ret_results=True)
 
             cur_step += 1

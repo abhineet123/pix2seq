@@ -1,0 +1,5 @@
+{
+  "eval": {
+	"min_score_thresh": %0%,	
+	}  
+}

@@ -233,7 +233,9 @@ class TaskObjectDetection(task_lib.Task):
                         eval_step=None,
                         training=False,
                         summary_tag='eval',
-                        ret_results=False):
+                        ret_results=False,
+                        min_score_thresh=0.1,
+                        ):
         """CPU post-processing of outputs.
 
         Such as computing the metrics, log image summary.
@@ -303,6 +305,7 @@ class TaskObjectDetection(task_lib.Task):
                     image_ids__, train_step, tag,
                     out_vis_dir=out_vis_dir,
                     csv_data=csv_data,
+                    min_score_thresh=min_score_thresh,
                     max_images_shown=(-1 if ret_results else 3))
 
         logging.info('Done post-process')
@@ -369,11 +372,13 @@ class TaskObjectDetection(task_lib.Task):
 
 
 def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores, category_names,
-                                image_ids, step, tag, max_images_shown=3, out_vis_dir=None, csv_data=None):
+                                image_ids, step, tag, max_images_shown=3,
+                                out_vis_dir=None, csv_data=None, min_score_thresh=0.1):
     """Adds image summary with GT / predicted bbox."""
     k = 0
     # del image_ids
     new_images = []
+    print(f'min_score_thresh: {min_score_thresh}')
     for image_id_, image_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(image_ids, images, bboxes,
                                                                               bboxes_rescaled, scores, classes):
         keep_indices = np.where(classes_ > 0)[0]
@@ -388,7 +393,7 @@ def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores
             scores=scores_[keep_indices],
             category_index=category_names,
             use_normalized_coordinates=True,
-            min_score_thresh=0.1,
+            min_score_thresh=min_score_thresh,
             max_boxes_to_draw=100)
         new_images.append(image)
 
