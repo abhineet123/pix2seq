@@ -18,14 +18,18 @@ r"""Convert COCO dataset to tfrecords."""
 import collections
 import json
 import os
+import sys
+
+sys.path.append(os.getcwd())
 
 from absl import app
 from absl import flags
 from absl import logging
 import numpy as np
+import tensorflow as tf
+
 import vocab
 from data.scripts import tfrecord_lib
-import tensorflow as tf
 
 flags.DEFINE_string('image_dir', './datasets/ipsc/well3/all_frames_roi', 'Directory containing images.')
 # flags.DEFINE_string('ann_file', './datasets/ipsc/well3/all_frames_roi/ext_reorg_roi_g2_0_53.json',

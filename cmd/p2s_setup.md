@@ -26,6 +26,7 @@
         - [ext_reorg_roi_g2_0_1       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_1___ipsc_tfrecor_d_)
         - [ext_reorg_roi_g2_0_15       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_15___ipsc_tfrecor_d_)
         - [ext_reorg_roi_g2_0_37       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_37___ipsc_tfrecor_d_)
+        - [ext_reorg_roi_g2_38_53       @ ipsc/tfrecord](#ext_reorg_roi_g2_38_53___ipsc_tfrecor_d_)
 
 <!-- /MarkdownTOC -->
 
@@ -227,5 +228,7 @@ python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_15.jso
 <a id="ext_reorg_roi_g2_0_37___ipsc_tfrecor_d_"></a>
 ### ext_reorg_roi_g2_0_37       @ ipsc/tfrecord-->p2s_setup
 python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_37.json --n_proc=0
-
+<a id="ext_reorg_roi_g2_38_53___ipsc_tfrecor_d_"></a>
+### ext_reorg_roi_g2_38_53       @ ipsc/tfrecord-->p2s_setup
+python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_38_53.json --n_proc=0
 
