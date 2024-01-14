@@ -378,7 +378,6 @@ def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores
     k = 0
     # del image_ids
     new_images = []
-    print(f'min_score_thresh: {min_score_thresh}')
     for image_id_, image_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(image_ids, images, bboxes,
                                                                               bboxes_rescaled, scores, classes):
         keep_indices = np.where(classes_ > 0)[0]

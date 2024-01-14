@@ -40,6 +40,19 @@ def get_feature_map_for_object_detection():
       'image/object/score': tf.io.VarLenFeature(tf.float32),
   }
 
+def get_feature_map_for_video_detection():
+  return {
+      'video/object/bbox/xmin': tf.io.VarLenFeature(tf.float32),
+      'video/object/bbox/xmax': tf.io.VarLenFeature(tf.float32),
+      'video/object/bbox/ymin': tf.io.VarLenFeature(tf.float32),
+      'video/object/bbox/ymax': tf.io.VarLenFeature(tf.float32),
+      'video/object/class/label': tf.io.VarLenFeature(tf.int64),
+      'video/object/area': tf.io.VarLenFeature(tf.float32),
+      'video/object/is_crowd': tf.io.VarLenFeature(tf.int64),
+      'video/object/score': tf.io.VarLenFeature(tf.float32),
+      'video/object/frame_id': tf.io.VarLenFeature(tf.string),
+  }
+
 
 def get_feature_map_for_instance_segmentation():
   return {

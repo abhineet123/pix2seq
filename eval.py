@@ -74,6 +74,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         cur_step = 0
         img_id = 0
         seq_to_csv_rows = collections.defaultdict(list)
+        print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
 
         while True:
             if eval_steps and cur_step >= eval_steps:
