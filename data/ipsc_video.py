@@ -36,37 +36,12 @@ def process_instance_id_map(instance_id_map, order, max_instances_per_image):
     return instance_id_map
 
 
-@dataset_lib.DatasetRegistry.register('davis_vps')
+@dataset_lib.DatasetRegistry.register('ipsc_video_detection')
 class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
     def __init__(self, config):
         super().__init__(config)
         self._video_name_to_id_map = {
             v: i for i, v in enumerate(self.VIDEO_NAMES)}
-
-    def get_feature_map(self, unused_training):
-        """Returns feature map for parsing the TFExample."""
-        context_features = {
-            'image/format':
-                tf.io.FixedLenFeature([], tf.string),
-            'image/channels':
-                tf.io.FixedLenFeature([], tf.int64),
-            'image/height':
-                tf.io.FixedLenFeature([], tf.int64),
-            'image/width':
-                tf.io.FixedLenFeature([], tf.int64),
-            'video/frame_id':
-                tf.io.FixedLenFeature([], tf.string),
-            'video/name':
-                tf.io.FixedLenFeature([], tf.string),
-            'video/num_frames':
-                tf.io.FixedLenFeature([], tf.int64),
-        }
-        sequence_features = {
-            'video/frames':
-                tf.io.FixedLenSequenceFeature([], tf.string),
-            'video/detections':
-                tf.io.FixedLenSequenceFeature([], tf.string),
-        }
 
         detection_feature_map = decode_utils.get_feature_map_for_video_detection()
         return (context_features, sequence_features)

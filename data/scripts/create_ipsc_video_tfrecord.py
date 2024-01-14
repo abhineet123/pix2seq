@@ -72,8 +72,8 @@ def load_ytvis_annotations(annotation_path):
     return video_info, category_id_to_name_map, vid_to_ann
 
 
-def coco_annotations_to_lists(obj_annotations, id_to_name_map):
-    """Converts COCO annotations to feature lists.
+def ytvis_annotations_to_lists(obj_annotations, id_to_name_map, vid_len):
+    """Converts YTVIS annotations to feature lists.
 
     Args:
       obj_annotations: a list of object annotations.
@@ -84,25 +84,50 @@ def coco_annotations_to_lists(obj_annotations, id_to_name_map):
     """
 
     data = dict((k, list()) for k in [
-        'xmin', 'xmax', 'ymin', 'ymax', 'is_crowd', 'category_id',
-        'category_names', 'area'])
+        'is_crowd', 'category_id',
+        'category_names', 'area', 'target_id'])
 
-    for ann in obj_annotations:
-        (x, y, width, height) = tuple(ann['bbox'])
-        data['xmin'].append(float(x))
-        data['xmax'].append(float(x + width))
-        data['ymin'].append(float(y))
-        data['ymax'].append(float(y + height))
+    for _id in vid_len:
+        frame_data = dict((k, list()) for k in [
+            f'xmin-{_id}', f'xmax-{_id}', f'ymin-{id}', f'ymax-{_id}'
+        ])
+        data.update(frame_data)
+
+    for ann_id, ann in enumerate(obj_annotations):
+        bboxes = ann['bboxes']
+        areas = ann['areas']
+        assert len(bboxes) == vid_len, \
+            f"number of boxes: {len(bboxes)} does not match the video length: {vid_len}"
+        assert len(areas) == vid_len, \
+            f"number of areas: {len(areas)} does not match the video length: {vid_len}"
+
         data['is_crowd'].append(ann['iscrowd'])
+        data['target_id'].append(int(ann['id']))
         category_id = int(ann['category_id'])
         data['category_id'].append(category_id)
         data['category_names'].append(id_to_name_map[category_id].encode('utf8'))
-        data['area'].append(ann['area'])
 
+        for bbox_id, bbox in enumerate(bboxes):
+            area = areas[bbox_id]
+
+            if bbox is None:
+                assert area is None, "null bbox for non-null area"
+                xmin, ymin, xmax, ymax = -1, -1, -1, -1
+                area = -1
+            else:
+                assert area is not None, "null area for non-null bbox"
+                (x, y, width, height) = tuple(bbox)
+                xmin, ymin, xmax, ymax = float(x), float(y), float(x + width), float(y + height)
+
+            data[f'xmin-{bbox_id}'].append(xmin)
+            data[f'xmax-{bbox_id}'].append(xmax)
+            data[f'ymin-{bbox_id}'].append(ymin)
+            data[f'ymax-{bbox_id}'].append(ymax)
+            data[f'area-{bbox_id}'].append(area)
     return data
 
 
-def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map):
+def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map, vid_len):
     """Convert COCO annotations to an encoded feature dict.
 
     Args:
@@ -113,25 +138,33 @@ def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map):
       a dict of tf features.
     """
 
-    data = coco_annotations_to_lists(obj_annotations, id_to_name_map)
+    data = ytvis_annotations_to_lists(obj_annotations, id_to_name_map, vid_len)
     feature_dict = {
-        'image/object/bbox/xmin':
-            tfrecord_lib.convert_to_feature(data['xmin']),
-        'image/object/bbox/xmax':
-            tfrecord_lib.convert_to_feature(data['xmax']),
-        'image/object/bbox/ymin':
-            tfrecord_lib.convert_to_feature(data['ymin']),
-        'image/object/bbox/ymax':
-            tfrecord_lib.convert_to_feature(data['ymax']),
-        'image/object/class/text':
+        'video/object/class/text':
             tfrecord_lib.convert_to_feature(data['category_names']),
-        'image/object/class/label':
+        'video/object/class/label':
             tfrecord_lib.convert_to_feature(data['category_id']),
-        'image/object/is_crowd':
+        'video/object/is_crowd':
             tfrecord_lib.convert_to_feature(data['is_crowd']),
-        'image/object/area':
-            tfrecord_lib.convert_to_feature(data['area'], value_type='float_list'),
+        'video/object/target_id':
+            tfrecord_lib.convert_to_feature(data['target_id']),
     }
+
+    for _id in range(vid_len):
+        frame_feature_dict = {
+            f'video/object/bbox/xmin-{_id}':
+                tfrecord_lib.convert_to_feature(data[f'xmin-{_id}']),
+            f'video/object/bbox/xmax-{_id}':
+                tfrecord_lib.convert_to_feature(data[f'xmax-{_id}']),
+            f'video/object/bbox/ymin-{_id}':
+                tfrecord_lib.convert_to_feature(data[f'ymin-{_id}']),
+            f'video/object/bbox/ymax-{_id}':
+                tfrecord_lib.convert_to_feature(data[f'ymax-{_id}']),
+            f'video/object/area-{_id}':
+                tfrecord_lib.convert_to_feature(data[f'area-{_id}'], value_type='float_list'),
+        }
+        feature_dict.update(frame_feature_dict)
+
     return feature_dict
 
 
@@ -143,59 +176,6 @@ def flatten_segmentation(seg):
             flat_seg.extend([vocab.SEPARATOR_FLOAT, vocab.SEPARATOR_FLOAT])
         flat_seg.extend(s)
     return flat_seg
-
-
-def obj_annotations_to_seg_dict(obj_annotations):
-    """Get the segmentation features from instance annotations."""
-    segs = []
-    seg_lens = []
-    for ann in obj_annotations:
-        if ann['iscrowd']:
-            seg_lens.append(0)
-        else:
-            seg = flatten_segmentation(ann['segmentation'])
-            segs.extend(seg)
-            seg_lens.append(len(seg))
-    seg_sep = [0] + list(np.cumsum(seg_lens))
-    return {
-        'image/object/segmentation_v': tfrecord_lib.convert_to_feature(segs),
-        'image/object/segmentation_sep': tfrecord_lib.convert_to_feature(seg_sep),
-    }
-
-
-def key_annotations_to_feature_dict(key_annotations, obj_annotations):
-    """Get the keypoints features from keypoints annotations."""
-    oids = [ann['id'] for ann in obj_annotations]
-    keys = []
-    key_lens = []
-    num_keypoints = []
-    for oid in oids:
-        found = False
-        for ann in key_annotations:
-            if oid == ann['id']:
-                found = True
-                key = ann['keypoints']
-                keys.extend(key)
-                key_lens.append(len(key))
-                num_keypoints.append(ann['num_keypoints'])
-                break
-        if not found:
-            key_lens.append(0)
-            num_keypoints.append(0)
-    key_sep = [0] + list(np.cumsum(key_lens))
-    return {
-        'image/object/keypoints_v':
-            tfrecord_lib.convert_to_feature(keys, value_type='float_list'),
-        'image/object/keypoints_sep':
-            tfrecord_lib.convert_to_feature(key_sep),
-        'image/object/num_keypoints':
-            tfrecord_lib.convert_to_feature(num_keypoints),
-    }
-
-
-def pan_annotations_to_feature_dict(pan_annotations):
-    # TODO(lala) - decide what to do with panoptic annotations.
-    return {}
 
 
 def generate_video_annotations(
@@ -225,8 +205,6 @@ def create_video_tf_example(
     file_names = video['file_names']
     video_id = video['id']
 
-
-
     feature_dict = tfrecord_lib.video_info_to_feature_dict(
         video_height, video_width, file_names, video_id)
 
@@ -240,17 +218,6 @@ def create_video_tf_example(
         # Polygons.
         seg_feature_dict = obj_annotations_to_seg_dict(object_ann)
         feature_dict.update(seg_feature_dict)
-
-        # Keypoints.
-        # key_feature_dict = key_annotations_to_feature_dict(keypoint_ann, object_ann)
-        # feature_dict.update(key_feature_dict)
-
-    # Captions.
-    # feature_dict['image/caption'] = tfrecord_lib.convert_to_feature(caption_ann)
-
-    # Panoptic masks.
-    # pan_feature_dict = pan_annotations_to_feature_dict(panoptic_ann)
-    # feature_dict.update(pan_feature_dict)
 
     example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
     return example, 0
