@@ -99,8 +99,11 @@ def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_
 
             if bbox is None:
                 assert area is None, "null bbox for non-null area"
-                xmin, ymin, xmax, ymax = -1, -1, -1, -1
-                area = -1
+                # xmin, ymin, xmax, ymax = -1, -1, -1, -1
+                # area = -1
+                # xmin = ymin = xmax = ymax = area = -1
+                xmin = ymin = xmax = ymax = area = None
+
             else:
                 assert area is not None, "null area for non-null bbox"
                 (x, y, width, height) = tuple(bbox)

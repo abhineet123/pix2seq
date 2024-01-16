@@ -6,7 +6,6 @@ import utils
 import tensorflow as tf
 
 
-
 @dataset_lib.DatasetRegistry.register('ipsc_video_detection')
 class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
     def get_feature_map(self, config):
@@ -31,9 +30,9 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         frames.set_shape([num_frames, h, w, 3])
 
         new_example = {
-            'video/filenames': tf.image.convert_image_dtype(frames, tf.float32),
+            'video/frames': tf.image.convert_image_dtype(frames, tf.float32),
             'video/num_frames': tf.cast(num_frames, tf.int32),
-            'video/source_id': tf.cast(example['video/source_id'], tf.int32),
+            'video/id': tf.cast(example['video/source_id'], tf.int32),
         }
 
         bbox = decode_utils.decode_video_boxes(example)
@@ -41,6 +40,7 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         bbox = utils.scale_points(bbox, scale)
 
         new_example.update({
+            'shape': utils.tf_float32((h, w)),
             'label': example['video/object/class/label'],
             'bbox': bbox,
             'area': decode_utils.decode_video_areas(example),

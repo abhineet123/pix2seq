@@ -108,7 +108,7 @@ class TaskObjectDetection(task_lib.Task):
             mconfig.coord_vocab_shift,
             class_label_corruption=config.class_label_corruption)
 
-        """response_seq_cm has random and noise labels by default"""
+        """response_seq_cm has random and noise class labels by default"""
         response_seq, response_seq_cm, token_weights = ret
 
         """

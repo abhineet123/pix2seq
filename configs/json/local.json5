@@ -1,8 +1,0 @@
-{
-"tf_config": {
-	"cluster": {
-		"worker": ["localhost:12345", "localhost:56789"]
-	},
-	"task": {"type": "worker", "index": %0%}
-}
-}

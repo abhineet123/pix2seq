@@ -1,6 +1,0 @@
-{
-"%mode%": {
-	"suffix": ["batch_%0%",],
-    "batch_size": %0%,
-  },
-}

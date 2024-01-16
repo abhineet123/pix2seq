@@ -33,7 +33,7 @@ from ml_collections.config_flags import config_flags
 config_flags.DEFINE_config_file('cfg', 'path/to/config/file.py', 'The config file.', lock_config=False)
 flags.DEFINE_list('j5', [], 'list of config json5 files to override settings from default and pretrained configs')
 flags.DEFINE_string('cluster', 'cluster.json', 'cluster_cfg')
-flags.DEFINE_string('j5_root', 'configs/json', 'relative path of the folder containing the optional json files')
+flags.DEFINE_string('j5_root', 'configs/j5', 'relative path of the folder containing the optional json files')
 flags.DEFINE_integer('worker_id', 0, 'worker id for multi-machine training')
 FLAGS = flags.FLAGS
 

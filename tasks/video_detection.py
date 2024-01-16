@@ -58,10 +58,6 @@ class TaskVideoDetection(task_lib.Task):
     def preprocess_single(self, dataset, batch_duplicates, training):
         """Task-specific preprocessing of individual example in the dataset.
 
-        Typical operations in this preprocessing step for detection task:
-          - Image augmentation such random resize & cropping, color jittering, flip.
-          - Label augmentation such as sampling noisy & duplicated boxes.
-
         Args:
           dataset: A tf.data.Dataset.
           batch_duplicates: `int`, enlarge a batch by augmenting it multiple times
@@ -71,9 +67,20 @@ class TaskVideoDetection(task_lib.Task):
         Returns:
           A dataset.
         """
-        if training:
-            dataset = dataset.filter(  # Filter out images with no annotations.
-                lambda example: tf.shape(example['label'])[0] > 0)
+
+        def _convert_video_to_image_features(example):
+            new_example = {
+                'orig_image_size': tf.shape(example['video/frames'])[1:3],
+                'video_id': example['video/id'],
+                'num_frames': example['video/num_frames'],
+            }
+            new_example['image'] = example['video/frames']
+            new_example['bbox'] = example['bbox']
+            new_example['label'] = example['label']
+            return new_example
+
+        dataset = dataset.map(_convert_video_to_image_features,
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
         dataset = dataset.map(
             lambda x: self.preprocess_single_example(x, training, batch_duplicates),
             num_parallel_calls=tf.data.experimental.AUTOTUNE)
@@ -102,7 +109,7 @@ class TaskVideoDetection(task_lib.Task):
 
         # Create input/target seq.
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
-        ret = build_response_seq_from_bbox(
+        ret = build_response_seq_from_bboxes(
             batched_examples['bbox'], batched_examples['label'],
             config.quantization_bins, config.noise_bbox_weight,
             mconfig.coord_vocab_shift,
@@ -309,109 +316,20 @@ class TaskVideoDetection(task_lib.Task):
         if ret_results:
             return ret_images
 
-    def evaluate(self, summary_writer, step, eval_tag):
-        """Evaluate results on accumulated outputs (after multiple infer steps).
 
-        Args:
-          summary_writer: the summary writer.
-          step: current step.
-          eval_tag: `string` name scope for eval result summary.
+def build_response_seq_from_bboxes(
+        bboxes,
+        label,
+        quantization_bins,
+        noise_bbox_weight,
+        coord_vocab_shift,
+        class_label_corruption='rand_cls'):
+    """"Build target seq from bounding bboxes for video detection.
 
-        Returns:
-          result as a `dict`.
-        """
-        metrics = self.compute_scalar_metrics(step)
-
-        if summary_writer is not None:
-            with summary_writer.as_default():
-                with tf.name_scope(eval_tag):
-                    self._log_metrics(metrics, step)
-                summary_writer.flush()
-        result_json_path = os.path.join(
-            self.config.model_dir, eval_tag + 'cocoeval.pkl')
-        if self._coco_metrics:
-            tosave = {'dataset': self._coco_metrics.dataset,
-                      'detections': np.array(self._coco_metrics.detections)}
-            with tf.io.gfile.GFile(result_json_path, 'wb') as f:
-                pickle.dump(tosave, f)
-        self.reset_metrics()
-        if self.config.task.get('eval_outputs_json_path', None):
-            annotations_to_save = {
-                'annotations': self.eval_output_annotations,
-                'categories': list(self._category_names.values())
-            }
-            json_path = self.config.task.eval_outputs_json_path.format(
-                eval_split=self.config.dataset.eval_split,
-                top_p=self.config.task.top_p,
-                max_instances_per_image_test=self.config.task
-                .max_instances_per_image_test,
-                step=int(step))
-            tf.io.gfile.makedirs(os.path.basename(json_path))
-            logging.info('Saving %d result annotations to %s',
-                         len(self.eval_output_annotations),
-                         json_path)
-            with tf.io.gfile.GFile(json_path, 'w') as f:
-                json.dump(annotations_to_save, f)
-            self.eval_output_annotations = []
-        return metrics
-
-    def compute_scalar_metrics(self, step):
-        """Returns a dict containing scalar metrics to log."""
-        if self._coco_metrics:
-            return self._coco_metrics.result(step)
-        else:
-            return {}
-
-    def reset_metrics(self):
-        """Reset states of metrics accumulators."""
-        if self._coco_metrics:
-            self._coco_metrics.reset_states()
-
-
-def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores, category_names,
-                                image_ids, step, tag, max_images_shown=3, out_vis_dir=None, csv_data=None):
-    """Adds image summary with GT / predicted bbox."""
-    k = 0
-    # del image_ids
-    new_images = []
-    for image_id_, image_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(image_ids, images, bboxes,
-                                                                              bboxes_rescaled, scores, classes):
-        keep_indices = np.where(classes_ > 0)[0]
-        image = vis_utils.visualize_boxes_and_labels_on_image_array(
-            out_vis_dir=out_vis_dir,
-            csv_data=csv_data,
-            image_id=image_id_,
-            image=image_,
-            bboxes_rescaled=bboxes_rescaled_[keep_indices],
-            boxes=boxes_[keep_indices],
-            classes=classes_[keep_indices],
-            scores=scores_[keep_indices],
-            category_index=category_names,
-            use_normalized_coordinates=True,
-            min_score_thresh=0.1,
-            max_boxes_to_draw=100)
-        new_images.append(image)
-
-        # new_images.append(tf.image.convert_image_dtype(image, tf.float32))
-        k += 1
-        # if max_images_shown >= 0 and k >= max_images_shown:
-        #     break
-    # tf.summary.image(tag, new_images, step=step, max_outputs=max_images_shown)
-    return new_images
-
-
-def build_response_seq_from_bbox(bbox,
-                                 label,
-                                 quantization_bins,
-                                 noise_bbox_weight,
-                                 coord_vocab_shift,
-                                 class_label_corruption='rand_cls'):
-    """"Build target seq from bounding bboxes for object detection.
-
-    Objects are serialized using the format of yxyxc.
+    Objects are serialized using the format of yxyx...c.
 
     Args:
-      bbox: `float` bounding box of shape (bsz, n, 4).
+      bboxes: `float` bounding box of shape (bsz, n, 4).
       label: `int` label of shape (bsz, n).
       quantization_bins: `int`.
       noise_bbox_weight: `float` on the token weights for noise bboxes.
@@ -424,7 +342,12 @@ def build_response_seq_from_bbox(bbox,
     """
     # Bbox and label quantization.
     is_padding = tf.expand_dims(tf.equal(label, 0), -1)
-    quantized_bbox = utils.quantize(bbox, quantization_bins)
+    bboxes = tf.where(
+        bboxes == -1,
+        vocab.NO_BOX_TOKEN,
+        bboxes)
+
+    quantized_bbox = utils.quantize(bboxes, quantization_bins)
     quantized_bbox = quantized_bbox + coord_vocab_shift
 
     """set 0-labeled bboxes to zero"""
