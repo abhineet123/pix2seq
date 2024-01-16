@@ -67,7 +67,6 @@ def get_config(config_str=None):
             top_p=0.4,
             temperature=1.0,
             weight=1.0,
-            metric=D(name='coco_object_detection', ),
         ),
     }
 
@@ -86,7 +85,7 @@ def get_config(config_str=None):
         tasks=task_d_list,
 
         model=D(
-            name='encoder_ar_decoder',
+            name='video_encoder_ar_decoder',
             image_size=image_size,
             max_seq_len=512,
             vocab_size=3000,  # Note: should be large enough for 100 + num_classes + quantization_bins + (optional) text

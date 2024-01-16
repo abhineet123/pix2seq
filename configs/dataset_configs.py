@@ -65,7 +65,7 @@ def ipsc_post_process(dataset_cfg):
     train_name = dataset_cfg.train_name
     eval_name = dataset_cfg.eval_name
 
-    dataset_cfg.train.image_dir = root_dir
+    dataset_cfg.image_dir = root_dir
 
     if is_video:
         db_root_dir = os.path.join(root_dir, 'ytvis19')
@@ -79,6 +79,8 @@ def ipsc_post_process(dataset_cfg):
     else:
         db_root_dir = root_dir
         db_type = 'images'
+
+    dataset_cfg.db_root_dir = db_root_dir
 
     train_json_name = f'{train_name}.json'
     eval_json_name = f'{eval_name}.json'
@@ -137,8 +139,8 @@ def get_ipsc_data():
 def get_ipsc_video_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
 
-    train_name = 'ipsc-ext_reorg_roi_g2_0_4'
-    eval_name = 'ipsc-ext_reorg_roi_g2_5_9'
+    train_name = 'ext_reorg_roi_g2_0_4'
+    eval_name = 'ext_reorg_roi_g2_5_9'
 
     return D(
         name='ipsc_video_detection',

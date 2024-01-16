@@ -134,6 +134,7 @@ def main(unused_argv):
     from data import transforms  # pylint: disable=unused-import
     from metrics import coco_metrics  # pylint: disable=unused-import
     from models import ar_model  # pylint: disable=unused-import
+    from models import video_ar_model  # pylint: disable=unused-import
     from models import image_ar_model  # pylint: disable=unused-import
     from models import image_diffusion_model  # pylint: disable=unused-import
     # from models import latent_diffusion_model  # pylint: disable=unused-import
@@ -147,6 +148,7 @@ def main(unused_argv):
     from tasks import instance_segmentation
     # from tasks import keypoint_detection
     from tasks import object_detection
+    from tasks import video_detection
     # pylint: enable=unused-import
     from tasks import task as task_lib
 
