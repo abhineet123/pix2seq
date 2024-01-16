@@ -13,3 +13,4 @@ netifaces
 pandas
 paramparse
 opencv-python
+compress_json

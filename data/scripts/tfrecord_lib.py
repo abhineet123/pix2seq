@@ -93,6 +93,7 @@ def video_info_to_feature_dict(height, width, filenames, video_id):
         'video/height': convert_to_feature(height),
         'video/width': convert_to_feature(width),
         'video/filenames': convert_to_feature(filenames),
+        'video/num_frames': convert_to_feature(len(filenames)),
         'video/source_id': convert_to_feature(str(video_id).encode('utf8')),
     }
 def image_info_to_feature_dict(height, width, filename, image_id,

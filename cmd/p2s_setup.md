@@ -27,6 +27,14 @@
         - [ext_reorg_roi_g2_0_15       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_15___ipsc_tfrecor_d_)
         - [ext_reorg_roi_g2_0_37       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_37___ipsc_tfrecor_d_)
         - [ext_reorg_roi_g2_38_53       @ ipsc/tfrecord](#ext_reorg_roi_g2_38_53___ipsc_tfrecor_d_)
+- [video_tfrecord](#video_tfrecor_d_)
+    - [ipsc       @ video_tfrecord](#ipsc___video_tfrecord_)
+        - [ext_reorg_roi_g2_0_4       @ ipsc/video_tfrecord](#ext_reorg_roi_g2_0_4___ipsc_video_tfrecor_d_)
+            - [length-2-stride-1       @ ext_reorg_roi_g2_0_4/ipsc/video_tfrecord](#length_2_stride_1___ext_reorg_roi_g2_0_4_ipsc_video_tfrecord_)
+        - [ext_reorg_roi_g2_0_1       @ ipsc/video_tfrecord](#ext_reorg_roi_g2_0_1___ipsc_video_tfrecor_d_)
+        - [ext_reorg_roi_g2_0_15       @ ipsc/video_tfrecord](#ext_reorg_roi_g2_0_15___ipsc_video_tfrecor_d_)
+        - [ext_reorg_roi_g2_0_37       @ ipsc/video_tfrecord](#ext_reorg_roi_g2_0_37___ipsc_video_tfrecor_d_)
+        - [ext_reorg_roi_g2_38_53       @ ipsc/video_tfrecord](#ext_reorg_roi_g2_38_53___ipsc_video_tfrecor_d_)
 
 <!-- /MarkdownTOC -->
 
@@ -230,5 +238,29 @@ python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_15.jso
 python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_37.json --n_proc=0
 <a id="ext_reorg_roi_g2_38_53___ipsc_tfrecor_d_"></a>
 ### ext_reorg_roi_g2_38_53       @ ipsc/tfrecord-->p2s_setup
+python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_38_53.json --n_proc=0
+
+<a id="video_tfrecor_d_"></a>
+# video_tfrecord
+<a id="ipsc___video_tfrecord_"></a>
+## ipsc       @ video_tfrecord-->p2s_setup
+python3 data/scripts/create_ipsc_tfrecord.py
+<a id="ext_reorg_roi_g2_0_4___ipsc_video_tfrecor_d_"></a>
+### ext_reorg_roi_g2_0_4       @ ipsc/video_tfrecord-->p2s_setup
+<a id="length_2_stride_1___ext_reorg_roi_g2_0_4_ipsc_video_tfrecord_"></a>
+#### length-2-stride-1       @ ext_reorg_roi_g2_0_4/ipsc/video_tfrecord-->p2s_setup
+python3 data/scripts/create_ipsc_video_tfrecord.py cfg=ipsc:gz:shards-2 ann_file=ipsc-ext_reorg_roi_g2_0_4-length-2-stride-1
+
+<a id="ext_reorg_roi_g2_0_1___ipsc_video_tfrecor_d_"></a>
+### ext_reorg_roi_g2_0_1       @ ipsc/video_tfrecord-->p2s_setup
+python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_1.json --n_proc=0
+<a id="ext_reorg_roi_g2_0_15___ipsc_video_tfrecor_d_"></a>
+### ext_reorg_roi_g2_0_15       @ ipsc/video_tfrecord-->p2s_setup
+python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_15.json --n_proc=0
+<a id="ext_reorg_roi_g2_0_37___ipsc_video_tfrecor_d_"></a>
+### ext_reorg_roi_g2_0_37       @ ipsc/video_tfrecord-->p2s_setup
+python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_37.json --n_proc=0
+<a id="ext_reorg_roi_g2_38_53___ipsc_video_tfrecor_d_"></a>
+### ext_reorg_roi_g2_38_53       @ ipsc/video_tfrecord-->p2s_setup
 python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_38_53.json --n_proc=0
 
