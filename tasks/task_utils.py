@@ -41,9 +41,12 @@ def get_category_names(
         )
         return {i: {'name': str(i)} for i in range(10000)}
     logging.info('Loading category names from %s', category_names_path)
-    category_names = {}
-    with tf.io.gfile.GFile(category_names_path, 'r') as f:
-        annotations = json.load(f)
+    if category_names_path.endswith('.json.gz'):
+        import compress_json
+        annotations = compress_json.load(category_names_path)
+    else:
+        with open(category_names_path, 'r') as f:
+            annotations = json.load(f)
     category_names = {c['id']: c for c in annotations['categories']}
     return category_names
 

@@ -69,14 +69,14 @@ class TaskVideoDetection(task_lib.Task):
         """
 
         def _convert_video_to_image_features(example):
-            new_example = {
-                'orig_image_size': tf.shape(example['video/frames'])[1:3],
-                'video_id': example['video/id'],
-                'num_frames': example['video/num_frames'],
-            }
-            new_example['image'] = example['video/frames']
-            new_example['bbox'] = example['bbox']
-            new_example['label'] = example['label']
+            new_example = dict(
+                orig_image_size=tf.shape(example['video/frames'])[1:3],
+                video_id=example['video/id'],
+                num_frames=example['video/num_frames'],
+                image=example['video/frames'],
+                bbox=example['bbox'],
+                label=example['label'],
+            )
             return new_example
 
         dataset = dataset.map(_convert_video_to_image_features,
@@ -315,6 +315,18 @@ class TaskVideoDetection(task_lib.Task):
         logging.info('Done post-process')
         if ret_results:
             return ret_images
+
+    def compute_scalar_metrics(self, step):
+        """Returns a dict containing scalar metrics to log."""
+        if self._coco_metrics:
+            return self._coco_metrics.result(step)
+        else:
+            return {}
+
+    def reset_metrics(self):
+        """Reset states of metrics accumulators."""
+        if self._coco_metrics:
+            self._coco_metrics.reset_states()
 
 
 def build_response_seq_from_bboxes(

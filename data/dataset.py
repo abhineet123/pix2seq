@@ -130,9 +130,13 @@ class Dataset(abc.ABC):
             dataset = dataset.map(
                 lambda x: self.parse_example(x, training),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE
-            ).filter(
+            )
+
+            dataset = dataset.filter(
                 lambda x: self.filter_example(x, training)
-            ).map(
+            )
+
+            dataset = dataset.map(
                 lambda x: self.extract(x, training),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE
             )

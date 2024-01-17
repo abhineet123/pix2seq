@@ -46,7 +46,8 @@ def get_feature_map_for_video():
         'video/source_id': tf.io.FixedLenFeature((), tf.string, ''),
         'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
-        'video/filenames': tf.io.FixedLenFeature((), tf.string, ''),
+        'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),
+        'video/filenames': tf.io.VarLenFeature(tf.string),
     }
 
 
@@ -118,21 +119,6 @@ def decode_boxes(example):
     return tf.stack([ymin, xmin, ymax, xmax], axis=-1)
 
 
-def decode_video_boxes(example):
-    num_frames = int(example['video/num_frames'])
-
-    bbox_list = []
-    for _id in range(num_frames):
-        xmin = example[f'video/object/bbox/xmin-{_id}']
-        xmax = example[f'video/object/bbox/xmax-{_id}']
-        ymin = example[f'video/object/bbox/ymin-{_id}']
-        ymax = example[f'video/object/bbox/ymax-{_id}']
-
-        bbox_list += [ymin, xmin, ymax, xmax]
-
-    return tf.stack(bbox_list, axis=-1)
-
-
 def decode_areas(example):
     xmin = example['image/object/bbox/xmin']
     xmax = example['image/object/bbox/xmax']
@@ -145,9 +131,21 @@ def decode_areas(example):
         lambda: example['image/object/area'],
         lambda: (xmax - xmin) * (ymax - ymin) * height * width)
 
-def decode_video_areas(example):
-    num_frames = int(example['video/num_frames'])
 
+def decode_video_boxes(example, num_frames):
+    bbox_list = []
+    for _id in range(num_frames):
+        xmin = example[f'video/object/bbox/xmin-{_id}']
+        xmax = example[f'video/object/bbox/xmax-{_id}']
+        ymin = example[f'video/object/bbox/ymin-{_id}']
+        ymax = example[f'video/object/bbox/ymax-{_id}']
+
+        bbox_list += [ymin, xmin, ymax, xmax]
+
+    return tf.stack(bbox_list, axis=-1)
+
+
+def decode_video_areas(example, num_frames):
     areas_list = []
     for _id in range(num_frames):
         area = example[f'video/object/area-{_id}']

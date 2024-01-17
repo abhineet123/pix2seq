@@ -182,9 +182,9 @@ class Model(tf.keras.models.Model):
         return pred_seq, logits, encoded
 
 
-@model_lib.TrainerRegistry.register('encoder_ar_decoder')
+@model_lib.TrainerRegistry.register('video_encoder_ar_decoder')
 class ARTrainer(model_lib.Trainer):
-    """A trainer for AR model."""
+    """A trainer for Video AR model."""
 
     def __init__(self, config: ml_collections.ConfigDict, **kwargs):
         """Init and setup basic training elements under strategy scope.
@@ -230,7 +230,7 @@ class ARTrainer(model_lib.Trainer):
         return loss
 
 
-@model_lib.ModelRegistry.register('fit_encoder_ar_decoder')
+@model_lib.ModelRegistry.register('fit_video_encoder_ar_decoder')
 class ModelT(Model):
     """Inputs images and returns activations."""
 
@@ -291,5 +291,9 @@ class ModelT(Model):
         return encoded
 
 
-## fancy way of saying TrainerRegistry['fit_encoder_ar_decoder'] = ARTrainer
-model_lib.TrainerRegistry.register('fit_encoder_ar_decoder')(ARTrainer)
+"""
+fancy way of saying TrainerRegistry['fit_encoder_ar_decoder'] = ARTrainer
+Separate line here since both fit_video_encoder_ar_decoder And video_encoder_ar_decoder 
+have the same trainer class
+"""
+model_lib.TrainerRegistry.register('fit_video_encoder_ar_decoder')(ARTrainer)

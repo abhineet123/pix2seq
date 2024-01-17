@@ -52,7 +52,7 @@ def get_config(config_str=None):
             quantization_bins=1000,
             max_instances_per_image=max_instances_per_image,
             max_instances_per_image_test=max_instances_per_image_test,
-            train_transforms=transform_configs.get_object_detection_train_transforms(
+            train_transforms=transform_configs.get_video_detection_train_transforms(
                 image_size, max_instances_per_image),
             eval_transforms=transform_configs.get_object_detection_eval_transforms(
                 image_size, max_instances_per_image_test),

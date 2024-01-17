@@ -17,3 +17,4 @@
 
 from data import coco  # pylint: disable=unused-import
 from data import ipsc  # pylint: disable=unused-import
+from data import ipsc_video  # pylint: disable=unused-import

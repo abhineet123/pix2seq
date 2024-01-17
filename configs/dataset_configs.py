@@ -73,9 +73,11 @@ def ipsc_post_process(dataset_cfg):
 
         if dataset_cfg.length:
             train_name = f'{train_name}-length-{dataset_cfg.length}'
+            eval_name = f'{eval_name}-length-{dataset_cfg.length}'
 
         if dataset_cfg.stride:
             train_name = f'{train_name}-stride-{dataset_cfg.stride}'
+            eval_name = f'{eval_name}-stride-{dataset_cfg.stride}'
     else:
         db_root_dir = root_dir
         db_type = 'images'
@@ -85,13 +87,15 @@ def ipsc_post_process(dataset_cfg):
     train_json_name = f'{train_name}.json'
     eval_json_name = f'{eval_name}.json'
 
+    if dataset_cfg.compressed:
+        train_json_name += '.gz'
+        eval_json_name += '.gz'
+
     train_json_path = os.path.join(db_root_dir, train_json_name)
     eval_json_path = os.path.join(db_root_dir, eval_json_name)
 
     if dataset_cfg.compressed:
         import compress_json
-        train_json_path += '.gz'
-        eval_json_path += '.gz'
         train_dict = compress_json.load(train_json_path)
         eval_dict = compress_json.load(eval_json_path)
     else:
@@ -113,8 +117,8 @@ def ipsc_post_process(dataset_cfg):
     dataset_cfg.train_file_pattern = os.path.join(db_root_dir, 'tfrecord', train_name + '*')
     dataset_cfg.eval_file_pattern = os.path.join(db_root_dir, 'tfrecord', eval_name + '*')
 
-    dataset_cfg.category_names_path = os.path.join(root_dir, dataset_cfg.eval_filename_for_metrics)
-    dataset_cfg.coco_annotations_dir_for_metrics = root_dir
+    dataset_cfg.category_names_path = os.path.join(db_root_dir, dataset_cfg.eval_filename_for_metrics)
+    dataset_cfg.coco_annotations_dir_for_metrics = db_root_dir
 
 
 def get_ipsc_data():
@@ -150,7 +154,7 @@ def get_ipsc_video_data():
         train_split='train',
         eval_split='validation',
         label_shift=0,
-        compressed=0,
+        compressed=1,
         length=2,
         stride=1,
         **_shared_dataset_config

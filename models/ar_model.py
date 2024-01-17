@@ -289,5 +289,9 @@ class ModelT(Model):
         return encoded
 
 
-## fancy way of saying TrainerRegistry['fit_encoder_ar_decoder'] = ARTrainer
+"""
+fancy way of saying TrainerRegistry['fit_encoder_ar_decoder'] = ARTrainer
+Separate line here since both fit_encoder_ar_decoder And encoder_ar_decoder 
+have the same trainer class
+"""
 model_lib.TrainerRegistry.register('fit_encoder_ar_decoder')(ARTrainer)
