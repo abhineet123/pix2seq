@@ -76,6 +76,24 @@ class RecordOriginalImageSize(Transform):
         return example
 
 
+@TransformRegistry.register('record_original_video_size')
+class RecordOriginalVideoSize(Transform):
+    """Record the original image size.
+
+    Required fields in config:
+      image_key: optional name of image feature. Defaults to 'image'.
+      original_image_size_key: optional name of the original image size feature.
+        Defaults to 'orig_image_size'.
+    """
+
+    def process_example(self, example: dict[str, tf.Tensor]):
+        image_key = self.config.get('image_key', 'image')
+        orig_image_size_key = self.config.get('original_image_size_key',
+                                              DEFAULT_ORIG_IMAGE_SIZE_KEY)
+        example[orig_image_size_key] = tf.shape(example[image_key])[1:3]
+        return example
+
+
 @TransformRegistry.register('convert_image_dtype_float32')
 class ConvertImageDtypeFloat32(Transform):
     """Convert image dtype to float32.
@@ -160,6 +178,52 @@ class ScaleJitter(Transform):
         return example
 
 
+@TransformRegistry.register('scale_jitter_video')
+class ScaleJitterVideo(Transform):
+    """Scale jittering.
+
+    Required fields in config:
+      inputs: names of applicable fields in the example.
+      min_scale: float.
+      max_scale: float.
+      target_size: (height, width) tuple.
+      resize_method: Optional[List[str]]. Defaults to bilinear.
+      antialias: Optional[List[bool]]. Defaults to False.
+    """
+
+    def process_example(self, example: dict[str, tf.Tensor]):
+        example = copy.copy(example)
+        target_height, target_width = self.config.target_size
+        min_scale, max_scale = self.config.min_scale, self.config.max_scale
+
+        k = self.config.inputs[0]
+        input_size = tf.cast(tf.shape(example[self.config.inputs[0]])[1:3],
+                             tf.float32)
+        output_size = tf.constant([target_height, target_width], tf.float32)
+        random_scale = tf.random.uniform([], min_scale, max_scale)
+        random_scale_size = tf.multiply(output_size, random_scale)
+        scale = tf.minimum(
+            random_scale_size[0] / input_size[0],
+            random_scale_size[1] / input_size[1]
+        )
+        scaled_size = tf.cast(tf.multiply(input_size, scale), tf.int32)
+
+        num_inputs = len(self.config.inputs)
+        resize_methods = self.config.get('resize_method', ['bilinear'] * num_inputs)
+        antialias_list = self.config.get('antialias', [False] * num_inputs)
+        for k, resize_method, antialias in zip(self.config.inputs,
+                                               resize_methods, antialias_list):
+            resized_images = [None, ] * self.config.length
+            video = example[k]
+            for frame_id in range(self.config.length):
+                frame = video[frame_id, ...]
+                resized_images[frame_id] = tf.image.resize(
+                    frame, tf.cast(scaled_size, tf.int32),
+                    method=resize_method, antialias=antialias)
+            example[k] = tf.stack(resized_images, axis=0)
+        return example
+
+
 @TransformRegistry.register('fixed_size_crop')
 class FixedSizeCrop(Transform):
     """Fixed size crop.
@@ -191,8 +255,7 @@ class FixedSizeCrop(Transform):
                                object_coordinate_keys)
 
 
-
-@TransformRegistry.register('fixed_size_video_crop')
+@TransformRegistry.register('fixed_size_crop_video')
 class FixedSizeVideoCrop(Transform):
     """Fixed size crop.
 
@@ -220,7 +283,7 @@ class FixedSizeVideoCrop(Transform):
         object_coordinate_keys = self.config.get('object_coordinate_keys', [])
 
         return data_utils.video_crop(example, region, self.config.inputs,
-                               object_coordinate_keys)
+                                     object_coordinate_keys)
 
 
 @TransformRegistry.register('random_horizontal_flip')
@@ -256,6 +319,43 @@ class RandomHorizontalFlip(Transform):
         example.update(boxes)
         example.update(keypoints)
         example.update(polygons)
+        return example
+
+
+@TransformRegistry.register('random_horizontal_flip_video')
+class RandomHorizontalFlipVideo(Transform):
+    """Random horizontal flip.
+
+    Required fields in config:
+      inputs: names of applicable fields in the example.
+      bbox_keys: optional. Names of bbox fields.
+      keypoints_keys: optional. Names of bbox fields.
+      polygon_keys: optional. Names of polygon fields.
+    """
+
+    def process_example(self, example: dict[str, tf.Tensor]):
+        example = copy.copy(example)
+        inputs = {k: example[k] for k in self.config.inputs}
+        boxes = {k: example[k] for k in self.config.get('bbox_keys', [])}
+        # keypoints = {k: example[k] for k in self.config.get('keypoints_keys', [])}
+        # polygons = {k: example[k] for k in self.config.get('polygon_keys', [])}
+
+        with tf.name_scope('RandomHorizontalFlipVideo'):
+            coin_flip = tf.random.uniform([]) > 0.5
+            if coin_flip:
+                inputs = {k: data_utils.flip_video_left_right(v, self.config.length)
+                          for k, v in inputs.items()}
+                boxes = {k: data_utils.flip_polygons_left_right(v)
+                         for k, v in boxes.items()}
+                # keypoints = {k: data_utils.flip_keypoints_left_right(v)
+                #              for k, v in keypoints.items()}
+                # polygons = {k: data_utils.flip_polygons_left_right(v)
+                #             for k, v in polygons.items()}
+
+        example.update(inputs)
+        example.update(boxes)
+        # example.update(keypoints)
+        # example.update(polygons)
         return example
 
 
@@ -376,6 +476,34 @@ class InjectNoiseBbox(Transform):
         return example
 
 
+@TransformRegistry.register('inject_noise_bbox_video')
+class InjectNoiseBboxVideo(Transform):
+    """Inject noise bbox.
+
+    Required fields in config:
+      max_instances_per_image: int.
+      bbox_key: optional name of the bbox field. Defaults to 'bbox'.
+      bbox_label_key: optional name of the bbox label field. Defaults to 'label'.
+    """
+
+    def process_example(self, example: dict[str, tf.Tensor]):
+        example = copy.copy(example)
+        bbox_key = self.config.get('bbox_key', DEFAULT_BBOX_KEY)
+        bbox_label_key = self.config.get('bbox_label_key', 'label')
+
+        num_instances = tf.shape(example[bbox_key])[0]
+        if num_instances < self.config.max_instances_per_image:
+            n_noise_bbox = self.config.max_instances_per_image - num_instances
+            example[bbox_key], example[bbox_label_key] = data_utils.augment_bbox_video(
+                example[bbox_key],
+                example[bbox_label_key],
+                length=self.config.length,
+                max_disp=self.config.max_disp,
+                max_jitter=0.,
+                n_noise_bboxes=n_noise_bbox)
+        return example
+
+
 @TransformRegistry.register('pad_image_to_max_size')
 class PadImageToMaxSize(Transform):
     """Pad image to target size (height, width, 3).
@@ -414,6 +542,45 @@ class PadImageToMaxSize(Transform):
         object_coordinate_keys = self.config.get('object_coordinate_keys', [])
         if object_coordinate_keys:
             assert 'image' in self.config.inputs
+            hratio = tf.cast(height, tf.float32) / tf.cast(target_size[0], tf.float32)
+            wratio = tf.cast(width, tf.float32) / tf.cast(target_size[1], tf.float32)
+            scale = tf.stack([hratio, wratio])
+            for key in object_coordinate_keys:
+                example[key] = data_utils.flatten_points(
+                    data_utils.unflatten_points(example[key]) * scale)
+        return example
+
+
+@TransformRegistry.register('pad_video_to_max_size')
+class PadVideoToMaxSize(Transform):
+    def process_example(self, example: dict[str, tf.Tensor]):
+        example = copy.copy(example)
+        num_inputs = len(self.config.inputs)
+        backgrnd_val = self.config.get('background_val', [0.3] * num_inputs)
+        target_size = self.config.target_size
+        for k, backgrnd_val_ in zip(self.config.inputs, backgrnd_val):
+            unpadded_video = example[k]
+            if k == 'video':
+                height = tf.shape(unpadded_video)[1]
+                width = tf.shape(unpadded_video)[2]
+                example['unpadded_video_size'] = tf.concat([width, height])
+
+            example[k] = backgrnd_val_ + data_utils.pad_video_to_bounding_box(
+                unpadded_video - backgrnd_val_,
+                length=self.config.length,
+                offset_height=0,
+                offset_width=0,
+                target_height=target_size[0],
+                target_width=target_size[1]
+            )
+
+        # Adjust the coordinate fields.
+        object_coordinate_keys = self.config.get('object_coordinate_keys', [])
+        if object_coordinate_keys:
+
+            assert 'video' in self.config.inputs, \
+                "video must be in inputs for object_coordinate_keys to be processed"
+
             hratio = tf.cast(height, tf.float32) / tf.cast(target_size[0], tf.float32)
             wratio = tf.cast(width, tf.float32) / tf.cast(target_size[1], tf.float32)
             scale = tf.stack([hratio, wratio])

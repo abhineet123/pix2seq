@@ -82,41 +82,44 @@ def get_object_detection_eval_transforms(
 
 def get_video_detection_train_transforms(
         image_size: Tuple[int, int],
-        mask_size: Tuple[int, int],
-        jitter_scale_min: float,
-        jitter_scale_max: float,
-        color_jitter_strength: float):
-    """Train transforms for video panoptic segmentation."""
-    transforms = [
-        D(name='scale_jitter',
-          inputs=['image', 'cond_map', 'label_map'],
+        max_instances_per_image: int,
+        object_order: str = 'random',
+        jitter_scale_min: float = 0.3,
+        jitter_scale_max: float = 2.0):
+    instance_feature_names = ['bbox', 'label', 'area', 'is_crowd']
+    object_coordinate_keys = ['bbox']
+    return [
+        D(name='record_original_video_size'),
+        D(name='scale_jitter_video',
+          inputs=['video'],
           target_size=image_size,
           min_scale=jitter_scale_min,
-          max_scale=jitter_scale_max,
-          resize_method=['bicubic', 'nearest', 'nearest'],
-          antialias=[True, True, True]),
-        D(name='fixed_size_crop',
-          inputs=['image', 'cond_map', 'label_map'],
-          target_size=image_size),
-        D(name='random_horizontal_flip',
-          inputs=['image']),
-        D(name='random_color_jitter',
-          inputs=['image'],
-          color_jitter_strength=color_jitter_strength),
-        D(name='pad_image_to_max_size',
-          inputs=['image'],
+          max_scale=jitter_scale_max),
+        D(name='fixed_size_crop_video',
+          inputs=['video'],
           target_size=image_size,
-          background_val=[0.3, 0, 0]),
+          object_coordinate_keys=object_coordinate_keys),
+        D(name='random_horizontal_flip_video',
+          inputs=['video'],
+          bbox_keys=['bbox']),
+        # Remove objects with invalid boxes (e.g. produced by cropping) as well as
+        # crowded objects.
+        D(name='filter_invalid_objects',
+          inputs=instance_feature_names,
+          filter_keys=['is_crowd']),
+        D(name='reorder_object_instances',
+          inputs=instance_feature_names,
+          order=object_order),
+        D(name='inject_noise_bbox_video',
+          max_instances_per_image=max_instances_per_image),
+        D(name='pad_video_to_max_size',
+          inputs=['video'],
+          target_size=image_size,
+          object_coordinate_keys=object_coordinate_keys),
+        D(name='truncate_or_pad_to_max_instances',
+          inputs=instance_feature_names,
+          max_instances=max_instances_per_image),
     ]
-    if image_size[0] != mask_size[0] or image_size[1] != mask_size[1]:
-        transforms.append(D(
-            name='resize_image',
-            inputs=['cond_map', 'label_map'],
-            target_size=mask_size,
-            resize_method=['nearest', 'nearest']))
-    return transforms
-
-
 def get_video_detection_eval_transforms(
         image_size: Tuple[int, int],
         mask_size: Tuple[int, int],

@@ -73,7 +73,7 @@ class TaskVideoDetection(task_lib.Task):
                 orig_image_size=tf.shape(example['video/frames'])[1:3],
                 video_id=example['video/id'],
                 num_frames=example['video/num_frames'],
-                image=example['video/frames'],
+                video=example['video/frames'],
                 bbox=example['bbox'],
                 label=example['label'],
             )
@@ -200,7 +200,7 @@ class TaskVideoDetection(task_lib.Task):
         config = self.config.task
         mconfig = self.config.model
         example = batched_examples
-        images, image_ids = example['image'], example['image/id']
+        images, image_ids = example['video'], example['video/id']
         orig_image_size = example['orig_image_size']
         unpadded_image_size = example['unpadded_image_size']
 
