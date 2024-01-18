@@ -27,8 +27,10 @@ import tensorflow as tf
 
 TransformRegistry = registry.Registry()
 
+DEFAULT_VIDEO_KEY = 'video'
 DEFAULT_IMAGE_KEY = 'image'
 DEFAULT_ORIG_IMAGE_SIZE_KEY = 'orig_image_size'
+DEFAULT_ORIG_VIDEO_SIZE_KEY = 'orig_video_size'
 DEFAULT_BBOX_KEY = 'bbox'
 
 
@@ -87,9 +89,9 @@ class RecordOriginalVideoSize(Transform):
     """
 
     def process_example(self, example: dict[str, tf.Tensor]):
-        image_key = self.config.get('image_key', 'image')
-        orig_image_size_key = self.config.get('original_image_size_key',
-                                              DEFAULT_ORIG_IMAGE_SIZE_KEY)
+        image_key = self.config.get('image_key', 'video')
+        orig_image_size_key = self.config.get('original_video_size_key',
+                                              DEFAULT_ORIG_VIDEO_SIZE_KEY)
         example[orig_image_size_key] = tf.shape(example[image_key])[1:3]
         return example
 
@@ -175,6 +177,36 @@ class ScaleJitter(Transform):
             example[k] = tf.image.resize(
                 example[k], tf.cast(scaled_size, tf.int32),
                 method=resize_method, antialias=antialias)
+        return example
+
+
+
+@TransformRegistry.register('resize_video')
+class ResizeVideo(Transform):
+    """Resize video.
+
+    Required fields in config:
+      inputs: names of applicable fields in the example.
+      target_size: (height, width) tuple.
+      resize_method: Optional[List[str]]. Defaults to bilinear.
+      antialias: Optional[List[bool]]. Defaults to False.
+      preserve_aspect_ratio: Optional[List[bool]]. Defaults to True.
+    """
+
+    def process_example(self, example: dict[str, tf.Tensor]):
+        example = copy.copy(example)
+        num_inputs = len(self.config.inputs)
+        resize_methods = self.config.get('resize_method', ['bilinear'] * num_inputs)
+        antialias_list = self.config.get('antialias', [False] * num_inputs)
+        preserve_ar = self.config.get('preserve_aspect_ratio', [True] * num_inputs)
+
+        for k, resize_method, antialias, p_ar in zip(
+                self.config.inputs, resize_methods, antialias_list, preserve_ar):
+            example[k] = data_utils.resize_video(
+                example[k],
+                length= self.config.length,
+                size=self.config.target_size, method=resize_method,
+                antialias=antialias, preserve_aspect_ratio=p_ar)
         return example
 
 

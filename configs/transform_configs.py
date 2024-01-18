@@ -79,7 +79,6 @@ def get_object_detection_eval_transforms(
     ]
 
 
-
 def get_video_detection_train_transforms(
         image_size: Tuple[int, int],
         max_instances_per_image: int,
@@ -120,31 +119,24 @@ def get_video_detection_train_transforms(
           inputs=instance_feature_names,
           max_instances=max_instances_per_image),
     ]
+
+
 def get_video_detection_eval_transforms(
         image_size: Tuple[int, int],
-        mask_size: Tuple[int, int],
-        max_num_frames: int):
+        max_instances_per_image: int):
     return [
-        D(name='resize_image',
-          inputs=['image'],
+        D(name='record_original_video_size'),
+        D(name='resize_video',
+          inputs=['video'],
+          antialias=[True],
+          target_size=image_size),
+        D(name='pad_video_to_max_size',
+          inputs=['video'],
           target_size=image_size,
-          resize_method=['bilinear'],
-          antialias=[True]),
-        D(name='resize_image',
-          inputs=['cond_map', 'label_map'],
-          target_size=mask_size,
-          resize_method=['nearest', 'nearest']),
-        D(name='pad_image_to_max_size',
-          inputs=['image'],
-          target_size=image_size,
-          background_val=[0.3]),
-        D(name='pad_image_to_max_size',
-          inputs=['cond_map', 'label_map'],
-          target_size=mask_size,
-          background_val=[0, 0]),
-        D(name='truncate_or_pad_to_max_frames',
-          inputs=['image', 'cond_map', 'label_map'],
-          max_num_frames=max_num_frames),
+          object_coordinate_keys=['bbox']),
+        D(name='truncate_or_pad_to_max_instances',
+          inputs=['bbox', 'label', 'area', 'is_crowd'],
+          max_instances=max_instances_per_image),
     ]
 
 

@@ -80,10 +80,14 @@ class TaskVideoDetection(task_lib.Task):
             return new_example
 
         dataset = dataset.map(_convert_video_to_image_features,
-                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
+                              # num_parallel_calls=tf.data.experimental.AUTOTUNE
+                              )
         dataset = dataset.map(
-            lambda x: self.preprocess_single_example(x, training, batch_duplicates),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            lambda x: self.preprocess_single_example(
+                x, training,
+                batch_duplicates),
+            # num_parallel_calls=tf.data.experimental.AUTOTUNE
+        )
         return dataset
 
     def preprocess_batched(self, batched_examples, training):

@@ -132,6 +132,14 @@ def pad_video_to_bounding_box(video, length, **kwargs):
     resized_video = tf.stack(resized_images, axis=0)
     return resized_video
 
+def resize_video(video, length, **kwargs):
+    resized_images = [None, ] * length
+    for frame_id in range(length):
+        frame = video[frame_id, ...]
+        resized_images[frame_id] = tf.image.resize(frame, **kwargs)
+    resized_video = tf.stack(resized_images, axis=0)
+    return resized_video
+
 
 # from https://github.com/google-research/simclr
 def random_color_jitter(image, p=1.0, strength=1.0, impl='simclrv2'):
