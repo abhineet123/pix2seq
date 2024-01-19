@@ -155,6 +155,7 @@ def get_ipsc_video_data():
         eval_split='validation',
         label_shift=0,
         compressed=1,
+        max_disp=0.01,
         length=2,
         stride=1,
         **_shared_dataset_config

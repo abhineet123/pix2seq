@@ -81,16 +81,22 @@ def get_object_detection_eval_transforms(
 
 def get_video_detection_train_transforms(
         image_size: Tuple[int, int],
+        length: int,
+        max_disp: int,
         max_instances_per_image: int,
         object_order: str = 'random',
         jitter_scale_min: float = 0.3,
         jitter_scale_max: float = 2.0):
-    instance_feature_names = ['bbox', 'label', 'area', 'is_crowd']
+    instance_feature_names = ['bbox', 'label',
+                              'area', 'is_crowd'
+                              ]
     object_coordinate_keys = ['bbox']
-    return [
+
+    train_transforms = [
         D(name='record_original_video_size'),
         D(name='scale_jitter_video',
           inputs=['video'],
+          length=length,
           target_size=image_size,
           min_scale=jitter_scale_min,
           max_scale=jitter_scale_max),
@@ -100,37 +106,46 @@ def get_video_detection_train_transforms(
           object_coordinate_keys=object_coordinate_keys),
         D(name='random_horizontal_flip_video',
           inputs=['video'],
+          length=length,
           bbox_keys=['bbox']),
         # Remove objects with invalid boxes (e.g. produced by cropping) as well as
         # crowded objects.
         D(name='filter_invalid_objects',
           inputs=instance_feature_names,
-          filter_keys=['is_crowd']),
+          filter_keys=['is_crowd']
+          ),
         D(name='reorder_object_instances',
           inputs=instance_feature_names,
           order=object_order),
         D(name='inject_noise_bbox_video',
+          length=length,
+          max_disp=max_disp,
           max_instances_per_image=max_instances_per_image),
         D(name='pad_video_to_max_size',
           inputs=['video'],
+          length=length,
           target_size=image_size,
           object_coordinate_keys=object_coordinate_keys),
         D(name='truncate_or_pad_to_max_instances',
           inputs=instance_feature_names,
           max_instances=max_instances_per_image),
     ]
-
+    return train_transforms
 
 def get_video_detection_eval_transforms(
         image_size: Tuple[int, int],
-        max_instances_per_image: int):
+        length: int,
+        max_instances_per_image: int,
+):
     return [
         D(name='record_original_video_size'),
         D(name='resize_video',
           inputs=['video'],
+          length=length,
           antialias=[True],
           target_size=image_size),
         D(name='pad_video_to_max_size',
+          length=length,
           inputs=['video'],
           target_size=image_size,
           object_coordinate_keys=['bbox']),

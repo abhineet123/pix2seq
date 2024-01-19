@@ -52,10 +52,6 @@ def get_config(config_str=None):
             quantization_bins=1000,
             max_instances_per_image=max_instances_per_image,
             max_instances_per_image_test=max_instances_per_image_test,
-            train_transforms=transform_configs.get_video_detection_train_transforms(
-                image_size, max_instances_per_image),
-            eval_transforms=transform_configs.get_object_detection_eval_transforms(
-                image_size, max_instances_per_image_test),
             # Train on both ground-truth and (augmented) noisy objects.
             noise_bbox_weight=1.0,
             eos_token_weight=0.1,
@@ -73,9 +69,14 @@ def get_config(config_str=None):
     task_d_list = []
     dataset_list = []
     for tv, ds_name in tasks_and_datasets:
-        task_d_list.append(task_config_map[tv])
         dataset_config = copy.deepcopy(dataset_configs.dataset_configs[ds_name])
         dataset_list.append(dataset_config)
+        task_config = task_config_map[tv]
+        task_config.train_transforms = transform_configs.get_video_detection_train_transforms(
+            image_size, dataset_config.length, dataset_config.max_disp, max_instances_per_image)
+        task_config.eval_transforms = transform_configs.get_video_detection_eval_transforms(
+            image_size, dataset_config.length, max_instances_per_image_test)
+        task_d_list.append(task_config)
 
     config = D(
         dataset=dataset_list[0],

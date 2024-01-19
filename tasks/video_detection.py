@@ -76,6 +76,8 @@ class TaskVideoDetection(task_lib.Task):
                 video=example['video/frames'],
                 bbox=example['bbox'],
                 label=example['label'],
+                area=example['area'],
+                is_crowd=example['is_crowd'],
             )
             return new_example
 

@@ -90,9 +90,9 @@ class RecordOriginalVideoSize(Transform):
 
     def process_example(self, example: dict[str, tf.Tensor]):
         image_key = self.config.get('image_key', 'video')
-        orig_image_size_key = self.config.get('original_video_size_key',
+        orig_video_size_key = self.config.get('original_video_size_key',
                                               DEFAULT_ORIG_VIDEO_SIZE_KEY)
-        example[orig_image_size_key] = tf.shape(example[image_key])[1:3]
+        example[orig_video_size_key] = tf.shape(example[image_key])[1:3]
         return example
 
 
