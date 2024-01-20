@@ -81,6 +81,8 @@ class Trainer(abc.ABC):
         self._metrics.update({
             f'loss_{t.name}': tf.keras.metrics.Mean(f'loss_{t.name}')
             for t in config.tasks})
+
+
         self._print_params = False
 
     def train_step(self, examples, tasks, strategy):

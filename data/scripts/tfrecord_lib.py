@@ -19,6 +19,7 @@ import hashlib
 import io
 import itertools
 import multiprocessing
+import os.path
 
 from absl import logging
 import numpy as np
@@ -85,16 +86,36 @@ def convert_to_feature(value, value_type=None):
         raise ValueError('Unknown value_type parameter - {}'.format(value_type))
 
 
-def video_info_to_feature_dict(height, width, filenames, video_id):
+def video_info_to_feature_dict(height, width, filenames, video_id, image_dir):
     """Convert video information to a dict of features."""
-    filenames = [filename.encode('utf8') for filename in filenames]
+    file_paths = [os.path.realpath(os.path.join(image_dir, filename)) for filename in filenames]
+
+    img_type_accepted_by_tf = ["bmp", "gif", "jpeg", "png"]
+
+    for file_path in file_paths:
+        # realpath = os.path.realpath(file_path)
+
+        assert os.path.exists(file_path), f"file_path does not exist: {file_path}"
+
+        import imghdr
+        img_type = imghdr.what(file_path)
+
+        # print(f'img_type: {img_type}')
+
+        if img_type is None:
+            raise AssertionError(f"{file_path} is not an image")
+        elif img_type not in img_type_accepted_by_tf:
+            raise AssertionError(f"{file_path} is a {img_type}, not accepted by TensorFlow")
+
+    file_paths = [file_path.encode('utf8') for file_path in file_paths]
+
 
     return {
         'video/height': convert_to_feature(height),
         'video/width': convert_to_feature(width),
-        'video/filenames': convert_to_feature(filenames),
+        'video/filenames': convert_to_feature(file_paths),
         'video/num_frames': convert_to_feature(len(filenames)),
-        'video/source_id': convert_to_feature(str(video_id).encode('utf8')),
+        'video/source_id': convert_to_feature(video_id),
     }
 def image_info_to_feature_dict(height, width, filename, image_id,
                                encoded_str, encoded_format):

@@ -87,7 +87,7 @@ def get_video_detection_train_transforms(
         object_order: str = 'random',
         jitter_scale_min: float = 0.3,
         jitter_scale_max: float = 2.0):
-    instance_feature_names = ['bbox', 'label',
+    instance_feature_names = ['bbox', 'class_id', 'class_name',
                               'area', 'is_crowd'
                               ]
     object_coordinate_keys = ['bbox']
@@ -108,12 +108,10 @@ def get_video_detection_train_transforms(
           inputs=['video'],
           length=length,
           bbox_keys=['bbox']),
-        # Remove objects with invalid boxes (e.g. produced by cropping) as well as
-        # crowded objects.
-        D(name='filter_invalid_objects',
-          inputs=instance_feature_names,
-          filter_keys=['is_crowd']
-          ),
+        # D(name='filter_invalid_objects',
+        #   inputs=instance_feature_names,
+        #   filter_keys=['is_crowd']
+        #   ),
         D(name='reorder_object_instances',
           inputs=instance_feature_names,
           order=object_order),

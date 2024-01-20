@@ -870,7 +870,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
                  pos_encoding='learned',
                  use_cls_token=True,
                  **kwargs):
-        super(ResNetTransformer, self).__init__(**kwargs)
+        super(VideoResNetTransformer, self).__init__(**kwargs)
         self.vid_len = vid_len
         self.use_cls_token = use_cls_token
         self.resnet = resnet.resnet(

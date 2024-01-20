@@ -70,12 +70,13 @@ class TaskVideoDetection(task_lib.Task):
 
         def _convert_video_to_image_features(example):
             new_example = dict(
-                orig_image_size=tf.shape(example['video/frames'])[1:3],
+                orig_video_size=tf.shape(example['video/frames'])[1:3],
                 video_id=example['video/id'],
                 num_frames=example['video/num_frames'],
                 video=example['video/frames'],
                 bbox=example['bbox'],
-                label=example['label'],
+                class_name=example['class_name'],
+                class_id=example['class_id'],
                 area=example['area'],
                 is_crowd=example['is_crowd'],
             )
@@ -112,6 +113,9 @@ class TaskVideoDetection(task_lib.Task):
         """
         config = self.config.task
         mconfig = self.config.model
+
+        bbox_np = batched_examples['bbox'].numpy()
+        label_np = batched_examples['label'].numpy()
 
         # Create input/target seq.
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
@@ -207,8 +211,8 @@ class TaskVideoDetection(task_lib.Task):
         mconfig = self.config.model
         example = batched_examples
         images, image_ids = example['video'], example['video/id']
-        orig_image_size = example['orig_image_size']
-        unpadded_image_size = example['unpadded_image_size']
+        orig_video_size = example['orig_video_size']
+        unpadded_video_size = example['unpadded_video_size']
 
         # Decode sequence output.
         pred_classes, pred_bboxes, scores = task_utils.decode_object_seq_to_bbox(
@@ -223,8 +227,8 @@ class TaskVideoDetection(task_lib.Task):
             # scale points to original image size during eval.
             scale = (
                     utils.tf_float32(image_size)[tf.newaxis, :] /
-                    utils.tf_float32(unpadded_image_size))
-            scale = scale * utils.tf_float32(orig_image_size)
+                    utils.tf_float32(unpadded_video_size))
+            scale = scale * utils.tf_float32(orig_video_size)
             scale = tf.expand_dims(scale, 1)
         pred_bboxes_rescaled = utils.scale_points(pred_bboxes, scale)
 

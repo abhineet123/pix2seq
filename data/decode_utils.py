@@ -43,7 +43,7 @@ def get_feature_map_for_object_detection():
 
 def get_feature_map_for_video():
     return {
-        'video/source_id': tf.io.FixedLenFeature((), tf.string, ''),
+        'video/source_id': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),
@@ -53,6 +53,7 @@ def get_feature_map_for_video():
 
 def get_feature_map_for_video_detection(vid_len):
     feat_dict = {
+        'video/object/class/text': tf.io.VarLenFeature(tf.int64),
         'video/object/class/label': tf.io.VarLenFeature(tf.int64),
         'video/object/is_crowd': tf.io.VarLenFeature(tf.int64),
         'video/object/score': tf.io.VarLenFeature(tf.float32),

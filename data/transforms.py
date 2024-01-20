@@ -89,10 +89,10 @@ class RecordOriginalVideoSize(Transform):
     """
 
     def process_example(self, example: dict[str, tf.Tensor]):
-        image_key = self.config.get('image_key', 'video')
+        video_key = self.config.get('video_key', 'video')
         orig_video_size_key = self.config.get('original_video_size_key',
                                               DEFAULT_ORIG_VIDEO_SIZE_KEY)
-        example[orig_video_size_key] = tf.shape(example[image_key])[1:3]
+        example[orig_video_size_key] = tf.shape(example[video_key])[1:3]
         return example
 
 
@@ -427,13 +427,26 @@ class FilterInvalidObjects(Transform):
 
     def process_example(self, example: dict[str, tf.Tensor]):
         example = copy.copy(example)
-        bbox = example[self.config.get('bbox_key', DEFAULT_BBOX_KEY)]
+        bbox_key = self.config.get('bbox_key', DEFAULT_BBOX_KEY)
+        bbox = example[bbox_key]
+        n_bboxes = tf.shape(bbox)[0]
+
+        print(f'filter_invalid_objects: box shape: {tf.shape(bbox)}')
+        print(f'filter_invalid_objects: bbox: {bbox}')
+        print(f'filter_invalid_objects: n_bboxes: {n_bboxes}')
+
+
         box_valid = tf.logical_and(bbox[:, 2] > bbox[:, 0], bbox[:, 3] > bbox[:, 1])
         for k in self.config.get('filter_keys', []):
             box_valid = tf.logical_and(box_valid, tf.logical_not(example[k]))
         valid_indices = tf.where(box_valid)[:, 0]
         for k in self.config.inputs:
             example[k] = tf.gather(example[k], valid_indices)
+
+        out_bbox = example[bbox_key]
+        n_out_bboxes = tf.shape(out_bbox)[0]
+        tf.debugging.Assert(n_out_bboxes > 0, [bbox, out_bbox])
+
         return example
 
 
@@ -593,9 +606,9 @@ class PadVideoToMaxSize(Transform):
         for k, backgrnd_val_ in zip(self.config.inputs, backgrnd_val):
             unpadded_video = example[k]
             if k == 'video':
+                example['unpadded_video_size'] = tf.shape(unpadded_video)[1:3]
                 height = tf.shape(unpadded_video)[1]
                 width = tf.shape(unpadded_video)[2]
-                example['unpadded_video_size'] = tf.concat([width, height])
 
             example[k] = backgrnd_val_ + data_utils.pad_video_to_bounding_box(
                 unpadded_video - backgrnd_val_,

@@ -109,6 +109,8 @@ def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_
                 (x, y, width, height) = tuple(bbox)
                 xmin, ymin, xmax, ymax = float(x), float(y), float(x + width), float(y + height)
 
+                assert ymax > ymin and xmax > xmin, f"invalid bbox: {bbox}"
+
             data[f'xmin-{bbox_id}'].append(xmin)
             data[f'xmax-{bbox_id}'].append(xmax)
             data[f'ymin-{bbox_id}'].append(ymin)
@@ -162,6 +164,8 @@ def generate_video_annotations(
         videos,
         category_id_to_name_map,
         vid_to_obj_ann,
+        image_dir,
+
 ):
     """Generator for COCO annotations."""
     for video in videos:
@@ -170,6 +174,7 @@ def generate_video_annotations(
             video,
             category_id_to_name_map,
             object_ann,
+            image_dir,
         )
 
 
@@ -177,6 +182,7 @@ def create_video_tf_example(
         video,
         category_id_to_name_map,
         object_ann,
+        image_dir,
 ):
     video_height = video['height']
     video_width = video['width']
@@ -186,7 +192,7 @@ def create_video_tf_example(
     vid_len = len(file_names)
 
     feature_dict = tfrecord_lib.video_info_to_feature_dict(
-        video_height, video_width, file_names, video_id)
+        video_height, video_width, file_names, video_id, image_dir)
 
     if object_ann:
         # Bbox, area, etc.
@@ -211,7 +217,6 @@ class Params(paramparse.CFG):
         self.stride = 0
 
         self.image_dir = ''
-        self.image_dir = ''
         self.n_proc = 0
         self.num_shards = 32
         self.output_dir = ''
@@ -224,10 +229,12 @@ def main(_):
     assert params.image_dir, "image_dir must be provided"
     assert params.ann_file, "ann_file must be provided"
 
-    params.ann_file = os.path.join(params.image_dir, 'ytvis19', f'{params.ann_file}.{params.ann_ext}')
+    assert os.path.exists(params.image_dir), f"image_dir does not exist: {params.image_dir}"
 
-    video_info, category_id_to_name_map, vid_to_obj_ann = (
-        load_ytvis_annotations(params.ann_file))
+    params.ann_file = os.path.join(params.image_dir, 'ytvis19', f'{params.ann_file}.{params.ann_ext}')
+    assert os.path.exists(params.ann_file), f"ann_file does not exist: {params.ann_file}"
+
+    video_info, category_id_to_name_map, vid_to_obj_ann = load_ytvis_annotations(params.ann_file)
 
     if not params.output_dir:
         output_dir = os.path.join(params.image_dir, 'ytvis19', 'tfrecord')
@@ -241,6 +248,7 @@ def main(_):
         videos=video_info,
         category_id_to_name_map=category_id_to_name_map,
         vid_to_obj_ann=vid_to_obj_ann,
+        image_dir=params.image_dir,
     )
     output_path = os.path.join(params.output_dir, out_name)
 

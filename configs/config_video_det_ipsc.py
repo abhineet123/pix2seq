@@ -88,6 +88,7 @@ def get_config(config_str=None):
         model=D(
             name='video_encoder_ar_decoder',
             image_size=image_size,
+            vid_len=dataset_list[0].length,
             max_seq_len=512,
             vocab_size=3000,  # Note: should be large enough for 100 + num_classes + quantization_bins + (optional) text
             coord_vocab_shift=1000,  # Note: make sure num_class <= coord_vocab_shift - 100

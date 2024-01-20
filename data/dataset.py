@@ -51,7 +51,6 @@ def mix_datasets(input_fns, weights):
     return tf.distribute.get_strategy().distribute_datasets_from_function(input_fn)
 
 
-
 class Dataset(abc.ABC):
     """A dataset that handles creating a tf.data.Dataset."""
 
@@ -239,10 +238,19 @@ class TFRecordDataset(Dataset):
             file_pattern = self.config.train_file_pattern
         else:
             file_pattern = self.config.eval_file_pattern
-        dataset = tf.data.Dataset.list_files(file_pattern, shuffle=training)
+        dataset = tf.data.Dataset.list_files(
+            file_pattern,
+            # shuffle=training,
+            shuffle=False,
+        )
         dataset = dataset.interleave(
-            self.dataset_cls, cycle_length=32, deterministic=not training,
-            num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            self.dataset_cls,
+            cycle_length=32,
+            # deterministic=not training,
+            # num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            deterministic=True,
+            num_parallel_calls=0,
+        )
         return dataset
 
     @abc.abstractmethod

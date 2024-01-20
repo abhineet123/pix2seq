@@ -1,3 +1,5 @@
+import os.path
+
 from data import dataset as dataset_lib
 from data import decode_utils
 import utils
@@ -18,7 +20,7 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         Returns:
           a dictionary of feature name to tensors.
         """
-        print(f'example: {example}')
+        # print(f'example: {example}')
 
         # raise AssertionError()
 
@@ -55,18 +57,28 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         num_frames = int(example['video/num_frames'])
 
         filenames = example['video/filenames']
-        print(f'h, w : {h, w}')
-        print(f'num_frames: {num_frames}')
-        print(f'filenames: {filenames}')
+        # print(f'h, w : {h, w}')
+        # print(f'num_frames: {num_frames}')
+        # print(f'filenames: {filenames}')
         # exit()
 
-        # def read_video_frames(x):
-        #     print(f'x: {x}')
-        #     exit()
+        def read_video_frames(x):
+            print(f'x: {x}')
+            tf.print(f'x: {x}')
+
+            # root_dir = tf.convert_to_tensor(self.config.root_dir)
+            # file_path = tf.strings.join([root_dir, x], os.path.sep)
+            # print(f'file_path: {file_path}')
+            # tf.print(f'file_path: {file_path}')
+
+            return tf.io.decode_image(tf.io.read_file(x), channels=3)
+            # exit()
+
+
 
         frames = tf.map_fn(
-            lambda x: tf.io.decode_jpeg(x, channels=3),
-            # read_video_frames,
+            # lambda x: tf.io.decode_jpeg(x, channels=3),
+            read_video_frames,
             filenames, tf.uint8
         )
         frames.set_shape([None, None, None, 3])
@@ -83,7 +95,8 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
 
         new_example.update({
             'shape': utils.tf_float32((h, w)),
-            'label': example['video/object/class/label'],
+            'class_name': example['video/object/class/text'],
+            'class_id': example['video/object/class/label'],
             'bbox': bbox,
             'area': decode_utils.decode_video_areas(example, self.config.length),
             'is_crowd': tf.cast(example['video/object/is_crowd'], dtype=tf.bool),

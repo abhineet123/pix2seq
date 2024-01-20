@@ -50,12 +50,23 @@ class Model(tf.keras.models.Model):
                 name='vit')
         else:
             self.encoder = VideoResNetTransformer(
-                config.image_size[0], config.image_size[1], config.resnet_variant,
-                config.resnet_depth, config.resnet_width_multiplier,
-                config.resnet_sk_ratio, config.num_encoder_layers, config.dim_att,
-                mlp_ratio, config.num_heads, config.drop_path, config.drop_units,
-                config.drop_att, config.pos_encoding, config.use_cls_token,
-                name='rest')
+                image_height=config.image_size[0],
+                image_width=config.image_size[1],
+                vid_len=config.vid_len,
+                resnet_variant=config.resnet_variant,
+                resnet_depth=config.resnet_depth,
+                resnet_width_multiplier=config.resnet_width_multiplier,
+                resnet_sk_ratio=config.resnet_sk_ratio,
+                num_layers=config.num_encoder_layers,
+                dim=config.dim_att,
+                mlp_ratio=mlp_ratio,
+                num_heads=config.num_heads,
+                drop_path=config.drop_path,
+                drop_units=config.drop_units,
+                drop_att=config.drop_att,
+                pos_encoding=config.pos_encoding,
+                use_cls_token=config.use_cls_token,
+                name='video_resnet')
 
         mlp_ratio_dec = config.dim_mlp_dec // config.dim_att_dec
         self.proj = tf.keras.layers.Dense(
