@@ -30,7 +30,7 @@ from absl import logging
 from absl import flags
 from ml_collections.config_flags import config_flags
 
-config_flags.DEFINE_config_file('cfg', 'path/to/config/file.py', 'The config file.', lock_config=False)
+config_flags.DEFINE_config_file('cfg', '', 'The config file.', lock_config=False)
 flags.DEFINE_list('j5', [], 'list of config json5 files to override settings from default and pretrained configs')
 flags.DEFINE_string('cluster', 'cluster.json', 'cluster_cfg')
 flags.DEFINE_string('j5_root', 'configs/j5', 'relative path of the folder containing the optional json files')
@@ -88,6 +88,8 @@ def get_worker_id(tf_config):
 def main(unused_argv):
     # params = Params()
     # paramparse.process(params)
+    assert FLAGS.cfg, "cfg must be provided"
+
     import config
 
     cfg = config.load(FLAGS)

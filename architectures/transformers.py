@@ -901,9 +901,20 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
 
     def call(self, images, training, ret_list=False):
         """Input images of (bsz, h, w, c)."""
-        hidden_stack, _ = self.resnet(images, training)
-        tokens = hidden_stack[-1]
-        bsz, h, w, num_channels = get_shape(tokens)
+        tokens = []
+
+        # batch_size = images.shape[0]
+
+        for _id in range(self.vid_len):
+            images_ = images[:, _id, ...]
+            hidden_stack, _ = self.resnet(images_, training)
+            """last feature layer"""
+            tokens_ = hidden_stack[-1]
+            tokens.append(tokens_)
+
+        tokens = tf.stack(tokens, axis=1)
+
+        bsz, vid_len, h, w, num_channels = get_shape(tokens)
         tokens = tf.reshape(tokens, [bsz, h * w, num_channels])
         tokens = self.stem_ln(self.stem_projection(self.dropout(tokens, training)))
 
