@@ -95,7 +95,7 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
 
         new_example.update({
             'shape': utils.tf_float32((h, w)),
-            'class_name': example['video/object/class/text'],
+            'class_name':  tf.cast(example['video/object/class/text'], dtype=tf.string),
             'class_id': example['video/object/class/label'],
             'bbox': bbox,
             'area': decode_utils.decode_video_areas(example, self.config.length),

@@ -180,7 +180,6 @@ class ScaleJitter(Transform):
         return example
 
 
-
 @TransformRegistry.register('resize_video')
 class ResizeVideo(Transform):
     """Resize video.
@@ -204,7 +203,7 @@ class ResizeVideo(Transform):
                 self.config.inputs, resize_methods, antialias_list, preserve_ar):
             example[k] = data_utils.resize_video(
                 example[k],
-                length= self.config.length,
+                length=self.config.length,
                 size=self.config.target_size, method=resize_method,
                 antialias=antialias, preserve_aspect_ratio=p_ar)
         return example
@@ -435,7 +434,6 @@ class FilterInvalidObjects(Transform):
         print(f'filter_invalid_objects: bbox: {bbox}')
         print(f'filter_invalid_objects: n_bboxes: {n_bboxes}')
 
-
         box_valid = tf.logical_and(bbox[:, 2] > bbox[:, 0], bbox[:, 3] > bbox[:, 1])
         for k in self.config.get('filter_keys', []):
             box_valid = tf.logical_and(box_valid, tf.logical_not(example[k]))
@@ -464,25 +462,32 @@ class ReorderObjectInstances(Transform):
 
     def process_example(self, example: dict[str, tf.Tensor]):
         example = copy.copy(example)
-        if self.config.get('bbox_key', DEFAULT_BBOX_KEY) in example:
-            bbox = example[self.config.get('bbox_key', DEFAULT_BBOX_KEY)]
-            assert bbox.shape.rank == 2, 'Must be unbatched'
-            bbox = tf.reshape(bbox, [-1, 2, 2])
-        else:
-            bbox = None
+
+        bbox = example['bbox']
+        areas = example['area']
+
+        assert bbox.shape.rank == 2, 'Must be unbatched'
+        # bbox = tf.reshape(bbox, [-1, 2, 2])
+
+        # try:
+        #     bbox = example['bbox']
+        # except KeyError:
+        #     bbox = None
+        # else:
+        #     assert bbox.shape.rank == 2, 'Must be unbatched'
+        #     bbox = tf.reshape(bbox, [-1, 2, 2])
 
         order = self.config.order
         if order == 'none':
             return example
         elif order == 'random':
-            if bbox is not None:
-                num_instances = tf.shape(bbox)[0]
-            else:
-                num_instances = tf.shape(example[self.config.inputs[0]])[0]
+            num_instances = tf.shape(bbox)[0]
+            # if bbox is not None:
+            #     num_instances = tf.shape(bbox)[0]
+            # else:
+            #     num_instances = tf.shape(example[self.config.inputs[0]])[0]
             idx = tf.random.shuffle(tf.range(num_instances))
         elif order == 'area':
-            areas = tf.cast(tf.reduce_prod(bbox[:, 1, :] - bbox[:, 0, :], axis=1),
-                            tf.int64)  # approximated size.
             idx = tf.argsort(areas, direction='DESCENDING')
         elif order == 'dist2ori':
             y, x = bbox[:, 0], bbox[:, 1]  # using top-left corner.
@@ -493,7 +498,13 @@ class ReorderObjectInstances(Transform):
         else:
             raise ValueError('Unknown order {}'.format(order))
 
+        print(f'reorder_object_instances: areas: {areas}')
+        print(f'reorder_object_instances: order: {order}')
+        print(f'reorder_object_instances: idx: {idx}')
+        print(f'reorder_object_instances: num_instances: {num_instances}')
         for k in self.config.inputs:
+            print(f'reorder_object_instances: {k}: {example[k]}')
+            print(f'reorder_object_instances: {k} shape: {tf.shape(example[k])}')
             example[k] = tf.gather(example[k], idx)
         return example
 
@@ -533,15 +544,17 @@ class InjectNoiseBboxVideo(Transform):
 
     def process_example(self, example: dict[str, tf.Tensor]):
         example = copy.copy(example)
-        bbox_key = self.config.get('bbox_key', DEFAULT_BBOX_KEY)
-        bbox_label_key = self.config.get('bbox_label_key', 'label')
+        bbox_key = 'bbox'
+        class_id_key = 'class_id'
+        class_name_key = 'class_name'
 
         num_instances = tf.shape(example[bbox_key])[0]
         if num_instances < self.config.max_instances_per_image:
             n_noise_bbox = self.config.max_instances_per_image - num_instances
-            example[bbox_key], example[bbox_label_key] = data_utils.augment_bbox_video(
-                example[bbox_key],
-                example[bbox_label_key],
+            example[bbox_key], example[class_id_key], example[class_name_key] = data_utils.augment_bbox_video(
+                bbox=example[bbox_key],
+                class_id=example[class_id_key],
+                class_name=example[class_name_key],
                 length=self.config.length,
                 max_disp=self.config.max_disp,
                 max_jitter=0.,
@@ -653,7 +666,8 @@ class TruncateOrPadToMaxInstances(Transform):
         max_instances = self.config.max_instances
         for k in self.config.inputs:
             truncated = example[k][:max_instances]
-            example[k] = utils.pad_to_max_len(truncated, max_instances, 0)
+            padding_token = "padding" if truncated.dtype == tf.string else 0
+            example[k] = utils.pad_to_max_len(truncated, max_instances, 0, padding_token=padding_token)
         return example
 
 

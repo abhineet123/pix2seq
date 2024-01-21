@@ -456,55 +456,52 @@ def jitter_bbox_video(bbox, length, min_range=0., max_range=0.05, truncation=Tru
 def shift_bbox_video(bbox, length, truncation=True):
     """Shifting bbox without changing the bbox height and width."""
     n_bboxes = tf.shape(bbox)[0]
+    # bbox = tf.rehape(bbox, [n_bboxes, 4, length])
+
+    bbox_mask = tf.math.is_nan(bbox)
     # randomly sample new bbox centers.
-    cy = tf.random.uniform([n_bboxes, 1], 0, 1)
-    cx = tf.random.uniform([n_bboxes, 1], 0, 1)
+    shifted_bbox = []
 
-    ymin = tf.reshape(bbox[:, 0], [n_bboxes, 1])
-    xmin = tf.reshape(bbox[:, 1], [n_bboxes, 1])
-    ymax = tf.reshape(bbox[:, 2], [n_bboxes, 1])
-    xmax = tf.reshape(bbox[:, 3], [n_bboxes, 1])
+    for i in range(length):
+        ymin = tf.reshape(bbox[:, i * 4], [n_bboxes, 1])
+        xmin = tf.reshape(bbox[:, i * 4 + 1], [n_bboxes, 1])
+        ymax = tf.reshape(bbox[:, i * 4 + 2], [n_bboxes, 1])
+        xmax = tf.reshape(bbox[:, i * 4 + 3], [n_bboxes, 1])
 
-    h = ymax - ymin
-    w = xmax - xmin
+        cy = tf.random.uniform([n_bboxes, 1], 0, 1)
+        cx = tf.random.uniform([n_bboxes, 1], 0, 1)
 
-    print(f'shift_bbox_video: bbox: {tf.shape(bbox)}')
-    print(f'shift_bbox_video: ymin: {tf.shape(ymin)}')
-    print(f'shift_bbox_video: cy: {tf.shape(cy)}')
-    print(f'shift_bbox_video: h: {tf.shape(h)}')
+        h = ymax - ymin
+        w = xmax - xmin
 
-    ymin_s, xmin_s, ymax_s, xmax_s = (
-        cy - tf.abs(h) / 2,
-        cx - tf.abs(w) / 2,
-        cy + tf.abs(h) / 2,
-        cx + tf.abs(w) / 2
-    )
-    ymin_d, xmin_d, ymax_d, xmax_d = (
-        ymin_s - ymin,
-        xmin_s - xmin,
-        ymax_s - ymax,
-        xmax_s - xmin
-    )
-
-    print(f'shift_bbox_video: ymin_s: {tf.shape(ymin_s)}')
-    print(f'shift_bbox_video: ymin_d: {tf.shape(ymin_d)}')
-
-    shifted_bbox = [ymin_s, xmin_s, ymax_s, xmax_s]
-    for i in range(1, length):
-        ymin_ = tf.reshape(bbox[:, i * 4], [n_bboxes, 1])
-        xmin_ = tf.reshape(bbox[:, i * 4 + 1], [n_bboxes, 1])
-        ymax_ = tf.reshape(bbox[:, i * 4 + 2], [n_bboxes, 1])
-        xmax_ = tf.reshape(bbox[:, i * 4 + 3], [n_bboxes, 1])
-
-        ymin_s_, xmin_s_, ymax_s_, xmax_s_ = (
-            ymin_ + ymin_d,
-            xmin_ + xmin_d,
-            ymax_ + ymax_d,
-            xmax_ + xmax_d
+        ymin_s, xmin_s, ymax_s, xmax_s = (
+            cy - tf.abs(h) / 2,
+            cx - tf.abs(w) / 2,
+            cy + tf.abs(h) / 2,
+            cx + tf.abs(w) / 2
         )
-        print(f'shift_bbox_video: ymin_s_: {tf.shape(ymin_s_)}')
 
-        shifted_bbox += [ymin_s_, xmin_s_, ymax_s_, xmax_s_]
+        shifted_bbox += [ymin_s, xmin_s, ymax_s, xmax_s]
+
+
+    # print(f'shift_bbox_video: bbox: {tf.shape(bbox)}')
+    # print(f'shift_bbox_video: ymin: {tf.shape(ymin)}')
+    # print(f'shift_bbox_video: cy: {tf.shape(cy)}')
+    # print(f'shift_bbox_video: h: {tf.shape(h)}')
+
+
+    # ymin_d, xmin_d, ymax_d, xmax_d = (
+    #     ymin_s - ymin,
+    #     xmin_s - xmin,
+    #     ymax_s - ymax,
+    #     xmax_s - xmin
+    # )
+
+    # print(f'shift_bbox_video: ymin_s: {tf.shape(ymin_s)}')
+    # print(f'shift_bbox_video: ymin_d: {tf.shape(ymin_d)}')
+
+    # shifted_bbox = [ymin_s, xmin_s, ymax_s, xmax_s]
+
 
     shifted_bbox = tf.concat(shifted_bbox, -1)
     return truncation_bbox(shifted_bbox) if truncation else shifted_bbox
@@ -544,12 +541,15 @@ def random_bbox_video(n_bboxes, length, max_disp, max_size=1.0, truncation=True)
 
     return truncation_bbox(rand_bbox) if truncation else rand_bbox
 
-def augment_bbox_video(bbox, bbox_label, length, max_disp, max_jitter, n_noise_bboxes, mix_rate=0.):
+def augment_bbox_video(bbox, class_id, class_name, length, max_disp, max_jitter, n_noise_bboxes, mix_rate=0.):
     n_bboxes = tf.shape(bbox)[0]
 
     print(f'augment_bbox_video: bbox: {bbox}')
     print(f'augment_bbox_video: box shape: {tf.shape(bbox)}')
     print(f'augment_bbox_video: n_bboxes: {n_bboxes}')
+
+    fake_class_id = vocab.FAKE_CLASS_TOKEN - vocab.BASE_VOCAB_SHIFT
+    fake_class_name = "fake"
 
     n_dup_bboxes = tf.random.uniform(
         [], 0, n_noise_bboxes + 1, dtype=tf.int32)
@@ -571,7 +571,6 @@ def augment_bbox_video(bbox, bbox_label, length, max_disp, max_jitter, n_noise_b
 
     tf.debugging.Assert(n_bboxes > 0, [n_bboxes, bbox])
 
-
     bad_bbox_shift = shift_bbox_video(
         bbox_tiled_shift,
         length=length,
@@ -591,8 +590,10 @@ def augment_bbox_video(bbox, bbox_label, length, max_disp, max_jitter, n_noise_b
     bad_bboxes = tf.concat([bad_bbox_shift, bad_bbox_random], 0)
     bad_bboxes = tf.random.shuffle(bad_bboxes)[:n_bad_bboxes]
 
-    bad_bbox_label = tf.zeros([n_bad_bboxes], dtype=bbox_label.dtype) + (
-            vocab.FAKE_CLASS_TOKEN - vocab.BASE_VOCAB_SHIFT)
+    bad_class_id = tf.zeros([n_bad_bboxes], dtype=class_id.dtype) + (
+            fake_class_id)
+
+    bad_class_name = tf.fill([n_bad_bboxes], fake_class_name)
 
     # Create dup bbox.
     bbox_tiled = tf.random.shuffle(bbox_tiled)
@@ -602,37 +603,62 @@ def augment_bbox_video(bbox, bbox_label, length, max_disp, max_jitter, n_noise_b
         min_range=0,
         max_range=0.1,
         truncation=True)
-    dup_bbox_label = tf.zeros([n_dup_bboxes], dtype=bbox_label.dtype) + (
-            vocab.FAKE_CLASS_TOKEN - vocab.BASE_VOCAB_SHIFT)
+    dup_class_id = tf.zeros([n_dup_bboxes], dtype=class_id.dtype) + (
+            fake_class_id)
+    dup_class_name = tf.fill([n_dup_bboxes], fake_class_name)
 
     # Jitter positive bbox.
     if max_jitter > 0:
-        bbox = jitter_bbox_video(bbox, min_range=0, max_range=max_jitter, truncation=True)
+        bbox = jitter_bbox_video(
+            bbox,
+            length=length,
+            min_range=0,
+            max_range=max_jitter,
+            truncation=True)
 
     if tf.random.uniform([]) < mix_rate:
         # Mix the bbox with bad bbox, appneded by dup bbox.
         bbox_new = tf.concat([bbox, bad_bboxes], 0)
-        bbox_new_label = tf.concat([bbox_label, bad_bbox_label], 0)
+        class_id_new = tf.concat([class_id, bad_class_id], 0)
+        class_name_new = tf.concat([class_name, bad_class_name], 0)
+
         idx = tf.random.shuffle(tf.range(tf.shape(bbox_new)[0]))
+
         bbox_new = tf.gather(bbox_new, idx)
-        bbox_new_label = tf.gather(bbox_new_label, idx)
+        class_id_new = tf.gather(class_id_new, idx)
+        class_name_new = tf.gather(class_name_new, idx)
+
         bbox_new = tf.concat([bbox_new, dup_bbox], 0)
-        bbox_new_label = tf.concat([bbox_new_label, dup_bbox_label], 0)
+        class_id_new = tf.concat([class_id_new, dup_class_id], 0)
+        class_name_new = tf.concat([class_name_new, dup_class_name], 0)
     else:
         # Merge bad bbox and dup bbox into noise bbox.
         noise_bbox = tf.concat([bad_bboxes, dup_bbox], 0)
-        noise_bbox_label = tf.concat([bad_bbox_label, dup_bbox_label], 0)
+        noise_class_id = tf.concat([bad_class_id, dup_class_id], 0)
+        noise_class_name = tf.concat([bad_class_name, dup_class_name], 0)
 
         if n_noise_bboxes > 0:
+            print(f'augment_bbox_video: n_noise_bboxes: {n_noise_bboxes}')
+
+            print(f'augment_bbox_video: noise_bbox shape: {tf.shape(noise_bbox)}')
+
+            print(f'augment_bbox_video: noise_class_id: {noise_class_id}')
+            print(f'augment_bbox_video: noise_class_id shape: {tf.shape(noise_class_id)}')
+
+            print(f'augment_bbox_video: noise_class_name: {noise_class_name}')
+            print(f'augment_bbox_video: noise_class_name shape: {tf.shape(noise_class_name)}')
+
             idx = tf.random.shuffle(tf.range(n_noise_bboxes))
             noise_bbox = tf.gather(noise_bbox, idx)
-            noise_bbox_label = tf.gather(noise_bbox_label, idx)
+            noise_class_id = tf.gather(noise_class_id, idx)
+            noise_class_name = tf.gather(noise_class_name, idx)
 
         # Append noise bbox to bbox and create mask.
         bbox_new = tf.concat([bbox, noise_bbox], 0)
-        bbox_new_label = tf.concat([bbox_label, noise_bbox_label], 0)
+        class_id_new = tf.concat([class_id, noise_class_id], 0)
+        class_name_new = tf.concat([class_name, noise_class_name], 0)
 
-    return bbox_new, bbox_new_label
+    return bbox_new, class_id_new, class_name_new
 
 
 def inject_noise_bbox(labels, max_instances_per_image):

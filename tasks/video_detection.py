@@ -115,12 +115,13 @@ class TaskVideoDetection(task_lib.Task):
         mconfig = self.config.model
 
         bbox_np = batched_examples['bbox'].numpy()
-        label_np = batched_examples['label'].numpy()
+        class_id_np = batched_examples['class_id'].numpy()
+        class_name_np = batched_examples['class_name'].numpy()
 
         # Create input/target seq.
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
         ret = build_response_seq_from_bboxes(
-            batched_examples['bbox'], batched_examples['label'],
+            batched_examples['bbox'], batched_examples['class_id'],
             config.quantization_bins, config.noise_bbox_weight,
             mconfig.coord_vocab_shift,
             class_label_corruption=config.class_label_corruption)

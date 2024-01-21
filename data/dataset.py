@@ -240,16 +240,16 @@ class TFRecordDataset(Dataset):
             file_pattern = self.config.eval_file_pattern
         dataset = tf.data.Dataset.list_files(
             file_pattern,
-            # shuffle=training,
-            shuffle=False,
+            shuffle=training,
+            # shuffle=False,
         )
         dataset = dataset.interleave(
             self.dataset_cls,
             cycle_length=32,
-            # deterministic=not training,
-            # num_parallel_calls=tf.data.experimental.AUTOTUNE,
-            deterministic=True,
-            num_parallel_calls=0,
+            deterministic=not training,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            # deterministic=True,
+            # num_parallel_calls=0,
         )
         return dataset
 
