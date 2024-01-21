@@ -24,6 +24,8 @@ import os.path
 from absl import logging
 import numpy as np
 from PIL import Image
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 LOG_EVERY = 100
@@ -52,9 +54,8 @@ def convert_to_feature(value, value_type=None):
         elif isinstance(element, (int, np.integer)):
             value_type = 'int64'
 
-        elif isinstance(element, (float, np.floating)):
+        elif element is None or isinstance(element, (float, np.floating)):
             value_type = 'float'
-
         else:
             raise ValueError('Cannot convert type {} to feature'.
                              format(type(element)))

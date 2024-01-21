@@ -42,8 +42,18 @@ class TaskVideoDetection(task_lib.Task):
                  config: ml_collections.ConfigDict):
         super().__init__(config)
 
-        if config.task.get('max_seq_len', 'auto') == 'auto':
-            self.config.task.max_seq_len = config.task.max_instances_per_image * 5
+        self.max_seq_len = config.task.get('max_seq_len', 'auto')
+        self.max_seq_len_test = config.task.get('max_seq_len_test', 'auto')
+
+        if self.max_seq_len == 'auto':
+            self.max_seq_len = config.task.max_instances_per_image * (config.dataset.length * 4 + 1)
+
+        if self.max_seq_len_test == 'auto':
+            self.max_seq_len_test = config.task.max_instances_per_image_test * (config.dataset.length * 4 + 1) + 1
+
+        self.config.task.max_seq_len = self.max_seq_len
+        self.config.task.max_seq_len_test = self.max_seq_len_test
+
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
         metric_config = config.task.get('metric')
@@ -113,17 +123,21 @@ class TaskVideoDetection(task_lib.Task):
         """
         config = self.config.task
         mconfig = self.config.model
+        dconfig = self.config.dataset
 
-        bbox_np = batched_examples['bbox'].numpy()
-        class_id_np = batched_examples['class_id'].numpy()
-        class_name_np = batched_examples['class_name'].numpy()
+        # bbox_np = batched_examples['bbox'].numpy()
+        # class_id_np = batched_examples['class_id'].numpy()
+        # class_name_np = batched_examples['class_name'].numpy()
 
         # Create input/target seq.
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
-        ret = build_response_seq_from_bboxes(
-            batched_examples['bbox'], batched_examples['class_id'],
-            config.quantization_bins, config.noise_bbox_weight,
-            mconfig.coord_vocab_shift,
+        ret = build_response_seq_from_video_bboxes(
+            bboxes=batched_examples['bbox'],
+            label=batched_examples['class_id'],
+            quantization_bins=config.quantization_bins,
+            noise_bbox_weight=config.noise_bbox_weight,
+            coord_vocab_shift=mconfig.coord_vocab_shift,
+            vid_len=dconfig.length,
             class_label_corruption=config.class_label_corruption)
 
         """response_seq_cm has random and noise labels by default"""
@@ -168,9 +182,9 @@ class TaskVideoDetection(task_lib.Task):
             token_weights)
 
         if training:
-            return batched_examples['image'], input_seq, target_seq, token_weights
+            return batched_examples['video'], input_seq, target_seq, token_weights
         else:
-            return batched_examples['image'], response_seq, batched_examples
+            return batched_examples['video'], response_seq, batched_examples
 
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""
@@ -181,7 +195,7 @@ class TaskVideoDetection(task_lib.Task):
             self.task_vocab_id, prompt_shape=(bsz, 1))
         pred_seq, logits, _ = model.infer(
             image, prompt_seq, encoded=None,
-            max_seq_len=(config.max_instances_per_image_test * 5 + 1),
+            max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
         # if True:  # Sanity check by using gt response_seq as pred_seq.
         #   pred_seq = preprocessed_outputs[1]
@@ -340,12 +354,13 @@ class TaskVideoDetection(task_lib.Task):
             self._coco_metrics.reset_states()
 
 
-def build_response_seq_from_bboxes(
+def build_response_seq_from_video_bboxes(
         bboxes,
         label,
         quantization_bins,
         noise_bbox_weight,
         coord_vocab_shift,
+        vid_len,
         class_label_corruption='rand_cls'):
     """"Build target seq from bounding bboxes for video detection.
 
@@ -363,25 +378,44 @@ def build_response_seq_from_bboxes(
     Returns:
       discrete sequences with shape (bsz, seqlen).
     """
-    # Bbox and label quantization.
-    is_padding = tf.expand_dims(tf.equal(label, 0), -1)
-    bboxes = tf.where(
-        bboxes == -1,
+    # bboxes = tf.where(
+    #     bboxes == -1,
+    #     vocab.NO_BOX_TOKEN,
+    #     bboxes)
+    # from utils import add_name, np_dict
+
+    assert bboxes.shape[-1] % 4 == 0, f"invalid bboxes shape: {bboxes.shape}"
+
+    n_bboxes_per_vid = int(bboxes.shape[-1] / 4)
+    assert vid_len == n_bboxes_per_vid, f"Mismatch between vid_len: {vid_len} and n_bboxes_per_vid: {n_bboxes_per_vid}"
+
+    is_no_box = tf.math.is_nan(bboxes)
+
+    quantized_bboxes = utils.quantize(bboxes, quantization_bins)
+    quantized_bboxes = quantized_bboxes + coord_vocab_shift
+
+    # np_dict = utils.to_numpy(locals())
+
+    # quantized_bboxes_np = quantized_bboxes.numpy()
+    # add_name(vars())
+
+    quantized_bboxes = tf.where(
+        is_no_box,
         vocab.NO_BOX_TOKEN,
-        bboxes)
+        quantized_bboxes)
 
-    quantized_bbox = utils.quantize(bboxes, quantization_bins)
-    quantized_bbox = quantized_bbox + coord_vocab_shift
-
-    """set 0-labeled bboxes to zero"""
-    quantized_bbox = tf.where(is_padding,
-                              tf.zeros_like(quantized_bbox), quantized_bbox)
+    """set 0-labeled (padding) bboxes to zero"""
+    is_padding = tf.expand_dims(tf.equal(label, 0), -1)
+    quantized_bboxes = tf.where(
+        is_padding,
+        tf.zeros_like(quantized_bboxes),
+        quantized_bboxes)
     new_label = tf.expand_dims(label + vocab.BASE_VOCAB_SHIFT, -1)
     new_label = tf.where(is_padding, tf.zeros_like(new_label), new_label)
     lb_shape = tf.shape(new_label)
 
     # Bbox and label serialization.
-    response_seq = tf.concat([quantized_bbox, new_label], axis=-1)
+    response_seq = tf.concat([quantized_bboxes, new_label], axis=-1)
 
     """Merge last few dims to have rank-2 shape [bsz, n_tokens] where
     n_tokens = n_bboxes*5    
@@ -389,10 +423,13 @@ def build_response_seq_from_bboxes(
     response_seq = utils.flatten_non_batch_dims(response_seq, 2)
 
     """
-    different Combinations of random, fake and real class labels apparently 
-    created just in case something other than the real labels is required 
+    different combinations of random, fake and real class labels apparently 
+    created in case something other than the real labels is required 
     according to the class_label_corruption Parameter
+    
     class_label_corruption=rand_n_fake_cls by default
+    
+    
     """
     rand_cls = vocab.BASE_VOCAB_SHIFT + tf.random.uniform(
         lb_shape,
@@ -414,20 +451,33 @@ def build_response_seq_from_bboxes(
     new_label_m = label_mapping[class_label_corruption]
     new_label_m = tf.where(is_padding, tf.zeros_like(new_label_m), new_label_m)
 
-    """response_seq_class_m is apparently same as response_seq if no corruptions are needed,
-    i.e. if class_label_corruption=none"""
-    response_seq_class_m = tf.concat([quantized_bbox, new_label_m], axis=-1)
+    """response_seq_class_m is same as response_seq if no corruptions are needed,
+    i.e. if class_label_corruption=none
+    otherwise, some or all the real labels are randomly replaced by noise label to 
+    generate corrupted labels that are used as input sequence
+    
+    The rationale for corrupting the input sequences might be that we want the network to produce 
+    the right class labels in the subsequent outputs even if the previous one was incorrect 
+    So we do not want to condition the Generation of class output In the next tokens Lee to is strongly on 
+    the class label being correct in the previously generated tokens
+    """
+    response_seq_class_m = tf.concat([quantized_bboxes, new_label_m], axis=-1)
     response_seq_class_m = utils.flatten_non_batch_dims(response_seq_class_m, 2)
 
     # Get token weights.
     is_real = tf.cast(tf.not_equal(new_label, vocab.FAKE_CLASS_TOKEN), tf.float32)
 
-    """noise and real bbox coord tokens have weights 1 and 0 respectively"""
-    bbox_weight = tf.tile(is_real, [1, 1, 4])
-    """
+    """    
+    noise and real bbox coord tokens have weights 1 and 0 respectively
+    
     real bbox class tokens have weight 1
-    noise bbox class tokens have weight noise_bbox_weight    
+    noise bbox class tokens have weight noise_bbox_weight 
+    
+    noise_bbox_weight = 1.0 when training with fake objects
+    
+    We don't care about the coordinates of fake boxes but we do care about their class   
     """
+    bbox_weight = tf.tile(is_real, [1, 1, int(bboxes.shape[-1])])
     label_weight = is_real + (1. - is_real) * noise_bbox_weight
 
     token_weights = tf.concat([bbox_weight, label_weight], -1)

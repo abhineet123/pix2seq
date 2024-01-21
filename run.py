@@ -37,14 +37,28 @@ flags.DEFINE_string('j5_root', 'configs/j5', 'relative path of the folder contai
 flags.DEFINE_integer('worker_id', 0, 'worker id for multi-machine training')
 FLAGS = flags.FLAGS
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
+
+from utils import to_numpy
+
+from tensorflow.python.framework.ops import EagerTensor
+
+EagerTensor.to_numpy = to_numpy
+
+
+# temp1 = tf.random.uniform((5, 5))
+# temp2 = tf.random.uniform((5, 5))
+# temp3 = tf.random.uniform((5, 5), name='temp3')
+
 
 def get_worker_id(tf_config):
     worker_ip_addresses = [node.split(':')[0] for node in tf_config['cluster']['worker']]
 
     assert len(worker_ip_addresses) == len(set(worker_ip_addresses)), \
         "worker ID resolution cannot work with duplicate IP addresses"
-
     import netifaces as ni
+
     interfaces = ni.interfaces()
     self_ip_addresses = ''
     for interface in interfaces:
@@ -89,9 +103,6 @@ def main(unused_argv):
 
         os.environ.pop('TF_CONFIG', None)
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
-
-    import tensorflow as tf
-    tf.get_logger().setLevel('ERROR')
 
     gpus = tf.config.list_physical_devices('GPU')
 

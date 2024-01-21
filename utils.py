@@ -280,6 +280,56 @@ def pad_to_max_len(data, max_len, dim, padding_token=0):
     return tf.reshape(tf.concat([data, paddings], axis=dim), new_shape)
 
 
+import pandas as pd
+import inspect
+
+np_dict = dict()
+
+
+def add_name(var_dict):
+    var_dict['np_dict'] = np_dict
+    for name, val in var_dict.items():
+        if callable(getattr(val, "numpy", None)):
+            setattr(val, "_pycharm_name_", name)
+
+#
+# def to_numpy(self):
+#     try:
+#         name = self._pycharm_name_
+#     except AttributeError:
+#         # name = 'self'
+#         dtype = str(self.dtype)
+#         shape = 'x'.join(str(x) for x in self.shape)
+#         name = f'{dtype}_{shape}'
+#
+#         name_id = 0
+#         while name in np_dict.keys():
+#             name = f'{name}_{name_id}'
+#             name_id += 1
+#
+#     np_dict[name] = self.numpy()
+#     setattr(self, "numpy_arr", np_dict[name])
+#     return np_dict[name]
+
+
+def to_numpy(self):
+    arr = self.numpy()
+    setattr(self, "numpy_arr", arr)
+    return arr
+
+
+# def to_numpy(self, var_dict):
+#     np_dict.clear()
+#     for name, val in var_dict.items():
+#         try:
+#             np_dict[name.name] = val.numpy()
+#             return np_dict[name]
+#         except AttributeError:
+#             try:
+#                 np_dict[name] = val.cpu().numpy()
+#             except AttributeError:
+#                 continue
+#     return np_dict
 def quantize(coordinates, bins):
     """Quantization of (normalized) coordinates in [0, 1]."""
     coordinates = tf.cast(tf.round(coordinates * (bins - 1)), tf.int64)
@@ -431,7 +481,6 @@ def get_train_steps(dataset, train_steps, train_epochs, train_batch_size):
     num_train_examples = dataset.num_train_examples
     train_steps = num_train_examples * train_epochs // train_batch_size + 1
     return train_steps
-
 
 
 def get_eval_steps(dataset, eval_steps, eval_batch_size):

@@ -458,7 +458,7 @@ def shift_bbox_video(bbox, length, truncation=True):
     n_bboxes = tf.shape(bbox)[0]
     # bbox = tf.rehape(bbox, [n_bboxes, 4, length])
 
-    bbox_mask = tf.math.is_nan(bbox)
+    # bbox_mask = tf.math.is_nan(bbox)
     # randomly sample new bbox centers.
     shifted_bbox = []
 

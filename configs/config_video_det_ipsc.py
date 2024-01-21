@@ -41,8 +41,7 @@ def get_config(config_str=None):
     for task_and_ds in task_variant.split('+'):
         tasks_and_datasets.append(task_and_ds.split('@'))
 
-    max_instances_per_image = 100
-    max_instances_per_image_test = 100
+    max_seq_len = 512
 
     task_config_map = {
         'video_detection': D(
@@ -50,8 +49,8 @@ def get_config(config_str=None):
             vocab_id=10,
             image_size=image_size,
             quantization_bins=1000,
-            max_instances_per_image=max_instances_per_image,
-            max_instances_per_image_test=max_instances_per_image_test,
+            # max_instances_per_image=max_instances_per_image,
+            # max_instances_per_image_test=max_instances_per_image_test,
             # Train on both ground-truth and (augmented) noisy objects.
             noise_bbox_weight=1.0,
             eos_token_weight=0.1,
@@ -72,11 +71,38 @@ def get_config(config_str=None):
         dataset_config = copy.deepcopy(dataset_configs.dataset_configs[ds_name])
         dataset_list.append(dataset_config)
         task_config = task_config_map[tv]
+        max_instances_per_image = int(max_seq_len // (dataset_config.length * 4 + 1))
+        max_instances_per_image_test = max_instances_per_image
+
+        task_config.max_instances_per_image = max_instances_per_image
+        task_config.max_instances_per_image_test = max_instances_per_image_test
+
         task_config.train_transforms = transform_configs.get_video_detection_train_transforms(
             image_size, dataset_config.length, dataset_config.max_disp, max_instances_per_image)
         task_config.eval_transforms = transform_configs.get_video_detection_eval_transforms(
             image_size, dataset_config.length, max_instances_per_image_test)
         task_d_list.append(task_config)
+
+    model_config = D(
+        name='video_encoder_ar_decoder',
+        image_size=image_size,
+        vid_len=dataset_list[0].length,
+        max_seq_len=max_seq_len,
+        vocab_size=3000,  # Note: should be large enough for 100 + num_classes + quantization_bins + (optional) text
+        coord_vocab_shift=1000,  # Note: make sure num_class <= coord_vocab_shift - 100
+        text_vocab_shift=3000,  # Note: make sure coord_vocab_shift + quantization_bins <= text_vocab_shift
+        use_cls_token=False,
+        shared_decoder_embedding=True,
+        decoder_output_bias=True,
+        patch_size=16,
+        drop_path=0.1,
+        drop_units=0.1,
+        drop_att=0.0,
+        dec_proj_mode='mlp',
+        pos_encoding='sin_cos',
+        pos_encoding_dec='learned',
+        pretrained_ckpt=None,
+    )
 
     config = D(
         dataset=dataset_list[0],
@@ -85,26 +111,7 @@ def get_config(config_str=None):
         task=task_d_list[0],
         tasks=task_d_list,
 
-        model=D(
-            name='video_encoder_ar_decoder',
-            image_size=image_size,
-            vid_len=dataset_list[0].length,
-            max_seq_len=512,
-            vocab_size=3000,  # Note: should be large enough for 100 + num_classes + quantization_bins + (optional) text
-            coord_vocab_shift=1000,  # Note: make sure num_class <= coord_vocab_shift - 100
-            text_vocab_shift=3000,  # Note: make sure coord_vocab_shift + quantization_bins <= text_vocab_shift
-            use_cls_token=False,
-            shared_decoder_embedding=True,
-            decoder_output_bias=True,
-            patch_size=16,
-            drop_path=0.1,
-            drop_units=0.1,
-            drop_att=0.0,
-            dec_proj_mode='mlp',
-            pos_encoding='sin_cos',
-            pos_encoding_dec='learned',
-            pretrained_ckpt=None,
-        ),
+        model=model_config,
 
         optimization=D(
             optimizer='adamw',
@@ -129,4 +136,3 @@ def get_config(config_str=None):
     config.update(base_config)
 
     return config
-

@@ -22,9 +22,9 @@ import sys
 sys.path.append(os.getcwd())
 
 from absl import app
-from absl import flags
+# from absl import flags
 from absl import logging
-import numpy as np
+# import numpy as np
 
 import paramparse
 from data.scripts import tfrecord_lib
@@ -72,7 +72,7 @@ def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_
 
     data = dict((k, list()) for k in [
         'is_crowd', 'category_id',
-        'category_names', 'area', 'target_id'])
+        'category_names', 'target_id'])
 
     for _id in range(vid_len):
         frame_data = dict((k, list()) for k in [
@@ -103,13 +103,15 @@ def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_
                 # area = -1
                 # xmin = ymin = xmax = ymax = area = -1
                 xmin = ymin = xmax = ymax = area = None
-
             else:
                 assert area is not None, "null area for non-null bbox"
                 (x, y, width, height) = tuple(bbox)
                 xmin, ymin, xmax, ymax = float(x), float(y), float(x + width), float(y + height)
 
                 assert ymax > ymin and xmax > xmin, f"invalid bbox: {bbox}"
+
+            if bbox_id == 0:
+                xmin = ymin = xmax = ymax = area = None
 
             data[f'xmin-{bbox_id}'].append(xmin)
             data[f'xmax-{bbox_id}'].append(xmax)
