@@ -20,6 +20,7 @@
     - [vit_l       @ pretrained](#vit_l___pretrained_)
 - [secondary ethernet](#secondary_ethernet_)
 - [bugs](#bug_s_)
+    - [annoying_warnings       @ bugs](#annoying_warnings___bugs_)
 - [tfrecord](#tfrecor_d_)
     - [ipsc       @ tfrecord](#ipsc___tfrecord_)
         - [ext_reorg_roi_g2_16_53       @ ipsc/tfrecord](#ext_reorg_roi_g2_16_53___ipsc_tfrecor_d_)
@@ -214,6 +215,15 @@ bmon -p enp0s25
 probably something to do with the dataset loader
 https://github.com/tensorflow/tensorflow/issues/39122
 https://github.com/tensorflow/tensorflow/issues/39099
+
+<a id="annoying_warnings___bugs_"></a>
+## annoying_warnings       @ bugs-->p2s_setup
+
+~/.virtualenvs/pix2seq/lib/python3.10/site-packages/tensorflow_addons/utils/ensure_tf_install.py:53
+
+~/.virtualenvs/pix2seq/lib/python3.10/site-packages/tensorflow_addons/utils/tfa_eol_msg.py:53
+
+
 
 <a id="tfrecor_d_"></a>
 # tfrecord

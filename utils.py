@@ -45,6 +45,24 @@ def tf_float32(t):
     return tf.cast(t, tf.float32)
 
 
+def flatten_vid(t):
+    """merge vid dim with batch dim"""
+    shape_list = t.shape.as_list()
+    inner_dims = shape_list[2:]
+    new_bsz = shape_list[0]*shape_list[1]
+    out_shape = [new_bsz, ] + inner_dims
+    return tf.reshape(t, out_shape)
+
+
+def unflatten_vid(t, vid_len):
+    """split vid dim from combined vid+batch dim"""
+    shape_list = t.shape.as_list()
+    inner_dims = shape_list[1:]
+    new_bsz = shape_list[0] // vid_len
+    out_shape = [new_bsz, vid_len] + inner_dims
+    return tf.reshape(t, out_shape)
+
+
 def flatten_batch_dims(t, out_rank):
     """Merge first few dims to have out_rank."""
     if t.shape.rank == out_rank:
@@ -273,6 +291,10 @@ def shape_as_list(t):
 def pad_to_max_len(data, max_len, dim, padding_token=0):
     """Pad the data tensor to max length on dim."""
     shape = shape_as_list(data)
+
+    if shape[dim] >= max_len:
+        return data
+
     padding_shape, new_shape = copy.copy(shape), copy.copy(shape)
     padding_shape[dim] = max_len - padding_shape[dim]
     new_shape[dim] = max_len
@@ -280,17 +302,16 @@ def pad_to_max_len(data, max_len, dim, padding_token=0):
     return tf.reshape(tf.concat([data, paddings], axis=dim), new_shape)
 
 
-import pandas as pd
-import inspect
+# import pandas as pd
+# import inspect
+# np_dict = dict()
 
-np_dict = dict()
 
-
-def add_name(var_dict):
-    var_dict['np_dict'] = np_dict
-    for name, val in var_dict.items():
-        if callable(getattr(val, "numpy", None)):
-            setattr(val, "_pycharm_name_", name)
+# def add_name(var_dict):
+#     var_dict['np_dict'] = np_dict
+#     for name, val in var_dict.items():
+#         if callable(getattr(val, "numpy", None)):
+#             setattr(val, "_pycharm_name_", name)
 
 #
 # def to_numpy(self):
@@ -330,6 +351,7 @@ def to_numpy(self):
 #             except AttributeError:
 #                 continue
 #     return np_dict
+
 def quantize(coordinates, bins):
     """Quantization of (normalized) coordinates in [0, 1]."""
     coordinates = tf.cast(tf.round(coordinates * (bins - 1)), tf.int64)

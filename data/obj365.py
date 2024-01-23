@@ -66,7 +66,7 @@ class Obj365Dataset(dataset_lib.TFRecordDataset):
     masks = example['image/object/mask']
     return tf.cond(
         tf.greater(tf.size(masks), 0),
-        lambda: tf.map_fn(_decode_png_mask, masks, dtype=tf.float32),
+        lambda: tf.map_fn(_decode_png_mask, masks, fn_output_signature=tf.float32),
         lambda: tf.zeros([0, height, width], dtype=tf.float32))
 
   def extract(self, example, training):

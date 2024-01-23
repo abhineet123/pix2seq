@@ -520,7 +520,7 @@ def random_bbox_video(n_bboxes, length, max_disp, max_size=1.0, truncation=True)
         cy + tf.abs(h) / 2,
         cx + tf.abs(w) / 2
     )
-    print(f'ymin_r: {tf.shape(ymin_r)}')
+    # print(f'ymin_r: {tf.shape(ymin_r)}')
 
     rand_bbox = [ymin_r, xmin_r, ymax_r, xmax_r]
     for i in range(1, length):
@@ -544,9 +544,9 @@ def random_bbox_video(n_bboxes, length, max_disp, max_size=1.0, truncation=True)
 def augment_bbox_video(bbox, class_id, class_name, length, max_disp, max_jitter, n_noise_bboxes, mix_rate=0.):
     n_bboxes = tf.shape(bbox)[0]
 
-    print(f'augment_bbox_video: bbox: {bbox}')
-    print(f'augment_bbox_video: box shape: {tf.shape(bbox)}')
-    print(f'augment_bbox_video: n_bboxes: {n_bboxes}')
+    # print(f'augment_bbox_video: bbox: {bbox}')
+    # print(f'augment_bbox_video: box shape: {tf.shape(bbox)}')
+    # print(f'augment_bbox_video: n_bboxes: {n_bboxes}')
 
     fake_class_id = vocab.FAKE_CLASS_TOKEN - vocab.BASE_VOCAB_SHIFT
     fake_class_name = "fake"
@@ -558,16 +558,16 @@ def augment_bbox_video(bbox, class_id, class_name, length, max_disp, max_jitter,
     multiplier = 1 if n_bboxes == 0 else tf.math.floordiv(n_noise_bboxes, n_bboxes) + 1
     bbox_tiled = tf.tile(bbox, [multiplier, 1])
 
-    print(f'n_noise_bboxes: {n_noise_bboxes}')
-    print(f'n_dup_bboxes: {n_dup_bboxes}')
-    print(f'n_bad_bboxes: {n_bad_bboxes}')
+    # print(f'n_noise_bboxes: {n_noise_bboxes}')
+    # print(f'n_dup_bboxes: {n_dup_bboxes}')
+    # print(f'n_bad_bboxes: {n_bad_bboxes}')
 
     # Create bad bbox.
     """Randomly shuffle along the first dimension"""
     bbox_tiled = tf.random.shuffle(bbox_tiled)
-    print(f'bbox_tiled shape: {tf.shape(bbox_tiled)}')
+    # print(f'augment_bbox_video: bbox_tiled shape: {tf.shape(bbox_tiled)}')
     bbox_tiled_shift = bbox_tiled[:n_bad_bboxes]
-    print(f'bbox_tiled_shift shape: {tf.shape(bbox_tiled_shift)}')
+    # print(f'augment_bbox_video: bbox_tiled_shift shape: {tf.shape(bbox_tiled_shift)}')
 
     tf.debugging.Assert(n_bboxes > 0, [n_bboxes, bbox])
 
@@ -583,8 +583,8 @@ def augment_bbox_video(bbox, class_id, class_name, length, max_disp, max_jitter,
         max_size=1.0,
         truncation=True)
 
-    print(f'bad_bbox_shift shape: {tf.shape(bad_bbox_shift)}')
-    print(f'bad_bbox_random shape: {tf.shape(bad_bbox_random)}')
+    # print(f'bad_bbox_shift shape: {tf.shape(bad_bbox_shift)}')
+    # print(f'bad_bbox_random shape: {tf.shape(bad_bbox_random)}')
 
     """generate twice as many noise bboxes as needed and select a random subset"""
     bad_bboxes = tf.concat([bad_bbox_shift, bad_bbox_random], 0)
@@ -638,15 +638,15 @@ def augment_bbox_video(bbox, class_id, class_name, length, max_disp, max_jitter,
         noise_class_name = tf.concat([bad_class_name, dup_class_name], 0)
 
         if n_noise_bboxes > 0:
-            print(f'augment_bbox_video: n_noise_bboxes: {n_noise_bboxes}')
-
-            print(f'augment_bbox_video: noise_bbox shape: {tf.shape(noise_bbox)}')
-
-            print(f'augment_bbox_video: noise_class_id: {noise_class_id}')
-            print(f'augment_bbox_video: noise_class_id shape: {tf.shape(noise_class_id)}')
-
-            print(f'augment_bbox_video: noise_class_name: {noise_class_name}')
-            print(f'augment_bbox_video: noise_class_name shape: {tf.shape(noise_class_name)}')
+            # print(f'augment_bbox_video: n_noise_bboxes: {n_noise_bboxes}')
+            #
+            # print(f'augment_bbox_video: noise_bbox shape: {tf.shape(noise_bbox)}')
+            #
+            # print(f'augment_bbox_video: noise_class_id: {noise_class_id}')
+            # print(f'augment_bbox_video: noise_class_id shape: {tf.shape(noise_class_id)}')
+            #
+            # print(f'augment_bbox_video: noise_class_name: {noise_class_name}')
+            # print(f'augment_bbox_video: noise_class_name shape: {tf.shape(noise_class_name)}')
 
             idx = tf.random.shuffle(tf.range(n_noise_bboxes))
             noise_bbox = tf.gather(noise_bbox, idx)

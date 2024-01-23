@@ -36,11 +36,11 @@ def get_category_names(
       Dictionary with the format {1: {"name": "Person"}, ...}
     """
     if not category_names_path:
-        logging.info(
+        print(
             'category_names_path not specified, default category names will be used'
         )
         return {i: {'name': str(i)} for i in range(10000)}
-    logging.info('Loading category names from %s', category_names_path)
+    print(f'Loading category names from {category_names_path}')
     if category_names_path.endswith('.json.gz'):
         import compress_json
         annotations = compress_json.load(category_names_path)

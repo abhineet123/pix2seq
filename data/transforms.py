@@ -430,9 +430,9 @@ class FilterInvalidObjects(Transform):
         bbox = example[bbox_key]
         n_bboxes = tf.shape(bbox)[0]
 
-        print(f'filter_invalid_objects: box shape: {tf.shape(bbox)}')
-        print(f'filter_invalid_objects: bbox: {bbox}')
-        print(f'filter_invalid_objects: n_bboxes: {n_bboxes}')
+        # print(f'filter_invalid_objects: box shape: {tf.shape(bbox)}')
+        # print(f'filter_invalid_objects: bbox: {bbox}')
+        # print(f'filter_invalid_objects: n_bboxes: {n_bboxes}')
 
         box_valid = tf.logical_and(bbox[:, 2] > bbox[:, 0], bbox[:, 3] > bbox[:, 1])
         for k in self.config.get('filter_keys', []):
@@ -498,13 +498,13 @@ class ReorderObjectInstances(Transform):
         else:
             raise ValueError('Unknown order {}'.format(order))
 
-        print(f'reorder_object_instances: areas: {areas}')
-        print(f'reorder_object_instances: order: {order}')
-        print(f'reorder_object_instances: idx: {idx}')
-        print(f'reorder_object_instances: num_instances: {num_instances}')
+        # print(f'reorder_object_instances: areas: {areas}')
+        # print(f'reorder_object_instances: order: {order}')
+        # print(f'reorder_object_instances: idx: {idx}')
+        # print(f'reorder_object_instances: num_instances: {num_instances}')
         for k in self.config.inputs:
-            print(f'reorder_object_instances: {k}: {example[k]}')
-            print(f'reorder_object_instances: {k} shape: {tf.shape(example[k])}')
+            # print(f'reorder_object_instances: {k}: {example[k]}')
+            # print(f'reorder_object_instances: {k} shape: {tf.shape(example[k])}')
             example[k] = tf.gather(example[k], idx)
         return example
 

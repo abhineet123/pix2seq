@@ -71,6 +71,7 @@ def get_config(config_str=None):
         dataset_config = copy.deepcopy(dataset_configs.dataset_configs[ds_name])
         dataset_list.append(dataset_config)
         task_config = task_config_map[tv]
+
         max_instances_per_image = int(max_seq_len // (dataset_config.length * 4 + 1))
         max_instances_per_image_test = max_instances_per_image
 
@@ -81,6 +82,7 @@ def get_config(config_str=None):
             image_size, dataset_config.length, dataset_config.max_disp, max_instances_per_image)
         task_config.eval_transforms = transform_configs.get_video_detection_eval_transforms(
             image_size, dataset_config.length, max_instances_per_image_test)
+
         task_d_list.append(task_config)
 
     model_config = D(
@@ -100,6 +102,7 @@ def get_config(config_str=None):
         drop_att=0.0,
         dec_proj_mode='mlp',
         pos_encoding='sin_cos',
+        # pos_encoding='learned_3d',
         pos_encoding_dec='learned',
         pretrained_ckpt=None,
     )

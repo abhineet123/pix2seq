@@ -88,9 +88,14 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
     with open(pt_cfg_filepath, 'r') as f:
         cfg_dict = json.loads(f.read())
 
+    if not pt:
+        cfg.update(ml_collections.ConfigDict(cfg_dict))
+        cfg.update(cmd_cfg)
+        return
+
     """
     hack to deal with type mismatches between variables in the config py files and those in the 
-    config json files accompanying the pre-trained models
+    config json files accompanying the pretrained models
     ConfigDict does not allow type override so type changes must be done in ordinary dict
     """
     image_size = cfg_dict['model']['image_size']
@@ -120,47 +125,47 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
                 in_list[idx] = from_dict(val)
         return in_list
 
-    cfg_model = from_dict(cfg_dict)
-    cfg_model = ml_collections.ConfigDict(cfg_model)
+    model_cfg = from_dict(cfg_dict)
+    model_cfg = ml_collections.ConfigDict(model_cfg)
 
-    # status = isinstance(cfg_model, collections.abc.Mapping)
-
-    if pt:
-        cfg.model.update(cfg_model.model)
-        cfg.task.update(cfg_model.task)
-        cfg.train.update(cfg_model.train)
-        cfg.optimization.update(cfg_model.optimization)
-    else:
-        cfg.update(cfg_model)
+    cfg.model.update(model_cfg.model)
+    # cfg.task.update(model_cfg.task)
+    # cfg.train.update(model_cfg.train)
+    # cfg.optimization.update(model_cfg.optimization)
+    cfg.update(cmd_cfg)
     """
-    hack to deal with independently defined target_size setting in tasks.eval_transforms even though it should match 
-    image_size
+    hack to deal with independently defined target_size setting in tasks.eval_transforms even though 
+    it should match image_size
     """
-    image_size = cfg.task.image_size
+    if cfg.task.image_size == cfg.model.image_size:
+        return
 
+    image_size = cfg.model.image_size
+    from configs import transform_configs
+    """"update parameters that depend on image size but inexplicably missing from pretrained config files"""
     if cfg.task.name == 'object_detection':
-        from configs import transform_configs
         train_transforms_fn = transform_configs.get_object_detection_train_transforms
         eval_transforms_fn = transform_configs.get_object_detection_eval_transforms
+    elif cfg.task.name == 'video_detection':
+        train_transforms_fn = transform_configs.get_video_detection_train_transforms
+        eval_transforms_fn = transform_configs.get_video_detection_eval_transforms
     else:
         raise AssertionError(f'unsupported task: {cfg.task.name}')
 
-    for task in cfg.tasks:
+    for task in cfg.tasks + [cfg.task, ]:
+        task.image_size = image_size
         try:
-            eval_transforms = task.eval_transforms
+            _ = task.eval_transforms
         except AttributeError:
             pass
         else:
             task.eval_transforms = eval_transforms_fn(image_size, task.max_instances_per_image_test)
         try:
-            train_transforms = task.train_transforms
+            _ = task.train_transforms
         except AttributeError:
             pass
         else:
             task.train_transforms = train_transforms_fn(image_size, task.max_instances_per_image)
-
-    if cmd_cfg:
-        cfg.update(cmd_cfg)
 
 
 def load_from_json5(json_list, json_root):

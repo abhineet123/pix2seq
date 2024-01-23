@@ -22,8 +22,10 @@ from architectures.transformers import add_vis_pos_emb
 from architectures.transformers import AutoregressiveDecoder
 from architectures.transformers import FIT
 from architectures.transformers import MLP
-from architectures.transformers import VideoResNetTransformer
 from architectures.transformers import VisionTransformer
+
+from architectures.video_transformers import VideoResNetTransformer
+
 from models import model as model_lib
 from models import model_utils
 import tensorflow as tf
@@ -39,6 +41,8 @@ class Model(tf.keras.models.Model):
         super().__init__(**kwargs)
         config = config.model
         self.config = config
+        self.vid_len = config.vid_len
+        self.pos_encoding = config.pos_encoding
 
         mlp_ratio = config.dim_mlp // config.dim_att
         if config.resnet_variant == 'c1':
@@ -52,7 +56,7 @@ class Model(tf.keras.models.Model):
             self.encoder = VideoResNetTransformer(
                 image_height=config.image_size[0],
                 image_width=config.image_size[1],
-                vid_len=config.vid_len,
+                vid_len=self.vid_len,
                 resnet_variant=config.resnet_variant,
                 resnet_depth=config.resnet_depth,
                 resnet_width_multiplier=config.resnet_width_multiplier,
@@ -77,9 +81,16 @@ class Model(tf.keras.models.Model):
             """
             add visual positional embedding
             """
-            add_vis_pos_emb(
-                self, config.pos_encoding, self.encoder.n_rows, self.encoder.n_cols,
-                config.dim_att_dec, name_prefix='proj')
+            self.vis_pos_emb = add_vis_pos_emb(
+                self,
+                pos_encoding=config.pos_encoding,
+                n_rows=self.encoder.n_rows,
+                n_cols=self.encoder.n_cols,
+                dim=config.dim_att_dec,
+                name_prefix='proj',
+                return_only=True,
+                # n_images=self.vid_len,
+            )
             if config.dec_proj_mode == 'mlp':
                 self.proj_mlp = MLP(1, config.dim_att_dec, mlp_ratio, config.drop_path,
                                     config.drop_units, name='proj/mlp')
@@ -91,34 +102,25 @@ class Model(tf.keras.models.Model):
             config.pos_encoding_dec, config.shared_decoder_embedding,
             config.decoder_output_bias, name='ar_decoder')
 
-    def _tile_vis_output(self,
-                         vis_output,
-                         seq):
-        """Tile vis_output per seq.
-
-        Args:
-          vis_output: `float` tensor of encoded images in shape of (bsz, ....).
-          seq: `int` sequence in shape of (bsz, seqlen),
-            or (bsz, instances, seqlen) if there are multiple sequences per image.
-
-        Returns:
-          vis_output of (bsz*instances, ...).
-          seq of (bsz*instances, ...).
-        """
-        if seq.shape.rank > 2:
-            tile_factor = seq.shape.as_list()[-2]
-            vis_output = utils.tile_along_batch(vis_output, tile_factor)
-            seq = utils.flatten_batch_dims(seq, out_rank=2)
-        return vis_output, seq
-
     def _encode_images(self, images, training):
         """Encode images into latents for decoder to condition on."""
         config = self.config
         encoded = self.encoder(images, training)
+        # encoded = utils.flatten_vid(encoded)
+
         encoded = self.proj_ln(self.proj(encoded))
         # Add (optional) positional embedding to encoded visual units.
         if config.dec_proj_mode != 'linear':
             vis_pos_emb = tf.expand_dims(self.vis_pos_emb, 0)
+            # vis_pos_emb = tf.expand_dims(vis_pos_emb, 0)
+            # if self.pos_encoding == 'learned_3d':
+            #     encoded = utils.unflatten_vid(encoded, self.vid_len)
+            #     if config.use_cls_token:
+            #         raise AssertionError('use_cls_token is not supported with 3-D positional encoding')
+            #     else:
+            #         encoded = encoded + vis_pos_emb
+            #     encoded = utils.flatten_vid(encoded)
+            # else:
             if config.use_cls_token:
                 encoded = encoded + tf.concat(
                     [tf.zeros_like(vis_pos_emb[:, :1]), vis_pos_emb], 1)
@@ -128,6 +130,7 @@ class Model(tf.keras.models.Model):
                 encoded = self.proj_mlp(encoded, training)
             else:
                 assert config.dec_proj_mode == 'linear_p'
+        # encoded = utils.unflatten_vid(encoded, self.vid_len)
         return encoded
 
     def call(self, images, seq,
@@ -145,7 +148,10 @@ class Model(tf.keras.models.Model):
         """
         with tf.name_scope(''):  # for other functions to have the same name scope.
             encoded = self._encode_images(images, training)
-            encoded, seq = self._tile_vis_output(encoded, seq)
+
+            """_tile_vis_output is only needed if seq is 3D or above"""
+            # encoded, seq = self._tile_vis_output(encoded, seq)
+
             logits = self.decoder(seq, encoded, training)
             return logits
 

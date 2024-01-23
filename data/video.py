@@ -183,10 +183,10 @@ class DavisDataset(dataset_lib.TFRecordDataset):
 
         # Decode image and segmentation masks.
         frames = tf.map_fn(lambda x: tf.io.decode_png(x, channels=3),
-                           example['video/frames'], tf.uint8)
+                           example['video/frames'], fn_output_signature=tf.uint8)
         frames.set_shape([None, None, None, 3])
         segs = tf.map_fn(lambda x: tf.io.decode_png(x, channels=1),
-                         example['video/segmentations'], tf.uint8)
+                         example['video/segmentations'], fn_output_signature=tf.uint8)
         segs.set_shape([None, None, None, 1])
 
         new_example = {
@@ -264,7 +264,7 @@ class KittiStepDataset(dataset_lib.TFRecordDataset):
 
         decoded_frames = tf.map_fn(
             lambda x: tf.io.decode_png(x, channels=3),
-            example['image/encoded_list'], tf.uint8)
+            example['image/encoded_list'], fn_output_signature=tf.uint8)
         decoded_frames.set_shape([None, None, None, 3])
         video_id = tf.numpy_function(
             _get_video_id, (example['video/sequence_id'],), (tf.int32,))
@@ -278,7 +278,7 @@ class KittiStepDataset(dataset_lib.TFRecordDataset):
 
         decoded_segs = tf.map_fn(
             decode_label, example['image/segmentation/class/encoded_list'],
-            tf.int32)
+            fn_output_signature=tf.int32)
         decoded_segs.set_shape([None, None, None, 1])
 
         semantic_label = tf.cast(

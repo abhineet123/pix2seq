@@ -19,6 +19,7 @@ import math
 import re
 import einops
 
+import utils
 from architectures import resnet
 import tensorflow as tf
 
@@ -108,6 +109,52 @@ def get_2d_position_codes(height, width, out_dim, normalization_max=6.2831852):
     return y_coords + x_coords
 
 
+def get_3d_position_codes(height, width, depth, out_dim, normalization_max=6.2831852):
+    """
+    Doesn't Work Yet
+
+    Get 3d positional embedding with sin/cos codes for a video
+
+    Args:
+      height: a `int` specifying the height of the 2d image / feature map.
+      width: a `int` specifying the width of the 2d image / feature map.
+      depth: a `int` specifying the number of images.
+      out_dim: a `int` specifying the output dimension of the encoding.
+        Must be divisible by 3.
+      normalization_max: normalize coordinates between [0, normalization_max].
+        If None, raw coordinates from 0 to height/width/depth will be used.
+
+    Returns:
+      positional code of shape (1, depth, height, width, out_dim)
+    """
+
+    y_coords = tf.cast(tf.range(height), tf.float32)
+    if normalization_max is not None:
+        y_coords = (
+                y_coords / tf.cast(height - 1, dtype=tf.float32) * normalization_max)
+    y_coords = positional_encoding(y_coords, out_dim // 3)
+    y_coords = tf.expand_dims(y_coords, 3)
+    y_coords = tf.concat([tf.zeros_like(y_coords), y_coords, tf.zeros_like(y_coords)], -1)
+
+    x_coords = tf.cast(tf.range(width), tf.float32)
+    if normalization_max is not None:
+        x_coords = (
+                x_coords / tf.cast(width - 1, dtype=tf.float32) * normalization_max)
+    x_coords = positional_encoding(x_coords, out_dim // 3)
+    x_coords = tf.expand_dims(x_coords, 2)
+    x_coords = tf.concat([tf.zeros_like(x_coords), tf.zeros_like(x_coords), x_coords], -1)
+
+    z_coords = tf.cast(tf.range(depth), tf.float32)
+    if normalization_max is not None:
+        z_coords = (
+                z_coords / tf.cast(depth - 1, dtype=tf.float32) * normalization_max)
+    z_coords = positional_encoding(z_coords, out_dim // 3)
+    z_coords = tf.expand_dims(z_coords, 1)
+    z_coords = tf.concat([z_coords, tf.zeros_like(z_coords), tf.zeros_like(z_coords)], -1)
+
+    return y_coords + x_coords + z_coords
+
+
 def get_variable_initializer(name=None):
     if name is None:
         return tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=0.02)
@@ -140,24 +187,39 @@ def add_vis_pos_emb(self,
                     name_prefix=None,
                     initializer=None,
                     return_only=False,
-                    normalization_max=6.2831852):
+                    normalization_max=6.2831852,
+                    n_images=1,
+                    ):
     """Add vis_pos_emb variable/tensor to model instance referenced by `self`."""
     if name_prefix is None:
         name_prefix = self.name
     if initializer is None:
         initializer = get_variable_initializer()
-    if pos_encoding == 'learned':
+
+    if pos_encoding == 'learned_3d':
+        assert n_images > 1, "n_images must be > 1 for 3d positional encoding"
         vis_pos_emb = self.add_weight(
-            shape=(n_rows * n_cols, dim), initializer=initializer,
+            shape=(n_images, n_rows * n_cols, dim), initializer=initializer,
+            name='%s/vis_pos_embedding' % name_prefix)
+    elif pos_encoding == 'sin_cos_3d':
+        raise AssertionError('3D sin_cos encoding is not supported yet')
+        # sin_cos = get_3d_position_codes(
+        #     n_rows, n_cols, n_images, dim, normalization_max=normalization_max)
+    elif pos_encoding == 'learned':
+        assert n_images == 1, "n_images must be 1 for 2d positional encoding"
+        vis_pos_emb = self.add_weight(
+            shape=(n_rows * n_cols * n_images, dim), initializer=initializer,
             name='%s/vis_pos_embedding' % name_prefix)
     elif pos_encoding == 'sin_cos':
+        assert n_images == 1, "n_images must be 1 for 2d positional encoding"
         if n_rows == 1 or n_cols == 1:
             sin_cos = get_1d_position_codes(
                 n_rows * n_cols, dim, normalization_max=normalization_max)
         else:
             sin_cos = get_2d_position_codes(
                 n_rows, n_cols, dim, normalization_max=normalization_max)
-        vis_pos_emb = tf.reshape(sin_cos, [n_rows * n_cols, dim])
+
+        vis_pos_emb = tf.reshape(sin_cos, [n_rows * n_cols * n_images, dim])
     else:
         raise ValueError('Unknown pos encoding %s' % pos_encoding)
     if not return_only:
@@ -434,7 +496,8 @@ class MLP(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
         super(MLP, self).__init__(**kwargs)
         self.num_layers = num_layers
         self.mlp_layers = [
-            # each is a 2-layer MLP with both input and output size = dim and  hidden size = dim * mlp_ratio
+            # each is a 2-layer MLP with optional LN and both input and output size = dim and  hidden size = dim *
+            # mlp_ratio
             FeedForwardLayer(dim, dim * mlp_ratio, drop_units,
                              use_ln=use_ffn_ln, ln_scale_shift=ln_scale_shift,
                              name='ffn' + suffix_id(i))
@@ -457,105 +520,6 @@ class MLP(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
             x = x + self.dropp(x_residual, training)
             x_list.append(x)
         return (x, x_list) if ret_list else x
-
-
-class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
-
-    def __init__(self,
-                 dim,
-                 mlp_ratio,
-                 num_heads,
-                 vid_len,
-                 drop_path=0.1,
-                 drop_units=0.1,
-                 drop_att=0.,
-                 dim_x_att=None,
-                 self_attention=True,
-                 cross_attention=True,
-                 use_mlp=True,
-                 use_enc_ln=False,
-                 use_ffn_ln=False,
-                 ln_scale_shift=True,
-                 **kwargs):
-        super(VideoTransformerEncoderLayer, self).__init__(**kwargs)
-
-        assert vid_len >= 2, "vid_len must be >= 2"
-
-        self.vid_len = vid_len
-        self.dim = dim
-
-        self.self_attention = self_attention
-        if self_attention:
-            self.mha_ln = tf.keras.layers.LayerNormalization(
-                epsilon=1e-6,
-                center=ln_scale_shift,
-                scale=ln_scale_shift,
-                name='mha/ln')
-            self.mha = tf.keras.layers.MultiHeadAttention(
-                num_heads, dim // num_heads, dropout=drop_att, name='mha')
-        if cross_attention:
-            self.cross_ln = tf.keras.layers.LayerNormalization(
-                epsilon=1e-6,
-                center=ln_scale_shift,
-                scale=ln_scale_shift,
-                name='cross_mha/ln')
-            if use_enc_ln:
-                self.enc_ln = tf.keras.layers.LayerNormalization(
-                    epsilon=1e-6,
-                    center=ln_scale_shift,
-                    scale=ln_scale_shift,
-                    name='cross_mha/enc_ln')
-            else:
-                self.enc_ln = lambda x: x
-            dim_x_att = dim if dim_x_att is None else dim_x_att
-            self.cross_mha = tf.keras.layers.MultiHeadAttention(
-                num_heads, dim_x_att // num_heads, dropout=drop_att, name='cross_mha')
-
-        if use_mlp:
-            self.mlp = MLP(1, dim, mlp_ratio, drop_path, drop_units,
-                           use_ffn_ln=use_ffn_ln, ln_scale_shift=ln_scale_shift,
-                           name='mlp')
-        self.dropp = DropPath(drop_path)
-
-    def call(self, x, mask, training):
-        # x shape (bsz, vid_len, seq_len, dim_att), mask shape (bsz, seq_len, seq_len).
-        bsz, vid_len, seq_len, dim_att = get_shape(x)
-
-        assert vid_len == self.vid_len, "vid_len mismatch"
-
-        if self.self_attention:
-            x_self_attn = tf.zeros([bsz, self.vid_len, self.dim])
-
-            def loop_body(step, x_all, x_self_attn):
-                x_ = x_all[:, step, ...]
-                x_ln = self.mha_ln(x_)
-                x_residual = self.mha(x_ln, x_ln, x_ln, mask, training=training)
-                x_ = x_ + self.dropp(x_residual, training)
-                next_step = step + 1
-
-                x_self_attn = tf.tensor_scatter_nd_update(x_self_attn, [[step]], x_)
-
-                return (next_step, x_self_attn)
-
-            def cond(step, x):
-                """unused input args here because loop body and cond must have the same signature"""
-                del x
-                return tf.less(step, self.vid_len)
-
-            step = 0
-
-            step, x_self_attn = tf.while_loop(
-                cond=cond, body=loop_body,
-                loop_vars=[step, x, x_self_attn])
-
-        if self.cross_attention:
-            x_ln = self.cross_ln(x)
-            enc = self.enc_ln(enc)
-            x_res = self.cross_mha(x_ln, enc, enc, mask_cross, training=training)
-            x = x + self.dropp(x_res, training)
-
-        x = self.mlp(x, training)
-        return x
 
 
 class TransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
@@ -607,46 +571,6 @@ class TransformerEncoder(tf.keras.layers.Layer):  # pylint: disable=missing-docs
                  drop_units=0.1,
                  drop_att=0.,
                  self_attention=True,
-                 use_ffn_ln=False,
-                 ln_scale_shift=True,
-                 **kwargs):
-        super(TransformerEncoder, self).__init__(**kwargs)
-        self.num_layers = num_layers
-        self.enc_layers = [
-            TransformerEncoderLayer(  # pylint: disable=g-complex-comprehension
-                dim,
-                mlp_ratio,
-                num_heads,
-                drop_path,
-                drop_units,
-                drop_att,
-                self_attention=self_attention,
-                use_ffn_ln=use_ffn_ln,
-                ln_scale_shift=ln_scale_shift,
-                name='transformer_encoder' + suffix_id(i))
-            for i in range(num_layers)
-        ]
-
-    def call(self, x, mask, training, ret_list=False):
-        x_list = [x]
-        for i in range(self.num_layers):
-            x = self.enc_layers[i](x, mask, training)
-            x_list.append(x)
-        return (x, x_list) if ret_list else x
-
-
-class VideoTransformerEncoder(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
-
-    def __init__(self,
-                 num_layers,
-                 dim,
-                 mlp_ratio,
-                 num_heads,
-                 drop_path=0.1,
-                 drop_units=0.1,
-                 drop_att=0.,
-                 self_attention=True,
-                 cross_attention=True,
                  use_ffn_ln=False,
                  ln_scale_shift=True,
                  **kwargs):
@@ -849,92 +773,6 @@ class VisionTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-docst
         x = self.output_ln(tokens)
         return (x, x_list) if ret_list else x
 
-
-class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
-
-    def __init__(self,
-                 image_height,
-                 image_width,
-                 vid_len,
-                 resnet_variant,
-                 resnet_depth,
-                 resnet_width_multiplier,
-                 resnet_sk_ratio,
-                 num_layers,
-                 dim,
-                 mlp_ratio,
-                 num_heads,
-                 drop_path=0.1,
-                 drop_units=0.1,
-                 drop_att=0.,
-                 pos_encoding='learned',
-                 use_cls_token=True,
-                 **kwargs):
-        super(VideoResNetTransformer, self).__init__(**kwargs)
-        self.vid_len = vid_len
-        self.use_cls_token = use_cls_token
-        self.resnet = resnet.resnet(
-            resnet_depth=resnet_depth,
-            width_multiplier=resnet_width_multiplier,
-            sk_ratio=resnet_sk_ratio,
-            variant=resnet_variant)
-        self.dropout = tf.keras.layers.Dropout(drop_units)
-        self.stem_projection = tf.keras.layers.Dense(dim, name='stem_projection')
-        self.stem_ln = tf.keras.layers.LayerNormalization(
-            epsilon=1e-6, name='stem_ln')
-        if self.use_cls_token:
-            add_cls_token_emb(self, dim)
-        if resnet_variant in ['c3']:
-            factor = 8.
-        elif resnet_variant in ['c4', 'dc5']:
-            factor = 16.
-        else:
-            factor = 32.
-        self.n_rows = math.ceil(image_height / factor)
-        self.n_cols = math.ceil(image_width / factor)
-        add_vis_pos_emb(self, pos_encoding, self.n_rows, self.n_cols, dim)
-        self.transformer_encoder = TransformerEncoder(
-            num_layers, dim, mlp_ratio, num_heads, drop_path, drop_units, drop_att,
-            name='transformer_encoder')
-        self.output_ln = tf.keras.layers.LayerNormalization(
-            epsilon=1e-6, name='ouput_ln')
-
-    def call_image(self, images, training):
-
-        hidden_stack, _ = self.resnet(images, training)
-        """last feature layer"""
-        tokens = hidden_stack[-1]
-
-        bsz, h, w, num_channels = get_shape(tokens)
-        tokens = tf.reshape(tokens, [bsz, h * w, num_channels])
-        tokens = self.stem_ln(self.stem_projection(self.dropout(tokens, training)))
-
-        tokens_vis_pos_emb = tf.expand_dims(self.vis_pos_emb, 0)
-        tokens = tokens + tokens_vis_pos_emb
-
-        if self.use_cls_token:
-            cls_token = tf.tile(tf.expand_dims(self.cls_token_emb, 0), [bsz, 1, 1])
-            tokens = tf.concat([cls_token, tokens], 1)
-
-        tokens, x_list = self.transformer_encoder(
-            tokens, None, training=training, ret_list=True)
-        x = self.output_ln(tokens)
-        return x
-
-    def call(self, images, training):
-        """Input images of (bsz, h, w, c)."""
-        x_all = []
-
-        # batch_size = images.shape[0]
-
-        for _id in range(self.vid_len):
-            images_ = images[:, _id, ...]
-            x = self.call_image(images_, training)
-            x_all.append(x)
-
-        x_all = tf.stack(x_all, axis=1)
-
-        return x_all
 
 class ResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
 

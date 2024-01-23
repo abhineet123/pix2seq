@@ -77,9 +77,10 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
 
 
         frames = tf.map_fn(
-            # lambda x: tf.io.decode_jpeg(x, channels=3),
-            read_video_frames,
-            filenames, tf.uint8
+            lambda x: tf.io.decode_image(tf.io.read_file(x), channels=3),
+            # read_video_frames,
+            filenames,
+            fn_output_signature=tf.uint8
         )
         frames.set_shape([None, None, None, 3])
 
