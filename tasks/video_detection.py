@@ -401,7 +401,11 @@ def build_response_seq_from_video_bboxes(
 
     quantized_bboxes = tf.where(
         is_no_box,
-        vocab.NO_BOX_TOKEN,
+        # this is needed rather than simply vocab.NO_BOX_TOKEN to make sure that data types match otherwise
+        # annoying errors like
+        # "TypeError: Input 'e' of 'SelectV2' Op has type int64 that does not match type int32 of argument 't'."
+        # will occur and only in distributed mode for some reason
+        tf.zeros_like(quantized_bboxes)+vocab.NO_BOX_TOKEN,
         quantized_bboxes)
 
     """set 0-labeled (padding) bboxes to zero"""
