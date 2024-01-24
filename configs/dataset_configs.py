@@ -78,6 +78,9 @@ def ipsc_post_process(dataset_cfg):
         if dataset_cfg.stride:
             train_name = f'{train_name}-stride-{dataset_cfg.stride}'
             eval_name = f'{eval_name}-stride-{dataset_cfg.stride}'
+
+        dataset_cfg.train_name = train_name
+        dataset_cfg.eval_name = eval_name
     else:
         db_root_dir = root_dir
         db_type = 'images'
