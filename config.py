@@ -215,7 +215,7 @@ def load_from_json5(json_list, json_root):
 
         for var_id, json_var in enumerate(json_vars):
             """optional vars"""
-            json_str = json_str.replace(f'%{var_id}%', json_var)
+            json_str = json_str.replace(f'%%{var_id}%%', json_var)
             """compulsory vars"""
             json_str = json_str.replace(f'%{var_id}%', json_var)
 
