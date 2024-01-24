@@ -47,7 +47,7 @@ def tf_float32(t):
 
 def flatten_vid(t):
     """merge vid dim with batch dim"""
-    shape_list = t.shape.as_list()
+    shape_list = shape_as_list(t)
     inner_dims = shape_list[2:]
     new_bsz = shape_list[0]*shape_list[1]
     out_shape = [new_bsz, ] + inner_dims
@@ -56,7 +56,7 @@ def flatten_vid(t):
 
 def unflatten_vid(t, vid_len):
     """split vid dim from combined vid+batch dim"""
-    shape_list = t.shape.as_list()
+    shape_list = shape_as_list(t)
     inner_dims = shape_list[1:]
     new_bsz = shape_list[0] // vid_len
     out_shape = [new_bsz, vid_len] + inner_dims

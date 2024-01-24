@@ -157,8 +157,10 @@ class TaskVideoDetection(task_lib.Task):
         """
         max_seq_len=512 for object_detection
         """
-        assert input_seq.shape[-1] <= config.max_seq_len + 1, \
-            f"input_seq length {input_seq.shape[-1]} exceeds max_seq_len {config.max_seq_len + 1}"
+
+        input_shape = utils.shape_as_list(input_seq)
+        # assert input_shape[-1] <= config.max_seq_len + 1, \
+        #     f"input_seq length {input_seq.shape[-1]} exceeds max_seq_len {config.max_seq_len + 1}"
         input_seq = utils.pad_to_max_len(input_seq, config.max_seq_len + 1,
                                          dim=-1, padding_token=vocab.PADDING_TOKEN)
         target_seq = utils.pad_to_max_len(target_seq, config.max_seq_len + 1,
@@ -404,7 +406,7 @@ def build_response_seq_from_video_bboxes(
         # this is needed rather than simply vocab.NO_BOX_TOKEN to make sure that data types match otherwise
         # annoying errors like
         # "TypeError: Input 'e' of 'SelectV2' Op has type int64 that does not match type int32 of argument 't'."
-        # will occur and only in distributed mode for some reason
+        # will occur and only in non-eager mode for some reason
         tf.zeros_like(quantized_bboxes)+vocab.NO_BOX_TOKEN,
         quantized_bboxes)
 
