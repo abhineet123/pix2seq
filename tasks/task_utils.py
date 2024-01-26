@@ -174,6 +174,7 @@ def decode_video_seq_to_bbox(
     """
     pred_score = tf.reduce_sum(
         pred_class_p * tf.one_hot(pred_class, vocab_size), -1)
+
     pred_class = tf.maximum(pred_class - vocab.BASE_VOCAB_SHIFT, 0)
     pred_bbox = seq_to_video_bbox(pred_seq - coord_vocab_shift, quantization_bins, vid_len)
     return pred_class, pred_bbox, pred_score
@@ -188,10 +189,10 @@ def seq_to_video_bbox(seq, quantization_bins, vid_len):
 
     # [batch, num_instances, 1]
 
-    quantized_boxxes = []
+    quantized_boxes = []
 
     for _id in range(vid_len):
-        bbox_start_id = bbox_seq_len*_id
+        bbox_start_id = 4 * _id
         ymin = tf.expand_dims(seq[:, bbox_start_id::bbox_seq_len], -1)
         xmin = tf.expand_dims(seq[:, bbox_start_id + 1::bbox_seq_len], -1)
         ymax = tf.expand_dims(seq[:, bbox_start_id + 2::bbox_seq_len], -1)
@@ -200,12 +201,13 @@ def seq_to_video_bbox(seq, quantization_bins, vid_len):
         quantized_box = utils.dequantize(quantized_box, quantization_bins)
 
         quantized_box = tf.minimum(tf.maximum(quantized_box, 0), 1)
+        # quantized_box = tf.expand_dims(quantized_box, -1)
 
-        quantized_boxxes.append(quantized_box)
+        quantized_boxes.append(quantized_box)
 
-    quantized_boxxes = tf.concat(quantized_boxxes, axis=-1)
+    quantized_boxes = tf.concat(quantized_boxes, axis=-1)
 
-    return quantized_boxxes
+    return quantized_boxes
 
 
 def decode_object_seq_to_bbox(logits,

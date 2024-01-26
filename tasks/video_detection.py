@@ -44,12 +44,16 @@ class TaskVideoDetection(task_lib.Task):
 
         self.max_seq_len = config.task.get('max_seq_len', 'auto')
         self.max_seq_len_test = config.task.get('max_seq_len_test', 'auto')
+        self.vid_len =  self.config.dataset.length
+        self.inst_len =  self.vid_len * 4 + 1
+        self.max_inst_per_image =  self.config.task.max_instances_per_image
+        self.max_inst_per_image_test =  self.config.task.max_instances_per_image_test
 
         if self.max_seq_len == 'auto':
-            self.max_seq_len = config.task.max_instances_per_image * (config.dataset.length * 4 + 1)
+            self.max_seq_len = self.max_inst_per_image * self.inst_len
 
         if self.max_seq_len_test == 'auto':
-            self.max_seq_len_test = config.task.max_instances_per_image_test * (config.dataset.length * 4 + 1) + 1
+            self.max_seq_len_test = self.max_inst_per_image_test * self.inst_len + 1
 
         self.config.task.max_seq_len = self.max_seq_len
         self.config.task.max_seq_len_test = self.max_seq_len_test
@@ -224,16 +228,16 @@ class TaskVideoDetection(task_lib.Task):
         config = self.config.task
         mconfig = self.config.model
         example = batched_examples
-        videos, video_ids = example['video'], example['video/id']
+        videos, video_ids = example['video'], example['video_id']
         orig_video_size = example['orig_video_size']
         unpadded_video_size = example['unpadded_video_size']
 
         # Decode sequence output.
-        pred_classes, pred_bboxes, scores = task_utils.decode_object_seq_to_bbox(
-            logits, pred_seq, config.quantization_bins, mconfig.coord_vocab_shift)
+        pred_classes, pred_bboxes, scores = task_utils.decode_video_seq_to_bbox(
+            logits, pred_seq, self.vid_len, config.quantization_bins, mconfig.coord_vocab_shift)
 
         # Compute coordinate scaling from [0., 1.] to actual pixels in orig image.
-        image_size = videos.shape[1:3].as_list()
+        image_size = videos.shape[2:4].as_list()
         if training:
             # scale points to whole image size during train.
             scale = utils.tf_float32(image_size)
@@ -246,7 +250,7 @@ class TaskVideoDetection(task_lib.Task):
             scale = tf.expand_dims(scale, 1)
         pred_bboxes_rescaled = utils.scale_points(pred_bboxes, scale)
 
-        gt_classes, gt_bboxes = example['label'], example['bbox']
+        gt_classes, gt_bboxes = example['class_id'], example['bbox']
         gt_bboxes_rescaled = utils.scale_points(gt_bboxes, scale)
         area, is_crowd = example['area'], example['is_crowd']
 

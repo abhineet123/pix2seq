@@ -17,6 +17,8 @@
 
 import copy
 
+import vocab
+
 from configs import dataset_configs
 from configs import transform_configs
 from configs.config_base import architecture_config_map, base_config
@@ -47,7 +49,7 @@ def get_config(config_str=None):
     task_config_map = {
         'object_detection': D(
             name='object_detection',
-            vocab_id=10,
+            vocab_id=vocab.TASK_OBJ_DET,
             image_size=image_size,
             quantization_bins=1000,
             max_instances_per_image=max_instances_per_image,

@@ -16,6 +16,8 @@
 """An example config."""
 
 import copy
+
+import vocab
 # pylint: disable=invalid-name,line-too-long
 
 from configs import dataset_configs
@@ -44,7 +46,7 @@ def get_config(config_str=None):
       'object_detection':
           D(
               name='object_detection',
-              vocab_id=10,
+              vocab_id=vocab.TASK_OBJ_DET,
               image_size=image_size,
               quantization_bins=1000,
               max_instances_per_image=100,
@@ -74,7 +76,7 @@ def get_config(config_str=None):
       'instance_segmentation':
           D(
               name='instance_segmentation',
-              vocab_id=11,
+              vocab_id=vocab.TASK_INS_SEG,
               object_detection_vocab_id=10,
               image_size=image_size,
               quantization_bins=1000,
@@ -109,7 +111,7 @@ def get_config(config_str=None):
       'keypoint_detection':
           D(
               name='keypoint_detection',
-              vocab_id=12,
+              vocab_id=vocab.TASK_KEY_DET,
               object_detection_vocab_id=10,
               image_size=image_size,
               quantization_bins=1000,
@@ -139,7 +141,7 @@ def get_config(config_str=None):
       'captioning':
           D(
               name='captioning',
-              vocab_id=13,
+              vocab_id=vocab.TASK_CAP,
               image_size=image_size,
               max_seq_len=128,
               captions_per_image=5,
@@ -157,7 +159,7 @@ def get_config(config_str=None):
       'panoptic_segmentation':
           D(
               name='panoptic_segmentation',
-              vocab_id=16,
+              vocab_id=vocab.TASK_PAN_SEG,
               image_size=image_size,
               object_order='random',
               quantization_bins=1000,

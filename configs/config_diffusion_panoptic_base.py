@@ -16,6 +16,8 @@
 """A config."""
 
 import copy
+
+import vocab
 # pylint: disable=invalid-name,line-too-long,missing-docstring
 from configs import dataset_configs
 from configs import transform_configs
@@ -112,7 +114,7 @@ def get_config(config_str=None):
   task_config_map = {
       'panoptic_segmentation': D(
           name='panoptic_segmentation',
-          vocab_id=16,
+          vocab_id=vocab.TASK_PAN_SEG,
           image_size=image_size,
           n_bits_label=16,
           max_instances_per_image=101,
@@ -129,7 +131,7 @@ def get_config(config_str=None):
       ),
       'video_panoptic_segmentation': D(
           name='video_panoptic_segmentation',
-          vocab_id=18,
+          vocab_id=vocab.TASK_VID_PAN_SEG,
           image_size=image_size,
           n_bits_label=16,
           max_instances_per_image=256,  # including id 0.

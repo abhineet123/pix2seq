@@ -24,6 +24,13 @@
 PADDING_TOKEN = 0
 
 # 10-29 reserved for task id.
+TASK_OBJ_DET = 10
+TASK_INS_SEG = 11
+TASK_KEY_DET = 12
+TASK_CAP = 13
+TASK_PAN_SEG = 16
+TASK_VID_PAN_SEG = 18
+TASK_VID_DET = 20
 
 FAKE_CLASS_TOKEN = 30
 FAKE_TEXT_TOKEN = 30  # Same token to represent fake class and fake text.
