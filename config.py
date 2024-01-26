@@ -132,7 +132,12 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
     # cfg.task.update(model_cfg.task)
     # cfg.train.update(model_cfg.train)
     # cfg.optimization.update(model_cfg.optimization)
-    cfg.update(cmd_cfg)
+
+    try:
+        cfg.model.update(cmd_cfg.model)
+    except AttributeError:
+        """no model cfg params supplied at command line"""
+        pass
     """
     hack to deal with independently defined target_size setting in tasks.eval_transforms even though 
     it should match image_size
@@ -263,22 +268,29 @@ def load(FLAGS):
 
     cfg.update(cmd_cfg)
 
-    cmd_cfg.training = cfg.training = cfg.mode == TRAIN
-
     if cfg.model_dir:
-        assert not cfg.eval.pt, "pre-trained evaluation should be turned off if custom model directory is specified"
+        assert not cfg.eval.pt, "pre-trained evaluation must be disabled if custom model directory is specified"
         """load config from manually specified model_dirs"""
         load_from_model(cfg, cfg.model_dir, cmd_cfg, pt=False)
     else:
         if cfg.pretrained:
             load_from_model(cfg, cfg.pretrained, cmd_cfg, pt=True)
 
+    if cfg.dataset.name.startswith('ipsc'):
+        from configs.dataset_configs import ipsc_post_process
+        ipsc_post_process(cfg.dataset)
+
+    cmd_cfg.training = cfg.training = cfg.mode == TRAIN
+
+    if not cfg.model_dir:
+        """construct model_dir name from params"""
+
         if not cfg.training and cfg.eval.pt:
+            """evaluate on pretrained model but save results in the log folder"""
             assert cfg.pretrained, "cfg.pretrained must be provided for pretrained model eval"
 
             cfg.model_dir = cfg.pretrained.replace('pretrained', 'log')
         else:
-            """construct model_dir name from params"""
             model_dir_name = f'{cfg.dataset.train_name}'
             if cfg.pretrained:
                 pretrained_name = os.path.basename(cfg.pretrained)
@@ -303,17 +315,15 @@ def load(FLAGS):
         print(f'saving trained model to: {cfg.model_dir}')
     else:
         if cfg.eval.pt:
-            print(f'loading pretrained model from: {cfg.pretrained}')
+            print(f'evaluating on pretrained model from: {cfg.pretrained}')
         else:
-            print(f'loading trained model from: {cfg.model_dir}')
+            print(f'evaluating on trained model from: {cfg.model_dir}')
 
     # config_cmd_args = [k for k in dir(FLAGS) if k.startswith('cfg.')]
     # config_cmd_dict = {
     #     k: getattr(FLAGS, k) for k in dir(FLAGS) if k.startswith('cfg.')
     # }
-    if cfg.dataset.name.startswith('ipsc'):
-        from configs.dataset_configs import ipsc_post_process
-        ipsc_post_process(cfg.dataset)
+
 
     import utils
     utils.log_cfg(cfg)

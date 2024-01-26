@@ -137,6 +137,77 @@ def decode_instance_seq_to_points(seq, quantization_bins, coord_vocab_shift):
     return utils.replace_reserved_tokens(points, seq, vocab.TOKEN_TO_FLOAT)
 
 
+def decode_video_seq_to_bbox(
+        logits,
+        pred_seq,
+        vid_len,
+        quantization_bins,
+        coord_vocab_shift):
+    _, seqlen, vocab_size = logits.shape
+
+    bbox_seq_len = vid_len * 4 + 1
+
+    # truncate out the last few tokens
+    if seqlen % bbox_seq_len != 0:
+        pred_seq = pred_seq[..., :-(seqlen % bbox_seq_len)]
+        logits = logits[..., :-(seqlen % bbox_seq_len), :]
+    """
+    extract probs for all classes - starting from 5th element and extracting every fifth element from there
+    """
+    pred_class_p = tf.nn.softmax(logits)[:, bbox_seq_len::bbox_seq_len + 1]  # (bsz, instances, vocab_size)
+
+    """
+    mask-out non-class portions of the vocab
+    """
+    mask_s1 = [0.] * vocab.BASE_VOCAB_SHIFT  # reserved.
+    mask_s2 = [1.] * (coord_vocab_shift - vocab.BASE_VOCAB_SHIFT)  # labels.
+    mask_s3 = [0] * (vocab_size - coord_vocab_shift)  # coordinates and others.
+    mask = tf.constant(mask_s1 + mask_s2 + mask_s3)
+    """
+    this is where the claims of automatically learning domain-specific tokens breaks down - we simply select the 
+    class with the max prob even if some non-class token has higher prob than the max-prob class
+    """
+    pred_class = tf.argmax(pred_class_p * mask[tf.newaxis, tf.newaxis, :], -1)
+
+    """
+    round-about way of selecting the class prob of each bbox as its score
+    """
+    pred_score = tf.reduce_sum(
+        pred_class_p * tf.one_hot(pred_class, vocab_size), -1)
+    pred_class = tf.maximum(pred_class - vocab.BASE_VOCAB_SHIFT, 0)
+    pred_bbox = seq_to_video_bbox(pred_seq - coord_vocab_shift, quantization_bins, vid_len)
+    return pred_class, pred_bbox, pred_score
+
+
+def seq_to_video_bbox(seq, quantization_bins, vid_len):
+    """Returns [0, 1] normalized yxyx bbox from token sequence."""
+    # [batch, 5*num_instances]
+    assert seq.shape.rank == 2, f'seq has non-rank 2 shape: {seq.shape.as_list()}'
+
+    bbox_seq_len = vid_len * 4 + 1
+
+    # [batch, num_instances, 1]
+
+    quantized_boxxes = []
+
+    for _id in range(vid_len):
+        bbox_start_id = bbox_seq_len*_id
+        ymin = tf.expand_dims(seq[:, bbox_start_id::bbox_seq_len], -1)
+        xmin = tf.expand_dims(seq[:, bbox_start_id + 1::bbox_seq_len], -1)
+        ymax = tf.expand_dims(seq[:, bbox_start_id + 2::bbox_seq_len], -1)
+        xmax = tf.expand_dims(seq[:, bbox_start_id + 3::bbox_seq_len], -1)
+        quantized_box = tf.concat([ymin, xmin, ymax, xmax], axis=-1)
+        quantized_box = utils.dequantize(quantized_box, quantization_bins)
+
+        quantized_box = tf.minimum(tf.maximum(quantized_box, 0), 1)
+
+        quantized_boxxes.append(quantized_box)
+
+    quantized_boxxes = tf.concat(quantized_boxxes, axis=-1)
+
+    return quantized_boxxes
+
+
 def decode_object_seq_to_bbox(logits,
                               pred_seq,
                               quantization_bins,

@@ -88,8 +88,7 @@ def get_video_detection_train_transforms(
         jitter_scale_min: float = 0.3,
         jitter_scale_max: float = 2.0):
     instance_feature_names = ['bbox', 'class_id', 'class_name',
-                              'area', 'is_crowd'
-                              ]
+                              'area', 'is_crowd']
     object_coordinate_keys = ['bbox']
 
     train_transforms = [
@@ -135,6 +134,8 @@ def get_video_detection_eval_transforms(
         length: int,
         max_instances_per_image: int,
 ):
+    instance_feature_names = ['bbox', 'class_id', 'class_name',
+                              'area', 'is_crowd']
     return [
         D(name='record_original_video_size'),
         D(name='resize_video',
@@ -148,7 +149,7 @@ def get_video_detection_eval_transforms(
           target_size=image_size,
           object_coordinate_keys=['bbox']),
         D(name='truncate_or_pad_to_max_instances',
-          inputs=['bbox', 'label', 'area', 'is_crowd'],
+          inputs=instance_feature_names,
           max_instances=max_instances_per_image),
     ]
 

@@ -72,12 +72,18 @@ def ipsc_post_process(dataset_cfg):
         db_type = 'videos'
 
         if dataset_cfg.length:
-            train_name = f'{train_name}-length-{dataset_cfg.length}'
-            eval_name = f'{eval_name}-length-{dataset_cfg.length}'
+            length_suffix = f'length-{dataset_cfg.length}'
+            if length_suffix not in train_name:
+                train_name = f'{train_name}-{length_suffix}'
+            if length_suffix not in eval_name:
+                eval_name = f'{eval_name}-{length_suffix}'
 
         if dataset_cfg.stride:
-            train_name = f'{train_name}-stride-{dataset_cfg.stride}'
-            eval_name = f'{eval_name}-stride-{dataset_cfg.stride}'
+            stride_suffix = f'stride-{dataset_cfg.stride}'
+            if stride_suffix not in train_name:
+                train_name = f'{train_name}-{stride_suffix}'
+            if stride_suffix not in eval_name:
+                eval_name = f'{eval_name}-{stride_suffix}'
 
         dataset_cfg.train_name = train_name
         dataset_cfg.eval_name = eval_name

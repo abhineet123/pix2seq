@@ -186,11 +186,13 @@ class Model(tf.keras.models.Model):
         """
         if encoded is None:
             encoded = self._encode_images(images, training=False)
-        encoded, prompt_seq = self._tile_vis_output(encoded, prompt_seq)
 
-        # Tile by num_samples too.
-        encoded = utils.tile_along_batch(encoded, num_samples)
-        prompt_seq = utils.tile_along_batch(prompt_seq, num_samples)
+        """only needed if prompt_seq is 3D or above"""
+        # encoded, prompt_seq = self._tile_vis_output(encoded, prompt_seq)
+
+        """only needed if num_samples > 1"""
+        # encoded = utils.tile_along_batch(encoded, num_samples)
+        # prompt_seq = utils.tile_along_batch(prompt_seq, num_samples)
 
         pred_seq, logits = self.decoder.infer(
             prompt_seq, encoded, max_seq_len,

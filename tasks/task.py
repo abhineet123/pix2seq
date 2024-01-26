@@ -45,6 +45,10 @@ class Task(abc.ABC):
 
         train_transforms = config.task.get('train_transforms', [])
         eval_transforms = config.task.get('eval_transforms', [])
+
+        train_transforms = [ml_collections.ConfigDict(k) for k in train_transforms]
+        eval_transforms = [ml_collections.ConfigDict(k) for k in eval_transforms]
+
         self.train_transforms = [
             transforms.TransformRegistry.lookup(t.name)(t)
             for t in train_transforms]

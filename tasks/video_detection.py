@@ -56,12 +56,8 @@ class TaskVideoDetection(task_lib.Task):
 
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
-        metric_config = config.task.get('metric')
-        if metric_config and metric_config.get('name'):
-            self._coco_metrics = metric_registry.MetricRegistry.lookup(
-                metric_config.name)(config)
-        else:
-            self._coco_metrics = None
+        self._coco_metrics = None
+
         if self.config.task.get('eval_outputs_json_path', None):
             self.eval_output_annotations = []
 
@@ -158,9 +154,10 @@ class TaskVideoDetection(task_lib.Task):
         max_seq_len=512 for object_detection
         """
 
-        input_shape = utils.shape_as_list(input_seq)
+        # input_shape = utils.shape_as_list(input_seq)
         # assert input_shape[-1] <= config.max_seq_len + 1, \
         #     f"input_seq length {input_seq.shape[-1]} exceeds max_seq_len {config.max_seq_len + 1}"
+
         input_seq = utils.pad_to_max_len(input_seq, config.max_seq_len + 1,
                                          dim=-1, padding_token=vocab.PADDING_TOKEN)
         target_seq = utils.pad_to_max_len(target_seq, config.max_seq_len + 1,
@@ -216,7 +213,7 @@ class TaskVideoDetection(task_lib.Task):
 
         Args:
           batched_examples: a tuple of features (`dict`) and labels (`dict`),
-            containing images and labels.
+            containing videos and labels.
           pred_seq: `int` sequence of shape (bsz, seqlen').
           logits: `float` sequence of shape (bsz, seqlen', vocab_size).
           training: `bool` indicating training or inference mode.
@@ -227,7 +224,7 @@ class TaskVideoDetection(task_lib.Task):
         config = self.config.task
         mconfig = self.config.model
         example = batched_examples
-        images, image_ids = example['video'], example['video/id']
+        videos, video_ids = example['video'], example['video/id']
         orig_video_size = example['orig_video_size']
         unpadded_video_size = example['unpadded_video_size']
 
@@ -236,7 +233,7 @@ class TaskVideoDetection(task_lib.Task):
             logits, pred_seq, config.quantization_bins, mconfig.coord_vocab_shift)
 
         # Compute coordinate scaling from [0., 1.] to actual pixels in orig image.
-        image_size = images.shape[1:3].as_list()
+        image_size = videos.shape[1:3].as_list()
         if training:
             # scale points to whole image size during train.
             scale = utils.tf_float32(image_size)
@@ -253,7 +250,7 @@ class TaskVideoDetection(task_lib.Task):
         gt_bboxes_rescaled = utils.scale_points(gt_bboxes, scale)
         area, is_crowd = example['area'], example['is_crowd']
 
-        return (images, image_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
+        return (videos, video_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
                 scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
                 # is_crowd
                 )

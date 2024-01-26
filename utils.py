@@ -266,16 +266,17 @@ def reduce_non_leading_dims(x, reduce_op=tf.reduce_sum, keepdims=True):
     return reduce_op(x, range(1, x.shape.ndims), keepdims=keepdims)
 
 
-def tile_along_batch(t, factor):
+def tile_along_batch(t_in, factor):
     """Tile tensor in the first/batch dimension."""
     if factor == 1:
-        return t
-    t = tf.expand_dims(t, 1)
-    multiples = [1] * t.shape.rank
+        return t_in
+    t_out = tf.expand_dims(t_in, 1)
+    multiples = [1] * t_out.shape.rank
     multiples[1] = factor
-    t = tf.tile(t, multiples)
-    shape = shape_as_list(t)
-    return tf.reshape(t, [shape[0] * shape[1]] + shape[2:])
+    t_out = tf.tile(t_out, multiples)
+    shape = shape_as_list(t_out)
+    t_out = tf.reshape(t_out, [shape[0] * shape[1]] + shape[2:])
+    return t_out
 
 
 def shape_as_list(t):
@@ -360,6 +361,12 @@ def quantize(coordinates, bins):
 
 
 def dequantize(boxes, bins):
+    """Dequantization of discrete tokens of coordinates in [0, bins-1]."""
+    boxes = tf.cast(boxes, tf.float32)
+    boxes = boxes / (bins - 1)
+    return boxes
+
+def dequantize_video(boxes, bins):
     """Dequantization of discrete tokens of coordinates in [0, bins-1]."""
     boxes = tf.cast(boxes, tf.float32)
     boxes = boxes / (bins - 1)
