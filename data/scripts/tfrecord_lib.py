@@ -92,7 +92,8 @@ def convert_to_feature(value, value_type=None):
 
 def video_info_to_feature_dict(height, width, filenames, video_id, image_dir):
     """Convert video information to a dict of features."""
-    file_paths = [os.path.realpath(os.path.join(image_dir, filename)) for filename in filenames]
+    file_paths = [os.path.join(image_dir, filename) for filename in filenames]
+    # file_paths = [os.path.realpath(file_path) for file_path in file_paths]
 
     img_type_accepted_by_tf = ["bmp", "gif", "jpeg", "png"]
 
@@ -113,7 +114,6 @@ def video_info_to_feature_dict(height, width, filenames, video_id, image_dir):
 
     file_paths = [file_path.encode('utf8') for file_path in file_paths]
 
-
     return {
         'video/height': convert_to_feature(height),
         'video/width': convert_to_feature(width),
@@ -121,6 +121,8 @@ def video_info_to_feature_dict(height, width, filenames, video_id, image_dir):
         'video/num_frames': convert_to_feature(len(filenames)),
         'video/source_id': convert_to_feature(video_id),
     }
+
+
 def image_info_to_feature_dict(height, width, filename, image_id,
                                encoded_str, encoded_format):
     """Convert image information to a dict of features."""
