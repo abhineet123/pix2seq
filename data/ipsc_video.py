@@ -57,6 +57,7 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         num_frames = int(example['video/num_frames'])
 
         filenames = example['video/filenames']
+
         # print(f'h, w : {h, w}')
         # print(f'num_frames: {num_frames}')
         # print(f'filenames: {filenames}')
@@ -74,8 +75,6 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
             return tf.io.decode_image(tf.io.read_file(x), channels=3)
             # exit()
 
-
-
         frames = tf.map_fn(
             lambda x: tf.io.decode_image(tf.io.read_file(x), channels=3),
             # read_video_frames,
@@ -84,23 +83,21 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         )
         frames.set_shape([None, None, None, 3])
 
-        new_example = {
-            'video/frames': tf.image.convert_image_dtype(frames, tf.float32),
-            'video/num_frames': tf.cast(num_frames, tf.int32),
-            'video/id': tf.cast(example['video/source_id'], tf.int32),
-        }
-
         bbox = decode_utils.decode_video_boxes(example, self.config.length)
         scale = 1. / utils.tf_float32((h, w))
         bbox = utils.scale_points(bbox, scale)
 
-        new_example.update({
+        new_example = {
+            'video/filenames': tf.cast(example['video/filenames'], tf.string),
+            'video/id': tf.cast(example['video/source_id'], tf.int64),
+            'video/frames': tf.image.convert_image_dtype(frames, tf.float32),
+            'video/num_frames': tf.cast(num_frames, tf.int32),
             'shape': utils.tf_float32((h, w)),
-            'class_name':  tf.cast(example['video/object/class/text'], dtype=tf.string),
+            'class_name': tf.cast(example['video/object/class/text'], dtype=tf.string),
             'class_id': example['video/object/class/label'],
             'bbox': bbox,
             'area': decode_utils.decode_video_areas(example, self.config.length),
             'is_crowd': tf.cast(example['video/object/is_crowd'], dtype=tf.bool),
-        })
+        }
 
         return new_example

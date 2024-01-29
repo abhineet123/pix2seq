@@ -44,6 +44,8 @@ import PIL.Image as Image
 import PIL.ImageColor as ImageColor
 import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
+
+import vocab
 from tasks.visualization import shape_utils
 from tasks.visualization import standard_fields as fields
 import six
@@ -989,6 +991,140 @@ def visualize_boxes_and_labels_on_image_array(
         # cv2.waitKey(100)
 
     return image
+
+
+def visualize_boxes_and_labels_on_video(
+        video_id,
+        video,
+        vid_len,
+        filenames,
+        bboxes_rescaled,
+        boxes,
+        classes,
+        scores,
+        category_index,
+        out_vis_dir=None,
+        csv_data=None,
+
+        use_normalized_coordinates=False,
+        max_boxes_to_draw=20,
+        min_score_thresh=.5,
+        agnostic_mode=False,
+        line_thickness=4,
+        groundtruth_box_visualization_color='black',
+        skip_boxes=False,
+        skip_scores=False,
+        skip_labels=False,
+):
+    box_to_display_str_map = collections.defaultdict(list)
+    box_to_color_map = collections.defaultdict(str)
+    box_to_rescaled_map = {}
+    box_to_class_map = {}
+    box_to_scores_map = {}
+
+    video_id = video_id.astype(str)
+    video_id_ = str(video_id.item())
+    if '/' in video_id_:
+        seq_id, video_id_ = video_id_.split('/')
+    else:
+        seg_dir_path = os.path.dirname(filenames[0])
+        seq_id = os.path.basename(seg_dir_path)
+
+    if not max_boxes_to_draw:
+        max_boxes_to_draw = boxes.shape[0]
+    """
+    Collect supplementary information for each bounding box including colour, class
+    """
+    for box_id in range(boxes.shape[0]):
+        if max_boxes_to_draw == len(box_to_color_map):
+            break
+        if scores is None or scores[box_id] > min_score_thresh:
+            box = tuple(boxes[box_id].tolist())
+
+            if classes[box_id] in six.viewkeys(category_index):
+                class_name = category_index[classes[box_id]]['name']
+            else:
+                class_name = 'N/A'
+            box_to_class_map[box] = class_name
+            box_to_rescaled_map[box] = tuple(bboxes_rescaled[box_id].tolist())
+
+            display_str = f'{video_id_}'
+            if not skip_labels:
+                if not agnostic_mode:
+                    display_str = f'{display_str} {str(class_name)}'
+
+            if scores is None:
+                box_to_color_map[box] = groundtruth_box_visualization_color
+                box_to_scores_map[box] = 1.0
+            else:
+                box_to_scores_map[box] = scores[box_id]
+
+                if not skip_scores:
+                    conf = 100 * scores[box_id]
+                    display_str = f'{display_str}: {conf}%'
+
+            box_to_display_str_map[box].append(display_str)
+            if agnostic_mode:
+                box_to_color_map[box] = 'DarkOrange'
+            else:
+                box_to_color_map[box] = STANDARD_COLORS[classes[box_id] %
+                                                        len(STANDARD_COLORS)]
+
+    for box, color in box_to_color_map.items():
+        box_rescaled = box_to_rescaled_map[box]
+        score = box_to_scores_map[box]
+        label = box_to_class_map[box]
+
+        for frame_id in range(vid_len):
+
+            start_id = frame_id * 4
+
+            ymin, xmin, ymax, xmax = box[start_id:start_id + 4]
+
+            if vocab.NO_BOX_FLOAT in [ymin, xmin, ymax, xmax]:
+                continue
+
+            image = video[frame_id, ...]
+
+            image_path = str(filenames[frame_id])
+            image_name = os.path.basename(image_path)
+
+            if csv_data is not None:
+                ymin_, xmin_, ymax_, xmax_ = box_rescaled[start_id:start_id + 4]
+                row = {
+                    "ImageID": image_name,
+                    "LabelName": label,
+                    "XMin": xmin_,
+                    "XMax": xmax_,
+                    "YMin": ymin_,
+                    "YMax": ymax_,
+                    "Confidence": score,
+                    "VideoID": video_id_,
+                }
+                csv_data[seq_id].append(row)
+
+            draw_bounding_box_on_image_array(
+                image,
+                ymin,
+                xmin,
+                ymax,
+                xmax,
+                color=color,
+                thickness=0 if skip_boxes else line_thickness,
+                display_str_list=box_to_display_str_map[box],
+                use_normalized_coordinates=use_normalized_coordinates)
+
+        if out_vis_dir:
+            import cv2
+            # all_video_out = cv2.VideoWriter(vis_out_fname, fourcc, 5, (video_w, video_h))
+            seq_vis_dir = os.path.join(out_vis_dir, seq_id)
+            os.makedirs(seq_vis_dir, exist_ok=True)
+            vis_path = os.path.join(seq_vis_dir, video_id_)
+            cv2.imwrite(vis_path, video)
+            # cv2.imshow('image', image)
+            # cv2.waitKey(100)
+
+    return video
 
 
 def add_cdf_image_summary(values, name):

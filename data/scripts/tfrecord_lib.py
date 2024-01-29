@@ -48,6 +48,9 @@ def convert_to_feature(value, value_type=None):
 
         element = value[0] if isinstance(value, list) else value
 
+        # if isinstance(element, str):
+        #     value_type = 'bytes'
+
         if isinstance(element, bytes):
             value_type = 'bytes'
 

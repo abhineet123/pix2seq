@@ -102,10 +102,9 @@ class Model(tf.keras.models.Model):
             config.pos_encoding_dec, config.shared_decoder_embedding,
             config.decoder_output_bias, name='ar_decoder')
 
-    def _encode_images(self, images, training):
-        """Encode images into latents for decoder to condition on."""
+    def _encode_videos(self, videos, training):
         config = self.config
-        encoded = self.encoder(images, training)
+        encoded = self.encoder(videos, training)
         # encoded = utils.flatten_vid(encoded)
 
         encoded = self.proj_ln(self.proj(encoded))
@@ -147,7 +146,7 @@ class Model(tf.keras.models.Model):
           logits for each predicted tokens of (bsz * instances, seqlen, vocab_size).
         """
         with tf.name_scope(''):  # for other functions to have the same name scope.
-            encoded = self._encode_images(images, training)
+            encoded = self._encode_videos(images, training)
 
             """_tile_vis_output is only needed if seq is 3D or above"""
             # encoded, seq = self._tile_vis_output(encoded, seq)
@@ -155,13 +154,13 @@ class Model(tf.keras.models.Model):
             logits = self.decoder(seq, encoded, training)
             return logits
 
-    def infer(self, images, prompt_seq, encoded=None, max_seq_len=None,
+    def infer(self, videos, prompt_seq, encoded=None, max_seq_len=None,
               temperature=1, top_k=1, top_p=1., num_samples=1,
               sampling_callback=None):
         """Model function call for inference.
 
         Args:
-          images: `float` tensor of (bsz, h, w, c).
+          videos: `float` tensor of (bsz, v, h, w, c).
           prompt_seq: `int` sequence visible to the model of shape (bsz, seqlen),
             or (bsz, instances, seqlen) if there are multiple sequences per image.
           encoded: cache for encoded images for decoder. Skip image encoding if this
@@ -185,7 +184,7 @@ class Model(tf.keras.models.Model):
           encoded: `float` tensor of encoded images.
         """
         if encoded is None:
-            encoded = self._encode_images(images, training=False)
+            encoded = self._encode_videos(videos, training=False)
 
         """only needed if prompt_seq is 3D or above"""
         # encoded, prompt_seq = self._tile_vis_output(encoded, prompt_seq)
@@ -286,7 +285,7 @@ class ModelT(Model):
             config.pos_encoding_dec, config.shared_decoder_embedding,
             config.decoder_output_bias, name='ar_decoder')
 
-    def _encode_images(self, images, training):
+    def _encode_videos(self, images, training):
         """Encode images into latents for decoder to condition on."""
         config = self.config
         sub_isize = [config.image_size[0] // self.drate,

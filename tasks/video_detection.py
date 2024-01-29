@@ -44,10 +44,10 @@ class TaskVideoDetection(task_lib.Task):
 
         self.max_seq_len = config.task.get('max_seq_len', 'auto')
         self.max_seq_len_test = config.task.get('max_seq_len_test', 'auto')
-        self.vid_len =  self.config.dataset.length
-        self.inst_len =  self.vid_len * 4 + 1
-        self.max_inst_per_image =  self.config.task.max_instances_per_image
-        self.max_inst_per_image_test =  self.config.task.max_instances_per_image_test
+        self.vid_len = self.config.dataset.length
+        self.inst_len = self.vid_len * 4 + 1
+        self.max_inst_per_image = self.config.task.max_instances_per_image
+        self.max_inst_per_image_test = self.config.task.max_instances_per_image_test
 
         if self.max_seq_len == 'auto':
             self.max_seq_len = self.max_inst_per_image * self.inst_len
@@ -84,6 +84,7 @@ class TaskVideoDetection(task_lib.Task):
                 video_id=example['video/id'],
                 num_frames=example['video/num_frames'],
                 video=example['video/frames'],
+                filenames=example['video/filenames'],
                 bbox=example['bbox'],
                 class_name=example['class_name'],
                 class_id=example['class_id'],
@@ -192,17 +193,14 @@ class TaskVideoDetection(task_lib.Task):
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
-        image, _, examples = preprocessed_outputs  # response_seq unused by default
-        bsz = tf.shape(image)[0]
+        video, _, examples = preprocessed_outputs  # response_seq unused by default
+        bsz = tf.shape(video)[0]
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id, prompt_shape=(bsz, 1))
         pred_seq, logits, _ = model.infer(
-            image, prompt_seq, encoded=None,
+            video, prompt_seq, encoded=None,
             max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
-        # if True:  # Sanity check by using gt response_seq as pred_seq.
-        #   pred_seq = preprocessed_outputs[1]
-        #   logits = tf.one_hot(pred_seq, mconfig.vocab_size)
         return examples, pred_seq, logits
 
     def postprocess_tpu(self, batched_examples, pred_seq, logits,
@@ -229,6 +227,7 @@ class TaskVideoDetection(task_lib.Task):
         mconfig = self.config.model
         example = batched_examples
         videos, video_ids = example['video'], example['video_id']
+        filenames = example['filenames']
         orig_video_size = example['orig_video_size']
         unpadded_video_size = example['unpadded_video_size']
 
@@ -254,95 +253,47 @@ class TaskVideoDetection(task_lib.Task):
         gt_bboxes_rescaled = utils.scale_points(gt_bboxes, scale)
         area, is_crowd = example['area'], example['is_crowd']
 
-        return (videos, video_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
-                scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
-                # is_crowd
-                )
+        return (
+            videos, video_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
+            scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
+        )
 
-    def postprocess_cpu(self,
-                        outputs,
-                        train_step,
-                        # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
-                        out_vis_dir=None,
-                        csv_data=None,
-                        eval_step=None,
-                        training=False,
-                        summary_tag='eval',
-                        ret_results=False):
-        """CPU post-processing of outputs.
-
-        Such as computing the metrics, log image summary.
-
-        Note: current implementation only support eval mode where gt are given in
-          metrics as they are not given here in outputs.
-
-        Args:
-          outputs: a tuple of tensor passed from `postprocess_tpu`.
-          train_step: `int` scalar indicating training step of current model or
-            the checkpoint.
-          eval_step: `int` scalar indicating eval step for the given checkpoint.
-          training: `bool` indicating training or inference mode.
-          summary_tag: `string` of name scope for result summary.
-          ret_results: whether to return visualization images.
-
-        Returns:
-          A dict of visualization images if ret_results, else None.
-        """
-        # Copy outputs to cpu.
+    def postprocess_cpu(
+            self,
+            outputs,
+            train_step,
+            out_vis_dir=None,
+            csv_data=None,
+            eval_step=None,
+            training=False,
+    ):
         new_outputs = []
         for i in range(len(outputs)):
-            # logging.info('Copying output at index %d to cpu for cpu post-process', i)
             new_outputs.append(tf.identity(outputs[i]))
-        (images, image_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
-         # pylint: disable=unbalanced-tuple-unpacking
-         scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
-         # is_crowd
+        (videos, video_ids,
+         pred_bboxes, pred_bboxes_rescaled,
+         pred_classes, scores, gt_classes,
+         gt_bboxes, gt_bboxes_rescaled, area,
          ) = new_outputs
 
-        if self.config.task.get('eval_outputs_json_path', None):
-            annotations = build_annotations(image_ids.numpy(),
-                                            pred_classes.numpy(),
-                                            pred_bboxes_rescaled.numpy(),
-                                            scores.numpy(),
-                                            len(self.eval_output_annotations))
-            self.eval_output_annotations.extend(annotations)
-
-        # Log/accumulate metrics.
-        # if self._coco_metrics:
-        #     self._coco_metrics.record_prediction(
-        #         image_ids, pred_bboxes_rescaled, pred_classes, scores)
-        #     if not self._coco_metrics.gt_annotations_path:
-        #         self._coco_metrics.record_groundtruth(
-        #             image_ids,
-        #             gt_bboxes_rescaled,
-        #             gt_classes,
-        #             areas=area,
-        #             is_crowds=is_crowd)
-
-        # Image summary.
-        if eval_step <= 10 or ret_results:
-            image_ids_ = image_ids.numpy().flatten().astype(str)
-            image_ids__ = list(image_ids_)
-            gt_tuple = (gt_bboxes, gt_classes, scores * 0. + 1., 'gt')  # pylint: disable=unused-variable
-            pred_tuple = (pred_bboxes, pred_bboxes_rescaled, pred_classes, scores, 'pred')
-            vis_list = [pred_tuple]  # exclude gt for simplicity.
-            ret_images = []
-            for bboxes_, bboxes_rescaled_, classes_, scores_, tag_ in vis_list:
-                tag = summary_tag + '/' + task_utils.join_if_not_none(
-                    [tag_, 'bbox', eval_step], '_')
-                bboxes_, bboxes_rescaled_, classes_, scores_ = (
-                    bboxes_.numpy(), bboxes_rescaled_.numpy(), classes_.numpy(), scores_.numpy())
-                images_ = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
-                ret_images += add_image_summary_with_bbox(
-                    images_, bboxes_, bboxes_rescaled_, classes_, scores_, self._category_names,
-                    image_ids__, train_step, tag,
-                    out_vis_dir=out_vis_dir,
-                    csv_data=csv_data,
-                    max_images_shown=(-1 if ret_results else 3))
-
-        logging.info('Done post-process')
-        if ret_results:
-            return ret_images
+        video_ids_ = video_ids.numpy().flatten().astype(str)
+        video_ids__ = list(video_ids_)
+        gt_tuple = (gt_bboxes, gt_classes, scores * 0. + 1., 'gt')  # pylint: disable=unused-variable
+        pred_tuple = (pred_bboxes, pred_bboxes_rescaled, pred_classes, scores, 'pred')
+        vis_list = [pred_tuple]  # exclude gt for simplicity.
+        # ret_images = []
+        for bboxes_, bboxes_rescaled_, classes_, scores_, tag_ in vis_list:
+            bboxes_, bboxes_rescaled_, classes_, scores_ = (
+                bboxes_.numpy(), bboxes_rescaled_.numpy(), classes_.numpy(), scores_.numpy())
+            videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
+            add_video_summary_with_bbox(
+                videos_, bboxes_, bboxes_rescaled_,
+                classes_, scores_, self._category_names,
+                video_ids__,
+                vid_len=self.vid_len,
+                out_vis_dir=out_vis_dir,
+                csv_data=csv_data,
+            )
 
     def compute_scalar_metrics(self, step):
         """Returns a dict containing scalar metrics to log."""
@@ -355,6 +306,34 @@ class TaskVideoDetection(task_lib.Task):
         """Reset states of metrics accumulators."""
         if self._coco_metrics:
             self._coco_metrics.reset_states()
+
+
+def add_video_summary_with_bbox(
+        videos, bboxes, bboxes_rescaled, classes, scores, category_names,
+        video_ids, vid_len,
+        out_vis_dir=None, csv_data=None, min_score_thresh=0.1):
+    k = 0
+    new_images = []
+    for video_id_, video, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
+            video_ids, videos, bboxes,
+            bboxes_rescaled, scores, classes):
+        keep_indices = np.where(classes_ > 0)[0]
+        image = vis_utils.visualize_boxes_and_labels_on_video(
+            out_vis_dir=out_vis_dir,
+            csv_data=csv_data,
+            video_id=video_id_,
+            video=video,
+            bboxes_rescaled=bboxes_rescaled_[keep_indices],
+            boxes=boxes_[keep_indices],
+            classes=classes_[keep_indices],
+            scores=scores_[keep_indices],
+            category_index=category_names,
+            use_normalized_coordinates=True,
+            min_score_thresh=min_score_thresh,
+            max_boxes_to_draw=100)
+        new_images.append(image)
+        k += 1
+    return new_images
 
 
 def build_response_seq_from_video_bboxes(
@@ -408,7 +387,7 @@ def build_response_seq_from_video_bboxes(
         # annoying errors like
         # "TypeError: Input 'e' of 'SelectV2' Op has type int64 that does not match type int32 of argument 't'."
         # will occur and only in non-eager mode for some reason
-        tf.zeros_like(quantized_bboxes)+vocab.NO_BOX_TOKEN,
+        tf.zeros_like(quantized_bboxes) + vocab.NO_BOX_TOKEN,
         quantized_bboxes)
 
     """set 0-labeled (padding) bboxes to zero"""

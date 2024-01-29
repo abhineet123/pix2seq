@@ -94,6 +94,8 @@ def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_
         data['category_id'].append(category_id)
         data['category_names'].append(id_to_name_map[category_id].encode('utf8'))
 
+        valid_box_exists = False
+
         for bbox_id, bbox in enumerate(bboxes):
             area = areas[bbox_id]
 
@@ -110,14 +112,20 @@ def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_
 
                 assert ymax > ymin and xmax > xmin, f"invalid bbox: {bbox}"
 
-            if bbox_id == 0:
-                xmin = ymin = xmax = ymax = area = None
+                valid_box_exists = True
+
+            # if bbox_id == 0:
+            #     xmin = ymin = xmax = ymax = area = None
 
             data[f'xmin-{bbox_id}'].append(xmin)
             data[f'xmax-{bbox_id}'].append(xmax)
             data[f'ymin-{bbox_id}'].append(ymin)
             data[f'ymax-{bbox_id}'].append(ymax)
             data[f'area-{bbox_id}'].append(area)
+
+        if not valid_box_exists:
+            raise AssertionError('all boxes for an object cannot be None')
+
     return data
 
 

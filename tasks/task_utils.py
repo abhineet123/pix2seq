@@ -149,12 +149,13 @@ def decode_video_seq_to_bbox(
 
     # truncate out the last few tokens
     if seqlen % bbox_seq_len != 0:
-        pred_seq = pred_seq[..., :-(seqlen % bbox_seq_len)]
-        logits = logits[..., :-(seqlen % bbox_seq_len), :]
+        truncate_len = seqlen % bbox_seq_len
+        pred_seq = pred_seq[..., :-truncate_len]
+        logits = logits[..., :-truncate_len, :]
     """
     extract probs for all classes - starting from 5th element and extracting every fifth element from there
     """
-    pred_class_p = tf.nn.softmax(logits)[:, bbox_seq_len::bbox_seq_len + 1]  # (bsz, instances, vocab_size)
+    pred_class_p = tf.nn.softmax(logits)[:, bbox_seq_len - 1::bbox_seq_len]  # (bsz, instances, vocab_size)
 
     """
     mask-out non-class portions of the vocab
@@ -176,11 +177,11 @@ def decode_video_seq_to_bbox(
         pred_class_p * tf.one_hot(pred_class, vocab_size), -1)
 
     pred_class = tf.maximum(pred_class - vocab.BASE_VOCAB_SHIFT, 0)
-    pred_bbox = seq_to_video_bbox(pred_seq - coord_vocab_shift, quantization_bins, vid_len)
+    pred_bbox = seq_to_video_bbox(pred_seq, quantization_bins, vid_len, coord_vocab_shift)
     return pred_class, pred_bbox, pred_score
 
 
-def seq_to_video_bbox(seq, quantization_bins, vid_len):
+def seq_to_video_bbox(seq, quantization_bins, vid_len, coord_vocab_shift):
     """Returns [0, 1] normalized yxyx bbox from token sequence."""
     # [batch, 5*num_instances]
     assert seq.shape.rank == 2, f'seq has non-rank 2 shape: {seq.shape.as_list()}'
@@ -189,7 +190,7 @@ def seq_to_video_bbox(seq, quantization_bins, vid_len):
 
     # [batch, num_instances, 1]
 
-    quantized_boxes = []
+    boxes = []
 
     for _id in range(vid_len):
         bbox_start_id = 4 * _id
@@ -197,17 +198,26 @@ def seq_to_video_bbox(seq, quantization_bins, vid_len):
         xmin = tf.expand_dims(seq[:, bbox_start_id + 1::bbox_seq_len], -1)
         ymax = tf.expand_dims(seq[:, bbox_start_id + 2::bbox_seq_len], -1)
         xmax = tf.expand_dims(seq[:, bbox_start_id + 3::bbox_seq_len], -1)
-        quantized_box = tf.concat([ymin, xmin, ymax, xmax], axis=-1)
-        quantized_box = utils.dequantize(quantized_box, quantization_bins)
+        box_tokens = tf.concat([ymin, xmin, ymax, xmax], axis=-1)
 
-        quantized_box = tf.minimum(tf.maximum(quantized_box, 0), 1)
-        # quantized_box = tf.expand_dims(quantized_box, -1)
+        is_no_box = tf.equal(box_tokens, vocab.NO_BOX_TOKEN)
+        is_padding = tf.equal(box_tokens, vocab.PADDING_TOKEN)
 
-        quantized_boxes.append(quantized_box)
+        box_quant = box_tokens - coord_vocab_shift
 
-    quantized_boxes = tf.concat(quantized_boxes, axis=-1)
+        box_dequant = utils.dequantize(box_quant, quantization_bins)
 
-    return quantized_boxes
+        box_clipped = tf.minimum(tf.maximum(box_dequant, 0), 1)
+
+        # box_quant = tf.expand_dims(box_quant, -1)
+        box_clipped = tf.where(is_no_box, vocab.NO_BOX_FLOAT, box_clipped)
+        box_clipped = tf.where(is_padding, vocab.PADDING_FLOAT, box_clipped)
+
+        boxes.append(box_clipped)
+
+    boxes = tf.concat(boxes, axis=-1)
+
+    return boxes
 
 
 def decode_object_seq_to_bbox(logits,
