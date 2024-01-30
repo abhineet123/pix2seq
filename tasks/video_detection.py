@@ -344,27 +344,6 @@ def build_response_seq_from_video_bboxes(
         coord_vocab_shift,
         vid_len,
         class_label_corruption='rand_cls'):
-    """"Build target seq from bounding bboxes for video detection.
-
-    Objects are serialized using the format of yxyx...c.
-
-    Args:
-      bboxes: `float` bounding box of shape (bsz, n, 4).
-      label: `int` label of shape (bsz, n).
-      quantization_bins: `int`.
-      noise_bbox_weight: `float` on the token weights for noise bboxes.
-      coord_vocab_shift: `int`, shifting coordinates by a specified integer.
-      class_label_corruption: `string` specifying how labels are corrupted for the
-        input_seq.
-
-    Returns:
-      discrete sequences with shape (bsz, seqlen).
-    """
-    # bboxes = tf.where(
-    #     bboxes == -1,
-    #     vocab.NO_BOX_TOKEN,
-    #     bboxes)
-    # from utils import add_name, np_dict
 
     assert bboxes.shape[-1] % 4 == 0, f"invalid bboxes shape: {bboxes.shape}"
 
@@ -372,6 +351,14 @@ def build_response_seq_from_video_bboxes(
     assert vid_len == n_bboxes_per_vid, f"Mismatch between vid_len: {vid_len} and n_bboxes_per_vid: {n_bboxes_per_vid}"
 
     is_no_box = tf.math.is_nan(bboxes)
+
+    """There should be at least one valid box per object"""
+    max_no_boxes_per_obj = vid_len - 1
+    n_no_boxes_per_obj = tf.reduce_sum(tf.cast(is_no_box, dtype=tf.int32), axis=-1) / 4
+    tf.debugging.assert_less_equal(
+        n_no_boxes_per_obj,
+        tf.cast(max_no_boxes_per_obj, n_no_boxes_per_obj.dtype), message="There should be at least one valid box per object"
+    )
 
     quantized_bboxes = utils.quantize(bboxes, quantization_bins)
     quantized_bboxes = quantized_bboxes + coord_vocab_shift
@@ -387,7 +374,8 @@ def build_response_seq_from_video_bboxes(
         # annoying errors like
         # "TypeError: Input 'e' of 'SelectV2' Op has type int64 that does not match type int32 of argument 't'."
         # will occur and only in non-eager mode for some reason
-        tf.zeros_like(quantized_bboxes) + vocab.NO_BOX_TOKEN,
+        tf.cast(vocab.NO_BOX_TOKEN, dtype=quantized_bboxes.dtype),
+        # tf.zeros_like(quantized_bboxes) + vocab.NO_BOX_TOKEN,
         quantized_bboxes)
 
     """set 0-labeled (padding) bboxes to zero"""
