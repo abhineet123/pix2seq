@@ -213,7 +213,10 @@ def seq_to_video_bbox(seq, quantization_bins, vid_len, coord_vocab_shift):
         is_invalid = tf.math.logical_or(is_no_box, is_not_coord)
         is_invalid = tf.math.logical_or(is_invalid, is_padding)
 
-        box_clipped = tf.where(is_invalid, vocab.NO_BOX_FLOAT, box_clipped)
+        box_clipped = tf.where(
+            is_invalid,
+            tf.cast(vocab.NO_BOX_FLOAT, box_clipped.dtype),
+            box_clipped)
 
         boxes.append(box_clipped)
 
