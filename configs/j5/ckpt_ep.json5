@@ -1,5 +1,6 @@
 {
   "train": {
-	checkpoint_epochs=%0%
+	checkpoint_epochs=%0%,
+  }
 
 }
