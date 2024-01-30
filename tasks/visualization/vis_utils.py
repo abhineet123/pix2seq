@@ -1062,8 +1062,8 @@ def visualize_boxes_and_labels_on_video(
                 box_to_scores_map[box] = scores[box_id]
 
                 if not skip_scores:
-                    conf = 100 * scores[box_id]
-                    display_str = f'{display_str}: {conf}%'
+                    conf = int(100 * scores[box_id])
+                    display_str = f'{display_str}: {conf:d}%'
 
             box_to_display_str_map[box].append(display_str)
             if agnostic_mode:

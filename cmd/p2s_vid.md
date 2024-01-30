@@ -41,4 +41,4 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 python3 run.py --cfg=configs/config_video_det_ipsc.py --j5=train,resnet-640,vid_det,pt-0,ipsc-g2_5_9,batch-8,dbg-0,dyn-1,ep-10000,dist-1,ckpt_ep-20
 <a id="on_g2_5_9___batch_8_g2_5_9_resnet_64_0_"></a>
 #### on-g2_5_9       @ batch-8/g2_5_9/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_5_9,batch-1,save-vis-1,dbg-1,dyn-1
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_5_9,batch-16,save-vis-1,dbg-0,dyn-1
