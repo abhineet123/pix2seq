@@ -1022,7 +1022,9 @@ def visualize_boxes_and_labels_on_video(
     box_to_class_map = {}
     box_to_scores_map = {}
 
-    seg_dir_path = os.path.dirname(str(filenames[0]))
+    filenames = [str(filename.decode("utf-8")) for filename in filenames.numpy()]
+
+    seg_dir_path = os.path.dirname(filenames[0])
     seq_name = os.path.basename(seg_dir_path)
 
     video_id = video_id.astype(str)
@@ -1072,30 +1074,27 @@ def visualize_boxes_and_labels_on_video(
                 box_to_color_map[box] = STANDARD_COLORS[classes[box_id] %
                                                         len(STANDARD_COLORS)]
 
-    for box, color in box_to_color_map.items():
-        box_rescaled = box_to_rescaled_map[box]
-        score = box_to_scores_map[box]
-        label = box_to_class_map[box]
+    for frame_id in range(vid_len):
+        start_id = frame_id * 4
+        image = video[frame_id, ...]
 
-        for frame_id in range(vid_len):
+        image_path = str(filenames[frame_id])
+        image_name = os.path.basename(image_path)
 
-            start_id = frame_id * 4
+        image_id = f'{image_name}'
+        seg_dir_path_ = os.path.dirname(str(filenames[frame_id]))
+
+        assert seg_dir_path_ == seg_dir_path, f"seg_dir_path_ mismatch: {seg_dir_path}, {seg_dir_path_}"
+
+        for box, color in box_to_color_map.items():
+            box_rescaled = box_to_rescaled_map[box]
+            score = box_to_scores_map[box]
+            label = box_to_class_map[box]
 
             ymin, xmin, ymax, xmax = box[start_id:start_id + 4]
 
             if vocab.NO_BOX_FLOAT in [ymin, xmin, ymax, xmax]:
                 continue
-
-            seg_dir_path_ = os.path.dirname(str(filenames[frame_id]))
-
-            assert seg_dir_path_ == seg_dir_path, f"seg_dir_path_ mismatch: {seg_dir_path}, {seg_dir_path_}"
-
-            image = video[frame_id, ...]
-
-            image_path = str(filenames[frame_id])
-            image_name = os.path.basename(image_path)
-
-            image_id = f'{image_name}'
             # image_id = f'{seq_name}/{image_name}'
 
             if csv_data is not None:
@@ -1123,17 +1122,17 @@ def visualize_boxes_and_labels_on_video(
                 display_str_list=box_to_display_str_map[box],
                 use_normalized_coordinates=use_normalized_coordinates)
 
-            if out_vis_dir:
-                import cv2
-                # all_video_out = cv2.VideoWriter(vis_out_fname, fourcc, 5, (video_w, video_h))
-                seq_vis_dir = os.path.join(out_vis_dir, seq_id)
-                os.makedirs(seq_vis_dir, exist_ok=True)
-                image_name_, image_ext_ = os.path.splitext(image_name)
-                vis_name = f'{image_name_}_{video_id_}{image_ext_}'
-                vis_path = os.path.join(seq_vis_dir, vis_name)
-                cv2.imwrite(vis_path, image)
-                # cv2.imshow('image', image)
-                # cv2.waitKey(100)
+        if out_vis_dir:
+            import cv2
+            # all_video_out = cv2.VideoWriter(vis_out_fname, fourcc, 5, (video_w, video_h))
+            seq_vis_dir = os.path.join(out_vis_dir, seq_id)
+            os.makedirs(seq_vis_dir, exist_ok=True)
+            image_name_, image_ext_ = os.path.splitext(image_name)
+            vis_name = f'{image_name_}_{video_id_}{image_ext_}'
+            vis_path = os.path.join(seq_vis_dir, vis_name)
+            cv2.imwrite(vis_path, image)
+            # cv2.imshow('image', image)
+            # cv2.waitKey(100)
 
     return video
 
