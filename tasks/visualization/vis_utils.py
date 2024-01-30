@@ -1123,15 +1123,17 @@ def visualize_boxes_and_labels_on_video(
                 display_str_list=box_to_display_str_map[box],
                 use_normalized_coordinates=use_normalized_coordinates)
 
-        if out_vis_dir:
-            import cv2
-            # all_video_out = cv2.VideoWriter(vis_out_fname, fourcc, 5, (video_w, video_h))
-            seq_vis_dir = os.path.join(out_vis_dir, seq_id)
-            os.makedirs(seq_vis_dir, exist_ok=True)
-            vis_path = os.path.join(seq_vis_dir, video_id_)
-            cv2.imwrite(vis_path, video)
-            # cv2.imshow('image', image)
-            # cv2.waitKey(100)
+            if out_vis_dir:
+                import cv2
+                # all_video_out = cv2.VideoWriter(vis_out_fname, fourcc, 5, (video_w, video_h))
+                seq_vis_dir = os.path.join(out_vis_dir, seq_id)
+                os.makedirs(seq_vis_dir, exist_ok=True)
+                image_name_, image_ext_ = os.path.splitext(image_name)
+                vis_name = f'{image_name_}_{video_id_}{image_ext_}'
+                vis_path = os.path.join(seq_vis_dir, vis_name)
+                cv2.imwrite(vis_path, image)
+                # cv2.imshow('image', image)
+                # cv2.waitKey(100)
 
     return video
 
