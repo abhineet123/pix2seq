@@ -204,14 +204,16 @@ def seq_to_video_bbox(seq, quantization_bins, vid_len, coord_vocab_shift):
         is_padding = tf.equal(box_tokens, vocab.PADDING_TOKEN)
 
         box_quant = box_tokens - coord_vocab_shift
+        is_not_coord = tf.less(box_quant, 0)
 
         box_dequant = utils.dequantize(box_quant, quantization_bins)
 
         box_clipped = tf.minimum(tf.maximum(box_dequant, 0), 1)
 
-        # box_quant = tf.expand_dims(box_quant, -1)
-        box_clipped = tf.where(is_no_box, vocab.NO_BOX_FLOAT, box_clipped)
-        box_clipped = tf.where(is_padding, vocab.PADDING_FLOAT, box_clipped)
+        is_invalid = tf.math.logical_or(is_no_box, is_not_coord)
+        is_invalid = tf.math.logical_or(is_invalid, is_padding)
+
+        box_clipped = tf.where(is_invalid, vocab.NO_BOX_FLOAT, box_clipped)
 
         boxes.append(box_clipped)
 

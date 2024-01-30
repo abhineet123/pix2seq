@@ -226,6 +226,10 @@ class TaskVideoDetection(task_lib.Task):
         config = self.config.task
         mconfig = self.config.model
         example = batched_examples
+
+        gt_classes, gt_bboxes = example['class_id'], example['bbox']
+        area, is_crowd = example['area'], example['is_crowd']
+
         videos, video_ids = example['video'], example['video_id']
         filenames = example['filenames']
         orig_video_size = example['orig_video_size']
@@ -247,15 +251,13 @@ class TaskVideoDetection(task_lib.Task):
                     utils.tf_float32(unpadded_video_size))
             scale = scale * utils.tf_float32(orig_video_size)
             scale = tf.expand_dims(scale, 1)
-        pred_bboxes_rescaled = utils.scale_points(pred_bboxes, scale)
 
-        gt_classes, gt_bboxes = example['class_id'], example['bbox']
+        pred_bboxes_rescaled = utils.scale_points(pred_bboxes, scale)
         gt_bboxes_rescaled = utils.scale_points(gt_bboxes, scale)
-        area, is_crowd = example['area'], example['is_crowd']
 
         return (
             videos, video_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
-            scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
+            scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area, filenames,
         )
 
     def postprocess_cpu(
@@ -265,7 +267,10 @@ class TaskVideoDetection(task_lib.Task):
             out_vis_dir=None,
             csv_data=None,
             eval_step=None,
+            summary_tag='eval',
             training=False,
+            min_score_thresh=0.1,
+            ret_results=False,
     ):
         new_outputs = []
         for i in range(len(outputs)):
@@ -274,6 +279,7 @@ class TaskVideoDetection(task_lib.Task):
          pred_bboxes, pred_bboxes_rescaled,
          pred_classes, scores, gt_classes,
          gt_bboxes, gt_bboxes_rescaled, area,
+         filenames
          ) = new_outputs
 
         video_ids_ = video_ids.numpy().flatten().astype(str)
@@ -288,11 +294,14 @@ class TaskVideoDetection(task_lib.Task):
             videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
             add_video_summary_with_bbox(
                 videos_, bboxes_, bboxes_rescaled_,
-                classes_, scores_, self._category_names,
-                video_ids__,
+                classes_, scores_,
+                category_names=self._category_names,
+                video_ids=video_ids__,
+                filenames=filenames,
                 vid_len=self.vid_len,
                 out_vis_dir=out_vis_dir,
                 csv_data=csv_data,
+                min_score_thresh=min_score_thresh,
             )
 
     def compute_scalar_metrics(self, step):
@@ -310,19 +319,21 @@ class TaskVideoDetection(task_lib.Task):
 
 def add_video_summary_with_bbox(
         videos, bboxes, bboxes_rescaled, classes, scores, category_names,
-        video_ids, vid_len,
+        video_ids, vid_len, filenames,
         out_vis_dir=None, csv_data=None, min_score_thresh=0.1):
     k = 0
-    new_images = []
-    for video_id_, video, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
-            video_ids, videos, bboxes,
+    new_videos = []
+    for video_id_, video, filenames_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
+            video_ids, videos, filenames, bboxes,
             bboxes_rescaled, scores, classes):
         keep_indices = np.where(classes_ > 0)[0]
-        image = vis_utils.visualize_boxes_and_labels_on_video(
+        new_video = vis_utils.visualize_boxes_and_labels_on_video(
             out_vis_dir=out_vis_dir,
             csv_data=csv_data,
             video_id=video_id_,
             video=video,
+            filenames=filenames_,
+            vid_len=vid_len,
             bboxes_rescaled=bboxes_rescaled_[keep_indices],
             boxes=boxes_[keep_indices],
             classes=classes_[keep_indices],
@@ -331,9 +342,9 @@ def add_video_summary_with_bbox(
             use_normalized_coordinates=True,
             min_score_thresh=min_score_thresh,
             max_boxes_to_draw=100)
-        new_images.append(image)
+        new_videos.append(new_video)
         k += 1
-    return new_images
+    return new_videos
 
 
 def build_response_seq_from_video_bboxes(

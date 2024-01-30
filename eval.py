@@ -11,6 +11,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     summary_writer = None
     # summary_writer = tf.summary.create_file_writer(FLAGS.model_dir)
 
+    is_video = 'video' in cfg.task.name
+
     with strategy.scope():
         # Restore model checkpoint.
         model = model_lib.ModelRegistry.lookup(cfg.model.name)(cfg)
@@ -83,15 +85,15 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             # with summary_writer.as_default():
 
             per_step_outputs = run_single_step(iterator)
-            vis_images = task.postprocess_cpu(
-                per_step_outputs,
+            task.postprocess_cpu(
+                outputs=per_step_outputs,
                 train_step=global_step.numpy(),
                 out_vis_dir=out_vis_dir,
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,
                 summary_tag=eval_tag,
                 min_score_thresh=cfg.eval.min_score_thresh,
-                ret_results=True)
+                ret_results=False)
 
             cur_step += 1
             if eval_steps:
@@ -114,6 +116,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             "ImageID", "LabelName",
             "XMin", "XMax", "YMin", "YMax", "Confidence",
         ]
+        if is_video:
+            csv_columns.insert(1, 'VideoID')
         # if params.enable_mask:
         #     csv_columns += ['mask_w', 'mask_h', 'mask_counts']
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():

@@ -1022,13 +1022,15 @@ def visualize_boxes_and_labels_on_video(
     box_to_class_map = {}
     box_to_scores_map = {}
 
+    seg_dir_path = os.path.dirname(str(filenames[0]))
+    seq_name = os.path.basename(seg_dir_path)
+
     video_id = video_id.astype(str)
     video_id_ = str(video_id.item())
     if '/' in video_id_:
         seq_id, video_id_ = video_id_.split('/')
     else:
-        seg_dir_path = os.path.dirname(filenames[0])
-        seq_id = os.path.basename(seg_dir_path)
+        seq_id = seq_name
 
     if not max_boxes_to_draw:
         max_boxes_to_draw = boxes.shape[0]
@@ -1084,22 +1086,29 @@ def visualize_boxes_and_labels_on_video(
             if vocab.NO_BOX_FLOAT in [ymin, xmin, ymax, xmax]:
                 continue
 
+            seg_dir_path_ = os.path.dirname(str(filenames[frame_id]))
+
+            assert seg_dir_path_ == seg_dir_path, f"seg_dir_path_ mismatch: {seg_dir_path}, {seg_dir_path_}"
+
             image = video[frame_id, ...]
 
             image_path = str(filenames[frame_id])
             image_name = os.path.basename(image_path)
 
+            image_id = f'{image_name}'
+            # image_id = f'{seq_name}/{image_name}'
+
             if csv_data is not None:
                 ymin_, xmin_, ymax_, xmax_ = box_rescaled[start_id:start_id + 4]
                 row = {
-                    "ImageID": image_name,
+                    "ImageID": image_id,
+                    "VideoID": video_id_,
                     "LabelName": label,
                     "XMin": xmin_,
                     "XMax": xmax_,
                     "YMin": ymin_,
                     "YMax": ymax_,
                     "Confidence": score,
-                    "VideoID": video_id_,
                 }
                 csv_data[seq_id].append(row)
 
