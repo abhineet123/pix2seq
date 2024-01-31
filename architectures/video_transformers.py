@@ -39,13 +39,13 @@ class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=mi
                 epsilon=1e-6,
                 center=ln_scale_shift,
                 scale=ln_scale_shift,
-                name='self_mha/ln')
+                name='mha/ln')
             self.self_mha = tf.keras.layers.MultiHeadAttention(
-                num_heads, dim // num_heads, dropout=drop_att, name='self_mha')
+                num_heads, dim // num_heads, dropout=drop_att, name='mha')
             if use_mlp:
                 self.self_mlp = MLP(1, dim, mlp_ratio, drop_path, drop_units,
                                     use_ffn_ln=use_ffn_ln, ln_scale_shift=ln_scale_shift,
-                                    name='self_mlp')
+                                    name='mlp')
         if cross_attention:
             self.cross_ln = tf.keras.layers.LayerNormalization(
                 epsilon=1e-6,

@@ -420,12 +420,12 @@ def replace_reserved_tokens(seq, ref_seq, replacements):
     return seq
 
 
-def restore_from_checkpoint(model_dir, except_partial, **kwargs):
+def restore_from_checkpoint(model_dir, allow_partial, **kwargs):
     """Restores the latest ckpt.
 
     Args:
       model_dir: directory of checkpoint to be restored.
-      except_partial: whether to allow partially restoring the checkpoint.
+      allow_partial: whether to allow partially restoring the checkpoint.
       **kwargs: arguments for `tf.train.Checkpoint` so it knows what to restore,
         e.g., `model=model, global_step=global_step, optimizer=optimizer`.
 
@@ -440,7 +440,7 @@ def restore_from_checkpoint(model_dir, except_partial, **kwargs):
     latest_ckpt = tf.train.latest_checkpoint(model_dir)
     if latest_ckpt:
         logging.info('Restoring from latest checkpoint: %s', latest_ckpt)
-        if except_partial:
+        if allow_partial:
             status = checkpoint.restore(latest_ckpt).expect_partial()
         else:
             status = checkpoint.restore(latest_ckpt)
