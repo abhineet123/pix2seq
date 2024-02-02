@@ -252,8 +252,8 @@ python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_38_53.j
 ## ipsc       @ video_tfrecord-->p2s_setup
 <a id="ext_reorg_roi_g2_0_4___ipsc_video_tfrecor_d_"></a>
 ### ext_reorg_roi_g2_0_4       @ ipsc/video_tfrecord-->p2s_setup
-python3 data/scripts/create_ipsc_video_tfrecord.py cfg=ipsc:gz:shards-2 ann_file=ext_reorg_roi_g2_0_4-length-2-stride-1
+python3 data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2 ann_file=ext_reorg_roi_g2_0_4-length-2-stride-1
 <a id="ext_reorg_roi_g2_5_9___ipsc_video_tfrecor_d_"></a>
 ### ext_reorg_roi_g2_5_9       @ ipsc/video_tfrecord-->p2s_setup
-python3 data/scripts/create_ipsc_video_tfrecord.py cfg=ipsc:gz:shards-2 ann_file=ext_reorg_roi_g2_5_9-length-2-stride-1
+python3 data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1:gap-4 ann_file=ext_reorg_roi_g2_5_9
 

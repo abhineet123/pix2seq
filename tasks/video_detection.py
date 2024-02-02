@@ -84,7 +84,8 @@ class TaskVideoDetection(task_lib.Task):
                 video_id=example['video/id'],
                 num_frames=example['video/num_frames'],
                 video=example['video/frames'],
-                filenames=example['video/filenames'],
+                file_names=example['video/file_names'],
+                file_ids=example['video/file_ids'],
                 bbox=example['bbox'],
                 class_name=example['class_name'],
                 class_id=example['class_id'],
@@ -180,9 +181,7 @@ class TaskVideoDetection(task_lib.Task):
         """
         token_weights = tf.where(
             target_seq == vocab.PADDING_TOKEN,
-            # stupid way of assigning eos_token_weight to padding tokens,
-            # just eos_token_weight should work here too since tf.where is supposed to broadcast
-            tf.zeros_like(token_weights) + config.eos_token_weight,
+            tf.cast(config.eos_token_weight, token_weights.dtype),
             token_weights)
 
         if training:
@@ -231,7 +230,8 @@ class TaskVideoDetection(task_lib.Task):
         area, is_crowd = example['area'], example['is_crowd']
 
         videos, video_ids = example['video'], example['video_id']
-        filenames = example['filenames']
+        file_names = example['file_names']
+        file_ids = example['file_ids']
         orig_video_size = example['orig_video_size']
         unpadded_video_size = example['unpadded_video_size']
 
@@ -257,7 +257,8 @@ class TaskVideoDetection(task_lib.Task):
 
         return (
             videos, video_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
-            scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area, filenames,
+            scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
+            file_names, file_ids
         )
 
     def postprocess_cpu(
@@ -279,12 +280,12 @@ class TaskVideoDetection(task_lib.Task):
          pred_bboxes, pred_bboxes_rescaled,
          pred_classes, scores, gt_classes,
          gt_bboxes, gt_bboxes_rescaled, area,
-         filenames
+         file_names, file_ids
          ) = new_outputs
 
         video_ids_ = video_ids.numpy().flatten().astype(str)
         video_ids__ = list(video_ids_)
-        gt_tuple = (gt_bboxes, gt_classes, scores * 0. + 1., 'gt')  # pylint: disable=unused-variable
+        # gt_tuple = (gt_bboxes, gt_classes, scores * 0. + 1., 'gt')  # pylint: disable=unused-variable
         pred_tuple = (pred_bboxes, pred_bboxes_rescaled, pred_classes, scores, 'pred')
         vis_list = [pred_tuple]  # exclude gt for simplicity.
         # ret_images = []
@@ -297,7 +298,8 @@ class TaskVideoDetection(task_lib.Task):
                 classes_, scores_,
                 category_names=self._category_names,
                 video_ids=video_ids__,
-                filenames=filenames,
+                filenames=file_names,
+                file_ids=file_ids,
                 vid_len=self.vid_len,
                 out_vis_dir=out_vis_dir,
                 csv_data=csv_data,
@@ -319,12 +321,15 @@ class TaskVideoDetection(task_lib.Task):
 
 def add_video_summary_with_bbox(
         videos, bboxes, bboxes_rescaled, classes, scores, category_names,
-        video_ids, vid_len, filenames,
-        out_vis_dir=None, csv_data=None, min_score_thresh=0.1):
+        video_ids, vid_len,
+        filenames,
+        file_ids,
+        out_vis_dir=None, csv_data=None,
+        min_score_thresh=0.1):
     k = 0
     new_videos = []
-    for video_id_, video, filenames_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
-            video_ids, videos, filenames, bboxes,
+    for video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
+            video_ids, videos, filenames, file_ids, bboxes,
             bboxes_rescaled, scores, classes):
         keep_indices = np.where(classes_ > 0)[0]
         new_video = vis_utils.visualize_boxes_and_labels_on_video(
@@ -332,7 +337,8 @@ def add_video_summary_with_bbox(
             csv_data=csv_data,
             video_id=video_id_,
             video=video,
-            filenames=filenames_,
+            file_names=filenames_,
+            file_ids=file_ids_,
             vid_len=vid_len,
             bboxes_rescaled=bboxes_rescaled_[keep_indices],
             boxes=boxes_[keep_indices],

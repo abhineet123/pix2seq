@@ -30,7 +30,7 @@ import paramparse
 from data.scripts import tfrecord_lib
 
 
-def load_ytvis_annotations(annotation_path):
+def load_ytvis_annotations(annotation_path, vid_id_offset):
     """Load instance annotations.
 
     Args:
@@ -54,12 +54,17 @@ def load_ytvis_annotations(annotation_path):
         raise AssertionError(f'Invalid annotation_path: {annotation_path}')
 
     video_info = annotations['videos']
+
+    if vid_id_offset > 0:
+        for vid in video_info:
+            vid["id"] += vid_id_offset
+
     category_id_to_name_map = dict(
         (element['id'], element['name']) for element in annotations['categories'])
 
     vid_to_ann = collections.defaultdict(list)
     for ann in annotations['annotations']:
-        vid_id = ann['video_id']
+        vid_id = ann['video_id'] + vid_id_offset
         vid_to_ann[vid_id].append(ann)
 
     return video_info, category_id_to_name_map, vid_to_ann
@@ -194,6 +199,11 @@ def create_video_tf_example(
         object_ann,
         image_dir,
 ):
+    file_ids = video['file_ids']
+
+    assert all(i < j for i, j in zip(file_ids, file_ids[1:])), \
+        "file_ids should be strictly increasing"
+
     video_height = video['height']
     video_width = video['width']
     file_names = video['file_names']
@@ -202,7 +212,7 @@ def create_video_tf_example(
     vid_len = len(file_names)
 
     feature_dict = tfrecord_lib.video_info_to_feature_dict(
-        video_height, video_width, file_names, video_id, image_dir)
+        video_height, video_width, file_names, file_ids, video_id, image_dir)
 
     if object_ann:
         # Bbox, area, etc.
@@ -223,6 +233,7 @@ class Params(paramparse.CFG):
         self.ann_file = ''
         self.ann_ext = 'json'
 
+        self.frame_gaps = []
         self.length = 0
         self.stride = 0
 
@@ -241,10 +252,43 @@ def main(_):
 
     assert os.path.exists(params.image_dir), f"image_dir does not exist: {params.image_dir}"
 
-    params.ann_file = os.path.join(params.image_dir, 'ytvis19', f'{params.ann_file}.{params.ann_ext}')
-    assert os.path.exists(params.ann_file), f"ann_file does not exist: {params.ann_file}"
+    if params.length:
+        params.ann_file = f'{params.ann_file}-length-{params.length}'
 
-    video_info, category_id_to_name_map, vid_to_obj_ann = load_ytvis_annotations(params.ann_file)
+    if params.stride:
+        params.ann_file = f'{params.ann_file}-stride-{params.stride}'
+
+    if params.frame_gaps:
+        ann_files = [f'{params.ann_file}-frame_gap-{frame_gap}' if frame_gap > 1 else params.ann_file
+                     for frame_gap in params.frame_gaps]
+    else:
+        ann_files = params.ann_file
+
+    params.ann_file = None
+
+    ann_files = [os.path.join(params.image_dir, 'ytvis19', f'{ann_file}.{params.ann_ext}') for ann_file in ann_files]
+    vid_id_offset = 0
+    video_info = []
+    category_id_to_name_map = {}
+    vid_to_obj_ann = collections.defaultdict(list)
+
+    for ann_file in ann_files:
+        assert os.path.exists(ann_file), f"ann_file does not exist: {ann_file}"
+        video_info_, category_id_to_name_map_, vid_to_obj_ann_ = load_ytvis_annotations(ann_file, vid_id_offset)
+
+        existing_vid_ids = set(vid_to_obj_ann.keys())
+        new_vid_ids = set(vid_to_obj_ann_.keys())
+        overlapped_vid_ids = existing_vid_ids.intersection(new_vid_ids)
+
+        assert not overlapped_vid_ids, f"overlapped_vid_ids found: {overlapped_vid_ids}"
+
+        video_info += video_info_
+        vid_to_obj_ann.update(vid_to_obj_ann_)
+        category_id_to_name_map.update(category_id_to_name_map_)
+
+        vid_id_offset = max(vid_to_obj_ann.keys())
+
+        # print()
 
     if not params.output_dir:
         output_dir = os.path.join(params.image_dir, 'ytvis19', 'tfrecord')
@@ -253,7 +297,11 @@ def main(_):
 
     os.makedirs(params.output_dir, exist_ok=True)
 
-    out_name = os.path.basename(params.ann_file).split(os.extsep)[0]
+    out_name = os.path.basename(ann_files[0]).split(os.extsep)[0]
+    if params.frame_gaps:
+        frame_gaps_suffix = '_'.join(map(str, params.frame_gaps))
+        out_name = f'{out_name}_fg_{frame_gaps_suffix}'
+
     annotations_iter = generate_video_annotations(
         videos=video_info,
         category_id_to_name_map=category_id_to_name_map,

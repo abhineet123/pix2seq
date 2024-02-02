@@ -997,7 +997,8 @@ def visualize_boxes_and_labels_on_video(
         video_id,
         video,
         vid_len,
-        filenames,
+        file_names,
+        file_ids,
         bboxes_rescaled,
         boxes,
         classes,
@@ -1022,9 +1023,9 @@ def visualize_boxes_and_labels_on_video(
     box_to_class_map = {}
     box_to_scores_map = {}
 
-    filenames = [str(filename.decode("utf-8")) for filename in filenames.numpy()]
+    file_names = [str(filename.decode("utf-8")) for filename in file_names.numpy()]
 
-    seg_dir_path = os.path.dirname(filenames[0])
+    seg_dir_path = os.path.dirname(file_names[0])
     seq_name = os.path.basename(seg_dir_path)
 
     video_id = video_id.astype(str)
@@ -1078,11 +1079,11 @@ def visualize_boxes_and_labels_on_video(
         start_id = frame_id * 4
         image = video[frame_id, ...]
 
-        image_path = str(filenames[frame_id])
+        image_path = str(file_names[frame_id])
         image_name = os.path.basename(image_path)
 
         image_id = f'{image_name}'
-        seg_dir_path_ = os.path.dirname(str(filenames[frame_id]))
+        seg_dir_path_ = os.path.dirname(str(file_names[frame_id]))
 
         assert seg_dir_path_ == seg_dir_path, f"seg_dir_path_ mismatch: {seg_dir_path}, {seg_dir_path_}"
 

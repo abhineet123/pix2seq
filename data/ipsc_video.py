@@ -56,23 +56,23 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         h, w = int(example['video/height']), int(example['video/width'])
         num_frames = int(example['video/num_frames'])
 
-        filenames = example['video/filenames']
+        filenames = example['video/file_names']
 
         # print(f'h, w : {h, w}')
         # print(f'num_frames: {num_frames}')
         # print(f'filenames: {filenames}')
         # exit()
 
-        def read_video_frames(x):
-            print(f'x: {x}')
-            tf.print(f'x: {x}')
+        # def read_video_frames(x):
+        #     print(f'x: {x}')
+        #     tf.print(f'x: {x}')
 
             # root_dir = tf.convert_to_tensor(self.config.root_dir)
             # file_path = tf.strings.join([root_dir, x], os.path.sep)
             # print(f'file_path: {file_path}')
             # tf.print(f'file_path: {file_path}')
 
-            return tf.io.decode_image(tf.io.read_file(x), channels=3)
+            # return tf.io.decode_image(tf.io.read_file(x), channels=3)
             # exit()
 
         frames = tf.map_fn(
@@ -88,7 +88,8 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         bbox = utils.scale_points(bbox, scale)
 
         new_example = {
-            'video/filenames': tf.cast(example['video/filenames'], tf.string),
+            'video/file_names': tf.cast(example['video/file_names'], tf.string),
+            'video/file_ids': tf.cast(example['video/file_ids'], tf.int64),
             'video/id': tf.cast(example['video/source_id'], tf.int64),
             'video/frames': tf.image.convert_image_dtype(frames, tf.float32),
             'video/num_frames': tf.cast(num_frames, tf.int32),

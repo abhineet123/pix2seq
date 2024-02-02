@@ -47,7 +47,8 @@ def get_feature_map_for_video():
         'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),
-        'video/filenames': tf.io.VarLenFeature(tf.string),
+        'video/file_names': tf.io.VarLenFeature(tf.string),
+        'video/file_ids': tf.io.VarLenFeature(tf.int64),
     }
 
 

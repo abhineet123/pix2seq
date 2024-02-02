@@ -62,8 +62,12 @@ def ipsc_post_process(dataset_cfg):
     is_video = 'video' in dataset_cfg.name
 
     root_dir = dataset_cfg.root_dir
+
     train_name = dataset_cfg.train_name
     eval_name = dataset_cfg.eval_name
+
+    train_frame_gaps = dataset_cfg.train_frame_gaps
+    eval_frame_gaps = dataset_cfg.eval_frame_gaps
 
     dataset_cfg.image_dir = root_dir
 
@@ -78,12 +82,23 @@ def ipsc_post_process(dataset_cfg):
             if length_suffix not in eval_name:
                 eval_name = f'{eval_name}-{length_suffix}'
 
-        if dataset_cfg.stride:
-            stride_suffix = f'stride-{dataset_cfg.stride}'
-            if stride_suffix not in train_name:
-                train_name = f'{train_name}-{stride_suffix}'
-            if stride_suffix not in eval_name:
-                eval_name = f'{eval_name}-{stride_suffix}'
+        for mode in ['train', 'eval']:
+
+
+
+            if dataset_cfg.stride:
+                stride_suffix = f'stride-{dataset_cfg.stride}'
+                if stride_suffix not in train_name:
+                    train_name = f'{train_name}-{stride_suffix}'
+                if stride_suffix not in eval_name:
+                    eval_name = f'{eval_name}-{stride_suffix}'
+
+            if train_frame_gaps:
+                frame_gaps_suffix = '_'.join(map(str, train_frame_gaps))
+                train_name = f'{train_name}_fg_{frame_gaps_suffix}'
+            if eval_frame_gaps:
+                frame_gaps_suffix = '_'.join(map(str, eval_frame_gaps))
+                eval_name = f'{eval_name}_fg_{frame_gaps_suffix}'
 
         dataset_cfg.train_name = train_name
         dataset_cfg.eval_name = eval_name
@@ -166,7 +181,12 @@ def get_ipsc_video_data():
         compressed=1,
         max_disp=0.01,
         length=2,
-        stride=1,
+
+        train_stride=1,
+        train_frame_gaps=[],
+        eval_stride=1,
+        eval_frame_gaps=[],
+
         **_shared_dataset_config
     )
 

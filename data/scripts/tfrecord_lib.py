@@ -90,10 +90,11 @@ def convert_to_feature(value, value_type=None):
         raise ValueError('Unknown value_type parameter - {}'.format(value_type))
 
 
-def video_info_to_feature_dict(height, width, filenames, video_id, image_dir):
+def video_info_to_feature_dict(height, width, file_names, file_ids, video_id, image_dir):
     """Convert video information to a dict of features."""
-    file_paths = [os.path.join(image_dir, filename) for filename in filenames]
+    file_paths = [os.path.join(image_dir, filename) for filename in file_names]
     # file_paths = [os.path.realpath(file_path) for file_path in file_paths]
+
 
     img_type_accepted_by_tf = ["bmp", "gif", "jpeg", "png"]
 
@@ -117,8 +118,9 @@ def video_info_to_feature_dict(height, width, filenames, video_id, image_dir):
     return {
         'video/height': convert_to_feature(height),
         'video/width': convert_to_feature(width),
-        'video/filenames': convert_to_feature(file_paths),
-        'video/num_frames': convert_to_feature(len(filenames)),
+        'video/file_names': convert_to_feature(file_paths),
+        'video/file_ids': convert_to_feature(file_ids),
+        'video/num_frames': convert_to_feature(len(file_names)),
         'video/source_id': convert_to_feature(video_id),
     }
 
