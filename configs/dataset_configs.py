@@ -113,8 +113,16 @@ def ipsc_post_process(cfg):
     if is_video:
         db_root_dir = os.path.join(root_dir, 'ytvis19')
         db_type = 'videos'
-        for mode in ['train', 'eval']:
-            name = cfg[f'{mode}_name']
+    else:
+        db_root_dir = root_dir
+        db_type = 'images'
+
+    cfg.db_root_dir = db_root_dir
+
+    for mode in ['train', 'eval']:
+        name = cfg[f'{mode}_name']
+        tf_record_name = name
+        if is_video:
             if cfg.length:
                 length_suffix = f'length-{cfg.length}'
                 if length_suffix not in name:
@@ -124,24 +132,17 @@ def ipsc_post_process(cfg):
                 stride_suffix = f'stride-{stride}'
                 if stride_suffix not in name:
                     name = f'{name}-{stride_suffix}'
+            tf_record_name = name
+
             frame_gaps = cfg[f'{mode}_frame_gaps']
-            if frame_gaps:
+            if len(frame_gaps) > 1:
                 frame_gaps_suffix = 'fg_' + '_'.join(map(str, frame_gaps))
-                if frame_gaps_suffix not in name:
-                    name = f'{name}-{frame_gaps_suffix}'
-            cfg[f'{mode}_name'] = name
-    else:
-        db_root_dir = root_dir
-        db_type = 'images'
-
-    cfg.db_root_dir = db_root_dir
-
-    for mode in ['train', 'eval']:
-        name = cfg[f'{mode}_name']
+                if frame_gaps_suffix not in tf_record_name:
+                    tf_record_name = f'{tf_record_name}-{frame_gaps_suffix}'
 
         json_name = f'{name}.json'
         if cfg.compressed:
-            name += '.gz'
+            json_name += '.gz'
         json_path = os.path.join(db_root_dir, json_name)
         if cfg.compressed:
             import compress_json
@@ -152,9 +153,11 @@ def ipsc_post_process(cfg):
                 json_dict = json.load(fid)
 
         num_examples = len(json_dict[db_type])
+
+        cfg[f'{mode}_name'] = name
         cfg[f'{mode}_num_examples'] = num_examples
         cfg[f'{mode}_filename_for_metrics'] = json_name
-        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name + '*')
+        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', tf_record_name + '*')
 
     cfg.category_names_path = os.path.join(db_root_dir, cfg.eval_filename_for_metrics)
     cfg.coco_annotations_dir_for_metrics = db_root_dir

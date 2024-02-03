@@ -298,9 +298,11 @@ def main(_):
     os.makedirs(params.output_dir, exist_ok=True)
 
     out_name = os.path.basename(ann_files[0]).split(os.extsep)[0]
-    if params.frame_gaps:
-        frame_gaps_suffix = '_'.join(map(str, params.frame_gaps))
-        out_name = f'{out_name}_fg_{frame_gaps_suffix}'
+
+    if len(params.frame_gaps) > 1:
+        frame_gaps_suffix = 'fg_' + '_'.join(map(str, params.frame_gaps))
+        if frame_gaps_suffix not in out_name:
+            out_name = f'{out_name}-fg_{frame_gaps_suffix}'
 
     annotations_iter = generate_video_annotations(
         videos=video_info,
