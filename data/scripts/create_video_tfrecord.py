@@ -302,7 +302,7 @@ def main(_):
     if len(params.frame_gaps) > 1:
         frame_gaps_suffix = 'fg_' + '_'.join(map(str, params.frame_gaps))
         if frame_gaps_suffix not in out_name:
-            out_name = f'{out_name}-fg_{frame_gaps_suffix}'
+            out_name = f'{out_name}-{frame_gaps_suffix}'
 
     annotations_iter = generate_video_annotations(
         videos=video_info,
