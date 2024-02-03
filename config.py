@@ -172,6 +172,33 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
         else:
             task.train_transforms = train_transforms_fn(image_size, task.max_instances_per_image)
 
+def expand_list(val):
+    val = val.strip()
+    if val.startswith('range('):
+        """standard (exclusive) range"""
+        end_id = val.find(')')
+        assert end_id > 6, f"invalid tuple str: {val}"
+        substr = val[:end_id+1]
+        val_list = val[6:].replace(')', '').split(',')
+        val_list = [int(x) for x in val_list]
+        val_list = list(range(*val_list))
+        out_str = val.replace(substr, f'{val_list}')
+        return val_list
+    elif val.startswith('irange('):
+        end_id = val.find(')')
+        assert end_id > 7, f"invalid tuple str: {val}"
+        substr = val[:end_id+1]
+        """inclusive range"""
+        val_list = val.replace('irange(', '').replace(')', '').split(',')
+        val_list = [int(x) for x in val_list if x]
+        if len(val_list) == 1:
+            val_list[0] += 1
+        elif len(val_list) >= 2:
+            val_list[1] += 1
+        val_list = list(range(*val_list))
+        out_str = val.replace(substr, f'{val_list}')
+        return out_str
+    return val
 
 def load_from_json5(json_list, json_root):
     """ml_collections.ConfigDict supports recursive updating for dict but not for list so this
@@ -225,7 +252,7 @@ def load_from_json5(json_list, json_root):
             json_str = json_str.replace(f'%{var_id}%', json_var)
 
         """
-        remove lines with under specified optional vars
+        remove lines with unspecified optional vars
         """
         json_lines = json_str.splitlines()
         valid_line_ids = []
@@ -239,9 +266,18 @@ def load_from_json5(json_list, json_root):
                 raise AssertionError(f'{json_name}: unsubstituted position variable found in {json_line}')
             if any(f'%{var}%' in json_line for var in NAMED_JSON_VARS):
                 raise AssertionError(f'{json_name}: unsubstituted named variable found in {json_line}')
-
             if is_valid:
                 valid_line_ids.append(line_id)
+            else:
+                continue
+            try:
+                arg_name, arg_val = json_line.split(':')
+            except ValueError:
+                pass
+            else:
+                arg_tuple = expand_list(arg_val)
+                json_line_ = f'{arg_name}: {arg_tuple}'
+                json_lines[line_id] = json_line_
 
         json_str = '\n'.join(json_lines[i] for i in valid_line_ids)
 

@@ -56,95 +56,6 @@ _shared_coco_dataset_config = D(
 )
 
 
-def ipsc_post_process(dataset_cfg):
-    import os
-
-    is_video = 'video' in dataset_cfg.name
-
-    root_dir = dataset_cfg.root_dir
-
-    train_name = dataset_cfg.train_name
-    eval_name = dataset_cfg.eval_name
-
-    train_frame_gaps = dataset_cfg.train_frame_gaps
-    eval_frame_gaps = dataset_cfg.eval_frame_gaps
-
-    dataset_cfg.image_dir = root_dir
-
-    if is_video:
-        db_root_dir = os.path.join(root_dir, 'ytvis19')
-        db_type = 'videos'
-
-        if dataset_cfg.length:
-            length_suffix = f'length-{dataset_cfg.length}'
-            if length_suffix not in train_name:
-                train_name = f'{train_name}-{length_suffix}'
-            if length_suffix not in eval_name:
-                eval_name = f'{eval_name}-{length_suffix}'
-
-        for mode in ['train', 'eval']:
-
-
-
-            if dataset_cfg.stride:
-                stride_suffix = f'stride-{dataset_cfg.stride}'
-                if stride_suffix not in train_name:
-                    train_name = f'{train_name}-{stride_suffix}'
-                if stride_suffix not in eval_name:
-                    eval_name = f'{eval_name}-{stride_suffix}'
-
-            if train_frame_gaps:
-                frame_gaps_suffix = '_'.join(map(str, train_frame_gaps))
-                train_name = f'{train_name}_fg_{frame_gaps_suffix}'
-            if eval_frame_gaps:
-                frame_gaps_suffix = '_'.join(map(str, eval_frame_gaps))
-                eval_name = f'{eval_name}_fg_{frame_gaps_suffix}'
-
-        dataset_cfg.train_name = train_name
-        dataset_cfg.eval_name = eval_name
-    else:
-        db_root_dir = root_dir
-        db_type = 'images'
-
-    dataset_cfg.db_root_dir = db_root_dir
-
-    train_json_name = f'{train_name}.json'
-    eval_json_name = f'{eval_name}.json'
-
-    if dataset_cfg.compressed:
-        train_json_name += '.gz'
-        eval_json_name += '.gz'
-
-    train_json_path = os.path.join(db_root_dir, train_json_name)
-    eval_json_path = os.path.join(db_root_dir, eval_json_name)
-
-    if dataset_cfg.compressed:
-        import compress_json
-        train_dict = compress_json.load(train_json_path)
-        eval_dict = compress_json.load(eval_json_path)
-    else:
-        import json
-        with open(train_json_path, 'r') as fid:
-            train_dict = json.load(fid)
-        with open(eval_json_path, 'r') as fid:
-            eval_dict = json.load(fid)
-
-    num_train = len(train_dict[db_type])
-    num_eval = len(eval_dict[db_type])
-
-    dataset_cfg.train_num_examples = num_train
-    dataset_cfg.eval_num_examples = num_eval
-
-    dataset_cfg.train_filename_for_metrics = train_json_name
-    dataset_cfg.eval_filename_for_metrics = eval_json_name
-
-    dataset_cfg.train_file_pattern = os.path.join(db_root_dir, 'tfrecord', train_name + '*')
-    dataset_cfg.eval_file_pattern = os.path.join(db_root_dir, 'tfrecord', eval_name + '*')
-
-    dataset_cfg.category_names_path = os.path.join(db_root_dir, dataset_cfg.eval_filename_for_metrics)
-    dataset_cfg.coco_annotations_dir_for_metrics = db_root_dir
-
-
 def get_ipsc_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
 
@@ -189,6 +100,64 @@ def get_ipsc_video_data():
 
         **_shared_dataset_config
     )
+
+
+def ipsc_post_process(cfg):
+    import os
+
+    is_video = 'video' in cfg.name
+
+    root_dir = cfg.root_dir
+    cfg.image_dir = root_dir
+
+    if is_video:
+        db_root_dir = os.path.join(root_dir, 'ytvis19')
+        db_type = 'videos'
+        for mode in ['train', 'eval']:
+            name = cfg[f'{mode}_name']
+            if cfg.length:
+                length_suffix = f'length-{cfg.length}'
+                if length_suffix not in name:
+                    name = f'{name}-{length_suffix}'
+            stride = cfg[f'{mode}_stride']
+            if stride:
+                stride_suffix = f'stride-{stride}'
+                if stride_suffix not in name:
+                    name = f'{name}-{stride_suffix}'
+            frame_gaps = cfg[f'{mode}_frame_gaps']
+            if frame_gaps:
+                frame_gaps_suffix = 'fg_' + '_'.join(map(str, frame_gaps))
+                if frame_gaps_suffix not in name:
+                    name = f'{name}-{frame_gaps_suffix}'
+            cfg[f'{mode}_name'] = name
+    else:
+        db_root_dir = root_dir
+        db_type = 'images'
+
+    cfg.db_root_dir = db_root_dir
+
+    for mode in ['train', 'eval']:
+        name = cfg[f'{mode}_name']
+
+        json_name = f'{name}.json'
+        if cfg.compressed:
+            name += '.gz'
+        json_path = os.path.join(db_root_dir, json_name)
+        if cfg.compressed:
+            import compress_json
+            json_dict = compress_json.load(json_path)
+        else:
+            import json
+            with open(json_path, 'r') as fid:
+                json_dict = json.load(fid)
+
+        num_examples = len(json_dict[db_type])
+        cfg[f'{mode}_num_examples'] = num_examples
+        cfg[f'{mode}_filename_for_metrics'] = json_name
+        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name + '*')
+
+    cfg.category_names_path = os.path.join(db_root_dir, cfg.eval_filename_for_metrics)
+    cfg.coco_annotations_dir_for_metrics = db_root_dir
 
 
 dataset_configs = {
