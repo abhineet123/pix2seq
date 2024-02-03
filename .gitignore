@@ -4,6 +4,8 @@ resources.py
 checkpoint
 log
 
+*.cache*
+*.cache/
 .idea*
 labelImg.egg-info*
 
