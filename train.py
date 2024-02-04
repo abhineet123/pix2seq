@@ -56,9 +56,9 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
             cur_epoch += 1
             tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
+                train_multiple_steps(data_iterators, tasks)
                 trainer.check_checkpoint_restored()
 
-                train_multiple_steps(data_iterators, tasks)
                 cur_step = global_step.numpy()
                 # if cfg.dist != 2 or cfg.worker_idx == 0:
                 trainer.checkpoint_manager.save(cur_step)
