@@ -121,7 +121,6 @@ def ipsc_post_process(cfg):
 
     for mode in ['train', 'eval']:
         name = cfg[f'{mode}_name']
-        tf_record_name = name
         if is_video:
             if cfg.length:
                 length_suffix = f'length-{cfg.length}'
@@ -132,13 +131,12 @@ def ipsc_post_process(cfg):
                 stride_suffix = f'stride-{stride}'
                 if stride_suffix not in name:
                     name = f'{name}-{stride_suffix}'
-            tf_record_name = name
 
             frame_gaps = cfg[f'{mode}_frame_gaps']
             if len(frame_gaps) > 1:
                 frame_gaps_suffix = 'fg_' + '_'.join(map(str, frame_gaps))
-                if frame_gaps_suffix not in tf_record_name:
-                    tf_record_name = f'{tf_record_name}-{frame_gaps_suffix}'
+                if frame_gaps_suffix not in name:
+                    name = f'{name}-{frame_gaps_suffix}'
 
         json_name = f'{name}.json'
         if cfg.compressed:
@@ -154,10 +152,13 @@ def ipsc_post_process(cfg):
 
         num_examples = len(json_dict[db_type])
 
+
         cfg[f'{mode}_name'] = name
+        # cfg[f'{mode}_json_name'] = json_name
+        # cfg[f'{mode}_json_path'] = json_path
         cfg[f'{mode}_num_examples'] = num_examples
         cfg[f'{mode}_filename_for_metrics'] = json_name
-        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', tf_record_name + '*')
+        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name + '*')
 
     cfg.category_names_path = os.path.join(db_root_dir, cfg.eval_filename_for_metrics)
     cfg.coco_annotations_dir_for_metrics = db_root_dir

@@ -6,7 +6,7 @@ import utils
 from architectures import resnet
 import tensorflow as tf
 
-from architectures.transformers import MLP, DropPath, get_shape, add_cls_token_emb, add_vis_pos_emb
+from architectures.transformers import MLP, DropPath, get_shape, add_cls_token_emb, add_vis_pos_emb, suffix_id
 
 
 class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
@@ -129,7 +129,7 @@ class VideoTransformerEncoder(tf.keras.layers.Layer):  # pylint: disable=missing
                 self_attention=self_attention,
                 use_ffn_ln=use_ffn_ln,
                 ln_scale_shift=ln_scale_shift,
-                name=f'video_transformer_encoder_{i}')
+                name='transformer_encoder' + suffix_id(i))
             for i in range(num_layers)
         ]
 
@@ -202,7 +202,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             drop_path=drop_path,
             drop_units=drop_units,
             drop_att=drop_att,
-            name='video_transformer_encoder')
+            name='transformer_encoder')
         self.output_ln = tf.keras.layers.LayerNormalization(
             epsilon=1e-6, name='ouput_ln')
 

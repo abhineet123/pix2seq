@@ -30,19 +30,25 @@ import paramparse
 from data.scripts import tfrecord_lib
 
 
+def save_ytvis_annotations(json_dict, json_path):
+    print(f'saving ytvis annotations to {json_path}')
+    json_kwargs = dict(
+        indent=4
+    )
+    if json_path.endswith('.json.gz'):
+        import compress_json
+        compress_json.dump(json_dict, json_path, json_kwargs=json_kwargs)
+    elif json_path.endswith('.json'):
+        import json
+        output_json = json.dumps(json_dict, **json_kwargs)
+        with open(json_path, 'w') as f:
+            f.write(output_json)
+    else:
+        raise AssertionError(f'Invalid json_path: {json_path}')
+
+
 def load_ytvis_annotations(annotation_path, vid_id_offset):
-    """Load instance annotations.
-
-    Args:
-      annotation_path: str. Path to the annotation file.
-
-    Returns:
-      image_info: a list of dicts, with information such as file name, image id,
-          height, width, etc.
-      category_id_to_name_map: dict of category ids to category names.
-      img_to_ann: a dict of image_id to annotation.
-    """
-    logging.info(f'Reading ytvis annotations from {annotation_path}')
+    print(f'Reading ytvis annotations from {annotation_path}')
     if annotation_path.endswith('.json'):
         import json
         with open(annotation_path, 'r') as f:
@@ -64,10 +70,11 @@ def load_ytvis_annotations(annotation_path, vid_id_offset):
 
     vid_to_ann = collections.defaultdict(list)
     for ann in annotations['annotations']:
-        vid_id = ann['video_id'] + vid_id_offset
+        ann['video_id'] += vid_id_offset
+        vid_id = ann['video_id']
         vid_to_ann[vid_id].append(ann)
 
-    return video_info, category_id_to_name_map, vid_to_ann
+    return video_info, category_id_to_name_map, vid_to_ann, annotations
 
 
 def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_len: int):
@@ -268,19 +275,54 @@ def main(_):
 
     ann_files = [os.path.join(params.image_dir, 'ytvis19', f'{ann_file}.{params.ann_ext}') for ann_file in ann_files]
     vid_id_offset = 0
+    n_all_vid = 0
+    n_all_ann = 0
     video_info = []
+    annotations_all = {}
     category_id_to_name_map = {}
     vid_to_obj_ann = collections.defaultdict(list)
 
     for ann_file in ann_files:
         assert os.path.exists(ann_file), f"ann_file does not exist: {ann_file}"
-        video_info_, category_id_to_name_map_, vid_to_obj_ann_ = load_ytvis_annotations(ann_file, vid_id_offset)
+        video_info_, category_id_to_name_map_, vid_to_obj_ann_, annotations_ = load_ytvis_annotations(
+            ann_file, vid_id_offset)
+        new_vid_ids = set(vid_to_obj_ann_.keys())
+        n_new_vid_ids = len(new_vid_ids)
+        counts_ = annotations_['info']['counts'][0]
+        n_new_vids = len(annotations_['videos'])
+        n_new_anns = len(annotations_['annotations'])
+
+        assert n_new_vids == counts_['videos'], "videos counts mismatch"
+        assert n_new_vids == n_new_vid_ids, "n_new_vid_ids mismatch"
+        assert n_new_anns == counts_['annotations'], "annotations counts mismatch"
 
         existing_vid_ids = set(vid_to_obj_ann.keys())
-        new_vid_ids = set(vid_to_obj_ann_.keys())
         overlapped_vid_ids = existing_vid_ids.intersection(new_vid_ids)
 
         assert not overlapped_vid_ids, f"overlapped_vid_ids found: {overlapped_vid_ids}"
+
+        if not annotations_all:
+            annotations_all = annotations_
+        else:
+            annotations_all['videos'] += annotations_['videos']
+            annotations_all['annotations'] += annotations_['annotations']
+            # annotations_all['categories'] += annotations_['categories']
+
+            counts = annotations_all['info']['counts'][0]
+
+            counts['videos'] += n_new_vids
+            counts['annotations'] += n_new_anns
+
+        n_all_vid += n_new_vids
+        n_all_ann += n_new_anns
+
+        counts = annotations_all['info']['counts'][0]
+
+        assert n_all_vid == counts['videos'], "n_all_vid mismatch"
+        assert n_all_ann == counts['annotations'], "n_all_ann mismatch"
+
+        assert n_all_vid == len(annotations_all['videos']), "annotations_all videos mismatch"
+        assert n_all_ann == len(annotations_all['annotations']), "annotations_all annotations mismatch"
 
         video_info += video_info_
         vid_to_obj_ann.update(vid_to_obj_ann_)
@@ -288,7 +330,9 @@ def main(_):
 
         vid_id_offset = max(vid_to_obj_ann.keys())
 
-        # print()
+    # categories_all = annotations_all['categories']
+    # categories_unique = [dict(t) for t in {tuple(d.items()) for d in categories_all}]
+    # annotations_all['categories'] = categories_unique
 
     if not params.output_dir:
         output_dir = os.path.join(params.image_dir, 'ytvis19', 'tfrecord')
@@ -303,6 +347,10 @@ def main(_):
         frame_gaps_suffix = 'fg_' + '_'.join(map(str, params.frame_gaps))
         if frame_gaps_suffix not in out_name:
             out_name = f'{out_name}-{frame_gaps_suffix}'
+
+        out_json_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}.{params.ann_ext}')
+        annotations_all['info']['description'] = out_name
+        save_ytvis_annotations(annotations_all, out_json_path)
 
     annotations_iter = generate_video_annotations(
         videos=video_info,

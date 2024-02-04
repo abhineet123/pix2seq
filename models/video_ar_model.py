@@ -70,7 +70,7 @@ class Model(tf.keras.models.Model):
                 drop_att=config.drop_att,
                 pos_encoding=config.pos_encoding,
                 use_cls_token=config.use_cls_token,
-                name='video_resnet')
+                name='rest')
 
         mlp_ratio_dec = config.dim_mlp_dec // config.dim_att_dec
         self.proj = tf.keras.layers.Dense(
