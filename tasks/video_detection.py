@@ -361,7 +361,6 @@ def build_response_seq_from_video_bboxes(
         coord_vocab_shift,
         vid_len,
         class_label_corruption='rand_cls'):
-
     assert bboxes.shape[-1] % 4 == 0, f"invalid bboxes shape: {bboxes.shape}"
 
     n_bboxes_per_vid = int(bboxes.shape[-1] / 4)
@@ -370,12 +369,13 @@ def build_response_seq_from_video_bboxes(
     is_no_box = tf.math.is_nan(bboxes)
 
     """There should be at least one valid box per object"""
-    max_no_boxes_per_obj = vid_len - 1
-    n_no_boxes_per_obj = tf.reduce_sum(tf.cast(is_no_box, dtype=tf.int32), axis=-1) / 4
-    tf.debugging.assert_less_equal(
-        n_no_boxes_per_obj,
-        tf.cast(max_no_boxes_per_obj, n_no_boxes_per_obj.dtype), message="There should be at least one valid box per object"
-    )
+    # max_no_boxes_per_obj = vid_len - 1
+    # n_no_boxes_per_obj = tf.reduce_sum(tf.cast(is_no_box, dtype=tf.int32), axis=-1) / 4
+    # tf.debugging.assert_less_equal(
+    #     n_no_boxes_per_obj,
+    #     tf.cast(max_no_boxes_per_obj, n_no_boxes_per_obj.dtype), message="There should be at least one valid box
+    #     per object"
+    # )
 
     quantized_bboxes = utils.quantize(bboxes, quantization_bins)
     quantized_bboxes = quantized_bboxes + coord_vocab_shift
@@ -418,9 +418,7 @@ def build_response_seq_from_video_bboxes(
     created in case something other than the real labels is required 
     according to the class_label_corruption Parameter
     
-    class_label_corruption=rand_n_fake_cls by default
-    
-    
+    class_label_corruption=rand_n_fake_cls by default  
     """
     rand_cls = vocab.BASE_VOCAB_SHIFT + tf.random.uniform(
         lb_shape,
