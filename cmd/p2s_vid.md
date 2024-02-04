@@ -13,6 +13,7 @@
             - [on-g2_5_9       @ batch-8/g2_5_9/resnet-640](#on_g2_5_9___batch_8_g2_5_9_resnet_64_0_)
         - [fg-4       @ g2_5_9/resnet-640](#fg_4___g2_5_9_resnet_64_0_)
     - [g2_0_37       @ resnet-640](#g2_0_37___resnet_640_)
+        - [fg-4       @ g2_0_37/resnet-640](#fg_4___g2_0_37_resnet_640_)
 
 <!-- /MarkdownTOC -->
 
@@ -55,4 +56,7 @@ python3 run.py --cfg=configs/config_video_det_ipsc.py --j5=train,resnet-640,vid_
 
 <a id="g2_0_37___resnet_640_"></a>
 ## g2_0_37       @ resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_video_det_ipsc.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_0_37,len-2,strd-1,batch-12,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-20
+<a id="fg_4___g2_0_37_resnet_640_"></a>
+### fg-4       @ g2_0_37/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det_ipsc.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_0_37,len-2,strd-1,fg-4,batch-12,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-20

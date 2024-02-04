@@ -78,8 +78,8 @@ def get_ipsc_data():
 def get_ipsc_video_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
 
-    train_name = 'ext_reorg_roi_g2_0_4'
-    eval_name = 'ext_reorg_roi_g2_5_9'
+    train_name = ''
+    eval_name = ''
 
     return D(
         name='ipsc_video_detection',
@@ -119,6 +119,9 @@ def ipsc_post_process(cfg):
 
     cfg.db_root_dir = db_root_dir
 
+    if not cfg.eval_name:
+        cfg.eval_name = cfg.train_name
+
     for mode in ['train', 'eval']:
         name = cfg[f'{mode}_name']
         if is_video:
@@ -151,7 +154,6 @@ def ipsc_post_process(cfg):
                 json_dict = json.load(fid)
 
         num_examples = len(json_dict[db_type])
-
 
         cfg[f'{mode}_name'] = name
         # cfg[f'{mode}_json_name'] = json_name
