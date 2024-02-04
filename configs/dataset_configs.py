@@ -156,7 +156,7 @@ def ipsc_post_process(cfg):
         # cfg[f'{mode}_json_name'] = json_name
         # cfg[f'{mode}_json_path'] = json_path
         cfg[f'{mode}_num_examples'] = num_examples
-        cfg[f'{mode}_filename_for_metrics'] = name
+        cfg[f'{mode}_filename_for_metrics'] = json_name
         cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name + '*')
 
     cfg.category_names_path = os.path.join(db_root_dir, cfg.train_filename_for_metrics)
