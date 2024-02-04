@@ -269,9 +269,9 @@ def main(_):
         ann_files = [f'{params.ann_file}-frame_gap-{frame_gap}' if frame_gap > 1 else params.ann_file
                      for frame_gap in params.frame_gaps]
     else:
-        ann_files = params.ann_file
+        ann_files = [params.ann_file, ]
 
-    params.ann_file = None
+    # params.ann_file = None
 
     ann_files = [os.path.join(params.image_dir, 'ytvis19', f'{ann_file}.{params.ann_ext}') for ann_file in ann_files]
     vid_id_offset = 0
