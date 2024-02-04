@@ -435,7 +435,7 @@ def restore_from_checkpoint(model_dir, allow_partial, **kwargs):
       checkpoint object
       verify_restored: function for verification
     """
-    verify_restored = None
+    verify_restored = verify_existing = None
     checkpoint = tf.train.Checkpoint(**kwargs)
     latest_ckpt = tf.train.latest_checkpoint(model_dir)
     if latest_ckpt:
@@ -445,7 +445,8 @@ def restore_from_checkpoint(model_dir, allow_partial, **kwargs):
         else:
             status = checkpoint.restore(latest_ckpt)
         verify_restored = status.assert_consumed
-    return latest_ckpt, checkpoint, verify_restored
+        verify_existing = status.assert_existing_objects_matched
+    return latest_ckpt, checkpoint, verify_restored, verify_existing
 
 
 def check_checkpoint_restored(strict_verifiers, loose_verifiers=()):

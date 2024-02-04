@@ -60,13 +60,13 @@ class Trainer(abc.ABC):
         # Setup model and checkpoints.
         self._model = model = ModelRegistry.lookup(config.model.name)(config)
         model_dir = kwargs['model_dir']
-        latest_ckpt, ckpt, self._verify_restored = utils.restore_from_checkpoint(
+        latest_ckpt, ckpt, self._verify_restored, self._verify_existing = utils.restore_from_checkpoint(
             model_dir, False,
             model=model, global_step=optimizer.iterations, optimizer=optimizer)
         self._verify_restored_p = None
         if not latest_ckpt:
             if config.model.pretrained_ckpt:
-                _, _, self._verify_restored_p = utils.restore_from_checkpoint(
+                _, _, self._verify_restored_p, self._verify_existing_p = utils.restore_from_checkpoint(
                     config.model.pretrained_ckpt, True, model=model)
         self._checkpoint_manager = tf.train.CheckpointManager(
             ckpt, model_dir, config.train.keep_checkpoint_max)
@@ -134,11 +134,16 @@ class Trainer(abc.ABC):
 
     def check_checkpoint_restored(self):
         """Check if the checkpoints are correctly restored."""
-        (verify_restored,), (verify_restored_p,) = (
+        (verify_restored, verify_existing), (verify_restored_p, verify_existing_p) = (
             utils.check_checkpoint_restored(
-                [self._verify_restored], [self._verify_restored_p]))
+                [self._verify_restored, self._verify_existing],
+                [self._verify_restored_p, self._verify_existing_p]))
+
         self._verify_restored = verify_restored
+        self._verify_existing = verify_existing
+
         self._verify_restored_p = verify_restored_p
+        self._verify_existing_p = verify_existing_p
 
     def reset(self):
         """Reseting the metrics and/or other state accumulators."""
