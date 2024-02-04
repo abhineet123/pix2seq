@@ -78,14 +78,11 @@ def get_ipsc_data():
 def get_ipsc_video_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
 
-    train_name = ''
-    eval_name = ''
-
     return D(
         name='ipsc_video_detection',
         root_dir=root_dir,
-        train_name=train_name,
-        eval_name=eval_name,
+        train_name='',
+        eval_name='',
         train_split='train',
         eval_split='validation',
         label_shift=0,
