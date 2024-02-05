@@ -42,67 +42,66 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
 
                 if cfg.eager:
                     progbar.add(1)
-                    cur_step_ = trainer.optimizer.iterations.numpy()
-                    if cur_step_ != 1:
-                        continue
 
-                    ckpt_vars_pt = trainer.ckpt_vars_p
-                    name_to_shape_pt = trainer.name_to_shape_p
+                cur_step_ = trainer.optimizer.iterations.numpy()
+                ckpt_vars_pt = trainer.ckpt_vars_p
 
-                    trainer.checkpoint_manager.save(cur_step_)
-                    ckpt_vars, name_to_shape = utils.save_ckpt_vars(cfg.model_dir)
+                if cur_step_ != 1 or ckpt_vars_pt is None:
+                    continue
 
-                    if ckpt_vars_pt is not None:
-                        ckpt_names_pt = set(k for k in ckpt_vars_pt['name'] if 'optimizer' not in k)
-                        ckpt_names = set(k for k in ckpt_vars['name'] if 'optimizer' not in k)
+                name_to_shape_pt = trainer.name_to_shape_p
+                trainer.checkpoint_manager.save(cur_step_)
+                ckpt_vars, name_to_shape = utils.save_ckpt_vars(cfg.model_dir)
 
-                        ckpt_names_file = os.path.join(cfg.model_dir, 'ckpt_names.txt')
-                        with open(ckpt_names_file, 'w') as fid:
-                            fid.write('\n'.join(ckpt_names))
+                ckpt_names_pt = set(k for k in ckpt_vars_pt['name'] if 'optimizer' not in k)
+                ckpt_names = set(k for k in ckpt_vars['name'] if 'optimizer' not in k)
 
-                        ckpt_names_pt_file = os.path.join(cfg.model_dir, 'ckpt_names_pt.txt')
-                        with open(ckpt_names_pt_file, 'w') as fid:
-                            fid.write('\n'.join(ckpt_names_pt))
+                ckpt_names_file = os.path.join(cfg.model_dir, 'ckpt_names.txt')
+                with open(ckpt_names_file, 'w') as fid:
+                    fid.write('\n'.join(ckpt_names))
 
-                        unmatched_names_model = ckpt_names - ckpt_names_pt
-                        unmatched_names_pt = ckpt_names_pt - ckpt_names
+                ckpt_names_pt_file = os.path.join(cfg.model_dir, 'ckpt_names_pt.txt')
+                with open(ckpt_names_pt_file, 'w') as fid:
+                    fid.write('\n'.join(ckpt_names_pt))
 
-                        matched_names = ckpt_names.intersection(ckpt_names_pt)
+                unmatched_names_model = ckpt_names - ckpt_names_pt
+                unmatched_names_pt = ckpt_names_pt - ckpt_names
 
-                        if unmatched_names_model:
-                            unmatched_names_model_file = os.path.join(cfg.model_dir, 'unmatched_names_model.txt')
-                            with open(unmatched_names_model_file, 'w') as fid:
-                                fid.write('\n'.join(unmatched_names_model))
+                matched_names = ckpt_names.intersection(ckpt_names_pt)
 
-                        if unmatched_names_pt:
-                            unmatched_names_pt_file = os.path.join(cfg.model_dir, 'unmatched_names_pt.txt')
-                            with open(unmatched_names_pt_file, 'w') as fid:
-                                fid.write('\n'.join(unmatched_names_pt))
+                if unmatched_names_model:
+                    unmatched_names_model_file = os.path.join(cfg.model_dir, 'unmatched_names_model.txt')
+                    with open(unmatched_names_model_file, 'w') as fid:
+                        fid.write('\n'.join(unmatched_names_model))
 
-                        unmatched_shapes = {
-                            name: (name_to_shape_pt[name], name_to_shape[name])
-                            for name in matched_names
-                            if name_to_shape_pt[name] != name_to_shape[name]
-                        }
+                if unmatched_names_pt:
+                    unmatched_names_pt_file = os.path.join(cfg.model_dir, 'unmatched_names_pt.txt')
+                    with open(unmatched_names_pt_file, 'w') as fid:
+                        fid.write('\n'.join(unmatched_names_pt))
 
-                        if unmatched_shapes:
-                            names = list(unmatched_shapes.keys())
-                            unmatched_shapes_dict = dict(
-                                name=names,
-                                shapes=[unmatched_shapes[name] for name in names]
-                            )
+                unmatched_shapes = {
+                    name: (name_to_shape_pt[name], name_to_shape[name])
+                    for name in matched_names
+                    if name_to_shape_pt[name] != name_to_shape[name]
+                }
 
-                            import pandas as pd
-                            unmatched_shapes_df = pd.DataFrame.from_dict(unmatched_shapes_dict)
+                if unmatched_shapes:
+                    names = list(unmatched_shapes.keys())
+                    unmatched_shapes_dict = dict(
+                        name=names,
+                        shapes=[unmatched_shapes[name] for name in names]
+                    )
 
-                            unmatched_shapes_csv = os.path.join(cfg.model_dir, 'unmatched_shapes.csv')
-                            print(f'saving unmatched_shapes to {unmatched_shapes_csv}')
-                            unmatched_shapes_df.to_csv(
-                                unmatched_shapes_csv,
-                                index=False,
-                            )
+                    import pandas as pd
+                    unmatched_shapes_df = pd.DataFrame.from_dict(unmatched_shapes_dict)
 
-                        print()
+                    unmatched_shapes_csv = os.path.join(cfg.model_dir, 'unmatched_shapes.csv')
+                    print(f'saving unmatched_shapes to {unmatched_shapes_csv}')
+                    unmatched_shapes_df.to_csv(
+                        unmatched_shapes_csv,
+                        index=False,
+                    )
+                # print()
 
         global_step = trainer.optimizer.iterations
         cur_step = global_step.numpy()
