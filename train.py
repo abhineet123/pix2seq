@@ -61,7 +61,6 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
         ckpt_vars_pt = trainer.ckpt_vars_p
         name_to_shape_pt = trainer.name_to_shape_p
 
-        ckpt_names_pt = set(ckpt_vars_pt['name'])
 
         while cur_step < train_steps:
             cur_epoch += 1
@@ -76,6 +75,8 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 ckpt_vars, name_to_shape = utils.save_ckpt_vars(cfg.model_dir)
 
                 if ckpt_vars_pt is not None:
+                    ckpt_names_pt = set(ckpt_vars_pt['name'])
+
                     ckpt_names = set(ckpt_vars['name'])
 
                     unmatched_names_model = ckpt_names - ckpt_names_pt
