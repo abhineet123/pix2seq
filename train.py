@@ -51,9 +51,8 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                     ckpt_vars, name_to_shape = utils.save_ckpt_vars(cfg.model_dir)
 
                     if ckpt_vars_pt is not None:
-                        ckpt_names_pt = set(ckpt_vars_pt['name'])
-
-                        ckpt_names = set(ckpt_vars['name'])
+                        ckpt_names_pt = set(k for k in ckpt_vars_pt['name'] if k.startswith('model'))
+                        ckpt_names = set(k for k in ckpt_vars['name'] if k.startswith('model'))
 
                         unmatched_names_model = ckpt_names - ckpt_names_pt
                         unmatched_names_pt = ckpt_names_pt - ckpt_names
