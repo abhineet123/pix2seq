@@ -41,14 +41,32 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
                 if cfg.eager:
                     progbar.add(1)
-                # else:
-                #     temp = temp.write(i, 1)
-                #     tf.print(f'done step {int(temp.size())}')
-                # if not cfg.eager:
-                #     step_id += 1
-                #     with tf.Session():
-                #         step_id_val = step_id.eval()
-                #     tf.print(f'done step {int(step_id_val)}/{int(steps_per_epoch)}')
+
+                    ckpt_vars_pt = trainer.ckpt_vars_p
+                    name_to_shape_pt = trainer.name_to_shape_p
+
+                    cur_step = trainer.optimizer.iterations.numpy()
+
+                    trainer.checkpoint_manager.save(cur_step)
+                    ckpt_vars, name_to_shape = utils.save_ckpt_vars(cfg.model_dir)
+
+                    if ckpt_vars_pt is not None:
+                        ckpt_names_pt = set(ckpt_vars_pt['name'])
+
+                        ckpt_names = set(ckpt_vars['name'])
+
+                        unmatched_names_model = ckpt_names - ckpt_names_pt
+                        unmatched_names_pt = ckpt_names_pt - ckpt_names
+
+                        matched_names = ckpt_names.intersection(ckpt_names_pt)
+
+                        unmatched_shapes = {
+                            name: (name_to_shape_pt[name], name_to_shape[name])
+                            for name in matched_names
+                            if name_to_shape_pt[name] != name_to_shape[name]
+                        }
+
+                        print()
 
         global_step = trainer.optimizer.iterations
         cur_step = global_step.numpy()
@@ -56,40 +74,20 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
         cur_epoch = 0
         # if not cfg.eager:
         #     print('compiling graph...')
-        trainer.checkpoint_manager.save(cur_step)
-        ckpt_vars_0 = utils.save_ckpt_vars(cfg.model_dir)
-        ckpt_vars_pt = trainer.ckpt_vars_p
-        name_to_shape_pt = trainer.name_to_shape_p
+        # trainer.checkpoint_manager.save(cur_step)
+        # ckpt_vars_0 = utils.save_ckpt_vars(cfg.model_dir)
 
 
         while cur_step < train_steps:
             cur_epoch += 1
             tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
-                trainer.check_checkpoint_restored()
                 train_multiple_steps(data_iterators, tasks)
+                trainer.check_checkpoint_restored()
 
                 cur_step = global_step.numpy()
                 # if cfg.dist != 2 or cfg.worker_idx == 0:
                 trainer.checkpoint_manager.save(cur_step)
-                ckpt_vars, name_to_shape = utils.save_ckpt_vars(cfg.model_dir)
-
-                if ckpt_vars_pt is not None:
-                    ckpt_names_pt = set(ckpt_vars_pt['name'])
-
-                    ckpt_names = set(ckpt_vars['name'])
-
-                    unmatched_names_model = ckpt_names - ckpt_names_pt
-                    unmatched_names_pt = ckpt_names_pt - ckpt_names
-
-                    matched_names = ckpt_names.intersection(ckpt_names_pt)
-
-                    unmatched_shapes = {
-                        name: (name_to_shape_pt[name], name_to_shape[name])
-                        for name in matched_names
-                        if name_to_shape_pt[name] != name_to_shape[name]
-                    }
-
                 steps_per_sec = steps_per_epoch / (time.time() - timestamp)
                 timestamp = time.time()
                 with tf.name_scope('train'):
