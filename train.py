@@ -35,6 +35,7 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
             progbar = None
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(steps_per_epoch)
+
             # step_id = tf.constant(0)
             for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
@@ -42,7 +43,9 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
 
                 if cfg.eager:
                     progbar.add(1)
-
+                else:
+                    continue
+                    
                 cur_step_ = trainer.optimizer.iterations.numpy()
                 ckpt_vars_pt = trainer.ckpt_vars_p
 
