@@ -49,7 +49,7 @@ def flatten_vid(t):
     """merge vid dim with batch dim"""
     shape_list = shape_as_list(t)
     inner_dims = shape_list[2:]
-    new_bsz = shape_list[0]*shape_list[1]
+    new_bsz = shape_list[0] * shape_list[1]
     out_shape = [new_bsz, ] + inner_dims
     return tf.reshape(t, out_shape)
 
@@ -366,6 +366,7 @@ def dequantize(boxes, bins):
     boxes = boxes / (bins - 1)
     return boxes
 
+
 def dequantize_video(boxes, bins):
     """Dequantization of discrete tokens of coordinates in [0, bins-1]."""
     boxes = tf.cast(boxes, tf.float32)
@@ -438,7 +439,12 @@ def restore_from_checkpoint(model_dir, allow_partial, **kwargs):
     verify_restored = verify_existing = None
     checkpoint = tf.train.Checkpoint(**kwargs)
     latest_ckpt = tf.train.latest_checkpoint(model_dir)
+    ckpt_vars_dict = None
+    name_to_shape = None
     if latest_ckpt:
+
+        ckpt_vars_dict, name_to_shape = save_ckpt_vars(model_dir)
+
         logging.info('Restoring from latest checkpoint: %s', latest_ckpt)
         if allow_partial:
             status = checkpoint.restore(latest_ckpt).expect_partial()
@@ -446,8 +452,30 @@ def restore_from_checkpoint(model_dir, allow_partial, **kwargs):
             status = checkpoint.restore(latest_ckpt)
         verify_restored = status.assert_consumed
         verify_existing = status.assert_existing_objects_matched
-    return latest_ckpt, checkpoint, verify_restored, verify_existing
+    return (latest_ckpt, checkpoint, verify_restored, verify_existing,
+            ckpt_vars_dict, name_to_shape)
 
+
+def save_ckpt_vars(model_dir):
+    latest_ckpt = tf.train.latest_checkpoint(model_dir)
+    ckpt_vars = tf.train.list_variables(latest_ckpt)
+    ckpt_dict = dict(name=[], shape=[])
+    ckpt_dict['name'] = [ckpt_var[0] for ckpt_var in ckpt_vars]
+    ckpt_dict['shape'] = [ckpt_var[1] for ckpt_var in ckpt_vars]
+    import pandas as pd
+    ckpt_df = pd.DataFrame.from_dict(ckpt_dict)
+
+    ckpt_vars_csv = latest_ckpt + "-ckpt_vars.csv"
+    print(f'saving ckpt_vars to {ckpt_vars_csv}')
+    ckpt_df.to_csv(
+        ckpt_vars_csv,
+        # sep='\t',
+        index=False,
+        # lineterminator='\n'
+    )
+    name_to_shape = {name: shape for name, shape in
+                     zip(ckpt_dict['name'], ckpt_dict['shape'])}
+    return ckpt_dict, name_to_shape
 
 def check_checkpoint_restored(strict_verifiers, loose_verifiers=()):
     """Verification after model variables built."""

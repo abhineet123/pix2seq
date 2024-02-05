@@ -1,5 +1,9 @@
+import os.path
+
 from absl import logging
 import time
+
+import utils
 
 
 def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
@@ -8,7 +12,7 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
         assert cfg.pretrained, "cfg.pretrained must be provided to load pt and continue training from pretrained model"
         cfg.model.pretrained_ckpt = cfg.pretrained
     """Main training logic."""
-    with strategy.scope():
+    with (strategy.scope()):
         # Setup training elements.
         trainer = model_lib.TrainerRegistry.lookup(cfg.model.name)(
             cfg, model_dir=cfg.model_dir,
@@ -52,16 +56,39 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
         cur_epoch = 0
         # if not cfg.eager:
         #     print('compiling graph...')
+        trainer.checkpoint_manager.save(cur_step)
+        ckpt_vars_0 = utils.save_ckpt_vars(cfg.model_dir)
+        ckpt_vars_pt = trainer.ckpt_vars_p
+        name_to_shape_pt = trainer.name_to_shape_p
+
+        ckpt_names_pt = set(ckpt_vars_pt['name'])
+
         while cur_step < train_steps:
             cur_epoch += 1
             tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
-                train_multiple_steps(data_iterators, tasks)
                 trainer.check_checkpoint_restored()
+                train_multiple_steps(data_iterators, tasks)
 
                 cur_step = global_step.numpy()
                 # if cfg.dist != 2 or cfg.worker_idx == 0:
                 trainer.checkpoint_manager.save(cur_step)
+                ckpt_vars, name_to_shape = utils.save_ckpt_vars(cfg.model_dir)
+
+                if ckpt_vars_pt is not None:
+                    ckpt_names = set(ckpt_vars['name'])
+
+                    unmatched_names_model = ckpt_names - ckpt_names_pt
+                    unmatched_names_pt = ckpt_names_pt - ckpt_names
+
+                    matched_names = ckpt_names.intersection(ckpt_names_pt)
+
+                    unmatched_shapes = {
+                        name: (name_to_shape_pt[name], name_to_shape[name])
+                        for name in matched_names
+                        if name_to_shape_pt[name] != name_to_shape[name]
+                    }
+
                 steps_per_sec = steps_per_epoch / (time.time() - timestamp)
                 timestamp = time.time()
                 with tf.name_scope('train'):

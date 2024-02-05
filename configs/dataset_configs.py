@@ -132,12 +132,6 @@ def ipsc_post_process(cfg):
                 if stride_suffix not in name:
                     name = f'{name}-{stride_suffix}'
 
-            frame_gaps = cfg[f'{mode}_frame_gaps']
-            if len(frame_gaps) > 1:
-                frame_gaps_suffix = 'fg_' + '_'.join(map(str, frame_gaps))
-                if frame_gaps_suffix not in name:
-                    name = f'{name}-{frame_gaps_suffix}'
-
         json_name = f'{name}.json'
         if cfg.compressed:
             json_name += '.gz'
@@ -157,6 +151,14 @@ def ipsc_post_process(cfg):
         # cfg[f'{mode}_json_path'] = json_path
         cfg[f'{mode}_num_examples'] = num_examples
         cfg[f'{mode}_filename_for_metrics'] = json_name
+
+        if is_video:
+            frame_gaps = cfg[f'{mode}_frame_gaps']
+            if len(frame_gaps) > 1:
+                frame_gaps_suffix = 'fg_' + '_'.join(map(str, frame_gaps))
+                if frame_gaps_suffix not in name:
+                    name = f'{name}-{frame_gaps_suffix}'
+
         cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name + '*')
 
     cfg.category_names_path = os.path.join(db_root_dir, cfg.train_filename_for_metrics)

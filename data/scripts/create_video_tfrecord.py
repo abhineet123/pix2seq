@@ -246,6 +246,7 @@ class Params(paramparse.CFG):
 
         self.image_dir = ''
         self.n_proc = 0
+        self.save_fg_json = 0
         self.num_shards = 32
         self.output_dir = ''
 
@@ -301,6 +302,15 @@ def main(_):
 
         assert not overlapped_vid_ids, f"overlapped_vid_ids found: {overlapped_vid_ids}"
 
+        video_info += video_info_
+        vid_to_obj_ann.update(vid_to_obj_ann_)
+        category_id_to_name_map.update(category_id_to_name_map_)
+
+        vid_id_offset = max(vid_to_obj_ann.keys())
+
+        if not params.save_fg_json:
+            continue
+
         if not annotations_all:
             annotations_all = annotations_
         else:
@@ -324,12 +334,6 @@ def main(_):
         assert n_all_vid == len(annotations_all['videos']), "annotations_all videos mismatch"
         assert n_all_ann == len(annotations_all['annotations']), "annotations_all annotations mismatch"
 
-        video_info += video_info_
-        vid_to_obj_ann.update(vid_to_obj_ann_)
-        category_id_to_name_map.update(category_id_to_name_map_)
-
-        vid_id_offset = max(vid_to_obj_ann.keys())
-
     # categories_all = annotations_all['categories']
     # categories_unique = [dict(t) for t in {tuple(d.items()) for d in categories_all}]
     # annotations_all['categories'] = categories_unique
@@ -348,9 +352,10 @@ def main(_):
         if frame_gaps_suffix not in out_name:
             out_name = f'{out_name}-{frame_gaps_suffix}'
 
-        out_json_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}.{params.ann_ext}')
-        annotations_all['info']['description'] = out_name
-        save_ytvis_annotations(annotations_all, out_json_path)
+        if params.save_fg_json:
+            out_json_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}.{params.ann_ext}')
+            annotations_all['info']['description'] = out_name
+            save_ytvis_annotations(annotations_all, out_json_path)
 
     annotations_iter = generate_video_annotations(
         videos=video_info,

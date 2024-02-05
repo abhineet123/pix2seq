@@ -60,14 +60,19 @@ class Trainer(abc.ABC):
         # Setup model and checkpoints.
         self._model = model = ModelRegistry.lookup(config.model.name)(config)
         model_dir = kwargs['model_dir']
-        latest_ckpt, ckpt, self._verify_restored, self._verify_existing = utils.restore_from_checkpoint(
+        latest_ckpt, ckpt, self._verify_restored, self._verify_existing, _, _ = utils.restore_from_checkpoint(
             model_dir, False,
             model=model, global_step=optimizer.iterations, optimizer=optimizer)
         self._verify_restored_p = None
+        self._verify_existing_p = None
+        self.ckpt_vars_p = None
+        self.name_to_shape_p = None
+
         if not latest_ckpt:
             if config.model.pretrained_ckpt:
-                _, _, self._verify_restored_p, self._verify_existing_p = utils.restore_from_checkpoint(
-                    config.model.pretrained_ckpt, True, model=model)
+                _, _, self._verify_restored_p, self._verify_existing_p, self.ckpt_vars_p, self.name_to_shape_p = (
+                    utils.restore_from_checkpoint(
+                    config.model.pretrained_ckpt, True, model=model))
         self._checkpoint_manager = tf.train.CheckpointManager(
             ckpt, model_dir, config.train.keep_checkpoint_max)
 
