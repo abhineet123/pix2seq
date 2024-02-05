@@ -491,13 +491,13 @@ def check_checkpoint_restored(strict_verifiers, loose_verifiers=()):
             try:
                 loose_verifier()
             except AssertionError as e:
-                logging.info('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-                logging.info('+++++++++++Checkpoint verification msg begin+++++++++++')
-                logging.info('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-                logging.info(e)
-                logging.info('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-                logging.info('+++++++++++Checkpoint verification msg ends+++++++++++')
-                logging.info('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+                print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+                print('+++++++++++Checkpoint verification msg begin+++++++++++')
+                print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+                print(e)
+                print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+                print('+++++++++++Checkpoint verification msg ends+++++++++++')
+                print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
             loose_verifier = None
         loose_verifiers_new.append(loose_verifier)
     return strict_verifiers_new, loose_verifiers_new
