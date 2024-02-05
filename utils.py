@@ -459,9 +459,10 @@ def restore_from_checkpoint(model_dir, allow_partial, **kwargs):
 def save_ckpt_vars(model_dir):
     latest_ckpt = tf.train.latest_checkpoint(model_dir)
     ckpt_vars = tf.train.list_variables(latest_ckpt)
-    ckpt_dict = dict(name=[], shape=[])
-    ckpt_dict['name'] = [ckpt_var[0] for ckpt_var in ckpt_vars]
-    ckpt_dict['shape'] = [ckpt_var[1] for ckpt_var in ckpt_vars]
+    ckpt_dict = dict(
+        name=[ckpt_var[0] for ckpt_var in ckpt_vars],
+        shape=[ckpt_var[1] for ckpt_var in ckpt_vars]
+    )
     import pandas as pd
     ckpt_df = pd.DataFrame.from_dict(ckpt_dict)
 

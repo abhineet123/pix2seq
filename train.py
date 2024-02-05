@@ -65,6 +65,10 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                             if name_to_shape_pt[name] != name_to_shape[name]
                         }
 
+                        unmatched_shapes_dict = dict(
+                            name = []
+                        )
+
                         print()
 
         global_step = trainer.optimizer.iterations

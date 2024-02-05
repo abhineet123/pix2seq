@@ -35,15 +35,15 @@ class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=mi
         self.cross_attention = cross_attention
         self.use_mlp = use_mlp
         if self_attention:
-            self.self_mha_ln = tf.keras.layers.LayerNormalization(
+            self.mha_ln = tf.keras.layers.LayerNormalization(
                 epsilon=1e-6,
                 center=ln_scale_shift,
                 scale=ln_scale_shift,
                 name='mha/ln')
-            self.self_mha = tf.keras.layers.MultiHeadAttention(
+            self.mha = tf.keras.layers.MultiHeadAttention(
                 num_heads, dim // num_heads, dropout=drop_att, name='mha')
             if use_mlp:
-                self.self_mlp = MLP(1, dim, mlp_ratio, drop_path, drop_units,
+                self.mlp = MLP(1, dim, mlp_ratio, drop_path, drop_units,
                                     use_ffn_ln=use_ffn_ln, ln_scale_shift=ln_scale_shift,
                                     name='mlp')
         if cross_attention:
@@ -72,11 +72,11 @@ class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=mi
 
         if self.self_attention:
             x = utils.flatten_vid(x)
-            x_ln = self.self_mha_ln(x)
-            x_residual = self.self_mha(x_ln, x_ln, x_ln, attention_mask=mask, training=training)
+            x_ln = self.mha_ln(x)
+            x_residual = self.mha(x_ln, x_ln, x_ln, attention_mask=mask, training=training)
             x = x + self.dropp(x_residual, training)
             if self.use_mlp:
-                x = self.self_mlp(x, training)
+                x = self.mlp(x, training)
             x = utils.unflatten_vid(x, self.vid_len)
 
         if self.cross_attention:
