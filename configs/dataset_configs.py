@@ -126,7 +126,11 @@ def ipsc_post_process(cfg):
                 length_suffix = f'length-{cfg.length}'
                 if length_suffix not in name:
                     name = f'{name}-{length_suffix}'
-            stride = cfg[f'{mode}_stride']
+            try:
+                stride = cfg[f'{mode}_stride']
+            except KeyError:
+                stride = cfg[f'{mode}_stride'] = cfg[f'stride']
+
             if stride:
                 stride_suffix = f'stride-{stride}'
                 if stride_suffix not in name:
@@ -153,7 +157,11 @@ def ipsc_post_process(cfg):
         cfg[f'{mode}_filename_for_metrics'] = json_name
 
         if is_video:
-            frame_gaps = cfg[f'{mode}_frame_gaps']
+            try:
+                frame_gaps = cfg[f'{mode}_frame_gaps']
+            except KeyError:
+                frame_gaps = cfg[f'{mode}_frame_gaps'] = []
+
             if len(frame_gaps) > 1:
                 frame_gaps_suffix = 'fg_' + '_'.join(map(str, frame_gaps))
                 if frame_gaps_suffix not in name:
