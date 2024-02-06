@@ -79,22 +79,22 @@ class TaskVideoDetection(task_lib.Task):
         """
 
         def _convert_video_to_image_features(example):
-            print('\n')
-            print('\n')
+            # print('\n')
+            # print('\n')
 
-            video_id = example['video/id']
-            print(f'video_id: {video_id}')
-
-            file_names = example['video/file_names']
-            print(f'file_names:\n{file_names}')
-            print(f'file_names shape:\n{file_names.shape}')
-            print(f'file_names shape 2:\n{tf.shape(file_names)}')
-
-            file_ids = example['video/file_ids']
-            print(f'file_ids: {file_ids}')
-
-            num_frames = example['video/num_frames']
-            print(f'num_frames: {num_frames}')
+            # video_id = example['video/id']
+            # print(f'video_id: {video_id}')
+            #
+            # file_names = example['video/file_names']
+            # print(f'file_names:\n{file_names}')
+            # print(f'file_names shape:\n{file_names.shape}')
+            # print(f'file_names shape 2:\n{tf.shape(file_names)}')
+            #
+            # file_ids = example['video/file_ids']
+            # print(f'file_ids: {file_ids}')
+            #
+            # num_frames = example['video/num_frames']
+            # print(f'num_frames: {num_frames}')
 
             # bbox = example['bbox']
             # class_name = example['class_name']
@@ -109,11 +109,11 @@ class TaskVideoDetection(task_lib.Task):
             # video_np_shape = video_np.shape
             # print(f'video_np_shape: {video_np_shape}')
 
-            video_shape_1 = video.shape
-            print(f'video_shape_1: {video_shape_1}')
+            # video_shape_1 = video.shape
+            # print(f'video_shape_1: {video_shape_1}')
 
             video_shape_2 = tf.shape(video)
-            print(f'video_shape_2: {video_shape_2}')
+            # print(f'video_shape_2: {video_shape_2}')
 
             new_example = dict(
                 orig_video_size=video_shape_2[1:3],

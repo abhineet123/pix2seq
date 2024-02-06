@@ -86,10 +86,10 @@ def get_worker_id(tf_config):
 
 
 def main(unused_argv):
-    filenames = [
-        'datasets/ipsc/well3/all_frames_roi/all_frames_roi_12094_17082_16427_20915/image146.jpg'
-        'datasets/ipsc/well3/all_frames_roi/all_frames_roi_12094_17082_16427_20915/image147.jpg'
-    ]
+    # filenames = [
+    #     'datasets/ipsc/well3/all_frames_roi/all_frames_roi_12094_17082_16427_20915/image146.jpg'
+    #     'datasets/ipsc/well3/all_frames_roi/all_frames_roi_12094_17082_16427_20915/image147.jpg'
+    # ]
 
     # frames = tf.map_fn(
     #     lambda x: tf.io.decode_image(tf.io.read_file(x), channels=3),
