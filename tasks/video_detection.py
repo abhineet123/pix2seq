@@ -87,6 +87,8 @@ class TaskVideoDetection(task_lib.Task):
 
             file_names = example['video/file_names']
             print(f'file_names:\n{file_names}')
+            print(f'file_names shape:\n{file_names.shape}')
+            print(f'file_names shape 2:\n{tf.shape(file_names)}')
 
             file_ids = example['video/file_ids']
             print(f'file_ids: {file_ids}')
@@ -101,7 +103,7 @@ class TaskVideoDetection(task_lib.Task):
             # is_crowd = example['is_crowd']
 
             video = example['video/frames']
-            print(f'video: {video}')
+            # print(f'video: {video}')
 
             # video_np = video.numpy()
             # video_np_shape = video_np.shape

@@ -6,6 +6,7 @@
 - [virtualenv](#virtualen_v_)
     - [windows       @ virtualenv](#windows___virtualenv_)
 - [install](#install_)
+    - [win       @ install](#win___instal_l_)
     - [tensorflow       @ install](#tensorflow___instal_l_)
         - [wsl-gpu       @ tensorflow/install](#wsl_gpu___tensorflow_install_)
         - [ubuntu22.04       @ tensorflow/install](#ubuntu22_04___tensorflow_install_)
@@ -21,18 +22,6 @@
 - [secondary ethernet](#secondary_ethernet_)
 - [bugs](#bug_s_)
     - [annoying_warnings       @ bugs](#annoying_warnings___bugs_)
-- [tfrecord](#tfrecor_d_)
-    - [ipsc       @ tfrecord](#ipsc___tfrecord_)
-        - [ext_reorg_roi_g2_16_53       @ ipsc/tfrecord](#ext_reorg_roi_g2_16_53___ipsc_tfrecor_d_)
-        - [ext_reorg_roi_g2_0_1       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_1___ipsc_tfrecor_d_)
-        - [ext_reorg_roi_g2_0_15       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_15___ipsc_tfrecor_d_)
-        - [ext_reorg_roi_g2_0_37       @ ipsc/tfrecord](#ext_reorg_roi_g2_0_37___ipsc_tfrecor_d_)
-        - [ext_reorg_roi_g2_38_53       @ ipsc/tfrecord](#ext_reorg_roi_g2_38_53___ipsc_tfrecor_d_)
-- [video_tfrecord](#video_tfrecor_d_)
-    - [ipsc       @ video_tfrecord](#ipsc___video_tfrecord_)
-        - [ext_reorg_roi_g2_0_4       @ ipsc/video_tfrecord](#ext_reorg_roi_g2_0_4___ipsc_video_tfrecor_d_)
-        - [ext_reorg_roi_g2_5_9       @ ipsc/video_tfrecord](#ext_reorg_roi_g2_5_9___ipsc_video_tfrecor_d_)
-        - [ext_reorg_roi_g2_0_37       @ ipsc/video_tfrecord](#ext_reorg_roi_g2_0_37___ipsc_video_tfrecor_d_)
 
 <!-- /MarkdownTOC -->
 
@@ -71,18 +60,25 @@ source ~/.bashrc
 
 <a id="windows___virtualenv_"></a>
 ## windows       @ virtualenv-->p2s_setup
+python310 -m pip install virtualenv virtualenvwrapper
+
 python310 -m virtualenv pix2seq
-pix2seq\Scripts\activate
+Y:\UofA\venv\pix2seq\Scripts\activate
 
 <a id="install_"></a>
 # install
-python3 -m pip install --upgrade pip
-python3 -m pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+<a id="win___instal_l_"></a>
+## win       @ install-->p2s_setup
+python -m pip install -r requirements_win.txt
 
 <a id="tensorflow___instal_l_"></a>
 ## tensorflow       @ install-->p2s_setup
 python -m pip install tensorflow==2.14
 python -m pip install tensorflow-text
+python -m pip install tensorflow-datasets==4.8.3
 <a id="wsl_gpu___tensorflow_install_"></a>
 ### wsl-gpu       @ tensorflow/install-->p2s_setup
 install cuda:
@@ -142,7 +138,7 @@ python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'
 <a id="netifaces___instal_l_"></a>
 ## netifaces       @ install-->p2s_setup
 sudo apt-get install python3.10-dev
-pip install netifaces
+python -m pip install netifaces
 
 <a id="soft_link_s_"></a>
 # soft-links
@@ -224,43 +220,3 @@ https://github.com/tensorflow/tensorflow/issues/39099
 
 ~/.virtualenvs/pix2seq/lib/python3.10/site-packages/tensorflow_addons/utils/tfa_eol_msg.py:53
 
-
-
-<a id="tfrecor_d_"></a>
-# tfrecord
-<a id="ipsc___tfrecord_"></a>
-## ipsc       @ tfrecord-->p2s_setup
-python3 data/scripts/create_ipsc_tfrecord.py
-<a id="ext_reorg_roi_g2_16_53___ipsc_tfrecor_d_"></a>
-### ext_reorg_roi_g2_16_53       @ ipsc/tfrecord-->p2s_setup
-python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_16_53.json --n_proc=0
-<a id="ext_reorg_roi_g2_0_1___ipsc_tfrecor_d_"></a>
-### ext_reorg_roi_g2_0_1       @ ipsc/tfrecord-->p2s_setup
-python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_1.json --n_proc=0
-<a id="ext_reorg_roi_g2_0_15___ipsc_tfrecor_d_"></a>
-### ext_reorg_roi_g2_0_15       @ ipsc/tfrecord-->p2s_setup
-python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_15.json --n_proc=0
-<a id="ext_reorg_roi_g2_0_37___ipsc_tfrecor_d_"></a>
-### ext_reorg_roi_g2_0_37       @ ipsc/tfrecord-->p2s_setup
-python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_37.json --n_proc=0
-<a id="ext_reorg_roi_g2_38_53___ipsc_tfrecor_d_"></a>
-### ext_reorg_roi_g2_38_53       @ ipsc/tfrecord-->p2s_setup
-python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_38_53.json --n_proc=0
-
-<a id="video_tfrecor_d_"></a>
-# video_tfrecord
-<a id="ipsc___video_tfrecord_"></a>
-## ipsc       @ video_tfrecord-->p2s_setup
-<a id="ext_reorg_roi_g2_0_4___ipsc_video_tfrecor_d_"></a>
-### ext_reorg_roi_g2_0_4       @ ipsc/video_tfrecord-->p2s_setup
-python3 data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1 ann_file=ext_reorg_roi_g2_0_4
-<a id="ext_reorg_roi_g2_5_9___ipsc_video_tfrecor_d_"></a>
-### ext_reorg_roi_g2_5_9       @ ipsc/video_tfrecord-->p2s_setup
-python3 data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1 ann_file=ext_reorg_roi_g2_5_9
-**fg-4**
-python3 data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1:fg-4 ann_file=ext_reorg_roi_g2_5_9
-<a id="ext_reorg_roi_g2_0_37___ipsc_video_tfrecor_d_"></a>
-### ext_reorg_roi_g2_0_37       @ ipsc/video_tfrecord-->p2s_setup
-python3 data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1 ann_file=ext_reorg_roi_g2_0_37
-**fg-4**
-python3 data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1:fg-4 ann_file=ext_reorg_roi_g2_0_37

@@ -27,6 +27,9 @@ import tensorflow_datasets as tfds
 
 DatasetRegistry = registry.Registry()
 
+# num_parallel_calls = tf.data.experimental.AUTOTUNE
+num_parallel_calls = None
+
 
 def mix_datasets(input_fns, weights):
     """Mix multiple datasets according to weights.
@@ -128,7 +131,7 @@ class Dataset(abc.ABC):
 
             dataset = dataset.map(
                 lambda x: self.parse_example(x, training),
-                num_parallel_calls=tf.data.experimental.AUTOTUNE
+                num_parallel_calls=num_parallel_calls
             )
 
             dataset = dataset.filter(
@@ -137,7 +140,7 @@ class Dataset(abc.ABC):
 
             dataset = dataset.map(
                 lambda x: self.extract(x, training),
-                num_parallel_calls=tf.data.experimental.AUTOTUNE
+                num_parallel_calls=num_parallel_calls
             )
             if process_single_example:
                 dataset = process_single_example(
@@ -147,8 +150,10 @@ class Dataset(abc.ABC):
             # dataset = dataset.batch(batch_size, drop_remainder=training)
             dataset = dataset.padded_batch(batch_size, drop_remainder=training)
             if config.batch_duplicates > 1 and training:
-                dataset = dataset.map(self._flatten_dims,
-                                      num_parallel_calls=tf.data.experimental.AUTOTUNE)
+                dataset = dataset.map(
+                    self._flatten_dims,
+                    num_parallel_calls=num_parallel_calls
+                )
             dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
             return dataset
 
@@ -246,9 +251,9 @@ class TFRecordDataset(Dataset):
         dataset = dataset.interleave(
             self.dataset_cls,
             cycle_length=32,
-            deterministic=not training,
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-            # deterministic=True,
+            # deterministic=not training,
+            num_parallel_calls=num_parallel_calls,
+            deterministic=True,
             # num_parallel_calls=0,
         )
         return dataset

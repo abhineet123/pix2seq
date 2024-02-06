@@ -86,6 +86,22 @@ def get_worker_id(tf_config):
 
 
 def main(unused_argv):
+    filenames = [
+        'datasets/ipsc/well3/all_frames_roi/all_frames_roi_12094_17082_16427_20915/image146.jpg'
+        'datasets/ipsc/well3/all_frames_roi/all_frames_roi_12094_17082_16427_20915/image147.jpg'
+    ]
+
+    # frames = tf.map_fn(
+    #     lambda x: tf.io.decode_image(tf.io.read_file(x), channels=3),
+    #     # read_video_frames,
+    #     filenames,
+    #     fn_output_signature=tf.uint8
+    # )
+    #
+    # # img = tf.io.decode_image(tf.io.read_file(x), channels=3)
+    # img_shape_1 = frames.shape
+    # img_shape_2 = tf.shape(frames)
+
     # params = Params()
     # paramparse.process(params)
     assert FLAGS.cfg, "cfg must be provided"

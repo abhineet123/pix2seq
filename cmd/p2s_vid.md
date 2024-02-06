@@ -46,9 +46,13 @@ python3 run.py --cfg=configs/config_video_det_ipsc.py --j5=train,resnet-640,vid_
 <a id="on_g2_0_4___batch_8_g2_5_9_resnet_64_0_"></a>
 #### on-g2_0_4       @ batch-8/g2_5_9/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_0_4,batch-4,save-vis-1,dbg-1,dyn-1
+**12094**
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-12094_0_4,batch-4,save-vis-1,dbg-1,dyn-1
+**12094_short**
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-12094_short_0_4,batch-4,save-vis-1,dbg-1,dyn-1
 <a id="on_g2_5_9___batch_8_g2_5_9_resnet_64_0_"></a>
 #### on-g2_5_9       @ batch-8/g2_5_9/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_5_9,batch-1,save-vis-1,dbg-0,dyn-1
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_5_9,batch-4,save-vis-1,dbg-0,dyn-1
 
 <a id="fg_4___g2_5_9_resnet_64_0_"></a>
 ### fg-4       @ g2_5_9/resnet-640-->p2s_vid
