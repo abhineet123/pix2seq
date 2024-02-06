@@ -27,8 +27,8 @@ import tensorflow_datasets as tfds
 
 DatasetRegistry = registry.Registry()
 
-# num_parallel_calls = tf.data.experimental.AUTOTUNE
-num_parallel_calls = None
+num_parallel_calls = tf.data.experimental.AUTOTUNE
+# num_parallel_calls = None
 
 
 def mix_datasets(input_fns, weights):
@@ -251,9 +251,9 @@ class TFRecordDataset(Dataset):
         dataset = dataset.interleave(
             self.dataset_cls,
             cycle_length=32,
-            # deterministic=not training,
+            deterministic=not training,
             num_parallel_calls=num_parallel_calls,
-            deterministic=True,
+            # deterministic=True,
             # num_parallel_calls=0,
         )
         return dataset
