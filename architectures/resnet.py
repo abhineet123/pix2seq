@@ -68,7 +68,7 @@ class BatchNormRelu(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
                 scale=scale,
                 fused=fused,  # note: fused=True only support 4D input tensors.
                 gamma_initializer=gamma_initializer,
-                # synchronized=global_bn,
+                synchronized=global_bn,
                 name=('global_bn' if global_bn else 'bn'))
 
     def call(self, inputs, training):
