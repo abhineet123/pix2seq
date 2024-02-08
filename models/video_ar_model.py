@@ -252,7 +252,7 @@ class ARTrainer(model_lib.Trainer):
 
         y_mask = tf.greater(token_weights_notpad, 0)
         y_mask_int = tf.cast(y_mask, tf.int64)
-        y_mask_count = tf.reduce_sum(y_mask_int)
+        y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
 
         y_true = tf.boolean_mask(target_seq, y_mask)
         y_true_logits = tf.one_hot(y_true, depth=mconfig.vocab_size)
