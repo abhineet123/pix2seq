@@ -18,6 +18,9 @@
 import ml_collections
 
 import utils
+import vocab
+from tasks import task_utils
+
 from architectures.transformers import add_vis_pos_emb
 from architectures.transformers import AutoregressiveDecoder
 from architectures.transformers import FIT
@@ -214,6 +217,7 @@ class ARTrainer(model_lib.Trainer):
           **kwargs: other neccesary configurations to pass for training setup.
         """
         super().__init__(config, **kwargs)
+        self.vid_len = config.dataset.length
         self._metrics.update({
             'loss_notpad': tf.keras.metrics.Mean('loss_notpad'),
             'accuracy_notpad': tf.keras.metrics.SparseCategoricalAccuracy(
@@ -222,16 +226,20 @@ class ARTrainer(model_lib.Trainer):
 
     def compute_loss(self, preprocess_outputs):
         """Compute loss based on model outputs and targets."""
-        image, input_seq, target_seq, token_weights = preprocess_outputs
+
+        config = self.config.task
+        mconfig = self.config.model
+
+        video, input_seq, target_seq, token_weights = preprocess_outputs
 
         target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
         token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)
         token_weights = utils.tf_float32(token_weights)
-        is_padding = tf.equal(target_seq, 0)  # padding tokens.
+        is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
         token_weights_notpad = tf.where(
             is_padding, tf.zeros_like(token_weights), token_weights)
 
-        logits = self.model(image, input_seq)
+        logits = self.model(video, input_seq)
         losses = model_utils.get_loss(
             logits, target_seq, self.config.train.loss_type)
         loss = tf.reduce_sum(losses * token_weights) / (
@@ -241,77 +249,40 @@ class ARTrainer(model_lib.Trainer):
 
         # update metrics
         self._metrics['loss_notpad'].update_state(loss_notpad)
-        self._metrics['accuracy_notpad'].update_state(
-            tf.boolean_mask(target_seq, tf.greater(token_weights_notpad, 0)),
-            tf.boolean_mask(logits, tf.greater(token_weights_notpad, 0)))
+
+        y_mask = tf.greater(token_weights_notpad, 0)
+        y_mask_int = tf.cast(y_mask, tf.int64)
+        y_mask_count = tf.reduce_sum(y_mask_int)
+
+        y_true = tf.boolean_mask(target_seq, y_mask)
+        y_true_logits = tf.one_hot(y_true, depth=mconfig.vocab_size)
+
+        y_pred_logits = tf.boolean_mask(logits, y_mask)
+        y_pred = tf.argmax(y_pred_logits, axis=1)
+
+        y_correct = tf.math.equal(y_true, y_pred)
+        y_correct_int = tf.cast(y_correct, tf.int64)
+        y_correct_count = tf.reduce_sum(y_correct_int)
+
+        y_cmb = tf.stack((y_true, y_pred, y_correct_int), axis=0)
+
+        m = tf.keras.metrics.SparseCategoricalAccuracy()
+        m.update_state(y_true, y_pred_logits)
+        accuracy_notpad = m.result().numpy()
+
+        classes_pred, bboxes_pred, scores_pred = task_utils.decode_video_seq_to_bbox(
+            y_pred_logits, y_pred, self.vid_len, config.quantization_bins,
+            mconfig.coord_vocab_shift)
+
+        classes_true, bboxes_true, scores_true = task_utils.decode_video_seq_to_bbox(
+            y_true_logits, y_true, self.vid_len, config.quantization_bins,
+            mconfig.coord_vocab_shift)
+
+        image_size = video.shape[2:4].as_list()
+        scale = utils.tf_float32(image_size)
+        bboxes_pred_rescaled = utils.scale_points(bboxes_pred, scale)
+        bboxes_true_rescaled = utils.scale_points(bboxes_true, scale)
+
+        self._metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
 
         return loss
-
-
-@model_lib.ModelRegistry.register('fit_video_encoder_ar_decoder')
-class ModelT(Model):
-    """Inputs images and returns activations."""
-
-    def __init__(self, config: ml_collections.ConfigDict, **kwargs):
-        super(Model, self).__init__(**kwargs)
-        config = config.model
-        self.config = config
-        self.drate = config.glimpse_div_rate
-        self.mini_x = config.glimpse_mini_x
-        num_groups = self.drate ** 2 + self.mini_x
-        x_per_group = (config.image_size[0] // self.drate // config.patch_size) ** 2
-        self.encoder = FIT(
-            layers=config.layers,
-            x_size=x_per_group * num_groups,
-            num_groups=num_groups,
-            latents_per_group=config.latents_per_group,
-            x_dim=config.dim_att,
-            latent_dim=config.dim_latent,
-            x_num_heads=config.num_heads,
-            latent_num_heads=config.num_heads,
-            mlp_ratio=config.dim_mlp // config.dim_att,
-            drop_path=config.drop_path,
-            drop_units=config.drop_units,
-            drop_att=config.drop_att,
-            x_pos_encoding=config.pos_encoding,
-            latent_pos_encoding=config.latent_pos_encoding,
-            mask=config.mask)
-
-        mlp_ratio_dec = config.dim_mlp_dec // config.dim_att_dec
-        self.decoder = AutoregressiveDecoder(
-            config.vocab_size, config.max_seq_len, config.num_decoder_layers,
-            config.dim_att_dec, mlp_ratio_dec, config.num_heads_dec,
-            config.drop_path, config.drop_units, config.drop_att,
-            config.pos_encoding_dec, config.shared_decoder_embedding,
-            config.decoder_output_bias, name='ar_decoder')
-
-    def _encode_videos(self, images, training):
-        """Encode images into latents for decoder to condition on."""
-        config = self.config
-        sub_isize = [config.image_size[0] // self.drate,
-                     config.image_size[1] // self.drate]
-        patch_size = [config.patch_size, config.patch_size]
-        if config.shuffle_glimpses:
-            images, idx = utils.images2glimpses2tokens(
-                images, sub_isize, patch_size, mini_x=self.mini_x, shuffle=True)
-        else:
-            images, idx = utils.images2glimpses2tokens(
-                images, sub_isize, patch_size, mini_x=self.mini_x, shuffle=False)
-            idx = None
-        x_tokens, l_tokens = self.encoder(images, idx, training)
-        if self.encoder.layer_configs[-1][-1] > 0:
-            # using latent tokens only when the network ends with global layer(s).
-            encoded = l_tokens
-        else:
-            encoded = x_tokens
-        bsz, seqlen, slots, dim = utils.shape_as_list(encoded)
-        encoded = tf.reshape(encoded, [bsz, seqlen * slots, dim])
-        return encoded
-
-
-"""
-fancy way of saying TrainerRegistry['fit_encoder_ar_decoder'] = ARTrainer
-Separate line here since both fit_video_encoder_ar_decoder And video_encoder_ar_decoder 
-have the same trainer class
-"""
-model_lib.TrainerRegistry.register('fit_video_encoder_ar_decoder')(ARTrainer)

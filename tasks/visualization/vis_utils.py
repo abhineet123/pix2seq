@@ -1006,7 +1006,6 @@ def visualize_boxes_and_labels_on_video(
         category_index,
         out_vis_dir=None,
         csv_data=None,
-
         use_normalized_coordinates=False,
         max_boxes_to_draw=20,
         min_score_thresh=.5,
