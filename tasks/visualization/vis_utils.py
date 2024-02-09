@@ -1005,7 +1005,11 @@ def add_video_summary_with_bbox(
     for video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
             video_ids, videos, filenames, file_ids, bboxes,
             bboxes_rescaled, scores, classes):
-        keep_indices = np.where(classes_ > 0)[0]
+        if isinstance(boxes_, np.ndarray):
+            keep_indices = np.where(classes_ > 0)[0]
+        else:
+            keep_indices = tf.where(classes_ > 0)
+
         new_video = visualize_boxes_and_labels_on_video(
             out_vis_dir=out_vis_dir,
             csv_data=csv_data,
