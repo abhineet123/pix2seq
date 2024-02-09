@@ -1008,7 +1008,7 @@ def add_video_summary_with_bbox(
         if isinstance(boxes_, np.ndarray):
             keep_indices = np.where(classes_ > 0)[0]
         else:
-            keep_indices = tf.where(classes_ > 0)
+            keep_indices = tf.squeeze(tf.where(classes_ > 0))
 
         new_video = visualize_boxes_and_labels_on_video(
             out_vis_dir=out_vis_dir,
