@@ -221,7 +221,7 @@ class TaskVideoDetection(task_lib.Task):
             token_weights)
 
         if training:
-            return batched_examples['video'], input_seq, target_seq, token_weights
+            return batched_examples, input_seq, target_seq, token_weights
         else:
             return batched_examples['video'], response_seq, batched_examples
 
@@ -329,7 +329,7 @@ class TaskVideoDetection(task_lib.Task):
             bboxes_, bboxes_rescaled_, classes_, scores_ = (
                 bboxes_.numpy(), bboxes_rescaled_.numpy(), classes_.numpy(), scores_.numpy())
             videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
-            add_video_summary_with_bbox(
+            vis_utils.add_video_summary_with_bbox(
                 videos_, bboxes_, bboxes_rescaled_,
                 classes_, scores_,
                 category_names=self._category_names,
@@ -353,40 +353,6 @@ class TaskVideoDetection(task_lib.Task):
         """Reset states of metrics accumulators."""
         if self._coco_metrics:
             self._coco_metrics.reset_states()
-
-
-def add_video_summary_with_bbox(
-        videos, bboxes, bboxes_rescaled, classes, scores, category_names,
-        video_ids, vid_len,
-        filenames,
-        file_ids,
-        out_vis_dir=None, csv_data=None,
-        min_score_thresh=0.1):
-    k = 0
-    new_videos = []
-    for video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
-            video_ids, videos, filenames, file_ids, bboxes,
-            bboxes_rescaled, scores, classes):
-        keep_indices = np.where(classes_ > 0)[0]
-        new_video = vis_utils.visualize_boxes_and_labels_on_video(
-            out_vis_dir=out_vis_dir,
-            csv_data=csv_data,
-            video_id=video_id_,
-            video=video,
-            file_names=filenames_,
-            file_ids=file_ids_,
-            vid_len=vid_len,
-            bboxes_rescaled=bboxes_rescaled_[keep_indices],
-            boxes=boxes_[keep_indices],
-            classes=classes_[keep_indices],
-            scores=scores_[keep_indices],
-            category_index=category_names,
-            use_normalized_coordinates=True,
-            min_score_thresh=min_score_thresh,
-            max_boxes_to_draw=100)
-        new_videos.append(new_video)
-        k += 1
-    return new_videos
 
 
 def build_response_seq_from_video_bboxes(

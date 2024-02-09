@@ -20,6 +20,7 @@ import ml_collections
 import utils
 import vocab
 from tasks import task_utils
+from tasks.visualization import vis_utils
 
 from architectures.transformers import add_vis_pos_emb
 from architectures.transformers import AutoregressiveDecoder
@@ -218,46 +219,30 @@ class ARTrainer(model_lib.Trainer):
         """
         super().__init__(config, **kwargs)
         self.vid_len = config.dataset.length
+        self._category_names = task_utils.get_category_names(
+            config.dataset.get('category_names_path'))
+
         self._metrics.update({
             'loss_notpad': tf.keras.metrics.Mean('loss_notpad'),
             'accuracy_notpad': tf.keras.metrics.SparseCategoricalAccuracy(
                 'accuracy_notpad'),
         })
 
-    def compute_loss(self, preprocess_outputs):
-        """Compute loss based on model outputs and targets."""
-
+    def debug_loss(self, batched_examples, y_true_raw, y_pred_logits_raw, y_true, y_pred_logits, y_mask):
         config = self.config.task
         mconfig = self.config.model
 
-        video, input_seq, target_seq, token_weights = preprocess_outputs
+        videos = batched_examples['video']
 
-        target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
-        token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)
-        token_weights = utils.tf_float32(token_weights)
-        is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
-        token_weights_notpad = tf.where(
-            is_padding, tf.zeros_like(token_weights), token_weights)
+        image_size = videos.shape[2:4].as_list()
+        scale = utils.tf_float32(image_size)
 
-        logits = self.model(video, input_seq)
-        losses = model_utils.get_loss(
-            logits, target_seq, self.config.train.loss_type)
-        loss = tf.reduce_sum(losses * token_weights) / (
-                tf.reduce_sum(token_weights) + 1e-9)
-        loss_notpad = tf.reduce_sum(losses * token_weights_notpad) / (
-                tf.reduce_sum(token_weights_notpad) + 1e-9)
-
-        # update metrics
-        self._metrics['loss_notpad'].update_state(loss_notpad)
-
-        y_mask = tf.greater(token_weights_notpad, 0)
         y_mask_int = tf.cast(y_mask, tf.int64)
         y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
 
-        y_true = tf.boolean_mask(target_seq, y_mask)
         y_true_logits = tf.one_hot(y_true, depth=mconfig.vocab_size)
 
-        y_pred_logits = tf.boolean_mask(logits, y_mask)
+        """Don't care about output tokens corresponding to GT tokens marked as padding"""
         y_pred = tf.argmax(y_pred_logits, axis=1)
 
         y_correct = tf.math.equal(y_true, y_pred)
@@ -270,19 +255,70 @@ class ARTrainer(model_lib.Trainer):
         m.update_state(y_true, y_pred_logits)
         accuracy_notpad = m.result().numpy()
 
-        classes_pred, bboxes_pred, scores_pred = task_utils.decode_video_seq_to_bbox(
-            y_pred_logits, y_pred, self.vid_len, config.quantization_bins,
+        y_pred_raw = tf.argmax(y_pred_logits_raw, axis=1)
+        y_true_logits_raw = tf.one_hot(y_true_raw, depth=mconfig.vocab_size)
+
+        classes_pred_raw, bboxes_pred_raw, scores_pred_raw = task_utils.decode_video_seq_to_bbox(
+            y_pred_logits_raw, y_pred_raw, self.vid_len, config.quantization_bins,
             mconfig.coord_vocab_shift)
 
-        classes_true, bboxes_true, scores_true = task_utils.decode_video_seq_to_bbox(
-            y_true_logits, y_true, self.vid_len, config.quantization_bins,
+        classes_true_raw, bboxes_true_raw, scores_true_raw = task_utils.decode_video_seq_to_bbox(
+            y_true_logits_raw, y_true_raw, self.vid_len, config.quantization_bins,
             mconfig.coord_vocab_shift)
 
-        image_size = video.shape[2:4].as_list()
-        scale = utils.tf_float32(image_size)
-        bboxes_pred_rescaled = utils.scale_points(bboxes_pred, scale)
-        bboxes_true_rescaled = utils.scale_points(bboxes_true, scale)
+        bboxes_pred_raw_rescaled = utils.scale_points(bboxes_pred_raw, scale)
+        bboxes_true_raw_rescaled = utils.scale_points(bboxes_true_raw, scale)
 
+        video_ids = batched_examples['video_ids']
+        file_names = batched_examples['file_names']
+        file_ids = batched_examples['file_ids']
+
+        videos_true_raw = vis_utils.add_video_summary_with_bbox(
+            videos, bboxes_true_raw, bboxes_true_raw_rescaled,
+            classes_true_raw, scores_true_raw, vid_len=self.vid_len,
+            filenames=file_names,
+            file_ids=file_ids,
+            video_ids=video_ids,
+            category_names=self._category_names,
+        )
+
+        for _id in range(self.vid_len):
+            classes_pred, bboxes_pred, scores_pred = task_utils.decode_video_seq_to_bbox(
+                y_pred_logits, y_pred, self.vid_len, config.quantization_bins,
+                mconfig.coord_vocab_shift)
+
+            classes_true, bboxes_true, scores_true = task_utils.decode_video_seq_to_bbox(
+                y_true_logits, y_true, self.vid_len, config.quantization_bins,
+                mconfig.coord_vocab_shift)
+
+    def compute_loss(self, preprocess_outputs):
+        batched_examples, input_seq, target_seq, token_weights = preprocess_outputs
+
+        videos = batched_examples['video']
+
+        target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
+        token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)
+        token_weights = utils.tf_float32(token_weights)
+        is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
+        token_weights_notpad = tf.where(
+            is_padding, tf.zeros_like(token_weights), token_weights)
+
+        logits = self.model(videos, input_seq)
+        losses = model_utils.get_loss(
+            logits, target_seq, self.config.train.loss_type)
+        loss = tf.reduce_sum(losses * token_weights) / (
+                tf.reduce_sum(token_weights) + 1e-9)
+        loss_notpad = tf.reduce_sum(losses * token_weights_notpad) / (
+                tf.reduce_sum(token_weights_notpad) + 1e-9)
+
+        y_mask = tf.greater(token_weights_notpad, 0)
+        y_true = tf.boolean_mask(target_seq, y_mask)
+        y_pred_logits = tf.boolean_mask(logits, y_mask)
+
+        # update metrics
+        self._metrics['loss_notpad'].update_state(loss_notpad)
         self._metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
+
+        self.debug_loss(batched_examples, target_seq, logits, y_true, y_pred_logits, y_mask)
 
         return loss
