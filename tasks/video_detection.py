@@ -319,8 +319,7 @@ class TaskVideoDetection(task_lib.Task):
          file_names, file_ids
          ) = new_outputs
 
-        video_ids_ = video_ids.numpy().flatten().astype(str)
-        video_ids__ = list(video_ids_)
+        # video_ids__ = list(video_ids_)
         # gt_tuple = (gt_bboxes, gt_classes, scores * 0. + 1., 'gt')  # pylint: disable=unused-variable
         pred_tuple = (pred_bboxes, pred_bboxes_rescaled, pred_classes, scores, 'pred')
         vis_list = [pred_tuple]  # exclude gt for simplicity.
@@ -333,9 +332,9 @@ class TaskVideoDetection(task_lib.Task):
                 videos_, bboxes_, bboxes_rescaled_,
                 classes_, scores_,
                 category_names=self._category_names,
-                video_ids=video_ids__,
-                filenames=file_names,
-                file_ids=file_ids,
+                video_ids=video_ids.numpy(),
+                filenames=file_names.numpy(),
+                file_ids=file_ids.numpy(),
                 vid_len=self.vid_len,
                 out_vis_dir=out_vis_dir,
                 csv_data=csv_data,

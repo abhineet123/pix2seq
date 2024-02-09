@@ -32,7 +32,10 @@ from architectures.video_transformers import VideoResNetTransformer
 
 from models import model as model_lib
 from models import model_utils
+
+import numpy as np
 import tensorflow as tf
+
 
 
 @model_lib.ModelRegistry.register('video_encoder_ar_decoder')
@@ -228,14 +231,52 @@ class ARTrainer(model_lib.Trainer):
                 'accuracy_notpad'),
         })
 
-    def debug_loss(self, batched_examples, y_true_raw, y_pred_logits_raw, y_true, y_pred_logits, y_mask):
+    def visualize(self, examples, logits, tokens, label):
+
+        videos = examples['video']
         config = self.config.task
         mconfig = self.config.model
 
-        videos = batched_examples['video']
+        classes, bboxes, scores = task_utils.decode_video_seq_to_bbox(
+            logits, tokens, self.vid_len, config.quantization_bins,
+            mconfig.coord_vocab_shift)
 
         image_size = videos.shape[2:4].as_list()
         scale = utils.tf_float32(image_size)
+
+        bboxes_true_raw_rescaled = utils.scale_points(bboxes, scale)
+
+        video_ids = examples['video_id'].numpy()
+        file_ids = examples['file_ids'].numpy()
+        file_names = examples['file_names'].numpy()
+
+        videos_ = tf.image.convert_image_dtype(videos, tf.uint8).numpy()
+
+        videos_vis = vis_utils.add_video_summary_with_bbox(
+            videos_,
+            bboxes.numpy(),
+            bboxes_true_raw_rescaled.numpy(),
+            classes.numpy(),
+            scores.numpy(),
+            vid_len=self.vid_len,
+            filenames=file_names,
+            file_ids=file_ids,
+            video_ids=video_ids,
+            category_names=self._category_names,
+        )
+
+        import cv2
+
+        for vid_id, video in enumerate(videos_vis):
+            for _id in range(self.vid_len):
+                img = video[_id, ...]
+
+                cv2.imshow(f'{label} vid {video_ids[vid_id]} img {_id}', img)
+                cv2.waitKey(0)
+
+    def debug_loss(self, examples, y_true_raw, y_pred_logits_raw, y_true, y_pred_logits, y_mask):
+        config = self.config.task
+        mconfig = self.config.model
 
         y_mask_int = tf.cast(y_mask, tf.int64)
         y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
@@ -258,38 +299,12 @@ class ARTrainer(model_lib.Trainer):
         y_pred_raw = tf.argmax(y_pred_logits_raw, axis=2)
         y_true_logits_raw = tf.one_hot(y_true_raw, depth=mconfig.vocab_size)
 
-        classes_pred_raw, bboxes_pred_raw, scores_pred_raw = task_utils.decode_video_seq_to_bbox(
-            y_pred_logits_raw, y_pred_raw, self.vid_len, config.quantization_bins,
-            mconfig.coord_vocab_shift)
-
-        classes_true_raw, bboxes_true_raw, scores_true_raw = task_utils.decode_video_seq_to_bbox(
-            y_true_logits_raw, y_true_raw, self.vid_len, config.quantization_bins,
-            mconfig.coord_vocab_shift)
-
-        bboxes_pred_raw_rescaled = utils.scale_points(bboxes_pred_raw, scale)
-        bboxes_true_raw_rescaled = utils.scale_points(bboxes_true_raw, scale)
-
-        video_ids = batched_examples['video_id']
-        file_names = batched_examples['file_names']
-        file_ids = batched_examples['file_ids']
-
-        videos_true_raw = vis_utils.add_video_summary_with_bbox(
-            videos, bboxes_true_raw, bboxes_true_raw_rescaled,
-            classes_true_raw, scores_true_raw, vid_len=self.vid_len,
-            filenames=file_names,
-            file_ids=file_ids,
-            video_ids=video_ids,
-            category_names=self._category_names,
-        )
+        self.visualize(examples, y_true_logits_raw, y_true_raw, 'GT raw')
+        self.visualize(examples, y_pred_logits_raw, y_pred_raw, 'Pred raw')
 
         for _id in range(self.vid_len):
-            classes_pred, bboxes_pred, scores_pred = task_utils.decode_video_seq_to_bbox(
-                y_pred_logits, y_pred, self.vid_len, config.quantization_bins,
-                mconfig.coord_vocab_shift)
-
-            classes_true, bboxes_true, scores_true = task_utils.decode_video_seq_to_bbox(
-                y_true_logits, y_true, self.vid_len, config.quantization_bins,
-                mconfig.coord_vocab_shift)
+            self.visualize(examples, y_true_logits, y_true, 'GT masked')
+            self.visualize(examples, y_pred_logits, y_pred, 'Pred masked')
 
     def compute_loss(self, preprocess_outputs):
         batched_examples, input_seq, target_seq, token_weights = preprocess_outputs

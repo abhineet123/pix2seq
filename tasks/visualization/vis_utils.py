@@ -1005,10 +1005,7 @@ def add_video_summary_with_bbox(
     for video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
             video_ids, videos, filenames, file_ids, bboxes,
             bboxes_rescaled, scores, classes):
-        if isinstance(boxes_, np.ndarray):
-            keep_indices = np.where(classes_ > 0)[0]
-        else:
-            keep_indices = tf.squeeze(tf.where(classes_ > 0))
+        keep_indices = np.where(classes_ > 0)[0]
 
         new_video = visualize_boxes_and_labels_on_video(
             out_vis_dir=out_vis_dir,
@@ -1060,7 +1057,7 @@ def visualize_boxes_and_labels_on_video(
     box_to_class_map = {}
     box_to_scores_map = {}
 
-    file_names = [str(filename.decode("utf-8")) for filename in file_names.numpy()]
+    file_names = [str(filename.decode("utf-8")) for filename in file_names]
 
     seg_dir_path = os.path.dirname(file_names[0])
     seq_name = os.path.basename(seg_dir_path)
