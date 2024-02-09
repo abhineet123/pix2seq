@@ -255,7 +255,7 @@ class ARTrainer(model_lib.Trainer):
         m.update_state(y_true, y_pred_logits)
         accuracy_notpad = m.result().numpy()
 
-        y_pred_raw = tf.argmax(y_pred_logits_raw, axis=1)
+        y_pred_raw = tf.argmax(y_pred_logits_raw, axis=2)
         y_true_logits_raw = tf.one_hot(y_true_raw, depth=mconfig.vocab_size)
 
         classes_pred_raw, bboxes_pred_raw, scores_pred_raw = task_utils.decode_video_seq_to_bbox(
@@ -269,7 +269,7 @@ class ARTrainer(model_lib.Trainer):
         bboxes_pred_raw_rescaled = utils.scale_points(bboxes_pred_raw, scale)
         bboxes_true_raw_rescaled = utils.scale_points(bboxes_true_raw, scale)
 
-        video_ids = batched_examples['video_ids']
+        video_ids = batched_examples['video_id']
         file_names = batched_examples['file_names']
         file_ids = batched_examples['file_ids']
 
