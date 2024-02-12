@@ -201,9 +201,8 @@ class ResizeVideo(Transform):
 
         for k, resize_method, antialias, p_ar in zip(
                 self.config.inputs, resize_methods, antialias_list, preserve_ar):
-            example[k] = data_utils.resize_video(
+            example[k] = tf.image.resize(
                 example[k],
-                length=self.config.length,
                 size=self.config.target_size, method=resize_method,
                 antialias=antialias, preserve_aspect_ratio=p_ar)
         return example
@@ -223,13 +222,12 @@ class ScaleJitterVideo(Transform):
     """
 
     def process_example(self, example: dict[str, tf.Tensor]):
-        example = copy.copy(example)
+        example_out = copy.copy(example)
         target_height, target_width = self.config.target_size
         min_scale, max_scale = self.config.min_scale, self.config.max_scale
 
         k = self.config.inputs[0]
-        input_size = tf.cast(tf.shape(example[self.config.inputs[0]])[1:3],
-                             tf.float32)
+        input_size = tf.cast(tf.shape(example_out[k])[-3:-1], tf.float32)
         output_size = tf.constant([target_height, target_width], tf.float32)
         random_scale = tf.random.uniform([], min_scale, max_scale)
         random_scale_size = tf.multiply(output_size, random_scale)
@@ -244,15 +242,12 @@ class ScaleJitterVideo(Transform):
         antialias_list = self.config.get('antialias', [False] * num_inputs)
         for k, resize_method, antialias in zip(self.config.inputs,
                                                resize_methods, antialias_list):
-            resized_images = [None, ] * self.config.length
-            video = example[k]
-            for frame_id in range(self.config.length):
-                frame = video[frame_id, ...]
-                resized_images[frame_id] = tf.image.resize(
-                    frame, tf.cast(scaled_size, tf.int32),
+            video = example_out[k]
+            resized_video = tf.image.resize(
+                    video, tf.cast(scaled_size, tf.int32),
                     method=resize_method, antialias=antialias)
-            example[k] = tf.stack(resized_images, axis=0)
-        return example
+            example_out[k] = resized_video
+        return example_out
 
 
 @TransformRegistry.register('fixed_size_crop')
@@ -313,8 +308,10 @@ class FixedSizeVideoCrop(Transform):
                   tf.minimum(output_size[1], input_size[1] - offset[1]))
         object_coordinate_keys = self.config.get('object_coordinate_keys', [])
 
-        return data_utils.video_crop(example, region, self.config.inputs,
+        out_video = data_utils.video_crop(example, region, self.config.inputs,
                                      object_coordinate_keys)
+
+        return out_video
 
 
 @TransformRegistry.register('random_horizontal_flip')
@@ -374,15 +371,8 @@ class RandomHorizontalFlipVideo(Transform):
         with tf.name_scope('RandomHorizontalFlipVideo'):
             coin_flip = tf.random.uniform([]) > 0.5
             if coin_flip:
-                inputs = {k: data_utils.flip_video_left_right(v, self.config.length)
-                          for k, v in inputs.items()}
-                boxes = {k: data_utils.flip_polygons_left_right(v)
-                         for k, v in boxes.items()}
-                # keypoints = {k: data_utils.flip_keypoints_left_right(v)
-                #              for k, v in keypoints.items()}
-                # polygons = {k: data_utils.flip_polygons_left_right(v)
-                #             for k, v in polygons.items()}
-
+                inputs = {k: tf.image.flip_left_right(v) for k, v in inputs.items()}
+                boxes = {k: data_utils.flip_polygons_left_right(v) for k, v in boxes.items()}
         example.update(inputs)
         example.update(boxes)
         # example.update(keypoints)
@@ -623,9 +613,8 @@ class PadVideoToMaxSize(Transform):
                 height = tf.shape(unpadded_video)[1]
                 width = tf.shape(unpadded_video)[2]
 
-            example[k] = backgrnd_val_ + data_utils.pad_video_to_bounding_box(
+            example[k] = backgrnd_val_ + tf.image.pad_to_bounding_box(
                 unpadded_video - backgrnd_val_,
-                length=self.config.length,
                 offset_height=0,
                 offset_width=0,
                 target_height=target_size[0],

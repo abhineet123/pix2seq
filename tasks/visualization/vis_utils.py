@@ -45,9 +45,11 @@ import PIL.ImageColor as ImageColor
 import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
 
+import utils
 import vocab
 from tasks.visualization import shape_utils
 from tasks.visualization import standard_fields as fields
+import cv2
 import six
 from six.moves import range
 from six.moves import zip
@@ -116,6 +118,29 @@ def _get_multiplier_for_color_randomness():
     return prime_candidates[inds[0]]
 
 
+def save_video(video, file_names, t_name, vis_img_dir):
+    import cv2
+
+    out_img = video[0].numpy()
+
+    # video_np = [img.numpy() for img in video]
+    # out_img = np.concatenate(video_np, axis=1)
+
+    file_name = file_names[0].numpy()
+    file_name = file_name.decode('utf-8')
+
+    seq_name = os.path.basename(os.path.dirname(file_name))
+
+    vis_img_name = f'{t_name} {seq_name}'
+
+    vis_img_path = os.path.join(vis_img_dir, vis_img_name + '.jpg')
+
+    cv2.imwrite(vis_img_path, out_img)
+
+    print(f'vis_img_path: {vis_img_path}')
+    print()
+
+
 def save_image_array_as_png(image, output_path):
     """Saves an image (represented as a numpy array) to PNG.
 
@@ -145,15 +170,16 @@ def encode_image_array_as_png_str(image):
     return png_string
 
 
-def draw_bounding_box_on_image_array(image,
-                                     ymin,
-                                     xmin,
-                                     ymax,
-                                     xmax,
-                                     color='red',
-                                     thickness=4,
-                                     display_str_list=(),
-                                     use_normalized_coordinates=True):
+def draw_bounding_box_on_image_array(
+        image,
+        ymin,
+        xmin,
+        ymax,
+        xmax,
+        color='red',
+        thickness=4,
+        display_str_list=(),
+        use_normalized_coordinates=True):
     """Adds a bounding box to an image (numpy array).
 
     Bounding box coordinates can be specified in either absolute (pixel) or
@@ -177,7 +203,10 @@ def draw_bounding_box_on_image_array(image,
     draw_bounding_box_on_image(image_pil, ymin, xmin, ymax, xmax, color,
                                thickness, display_str_list,
                                use_normalized_coordinates)
-    np.copyto(image, np.array(image_pil))
+    image_vis = np.array(image_pil)
+    np.copyto(image, image_vis)
+
+    return image_vis
 
 
 def draw_bounding_box_on_image(image,
@@ -993,6 +1022,61 @@ def visualize_boxes_and_labels_on_image_array(
     return image
 
 
+def visualize_video(config, examples, logits, tokens, label, category_names):
+    from tasks import task_utils
+
+    videos = examples['video']
+    tconfig = config.task
+    mconfig = config.model
+    vid_len = config.dataset.length
+
+    classes, bboxes, scores = task_utils.decode_video_seq_to_bbox(
+        logits, tokens, vid_len, tconfig.quantization_bins,
+        mconfig.coord_vocab_shift)
+
+    image_size = videos.shape[2:4].as_list()
+    scale = utils.tf_float32(image_size)
+
+    bboxes_rescaled = utils.scale_points(bboxes, scale)
+
+    video_ids = examples['video_id'].numpy()
+    file_ids = examples['file_ids'].numpy()
+    file_names = examples['file_names'].numpy()
+
+    bboxes_, bboxes_rescaled_, classes_, scores_, videos_ = (
+        bboxes.numpy(),
+        bboxes_rescaled.numpy(),
+        classes.numpy(),
+        scores.numpy(),
+        tf.image.convert_image_dtype(videos, tf.uint8).numpy(),
+    )
+    videos_vis = add_video_summary_with_bbox(
+        videos_, bboxes_, bboxes_rescaled_, classes_, scores_,
+        vid_len=vid_len,
+        filenames=file_names,
+        file_ids=file_ids,
+        video_ids=video_ids,
+        category_names=category_names,
+        min_score_thresh=0
+    )
+
+    import cv2
+
+    for vid_id, video in enumerate(videos_vis):
+        for _id in range(vid_len):
+            img = video[_id, ...]
+
+            vis_img_name = f'{label} vid {video_ids[vid_id]} img {_id}'
+
+            import eval_utils
+            img = eval_utils.annotate(img, vis_img_name)
+            vis_img_path = os.path.join(config.model_dir, vis_img_name + '.jpg')
+
+            cv2.imwrite(vis_img_path, img)
+
+            print()
+
+
 def add_video_summary_with_bbox(
         videos, bboxes, bboxes_rescaled, classes, scores, category_names,
         video_ids, vid_len,
@@ -1001,13 +1085,13 @@ def add_video_summary_with_bbox(
         out_vis_dir=None, csv_data=None,
         min_score_thresh=0.1):
     k = 0
-    new_videos = []
+    vis_videos = []
     for video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
             video_ids, videos, filenames, file_ids, bboxes,
             bboxes_rescaled, scores, classes):
         keep_indices = np.where(classes_ > 0)[0]
 
-        new_video = visualize_boxes_and_labels_on_video(
+        vis_video = visualize_boxes_and_labels_on_video(
             out_vis_dir=out_vis_dir,
             csv_data=csv_data,
             video_id=video_id_,
@@ -1023,9 +1107,9 @@ def add_video_summary_with_bbox(
             use_normalized_coordinates=True,
             min_score_thresh=min_score_thresh,
             max_boxes_to_draw=100)
-        new_videos.append(new_video)
+        vis_videos.append(vis_video)
         k += 1
-    return new_videos
+    return vis_videos
 
 
 def visualize_boxes_and_labels_on_video(
@@ -1109,6 +1193,7 @@ def visualize_boxes_and_labels_on_video(
                 box_to_color_map[box] = STANDARD_COLORS[classes[box_id] %
                                                         len(STANDARD_COLORS)]
 
+    video_vis = []
     for frame_id in range(vid_len):
         start_id = frame_id * 4
         image = video[frame_id, ...]
@@ -1146,7 +1231,7 @@ def visualize_boxes_and_labels_on_video(
                 }
                 csv_data[seq_id].append(row)
 
-            draw_bounding_box_on_image_array(
+            image_vis = draw_bounding_box_on_image_array(
                 image,
                 ymin,
                 xmin,
@@ -1156,6 +1241,8 @@ def visualize_boxes_and_labels_on_video(
                 thickness=0 if skip_boxes else line_thickness,
                 display_str_list=box_to_display_str_map[box],
                 use_normalized_coordinates=use_normalized_coordinates)
+
+        video_vis.append(image_vis)
 
         if out_vis_dir:
             import cv2
@@ -1169,7 +1256,8 @@ def visualize_boxes_and_labels_on_video(
             # cv2.imshow('image', image)
             # cv2.waitKey(100)
 
-    return video
+    video_vis = np.stack(video_vis, axis=0)
+    return video_vis
 
 
 def add_cdf_image_summary(values, name):

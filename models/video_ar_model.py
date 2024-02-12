@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 """The image encoder and autoregressive decoder model."""
+import os.path
 
 import ml_collections
 
@@ -35,7 +36,6 @@ from models import model_utils
 
 import numpy as np
 import tensorflow as tf
-
 
 
 @model_lib.ModelRegistry.register('video_encoder_ar_decoder')
@@ -231,48 +231,6 @@ class ARTrainer(model_lib.Trainer):
                 'accuracy_notpad'),
         })
 
-    def visualize(self, examples, logits, tokens, label):
-
-        videos = examples['video']
-        config = self.config.task
-        mconfig = self.config.model
-
-        classes, bboxes, scores = task_utils.decode_video_seq_to_bbox(
-            logits, tokens, self.vid_len, config.quantization_bins,
-            mconfig.coord_vocab_shift)
-
-        image_size = videos.shape[2:4].as_list()
-        scale = utils.tf_float32(image_size)
-
-        bboxes_true_raw_rescaled = utils.scale_points(bboxes, scale)
-
-        video_ids = examples['video_id'].numpy()
-        file_ids = examples['file_ids'].numpy()
-        file_names = examples['file_names'].numpy()
-
-        videos_ = tf.image.convert_image_dtype(videos, tf.uint8).numpy()
-
-        videos_vis = vis_utils.add_video_summary_with_bbox(
-            videos_,
-            bboxes.numpy(),
-            bboxes_true_raw_rescaled.numpy(),
-            classes.numpy(),
-            scores.numpy(),
-            vid_len=self.vid_len,
-            filenames=file_names,
-            file_ids=file_ids,
-            video_ids=video_ids,
-            category_names=self._category_names,
-        )
-
-        import cv2
-
-        for vid_id, video in enumerate(videos_vis):
-            for _id in range(self.vid_len):
-                img = video[_id, ...]
-
-                cv2.imshow(f'{label} vid {video_ids[vid_id]} img {_id}', img)
-                cv2.waitKey(0)
 
     def debug_loss(self, examples, y_true_raw, y_pred_logits_raw, y_true, y_pred_logits, y_mask):
         config = self.config.task
@@ -299,12 +257,12 @@ class ARTrainer(model_lib.Trainer):
         y_pred_raw = tf.argmax(y_pred_logits_raw, axis=2)
         y_true_logits_raw = tf.one_hot(y_true_raw, depth=mconfig.vocab_size)
 
-        self.visualize(examples, y_true_logits_raw, y_true_raw, 'GT raw')
-        self.visualize(examples, y_pred_logits_raw, y_pred_raw, 'Pred raw')
+        vis_utils.visualize_video(self.config, examples, y_true_logits_raw, y_true_raw, 'GT raw', self._category_names)
+        vis_utils.visualize_video(self.config, examples, y_pred_logits_raw, y_pred_raw, 'Pred raw', self._category_names)
 
         for _id in range(self.vid_len):
-            self.visualize(examples, y_true_logits, y_true, 'GT masked')
-            self.visualize(examples, y_pred_logits, y_pred, 'Pred masked')
+            vis_utils.visualize_video(self.config, examples, y_true_logits, y_true, 'GT masked', self._category_names)
+            vis_utils.visualize_video(self.config, examples, y_pred_logits, y_pred, 'Pred masked', self._category_names)
 
     def compute_loss(self, preprocess_outputs):
         batched_examples, input_seq, target_seq, token_weights = preprocess_outputs

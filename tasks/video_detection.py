@@ -14,11 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 """Object detection task via COCO metric evaluation."""
+import copy
 import json
 import os
 import pickle
 from typing import Any, Dict, List
 
+import cv2
 from absl import logging
 import ml_collections
 import numpy as np
@@ -84,9 +86,10 @@ class TaskVideoDetection(task_lib.Task):
 
             # video_id = example['video/id']
             # print(f'video_id: {video_id}')
-            #
+
             # file_names = example['video/file_names']
             # print(f'file_names:\n{file_names}')
+
             # print(f'file_names shape:\n{file_names.shape}')
             # print(f'file_names shape 2:\n{tf.shape(file_names)}')
             #
@@ -102,7 +105,7 @@ class TaskVideoDetection(task_lib.Task):
             # area = example['area']
             # is_crowd = example['is_crowd']
 
-            video = example['video/frames']
+            # video = example['video/frames']
             # print(f'video: {video}')
 
             # video_np = video.numpy()
@@ -111,12 +114,12 @@ class TaskVideoDetection(task_lib.Task):
 
             # video_shape_1 = video.shape
             # print(f'video_shape_1: {video_shape_1}')
-
-            video_shape_2 = tf.shape(video)
+            #
+            # video_shape_2 = tf.shape(video)
             # print(f'video_shape_2: {video_shape_2}')
 
             new_example = dict(
-                orig_video_size=video_shape_2[1:3],
+                # orig_video_size=video_shape_2[1:3],
                 video_id=example['video/id'],
                 num_frames=example['video/num_frames'],
                 video=example['video/frames'],
@@ -130,35 +133,42 @@ class TaskVideoDetection(task_lib.Task):
             )
             return new_example
 
-        dataset = dataset.map(_convert_video_to_image_features,
-                              # num_parallel_calls=tf.data.experimental.AUTOTUNE
-                              )
+        dataset = dataset.map(
+            _convert_video_to_image_features,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE
+        )
         dataset = dataset.map(
             lambda x: self.preprocess_single_example(
                 x, training,
                 batch_duplicates),
-            # num_parallel_calls=tf.data.experimental.AUTOTUNE
+            num_parallel_calls=tf.data.experimental.AUTOTUNE
         )
         return dataset
 
+    def debug_transforms(self, batched_examples):
+        single_example = {
+            k: v[0, ...] for k, v in batched_examples.items()
+        }
+        proc_videos = dict(
+            orig=single_example["video"]
+        )
+        proc_example = copy.copy(single_example)
+
+        for t in self.train_transforms:
+            t_name = t.config.name
+            proc_example = t.process_example(proc_example)
+
+            proc_videos[t_name] = proc_example["video"]
+
+            video = proc_example["video"]
+            video = tf.image.convert_image_dtype(video, tf.uint8)
+
+            # video_ids = proc_example["video_id"]
+            file_names = proc_example["file_names"]
+
+            vis_utils.save_video(video, file_names, t_name, self.config.model_dir)
+
     def preprocess_batched(self, batched_examples, training):
-        """Task-specific preprocessing of batched examples on accelerators (TPUs).
-
-        Typical operations in this preprocessing step for detection task:
-          - Quantization and serialization of object instances.
-          - Creating the input sequence, target sequence, and token weights.
-
-        Args:
-          batched_examples: tuples of feature and label tensors that are
-            preprocessed, batched, and stored with `dict`.
-          training: bool.
-
-        Returns:
-          images: `float` of shape (bsz, h, w, c)
-          input_seq: `int` of shape (bsz, seqlen).
-          target_seq: `int` of shape (bsz, seqlen).
-          token_weights: `float` of shape (bsz, seqlen).
-        """
         config = self.config.task
         mconfig = self.config.model
         dconfig = self.config.dataset
@@ -167,7 +177,8 @@ class TaskVideoDetection(task_lib.Task):
         # class_id_np = batched_examples['class_id'].numpy()
         # class_name_np = batched_examples['class_name'].numpy()
 
-        # Create input/target seq.
+        # self.debug_transforms(batched_examples)
+
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
         ret = build_response_seq_from_video_bboxes(
             bboxes=batched_examples['bbox'],
