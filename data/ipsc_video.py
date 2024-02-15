@@ -93,6 +93,7 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
             'video/id': tf.cast(example['video/source_id'], tf.int64),
             'video/frames': tf.image.convert_image_dtype(frames, tf.float32),
             'video/num_frames': tf.cast(num_frames, tf.int32),
+            'video/size':  tf.cast(example['video/size'], tf.int64),
             'shape': utils.tf_float32((h, w)),
             'class_name': tf.cast(example['video/object/class/text'], dtype=tf.string),
             'class_id': example['video/object/class/label'],

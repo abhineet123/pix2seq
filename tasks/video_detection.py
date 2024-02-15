@@ -120,6 +120,7 @@ class TaskVideoDetection(task_lib.Task):
 
             new_example = dict(
                 # orig_video_size=video_shape_2[1:3],
+                orig_video_size=example['video/size'],
                 video_id=example['video/id'],
                 num_frames=example['video/num_frames'],
                 video=example['video/frames'],

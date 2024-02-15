@@ -61,7 +61,8 @@ class Trainer(abc.ABC):
         self._model = model = ModelRegistry.lookup(config.model.name)(config)
         model_dir = kwargs['model_dir']
         latest_ckpt, ckpt, self._verify_restored, self._verify_existing, _, _ = utils.restore_from_checkpoint(
-            model_dir, False,
+            model_dir,
+            allow_partial=True,
             model=model, global_step=optimizer.iterations, optimizer=optimizer)
         self._verify_restored_p = None
         self._verify_existing_p = None

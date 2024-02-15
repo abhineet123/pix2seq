@@ -8,6 +8,7 @@
 - [install](#install_)
     - [win       @ install](#win___instal_l_)
     - [tensorflow       @ install](#tensorflow___instal_l_)
+        - [win       @ tensorflow/install](#win___tensorflow_install_)
         - [wsl-gpu       @ tensorflow/install](#wsl_gpu___tensorflow_install_)
         - [ubuntu22.04       @ tensorflow/install](#ubuntu22_04___tensorflow_install_)
         - [all       @ tensorflow/install](#all___tensorflow_install_)
@@ -76,9 +77,13 @@ python -m pip install -r requirements_win.txt
 
 <a id="tensorflow___instal_l_"></a>
 ## tensorflow       @ install-->p2s_setup
-python -m pip install tensorflow==2.14
+python -m pip install tensorflow==2.15
 python -m pip install tensorflow-text
 python -m pip install tensorflow-datasets==4.8.3
+<a id="win___tensorflow_install_"></a>
+### win       @ tensorflow/install-->p2s_setup
+__2.10 is the latest tf release for Windows built with GPU__
+python -m pip install tensorflow==2.10
 <a id="wsl_gpu___tensorflow_install_"></a>
 ### wsl-gpu       @ tensorflow/install-->p2s_setup
 install cuda:

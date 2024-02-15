@@ -17,6 +17,9 @@
 
 import json
 import os
+import sys
+
+sys.path.append("/home/abhineet/ipsc/ipsc_data_processing")
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -160,7 +163,7 @@ def main(unused_argv):
     all these unused imports needed to register the various modules
     """
     from data import datasets  # pylint: disable=unused-import
-    from data import transforms  # pylint: disable=unused-import
+    from data import transforms, transforms_video  # pylint: disable=unused-import
     from metrics import coco_metrics  # pylint: disable=unused-import
     from models import ar_model  # pylint: disable=unused-import
     from models import video_ar_model  # pylint: disable=unused-import

@@ -1063,10 +1063,15 @@ def visualize_video(config, examples, logits, tokens, label, category_names):
     import cv2
 
     for vid_id, video in enumerate(videos_vis):
-        for _id in range(vid_len):
-            img = video[_id, ...]
+        for img_id in range(vid_len):
+            img = video[img_id, ...]
 
-            vis_img_name = f'{label} vid {video_ids[vid_id]} img {_id}'
+            img_path = file_names[vid_id][img_id].decode('utf-8')
+
+            img_name = os.path.basename(img_path)
+            seq_name = os.path.basename(os.path.dirname(img_path))
+
+            vis_img_name = f'{label} {seq_name} {img_name}'
 
             import eval_utils
             img = eval_utils.annotate(img, vis_img_name)

@@ -1,6 +1,8 @@
 <!-- MarkdownTOC -->
 
 - [resnet-640](#resnet_64_0_)
+    - [mnist-640-1-12_1000       @ resnet-640](#mnist_640_1_12_1000___resnet_640_)
+        - [batch-3       @ mnist-640-1-12_1000/resnet-640](#batch_3___mnist_640_1_12_1000_resnet_640_)
     - [g2_0_4       @ resnet-640](#g2_0_4___resnet_640_)
         - [batch-3       @ g2_0_4/resnet-640](#batch_3___g2_0_4_resnet_64_0_)
             - [on-g2_0_4       @ batch-3/g2_0_4/resnet-640](#on_g2_0_4___batch_3_g2_0_4_resnet_64_0_)
@@ -19,6 +21,12 @@
 
 <a id="resnet_64_0_"></a>
 # resnet-640 
+<a id="mnist_640_1_12_1000___resnet_640_"></a>
+## mnist-640-1-12_1000       @ resnet-640-->p2s_vid
+<a id="batch_3___mnist_640_1_12_1000_resnet_640_"></a>
+### batch-3       @ mnist-640-1-12_1000/resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_video_det_ipsc.py --j5=train,resnet-640,vid_det,pt-0,mnist-640-1-12_1000,batch-3,dbg-1,dyn-1,ep-4000
+
 <a id="g2_0_4___resnet_640_"></a>
 ## g2_0_4       @ resnet-640-->p2s_vid
 <a id="batch_3___g2_0_4_resnet_64_0_"></a>
@@ -42,7 +50,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 ## g2_5_9       @ resnet-640-->p2s_vid
 <a id="batch_8___g2_5_9_resnet_64_0_"></a>
 ### batch-8       @ g2_5_9/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det_ipsc.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_5_9,batch-3,dbg-1,dyn-1,ep-100000000,dist-0,ckpt_ep-20
+python3 run.py --cfg=configs/config_video_det_ipsc.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_5_9,batch-3,dbg-1,dyn-1,ep-1000000,dist-0,ckpt_ep-20
 <a id="on_g2_0_4___batch_8_g2_5_9_resnet_64_0_"></a>
 #### on-g2_0_4       @ batch-8/g2_5_9/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_0_4,batch-4,save-vis-1,dbg-1,dyn-1
