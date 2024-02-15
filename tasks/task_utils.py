@@ -139,24 +139,32 @@ def decode_instance_seq_to_points(seq, quantization_bins, coord_vocab_shift):
 
 def decode_video_seq_to_bbox(
         logits,
-        pred_seq,
+        seq,
         vid_len,
         quantization_bins,
-        coord_vocab_shift):
+        coord_vocab_shift,
+        seq_mask=None,
+):
     _, seqlen, vocab_size = logits.shape
+
+    if seq_mask is not None:
+        seq = tf.where(seq_mask, seq, tf.cast(-1, seq.dtype))
 
     bbox_seq_len = vid_len * 4 + 1
 
     # truncate out the last few tokens
     if seqlen % bbox_seq_len != 0:
         truncate_len = seqlen % bbox_seq_len
-        pred_seq = pred_seq[..., :-truncate_len]
+        seq = seq[..., :-truncate_len]
         logits = logits[..., :-truncate_len, :]
+        if seq_mask is not None:
+            seq_mask = seq_mask[..., :-truncate_len]
+
     """
     extract probs for all classes - starting from 5th element and extracting every fifth element from there
     """
-    pred_class_p = tf.nn.softmax(logits)[:, bbox_seq_len - 1::bbox_seq_len]  # (bsz, instances, vocab_size)
-
+    probs = tf.nn.softmax(logits)
+    class_probs = probs[:, bbox_seq_len - 1::bbox_seq_len]  # (bsz, instances, vocab_size)
     """
     mask-out non-class portions of the vocab
     """
@@ -168,17 +176,16 @@ def decode_video_seq_to_bbox(
     this is where the claims of automatically learning domain-specific tokens breaks down - we simply select the 
     class with the max prob even if some non-class token has higher prob than the max-prob class
     """
-    pred_class = tf.argmax(pred_class_p * mask[tf.newaxis, tf.newaxis, :], -1)
-
+    class_tokens = tf.argmax(class_probs * mask[tf.newaxis, tf.newaxis, :], -1)
     """
     round-about way of selecting the class prob of each bbox as its score
     """
-    pred_score = tf.reduce_sum(
-        pred_class_p * tf.one_hot(pred_class, vocab_size), -1)
+    # scores = tf.reduce_sum(class_probs * tf.one_hot(class_tokens, vocab_size), -1)
+    scores = tf.gather_nd(class_probs, class_tokens[:, :, tf.newaxis], batch_dims=2)
 
-    pred_class = tf.maximum(pred_class - vocab.BASE_VOCAB_SHIFT, 0)
-    pred_bbox = seq_to_video_bbox(pred_seq, quantization_bins, vid_len, coord_vocab_shift)
-    return pred_class, pred_bbox, pred_score
+    class_ids = tf.maximum(class_tokens - vocab.BASE_VOCAB_SHIFT, 0)
+    bboxes = seq_to_video_bbox(seq, quantization_bins, vid_len, coord_vocab_shift)
+    return class_ids, bboxes, scores
 
 
 def seq_to_video_bbox(seq, quantization_bins, vid_len, coord_vocab_shift):

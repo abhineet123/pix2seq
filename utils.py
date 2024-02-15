@@ -336,7 +336,7 @@ def pad_to_max_len(data, max_len, dim, padding_token=0):
 
 def to_numpy(self):
     arr = self.numpy()
-    setattr(self, "numpy_arr", arr)
+    setattr(self, "a___", arr)
     return arr
 
 
@@ -413,6 +413,12 @@ def preserve_reserved_tokens(points, points_orig) -> object:
     return replace_reserved_tokens(points, points_orig, dict(zip(vocab.FLOATS,
                                                                  vocab.FLOATS)))
 
+def boolean_mask(x, mask):
+    masked_x = []
+    for x_,mask_ in zip(x, mask):
+        masked_x_ = tf.boolean_mask(x_, mask_)
+        masked_x.append(masked_x_)
+    return masked_x
 
 def replace_reserved_tokens(seq, ref_seq, replacements):
     for key, replacement in replacements.items():

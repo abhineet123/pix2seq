@@ -231,38 +231,53 @@ class ARTrainer(model_lib.Trainer):
                 'accuracy_notpad'),
         })
 
+    def debug_loss(self, examples, y_true, y_pred_logits, y_mask):
+        vocab_size = self.config.model.vocab_size
 
-    def debug_loss(self, examples, y_true_raw, y_pred_logits_raw, y_true, y_pred_logits, y_mask):
-        config = self.config.task
-        mconfig = self.config.model
+        y_pred = tf.argmax(y_pred_logits, axis=2)
+        y_true_logits = tf.one_hot(y_true, depth=vocab_size)
 
-        y_mask_int = tf.cast(y_mask, tf.int64)
-        y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
-
-        y_true_logits = tf.one_hot(y_true, depth=mconfig.vocab_size)
-
-        """Don't care about output tokens corresponding to GT tokens marked as padding"""
-        y_pred = tf.argmax(y_pred_logits, axis=1)
-
+        y_total = tf.cast(tf.size(y_true), tf.int64)
         y_correct = tf.math.equal(y_true, y_pred)
-        y_correct_int = tf.cast(y_correct, tf.int64)
-        y_correct_count = tf.reduce_sum(y_correct_int)
-
-        y_cmb = tf.stack((y_true, y_pred, y_correct_int), axis=0)
+        y_correct_count = tf.reduce_sum(tf.cast(y_correct, tf.int64))
+        y_correct_pc = (y_correct_count / y_total) * 100
 
         m = tf.keras.metrics.SparseCategoricalAccuracy()
         m.update_state(y_true, y_pred_logits)
         accuracy_notpad = m.result().numpy()
 
-        y_pred_raw = tf.argmax(y_pred_logits_raw, axis=2)
-        y_true_logits_raw = tf.one_hot(y_true_raw, depth=mconfig.vocab_size)
+        y_true_m = tf.boolean_mask(y_true, y_mask)
+        y_pred_logits_m = tf.boolean_mask(y_pred_logits, y_mask)
 
-        vis_utils.visualize_video(self.config, examples, y_true_logits_raw, y_true_raw, 'GT raw', self._category_names)
-        vis_utils.visualize_video(self.config, examples, y_pred_logits_raw, y_pred_raw, 'Pred raw', self._category_names)
+        # y_mask_int = tf.cast(y_mask, tf.int64)
+        # y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
 
-        for _id in range(self.vid_len):
-            vis_utils.visualize_video(self.config, examples, y_true_logits, y_true, 'GT masked', self._category_names)
-            vis_utils.visualize_video(self.config, examples, y_pred_logits, y_pred, 'Pred masked', self._category_names)
+        # y_true_logits_masked = tf.one_hot(y_true_m, depth=vocab_size)
+
+        """Don't care about output tokens corresponding to GT tokens marked as padding"""
+        y_total_m = tf.cast(tf.size(y_true_m), tf.int64)
+        y_pred_m = tf.argmax(y_pred_logits_m, axis=1)
+        y_correct_m = tf.math.equal(y_true_m, y_pred_m)
+        y_correct_count_m = tf.reduce_sum(tf.cast(y_correct_m, tf.int64))
+        y_correct_pc_m = (y_correct_count_m / y_total_m) * 100
+
+        # y_cmb = tf.stack((y_true_m, y_pred_m, y_correct_int), axis=0)
+
+        m = tf.keras.metrics.SparseCategoricalAccuracy()
+        m.update_state(y_true_m, y_pred_logits_m)
+        accuracy_notpad_m = m.result().numpy()
+
+        vis_utils.visualize_video(self.config, examples, y_true_logits, y_true, 'GT raw',
+                                  self._category_names)
+        vis_utils.visualize_video(self.config, examples, y_pred_logits, y_pred, 'Pred raw',
+                                  self._category_names)
+
+        vis_utils.visualize_video(self.config, examples, y_true_logits, y_true, 'GT masked',
+                                  self._category_names, y_mask)
+        vis_utils.visualize_video(self.config, examples, y_pred_logits, y_pred, 'Pred masked',
+                                  self._category_names, y_mask)
+
+        print()
 
     def compute_loss(self, preprocess_outputs):
         batched_examples, input_seq, target_seq, token_weights = preprocess_outputs
@@ -285,6 +300,7 @@ class ARTrainer(model_lib.Trainer):
                 tf.reduce_sum(token_weights_notpad) + 1e-9)
 
         y_mask = tf.greater(token_weights_notpad, 0)
+
         y_true = tf.boolean_mask(target_seq, y_mask)
         y_pred_logits = tf.boolean_mask(logits, y_mask)
 
@@ -292,6 +308,6 @@ class ARTrainer(model_lib.Trainer):
         self._metrics['loss_notpad'].update_state(loss_notpad)
         self._metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
 
-        self.debug_loss(batched_examples, target_seq, logits, y_true, y_pred_logits, y_mask)
+        # self.debug_loss(batched_examples, target_seq, logits, y_mask)
 
         return loss

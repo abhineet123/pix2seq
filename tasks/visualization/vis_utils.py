@@ -1022,7 +1022,7 @@ def visualize_boxes_and_labels_on_image_array(
     return image
 
 
-def visualize_video(config, examples, logits, tokens, label, category_names):
+def visualize_video(config, examples, logits, tokens, label, category_names, mask=None):
     from tasks import task_utils
 
     videos = examples['video']
@@ -1032,7 +1032,7 @@ def visualize_video(config, examples, logits, tokens, label, category_names):
 
     classes, bboxes, scores = task_utils.decode_video_seq_to_bbox(
         logits, tokens, vid_len, tconfig.quantization_bins,
-        mconfig.coord_vocab_shift)
+        mconfig.coord_vocab_shift, mask)
 
     image_size = videos.shape[2:4].as_list()
     scale = utils.tf_float32(image_size)
@@ -1075,7 +1075,9 @@ def visualize_video(config, examples, logits, tokens, label, category_names):
 
             import eval_utils
             img = eval_utils.annotate(img, vis_img_name)
-            vis_img_path = os.path.join(config.model_dir, vis_img_name + '.jpg')
+            vis_img_path = os.path.join(config.model_dir, vis_img_name)
+
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
             cv2.imwrite(vis_img_path, img)
 
@@ -1201,7 +1203,7 @@ def visualize_boxes_and_labels_on_video(
     video_vis = []
     for frame_id in range(vid_len):
         start_id = frame_id * 4
-        image = video[frame_id, ...]
+        image_vis = np.copy(video[frame_id, ...])
 
         image_path = str(file_names[frame_id])
         image_name = os.path.basename(image_path)
@@ -1237,7 +1239,7 @@ def visualize_boxes_and_labels_on_video(
                 csv_data[seq_id].append(row)
 
             image_vis = draw_bounding_box_on_image_array(
-                image,
+                image_vis,
                 ymin,
                 xmin,
                 ymax,
