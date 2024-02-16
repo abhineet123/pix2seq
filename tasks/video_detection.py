@@ -374,7 +374,7 @@ def build_response_seq_from_video_bboxes(
         coord_vocab_shift,
         vid_len,
         class_label_corruption='rand_cls'):
-    
+
     # assert bboxes.shape[-1] % 4 == 0, f"invalid bboxes shape: {bboxes.shape}"
     # n_bboxes_per_vid = int(bboxes.shape[-1] / 4)
     # assert vid_len == n_bboxes_per_vid, f"Mismatch between vid_len: {vid_len} and n_bboxes_per_vid: {n_bboxes_per_vid}"
@@ -488,22 +488,3 @@ def build_response_seq_from_video_bboxes(
     return response_seq, response_seq_class_m, token_weights
 
 
-def build_annotations(image_ids, category_ids, boxes, scores,
-                      counter) -> List[Dict[str, Any]]:
-    """Builds annotations."""
-    annotations = []
-    for image_id, category_id_list, box_list, score_list in zip(
-            image_ids, category_ids, boxes, scores):
-        for category_id, box, score in zip(category_id_list, box_list, score_list):
-            category_id = int(category_id)
-            if category_id:
-                annotations.append({
-                    'id': counter,
-                    'image_id': int(image_id),
-                    'category_id': category_id,
-                    'bbox': metric_utils.yxyx_to_xywh(box.tolist()),
-                    'iscrowd': False,
-                    'score': float(score)
-                })
-                counter += 1
-    return annotations
