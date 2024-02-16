@@ -93,13 +93,14 @@ def get_video_detection_train_transforms(
 
     train_transforms = [
         # D(name='record_original_video_size'),
-        D(name='scale_jitter_video',
-          inputs=['video'],
-          length=length,
-          target_size=image_size,
-          # input_size_key='orig_video_size',
-          min_scale=jitter_scale_min,
-          max_scale=jitter_scale_max),
+
+        # D(name='scale_jitter_video',
+        #   inputs=['video'],
+        #   length=length,
+        #   target_size=image_size,
+        #   min_scale=jitter_scale_min,
+        #   max_scale=jitter_scale_max),
+        
         D(name='fixed_size_crop_video',
           inputs=['video'],
           target_size=image_size,
