@@ -79,18 +79,18 @@ class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=mi
                 x = self.mlp(x, training)
             x = utils.unflatten_vid(x, self.vid_len)
 
-        # if self.cross_attention:
-        #     x1 = x[:, 0, ...]
-        #     for _id in range(1, self.vid_len):
-        #         x2 = x[:, _id, ...]
-        #         x1_ln = self.cross_ln(x1)
-        #         x2_ln = self.cross_ln(x2)
-        #
-        #         x_res = self.cross_mha(x1_ln, x2_ln, x2_ln, attention_mask=None, training=training)
-        #         x1 = x1 + self.dropp(x_res, training)
-        #     x = x1
-        #     if self.use_mlp:
-        #         x = self.cross_mlp(x, training)
+        if self.cross_attention:
+            x1 = x[:, 0, ...]
+            for _id in range(1, self.vid_len):
+                x2 = x[:, _id, ...]
+                x1_ln = self.cross_ln(x1)
+                x2_ln = self.cross_ln(x2)
+
+                x_res = self.cross_mha(x1_ln, x2_ln, x2_ln, attention_mask=None, training=training)
+                x1 = x1 + self.dropp(x_res, training)
+            x = x1
+            if self.use_mlp:
+                x = self.cross_mlp(x, training)
 
         return x
 
