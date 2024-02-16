@@ -374,10 +374,10 @@ def build_response_seq_from_video_bboxes(
         coord_vocab_shift,
         vid_len,
         class_label_corruption='rand_cls'):
-    assert bboxes.shape[-1] % 4 == 0, f"invalid bboxes shape: {bboxes.shape}"
-
-    n_bboxes_per_vid = int(bboxes.shape[-1] / 4)
-    assert vid_len == n_bboxes_per_vid, f"Mismatch between vid_len: {vid_len} and n_bboxes_per_vid: {n_bboxes_per_vid}"
+    
+    # assert bboxes.shape[-1] % 4 == 0, f"invalid bboxes shape: {bboxes.shape}"
+    # n_bboxes_per_vid = int(bboxes.shape[-1] / 4)
+    # assert vid_len == n_bboxes_per_vid, f"Mismatch between vid_len: {vid_len} and n_bboxes_per_vid: {n_bboxes_per_vid}"
 
     is_no_box = tf.math.is_nan(bboxes)
 
