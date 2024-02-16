@@ -89,7 +89,7 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         bbox = decode_utils.decode_video_boxes(example, self.config.length)
         scale = 1. / utils.tf_float32((h, w))
         bbox = utils.scale_points(bbox, scale)
-        
+
         new_example = {
             'video/file_names': tf.cast(example['video/file_names'], tf.string),
             'video/file_ids': tf.cast(example['video/file_ids'], tf.int64),
