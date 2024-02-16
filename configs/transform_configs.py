@@ -100,36 +100,41 @@ def get_video_detection_train_transforms(
         #   target_size=image_size,
         #   min_scale=jitter_scale_min,
         #   max_scale=jitter_scale_max),
-        
-        D(name='fixed_size_crop_video',
-          inputs=['video'],
-          target_size=image_size,
-          # input_size_key='scale_jitter_video',
-          object_coordinate_keys=object_coordinate_keys),
-        D(name='random_horizontal_flip_video',
-          inputs=['video'],
-          length=length,
-          bbox_keys=['bbox']),
+
+        # D(name='fixed_size_crop_video',
+        #   inputs=['video'],
+        #   target_size=image_size,
+        #   object_coordinate_keys=object_coordinate_keys),
+
+        # D(name='random_horizontal_flip_video',
+        #   inputs=['video'],
+        #   length=length,
+        #   bbox_keys=['bbox']),
+
         # D(name='filter_invalid_objects',
         #   inputs=instance_feature_names,
         #   filter_keys=['is_crowd']
         #   ),
-        D(name='reorder_object_instances',
-          inputs=instance_feature_names,
-          order=object_order),
+
+        # D(name='reorder_object_instances',
+        #   inputs=instance_feature_names,
+        #   order=object_order),
+
         # D(name='inject_noise_bbox_video',
         #   length=length,
         #   max_disp=max_disp,
         #   max_instances_per_image=max_instances_per_image),
-        D(name='pad_video_to_max_size',
-          inputs=['video'],
-          length=length,
-          target_size=image_size,
-          # input_size_key='fixed_size_crop_video',
-          object_coordinate_keys=object_coordinate_keys),
-        D(name='truncate_or_pad_to_max_instances',
-          inputs=instance_feature_names,
-          max_instances=max_instances_per_image),
+        
+        # D(name='pad_video_to_max_size',
+        #   inputs=['video'],
+        #   length=length,
+        #   target_size=image_size,
+        #   # input_size_key='fixed_size_crop_video',
+        #   object_coordinate_keys=object_coordinate_keys),
+
+        # D(name='truncate_or_pad_to_max_instances',
+        #   inputs=instance_feature_names,
+        #   max_instances=max_instances_per_image),
     ]
     return train_transforms
 
