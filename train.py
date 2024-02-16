@@ -92,19 +92,19 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
             """
             train_steps = num_samples * num_epochs / batch_size
             """
-            # progbar = None
-            # if cfg.eager:
-            #     progbar = tf.keras.utils.Progbar(steps_per_epoch)
+            progbar = None
+            if cfg.eager:
+                progbar = tf.keras.utils.Progbar(steps_per_epoch)
 
             # step_id = tf.constant(0)
             for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
 
-                # if cfg.eager:
-                #     progbar.add(1)
-                # else:
-                #     continue
+                if not cfg.eager:
+                    continue
+
+                progbar.add(1)
 
                 # check_ckpt_vars(cfg, trainer)
                 # print()
@@ -112,15 +112,15 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
         global_step = trainer.optimizer.iterations
         cur_step = global_step.numpy()
         timestamp = time.time()
-        # cur_epoch = 0
+        cur_epoch = 0
         # if not cfg.eager:
         #     print('compiling graph...')
         # trainer.checkpoint_manager.save(cur_step)
         # ckpt_vars_0 = utils.save_ckpt_vars(cfg.model_dir)
 
         while cur_step < train_steps:
-            # cur_epoch += 1
-            # tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
+            cur_epoch += 1
+            tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
                 train_multiple_steps(data_iterators, tasks)
                 trainer.check_checkpoint_restored()
