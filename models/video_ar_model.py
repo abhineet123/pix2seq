@@ -46,68 +46,68 @@ class Model(tf.keras.models.Model):
         # vocab_size and max_seq_len don't include start token, which is only used
         # inside this class.
         super().__init__(**kwargs)
-        config = config.model
-        self.config = config
-        self.vid_len = config.vid_len
-        self.pos_encoding = config.pos_encoding
+        self.config_all = config
+        self.config = config.model
+        self.vid_len = config.dataset.length
+        self.pos_encoding = self.config.pos_encoding
 
-        mlp_ratio = config.dim_mlp // config.dim_att
-        if config.resnet_variant == 'c1':
+        mlp_ratio = self.config.dim_mlp // self.config.dim_att
+        if self.config.resnet_variant == 'c1':
             self.encoder = VisionTransformer(
-                config.image_size[0], config.image_size[1], config.patch_size,
-                config.num_encoder_layers, config.dim_att, mlp_ratio,
-                config.num_heads, config.drop_path, config.drop_units,
-                config.drop_att, config.pos_encoding, config.use_cls_token,
+                self.config.image_size[0], self.config.image_size[1], self.config.patch_size,
+                self.config.num_encoder_layers, self.config.dim_att, mlp_ratio,
+                self.config.num_heads, self.config.drop_path, self.config.drop_units,
+                self.config.drop_att, self.config.pos_encoding, self.config.use_cls_token,
                 name='vit')
         else:
             self.encoder = VideoResNetTransformer(
-                image_height=config.image_size[0],
-                image_width=config.image_size[1],
+                image_height=self.config.image_size[0],
+                image_width=self.config.image_size[1],
                 vid_len=self.vid_len,
-                resnet_variant=config.resnet_variant,
-                resnet_depth=config.resnet_depth,
-                resnet_width_multiplier=config.resnet_width_multiplier,
-                resnet_sk_ratio=config.resnet_sk_ratio,
-                num_layers=config.num_encoder_layers,
-                dim=config.dim_att,
+                resnet_variant=self.config.resnet_variant,
+                resnet_depth=self.config.resnet_depth,
+                resnet_width_multiplier=self.config.resnet_width_multiplier,
+                resnet_sk_ratio=self.config.resnet_sk_ratio,
+                num_layers=self.config.num_encoder_layers,
+                dim=self.config.dim_att,
                 mlp_ratio=mlp_ratio,
-                num_heads=config.num_heads,
-                drop_path=config.drop_path,
-                drop_units=config.drop_units,
-                drop_att=config.drop_att,
-                pos_encoding=config.pos_encoding,
-                use_cls_token=config.use_cls_token,
+                num_heads=self.config.num_heads,
+                drop_path=self.config.drop_path,
+                drop_units=self.config.drop_units,
+                drop_att=self.config.drop_att,
+                pos_encoding=self.config.pos_encoding,
+                use_cls_token=self.config.use_cls_token,
                 name='rest')
 
-        mlp_ratio_dec = config.dim_mlp_dec // config.dim_att_dec
+        mlp_ratio_dec = self.config.dim_mlp_dec // self.config.dim_att_dec
         self.proj = tf.keras.layers.Dense(
-            config.dim_att_dec, name='proj/linear')
+            self.config.dim_att_dec, name='proj/linear')
         self.proj_ln = tf.keras.layers.LayerNormalization(
             epsilon=1e-6, name='proj/ln')
-        if config.dec_proj_mode in ['linear_p', 'mlp']:
+        if self.config.dec_proj_mode in ['linear_p', 'mlp']:
             """
             add visual positional embedding
             """
             self.vis_pos_emb = add_vis_pos_emb(
                 self,
-                pos_encoding=config.pos_encoding,
+                pos_encoding=self.config.pos_encoding,
                 n_rows=self.encoder.n_rows,
                 n_cols=self.encoder.n_cols,
-                dim=config.dim_att_dec,
+                dim=self.config.dim_att_dec,
                 name_prefix='proj',
                 return_only=True,
                 # n_images=self.vid_len,
             )
-            if config.dec_proj_mode == 'mlp':
-                self.proj_mlp = MLP(1, config.dim_att_dec, mlp_ratio, config.drop_path,
-                                    config.drop_units, name='proj/mlp')
+            if self.config.dec_proj_mode == 'mlp':
+                self.proj_mlp = MLP(1, self.config.dim_att_dec, mlp_ratio, self.config.drop_path,
+                                    self.config.drop_units, name='proj/mlp')
 
         self.decoder = AutoregressiveDecoder(
-            config.vocab_size, config.max_seq_len, config.num_decoder_layers,
-            config.dim_att_dec, mlp_ratio_dec, config.num_heads_dec,
-            config.drop_path, config.drop_units, config.drop_att,
-            config.pos_encoding_dec, config.shared_decoder_embedding,
-            config.decoder_output_bias, name='ar_decoder')
+            self.config.vocab_size, self.config.max_seq_len, self.config.num_decoder_layers,
+            self.config.dim_att_dec, mlp_ratio_dec, self.config.num_heads_dec,
+            self.config.drop_path, self.config.drop_units, self.config.drop_att,
+            self.config.pos_encoding_dec, self.config.shared_decoder_embedding,
+            self.config.decoder_output_bias, name='ar_decoder')
 
     def _encode_videos(self, videos, training):
         config = self.config

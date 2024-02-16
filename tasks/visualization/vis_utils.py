@@ -129,11 +129,12 @@ def save_video(video, file_names, t_name, vis_img_dir):
     file_name = file_names[0].numpy()
     file_name = file_name.decode('utf-8')
 
+    img_name = os.path.basename(file_name)
     seq_name = os.path.basename(os.path.dirname(file_name))
 
-    vis_img_name = f'{t_name} {seq_name}'
+    vis_img_name = f'{t_name} {seq_name} {img_name}'
 
-    vis_img_path = os.path.join(vis_img_dir, vis_img_name + '.jpg')
+    vis_img_path = os.path.join(vis_img_dir, vis_img_name)
 
     cv2.imwrite(vis_img_path, out_img)
 

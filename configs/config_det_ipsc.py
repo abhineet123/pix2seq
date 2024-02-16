@@ -28,6 +28,38 @@ from configs.config_base import D
 # pylint: disable=invalid-name,line-too-long,missing-docstring
 
 
+def update_task_config(cfg):
+    """
+        hack to deal with independently defined target_size setting in tasks.eval_transforms even though
+        it should match image_size
+        """
+    # if cfg.task.image_size == cfg.model.image_size:
+    #     return
+
+    image_size = cfg.model.image_size
+    cfg.task.image_size = image_size
+
+    """"update parameters that depend on image size but inexplicably missing from pretrained config files"""
+    assert cfg.task.name == 'object_detection', f"invalid task name: {cfg.task.name}"
+
+    for task in cfg.tasks + [cfg.task, ]:
+        task.image_size = image_size
+        try:
+            _ = task.eval_transforms
+        except AttributeError:
+            pass
+        else:
+            task.eval_transforms = transform_configs.get_object_detection_eval_transforms(
+                image_size, task.max_instances_per_image_test)
+        try:
+            _ = task.train_transforms
+        except AttributeError:
+            pass
+        else:
+            task.train_transforms = transform_configs.get_object_detection_train_transforms(
+                image_size, task.max_instances_per_image)
+
+
 def get_config(config_str=None):
     """config_str is either empty or contains task,architecture variants."""
 
@@ -130,4 +162,3 @@ def get_config(config_str=None):
     config.update(base_config)
 
     return config
-

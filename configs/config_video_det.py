@@ -25,7 +25,26 @@ from configs.config_base import architecture_config_map, base_config
 from configs.config_base import D
 
 
-# pylint: disable=invalid-name,line-too-long,missing-docstring
+def update_task_config(cfg):
+    image_size = cfg.model.image_size
+    max_seq_len = cfg.model.max_seq_len
+    length = cfg.dataset.length
+    max_disp = cfg.dataset.max_disp
+
+
+    for task_config in cfg.tasks + [cfg.task, ]:
+        task_config.image_size = image_size
+
+        max_instances_per_image = int(max_seq_len // (length * 4 + 1))
+        max_instances_per_image_test = max_instances_per_image
+
+        task_config.max_instances_per_image = max_instances_per_image
+        task_config.max_instances_per_image_test = max_instances_per_image_test
+
+        task_config.train_transforms = transform_configs.get_video_detection_train_transforms(
+            image_size, length, max_disp, max_instances_per_image)
+        task_config.eval_transforms = transform_configs.get_video_detection_eval_transforms(
+            image_size, length, max_instances_per_image_test)
 
 
 def get_config(config_str=None):
@@ -73,24 +92,12 @@ def get_config(config_str=None):
         dataset_config = copy.deepcopy(dataset_configs.dataset_configs[ds_name])
         dataset_list.append(dataset_config)
         task_config = task_config_map[tv]
-
-        max_instances_per_image = int(max_seq_len // (dataset_config.length * 4 + 1))
-        max_instances_per_image_test = max_instances_per_image
-
-        task_config.max_instances_per_image = max_instances_per_image
-        task_config.max_instances_per_image_test = max_instances_per_image_test
-
-        task_config.train_transforms = transform_configs.get_video_detection_train_transforms(
-            image_size, dataset_config.length, dataset_config.max_disp, max_instances_per_image)
-        task_config.eval_transforms = transform_configs.get_video_detection_eval_transforms(
-            image_size, dataset_config.length, max_instances_per_image_test)
-
         task_d_list.append(task_config)
 
     model_config = D(
         name='video_encoder_ar_decoder',
         image_size=image_size,
-        vid_len=dataset_list[0].length,
+        # vid_len=dataset_list[0].length,
         max_seq_len=max_seq_len,
         vocab_size=3000,  # Note: should be large enough for 100 + num_classes + quantization_bins + (optional) text
         coord_vocab_shift=1000,  # Note: make sure num_class <= coord_vocab_shift - 100
@@ -133,11 +140,11 @@ def get_config(config_str=None):
             learning_rate_scaling='none',
         ),
     )
-
-    # Update model with architecture variant.
     for key, value in architecture_config_map[encoder_variant].items():
         config.model[key] = value
 
     config.update(base_config)
+
+    update_task_config(config)
 
     return config

@@ -91,8 +91,6 @@ def get_video_detection_train_transforms(
                               'area', 'is_crowd']
     object_coordinate_keys = ['bbox']
 
-
-
     train_transforms = [
         # D(name='record_original_video_size'),
         D(name='scale_jitter_video',
@@ -133,6 +131,7 @@ def get_video_detection_train_transforms(
           max_instances=max_instances_per_image),
     ]
     return train_transforms
+
 
 def get_video_detection_eval_transforms(
         image_size: Tuple[int, int],

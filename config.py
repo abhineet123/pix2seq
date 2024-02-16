@@ -78,6 +78,22 @@ def build_tasks_and_datasets(
 
     return tasks, mixed_datasets, ds
 
+def from_dict(in_dict):
+    for key, val in in_dict.items():
+        if isinstance(val, list):
+            in_dict[key] = from_list(val)
+        elif isinstance(val, dict):
+            in_dict[key] = from_dict(val)
+    in_dict = ml_collections.ConfigDict(in_dict)
+    return in_dict
+
+def from_list(in_list):
+    for idx, val in enumerate(in_list):
+        if isinstance(val, list):
+            in_list[idx] = from_list(val)
+        elif isinstance(val, dict):
+            in_list[idx] = from_dict(val)
+    return in_list
 
 def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
     pt_cfg_filepath = os.path.join(model_dir, 'config.json')
@@ -108,22 +124,6 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
 
     """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts or vice versa"""
 
-    def from_dict(in_dict):
-        for key, val in in_dict.items():
-            if isinstance(val, list):
-                in_dict[key] = from_list(val)
-            elif isinstance(val, dict):
-                in_dict[key] = from_dict(val)
-        in_dict = ml_collections.ConfigDict(in_dict)
-        return in_dict
-
-    def from_list(in_list):
-        for idx, val in enumerate(in_list):
-            if isinstance(val, list):
-                in_list[idx] = from_list(val)
-            elif isinstance(val, dict):
-                in_list[idx] = from_dict(val)
-        return in_list
 
     model_cfg = from_dict(cfg_dict)
     model_cfg = ml_collections.ConfigDict(model_cfg)
@@ -138,39 +138,9 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
     except AttributeError:
         """no model cfg params supplied at command line"""
         pass
-    """
-    hack to deal with independently defined target_size setting in tasks.eval_transforms even though 
-    it should match image_size
-    """
-    if cfg.task.image_size == cfg.model.image_size:
-        return
 
-    image_size = cfg.model.image_size
-    from configs import transform_configs
-    """"update parameters that depend on image size but inexplicably missing from pretrained config files"""
-    if cfg.task.name == 'object_detection':
-        train_transforms_fn = transform_configs.get_object_detection_train_transforms
-        eval_transforms_fn = transform_configs.get_object_detection_eval_transforms
-    elif cfg.task.name == 'video_detection':
-        train_transforms_fn = transform_configs.get_video_detection_train_transforms
-        eval_transforms_fn = transform_configs.get_video_detection_eval_transforms
-    else:
-        raise AssertionError(f'unsupported task: {cfg.task.name}')
+    # task_config_hack_old(cfg)
 
-    for task in cfg.tasks + [cfg.task, ]:
-        task.image_size = image_size
-        try:
-            _ = task.eval_transforms
-        except AttributeError:
-            pass
-        else:
-            task.eval_transforms = eval_transforms_fn(image_size, task.max_instances_per_image_test)
-        try:
-            _ = task.train_transforms
-        except AttributeError:
-            pass
-        else:
-            task.train_transforms = train_transforms_fn(image_size, task.max_instances_per_image)
 
 def expand_list(val):
     val = val.strip()
@@ -288,10 +258,13 @@ def load_from_json5(json_list, json_root):
 
         json_dict = json5.loads(json_str)
         all_json_dict = update(all_json_dict, json_dict)
+
         # all_json_dict2.update(json_dict)
         # all_json_cfg.update(ml_collections.ConfigDict(json_dict))
         # print()
 
+    """annoyingly buggy ml_collections.ConfigDict doesn't handle recursive dict to ConfigDict conversion"""
+    all_json_dict = from_dict(all_json_dict)
     all_cfg = ml_collections.ConfigDict(all_json_dict)
 
     return all_cfg
@@ -360,6 +333,14 @@ def load(FLAGS):
     #     k: getattr(FLAGS, k) for k in dir(FLAGS) if k.startswith('cfg.')
     # }
 
+    if cfg.task.name == 'object_detection':
+        from configs.config_det_ipsc import update_task_config
+        update_task_config(cfg)
+    elif cfg.task.name == 'video_detection':
+        from configs.config_video_det import update_task_config
+        update_task_config(cfg)
+    else:
+        raise AssertionError(f'unsupported task: {cfg.task.name}')
 
     import utils
     utils.log_cfg(cfg)
