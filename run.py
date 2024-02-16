@@ -191,7 +191,7 @@ def main(unused_argv):
         if 'datasets' not in cfg or len(cfg.datasets) == 1 or not cfg.training:
             cfg.datasets = [cfg.dataset]
 
-        """dataset is simply the last dataset"""
+        """dataset is simply the last dses"""
         tasks, dses, dataset = config.build_tasks_and_datasets(cfg, cfg.training, task_lib)
 
         # Calculate steps stuff using last task info (assuming all tasks the same.)

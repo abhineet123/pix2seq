@@ -127,7 +127,7 @@ class TaskObjectDetection(task_lib.Task):
         """
         # assert input_seq.shape[-1] <= config.max_seq_len + 1, \
         #     f"input_seq length {input_seq.shape[-1]} exceeds max_seq_len {config.max_seq_len + 1}"
-        
+
         input_seq = utils.pad_to_max_len(input_seq, config.max_seq_len + 1,
                                          dim=-1, padding_token=vocab.PADDING_TOKEN)
         target_seq = utils.pad_to_max_len(target_seq, config.max_seq_len + 1,
