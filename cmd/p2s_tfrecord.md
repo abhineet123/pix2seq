@@ -31,11 +31,11 @@ python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-3:s
 
 <a id="640_3___mnis_t_"></a>
 ## 640-3       @ mnist-->p2s_tfrecord
-python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-3:12_1000:gz:len-2:strd-1
+python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-3:12_1000:gz:len-2:strd-1:proc-6
 
 <a id="640_5___mnis_t_"></a>
 ## 640-5       @ mnist-->p2s_tfrecord
-python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-5:12_1000:gz:len-2:strd-1
+python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-5:12_1000:gz:len-2:strd-1:proc-6
 
 <a id="ipsc___tfrecord_"></a>
 # ipsc       @ tfrecord-->p2s_setup
