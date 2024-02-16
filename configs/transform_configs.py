@@ -124,7 +124,7 @@ def get_video_detection_train_transforms(
         #   length=length,
         #   max_disp=max_disp,
         #   max_instances_per_image=max_instances_per_image),
-        
+
         # D(name='pad_video_to_max_size',
         #   inputs=['video'],
         #   length=length,
