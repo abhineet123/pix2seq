@@ -64,7 +64,7 @@ source ~/.bashrc
 python310 -m pip install virtualenv virtualenvwrapper
 
 python310 -m virtualenv pix2seq
-Y:\UofA\venv\pix2seq\Scripts\activate
+pix2seq\Scripts\activate
 
 <a id="install_"></a>
 # install

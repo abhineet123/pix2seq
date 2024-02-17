@@ -22,43 +22,56 @@ import sys
 
 sys.path.append(os.getcwd())
 
-from absl import app
-from absl import flags
-from absl import logging
+# from absl import app
+# from absl import flags
+# from absl import logging
 import numpy as np
 import tensorflow as tf
+import paramparse
 
 import vocab
 from data.scripts import tfrecord_lib
 
-flags.DEFINE_string('image_dir', './datasets/ipsc/well3/all_frames_roi', 'Directory containing images.')
-# flags.DEFINE_string('ann_file', './datasets/ipsc/well3/all_frames_roi/ext_reorg_roi_g2_0_53.json',
-# 'Instance annotation file.')
-flags.DEFINE_string('ann_file', 'ext_reorg_roi_g2_54_126.json', 'Instance annotation file.')
-# flags.DEFINE_string('pan_ann_file', '', 'Panoptic annotation file.')
-# flags.DEFINE_string('pan_masks_dir', '', 'Directory containing panoptic masks.')
-flags.DEFINE_string('output_dir', './datasets/ipsc/well3/all_frames_roi/tfrecord', 'Output directory')
-flags.DEFINE_integer('num_shards', 32, 'Number of shards for output file.')
-flags.DEFINE_integer('n_proc', 0, 'n_proc')
 
-FLAGS = flags.FLAGS
+# flags.DEFINE_string('image_dir', './datasets/ipsc/well3/all_frames_roi', 'Directory containing images.')
+# # flags.DEFINE_string('ann_file', './datasets/ipsc/well3/all_frames_roi/ext_reorg_roi_g2_0_53.json',
+# # 'Instance annotation file.')
+# flags.DEFINE_string('ann_file', 'ext_reorg_roi_g2_54_126.json', 'Instance annotation file.')
+# # flags.DEFINE_string('pan_ann_file', '', 'Panoptic annotation file.')
+# # flags.DEFINE_string('pan_masks_dir', '', 'Directory containing panoptic masks.')
+# flags.DEFINE_string('output_dir', './datasets/ipsc/well3/all_frames_roi/tfrecord', 'Output directory')
+# flags.DEFINE_integer('num_shards', 32, 'Number of shards for output file.')
+# flags.DEFINE_integer('n_proc', 0, 'n_proc')
+#
+# FLAGS = flags.FLAGS
+
+
+class Params(paramparse.CFG):
+
+    def __init__(self):
+        paramparse.CFG.__init__(self, cfg_root='cfg/tfrecord')
+        self.ann_file = ''
+        self.ann_suffix = ''
+        self.image_dir = ''
+        self.enable_masks = 1
+        self.n_proc = 0
+        self.ann_ext = 'json'
+        self.num_shards = 32
+        self.output_dir = ''
+        self.xml_output_file = ''
 
 
 def load_instance_annotations(annotation_path):
-    """Load instance annotations.
-
-    Args:
-      annotation_path: str. Path to the annotation file.
-
-    Returns:
-      image_info: a list of dicts, with information such as file name, image id,
-          height, width, etc.
-      category_id_to_name_map: dict of category ids to category names.
-      img_to_ann: a dict of image_id to annotation.
-    """
-    logging.info('Building instance index.')
-    with tf.io.gfile.GFile(annotation_path, 'r') as f:
-        annotations = json.load(f)
+    print(f'Reading coco annotations from {annotation_path}')
+    if annotation_path.endswith('.json'):
+        import json
+        with open(annotation_path, 'r') as f:
+            annotations = json.load(f)
+    elif annotation_path.endswith('.json.gz'):
+        import compress_json
+        annotations = compress_json.load(annotation_path)
+    else:
+        raise AssertionError(f'Invalid annotation_path: {annotation_path}')
 
     image_info = annotations['images']
     category_id_to_name_map = dict(
@@ -72,82 +85,7 @@ def load_instance_annotations(annotation_path):
     return image_info, category_id_to_name_map, img_to_ann
 
 
-def load_keypoint_annotations(annotation_path):
-    """Load keypoints annotations.
-
-    Args:
-      annotation_path: str. Path to the annotation file.
-
-    Returns:
-      img_to_ann: a dict of image_id to annotation.
-    """
-    logging.info('Building keypoints index.')
-    with tf.io.gfile.GFile(annotation_path, 'r') as f:
-        annotations = json.load(f)
-
-    img_to_ann = collections.defaultdict(list)
-    for ann in annotations['annotations']:
-        image_id = ann['image_id']
-        img_to_ann[image_id].append(ann)
-    return img_to_ann
-
-
-def load_caption_annotations(annotation_path):
-    """Load caption annotations.
-
-    Args:
-      annotation_path: str. Path to the annotation file.
-
-    Returns:
-      img_to_ann: a dict of image_id to a list of captions. Each caption is
-          encoded in bytes with utf8.
-    """
-    logging.info('Building caption index.')
-    with tf.io.gfile.GFile(annotation_path, 'r') as f:
-        annotations = json.load(f)
-
-    img_to_ann = collections.defaultdict(list)
-    for ann in annotations['annotations']:
-        image_id = ann['image_id']
-        img_to_ann[image_id].append(ann['caption'].encode('utf8'))
-
-    return img_to_ann
-
-
-def load_panoptic_annotations(annotation_path):
-    """Load panoptic annotations.
-
-    Args:
-      annotation_path: str. Path to the annotation file.
-
-    Returns:
-      img_to_ann: a dict of image_id to annotation.
-      is_category_thing: a dict of category id to bool, whether the category is
-          a thing. The categories are different from the object categories.
-    """
-    logging.info('Building panoptic index.')
-    with tf.io.gfile.GFile(annotation_path, 'r') as f:
-        annotations = json.load(f)
-    img_to_ann = {ann['image_id']: ann for ann in annotations['annotations']}
-    is_category_thing = {
-        category_info['id']: category_info['isthing'] == 1
-        for category_info in annotations['categories']
-    }
-
-    return img_to_ann, is_category_thing
-
-
 def coco_annotations_to_lists(obj_annotations, id_to_name_map):
-    """Converts COCO annotations to feature lists.
-
-    Args:
-      obj_annotations: a list of object annotations.
-      id_to_name_map: category id to category name map.
-
-    Returns:
-      a dict of list features.
-    """
-
     data = dict((k, list()) for k in [
         'xmin', 'xmax', 'ymin', 'ymax', 'is_crowd', 'category_id',
         'category_names', 'area'])
@@ -168,16 +106,6 @@ def coco_annotations_to_lists(obj_annotations, id_to_name_map):
 
 
 def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map):
-    """Convert COCO annotations to an encoded feature dict.
-
-    Args:
-      obj_annotations: a list of object annotations.
-      id_to_name_map: category id to category name map.
-
-    Returns:
-      a dict of tf features.
-    """
-
     data = coco_annotations_to_lists(obj_annotations, id_to_name_map)
     feature_dict = {
         'image/object/bbox/xmin':
@@ -201,7 +129,6 @@ def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map):
 
 
 def flatten_segmentation(seg):
-    """Flatten the segmentation polygon list of lists into a single list."""
     flat_seg = []
     for i, s in enumerate(seg):
         if i > 0:
@@ -211,7 +138,6 @@ def flatten_segmentation(seg):
 
 
 def obj_annotations_to_seg_dict(obj_annotations):
-    """Get the segmentation features from instance annotations."""
     segs = []
     seg_lens = []
     for ann in obj_annotations:
@@ -227,46 +153,11 @@ def obj_annotations_to_seg_dict(obj_annotations):
         'image/object/segmentation_sep': tfrecord_lib.convert_to_feature(seg_sep),
     }
 
-
-def key_annotations_to_feature_dict(key_annotations, obj_annotations):
-    """Get the keypoints features from keypoints annotations."""
-    oids = [ann['id'] for ann in obj_annotations]
-    keys = []
-    key_lens = []
-    num_keypoints = []
-    for oid in oids:
-        found = False
-        for ann in key_annotations:
-            if oid == ann['id']:
-                found = True
-                key = ann['keypoints']
-                keys.extend(key)
-                key_lens.append(len(key))
-                num_keypoints.append(ann['num_keypoints'])
-                break
-        if not found:
-            key_lens.append(0)
-            num_keypoints.append(0)
-    key_sep = [0] + list(np.cumsum(key_lens))
-    return {
-        'image/object/keypoints_v':
-            tfrecord_lib.convert_to_feature(keys, value_type='float_list'),
-        'image/object/keypoints_sep':
-            tfrecord_lib.convert_to_feature(key_sep),
-        'image/object/num_keypoints':
-            tfrecord_lib.convert_to_feature(num_keypoints),
-    }
-
-
-def pan_annotations_to_feature_dict(pan_annotations):
-    # TODO(lala) - decide what to do with panoptic annotations.
-    return {}
-
-
 def generate_annotations(images, image_dir,
                          # panoptic_masks_dir,
                          category_id_to_name_map,
                          img_to_obj_ann,
+                         enable_masks,
                          # img_to_cap_ann,
                          # img_to_key_ann,
                          # img_to_pan_ann,
@@ -286,6 +177,7 @@ def generate_annotations(images, image_dir,
                # panoptic_masks_dir,
                category_id_to_name_map,
                object_ann,
+               enable_masks,
                # caption_ann,
                # keypoint_ann,
                # panoptic_ann,
@@ -293,14 +185,17 @@ def generate_annotations(images, image_dir,
                )
 
 
-def create_tf_example(image, image_dir,
-                      # panoptic_masks_dir,
-                      category_id_to_name_map,
-                      object_ann,
-                      # caption_ann,
-                      # keypoint_ann, panoptic_ann,
-                      # is_category_thing
-                      ):
+def create_tf_example(
+        image,
+        image_dir,
+        # panoptic_masks_dir,
+        category_id_to_name_map,
+        object_ann,
+        enable_masks,
+        # caption_ann,
+        # keypoint_ann, panoptic_ann,
+        # is_category_thing
+):
     """Converts image and annotations to a tf.Example proto."""
     # Add image features.
     image_height = image['height']
@@ -315,56 +210,57 @@ def create_tf_example(image, image_dir,
 
     # Add annotation features.
     if object_ann:
-        # Bbox, area, etc.
         obj_feature_dict = obj_annotations_to_feature_dict(object_ann,
                                                            category_id_to_name_map)
         feature_dict.update(obj_feature_dict)
 
-        # Polygons.
-        seg_feature_dict = obj_annotations_to_seg_dict(object_ann)
-        feature_dict.update(seg_feature_dict)
-
-        # Keypoints.
-        # key_feature_dict = key_annotations_to_feature_dict(keypoint_ann, object_ann)
-        # feature_dict.update(key_feature_dict)
-
-    # Captions.
-    # feature_dict['image/caption'] = tfrecord_lib.convert_to_feature(caption_ann)
-
-    # Panoptic masks.
-    # pan_feature_dict = pan_annotations_to_feature_dict(panoptic_ann)
-    # feature_dict.update(pan_feature_dict)
+        if enable_masks:
+            seg_feature_dict = obj_annotations_to_seg_dict(object_ann)
+            feature_dict.update(seg_feature_dict)
 
     example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
     return example, 0
 
 
-def main(_):
-    FLAGS.ann_file = os.path.join(FLAGS.image_dir, FLAGS.ann_file)
+def main():
+    params: Params = paramparse.process(Params)
+
+    assert params.ann_file, "ann_file must be provided"
+    assert params.image_dir, "image_dir must be provided"
+
+    if params.ann_suffix:
+        params.ann_file = f'{params.ann_file}-{params.ann_suffix}'
+
+    params.ann_file = os.path.join(params.image_dir, f'{params.ann_file}.{params.ann_ext}')
 
     image_info, category_id_to_name_map, img_to_obj_ann = (
-        load_instance_annotations(FLAGS.ann_file))
+        load_instance_annotations(params.ann_file))
 
-    # img_to_key_ann = load_keypoint_annotations(FLAGS.key_ann_file)
-    # img_to_cap_ann = load_caption_annotations(FLAGS.cap_ann_file)
+    if not params.output_dir:
+        params.output_dir = os.path.join(params.image_dir, 'tfrecord')
+
+    # img_to_key_ann = load_keypoint_annotations(params.key_ann_file)
+    # img_to_cap_ann = load_caption_annotations(params.cap_ann_file)
     # img_to_pan_ann, is_category_thing = load_panoptic_annotations(
-    #     FLAGS.pan_ann_file)
+    #     params.pan_ann_file)
 
-    os.makedirs(FLAGS.output_dir, exist_ok=True)
+    os.makedirs(params.output_dir, exist_ok=True)
 
-    out_name = os.path.splitext(os.path.basename(FLAGS.ann_file))[0]
+    out_name = os.path.basename(params.ann_file).split(os.extsep)[0]
+
     annotations_iter = generate_annotations(
         images=image_info,
-        image_dir=FLAGS.image_dir,
-        # panoptic_masks_dir=FLAGS.pan_masks_dir,
+        image_dir=params.image_dir,
+        # panoptic_masks_dir=params.pan_masks_dir,
         category_id_to_name_map=category_id_to_name_map,
         img_to_obj_ann=img_to_obj_ann,
+        enable_masks=params.enable_masks,
         # img_to_cap_ann=img_to_cap_ann,
         # img_to_key_ann=img_to_key_ann,
         # img_to_pan_ann=img_to_pan_ann,
         # is_category_thing=is_category_thing
     )
-    output_path = os.path.join(FLAGS.output_dir, out_name)
+    output_path = os.path.join(params.output_dir, out_name)
 
     print(f'out_name: {out_name}')
     print(f'output_path: {output_path}')
@@ -373,14 +269,9 @@ def main(_):
         output_path=output_path,
         annotation_iterator=annotations_iter,
         process_func=create_tf_example,
-        num_shards=FLAGS.num_shards,
-        multiple_processes=FLAGS.n_proc)
-
-
-# Note: internal version of the code overrides this function.
-def run_main():
-    app.run(main)
+        num_shards=params.num_shards,
+        multiple_processes=params.n_proc)
 
 
 if __name__ == '__main__':
-    run_main()
+    main()
