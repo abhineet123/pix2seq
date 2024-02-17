@@ -101,7 +101,7 @@ def get_config(config_str=None):
             top_p=0.4,
             temperature=1.0,
             weight=1.0,
-            metric=D(name='coco_object_detection', ),
+            # metric=D(name='coco_object_detection', ),
         ),
     }
 

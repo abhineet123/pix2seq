@@ -8,6 +8,8 @@
             - [dist       @ on-g2_16_53/pt/resnet-640](#dist___on_g2_16_53_pt_resnet_64_0_)
         - [on-g2_54_126       @ pt/resnet-640](#on_g2_54_126___pt_resnet_64_0_)
         - [on-g2_0_15       @ pt/resnet-640](#on_g2_0_15___pt_resnet_64_0_)
+    - [mnist-640-1       @ resnet-640](#mnist_640_1___resnet_640_)
+    - [mnist-640-5       @ resnet-640](#mnist_640_5___resnet_640_)
     - [g2_16_53       @ resnet-640](#g2_16_53___resnet_640_)
         - [batch_6       @ g2_16_53/resnet-640](#batch_6___g2_16_53_resnet_64_0_)
             - [on-g2_0_15       @ batch_6/g2_16_53/resnet-640](#on_g2_0_15___batch_6_g2_16_53_resnet_64_0_)
@@ -78,6 +80,14 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eva
 <a id="on_g2_0_15___pt_resnet_64_0_"></a>
 ### on-g2_0_15       @ pt/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,pt,resnet-640,ipsc-g2_0_15,batch-32,save-vis-0,save-csv-1
+
+<a id="mnist_640_1___resnet_640_"></a>
+## mnist-640-1       @ resnet-640-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-1-12_1000,suffix-train,batch-18,pt-1,dbg-1,dyn-1,dist-0,ep-10000,gz
+
+<a id="mnist_640_5___resnet_640_"></a>
+## mnist-640-5       @ resnet-640-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-5-12_1000,suffix-train,batch-18,pt-1,dbg-1,dyn-1,dist-0,ep-10000,gz
 
 <a id="g2_16_53___resnet_640_"></a>
 ## g2_16_53       @ resnet-640-->p2s

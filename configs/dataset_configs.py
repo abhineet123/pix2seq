@@ -20,6 +20,12 @@ from configs.config_base import D
 _shared_dataset_config = D(
     batch_duplicates=1,
     cache_dataset=True,
+    train_name='',
+    eval_name='',
+    train_suffix='',
+    eval_suffix='',
+    train_split='train',
+    eval_split='validation',
 )
 
 # IPSC_NAME_TO_NUM = dict(
@@ -44,8 +50,7 @@ _shared_coco_dataset_config = D(
     # eval_file_pattern=COCO_VAL_TFRECORD_PATTERN,
     train_num_examples=118287,
     eval_num_examples=5000,
-    train_split='train',
-    eval_split='validation',
+
     # Directory of annotations used by the metrics.
     # Also need to set train_filename_for_metrics and eval_filename_for_metrics.
     # If unset, groundtruth annotations should be specified via
@@ -59,16 +64,9 @@ _shared_coco_dataset_config = D(
 def get_ipsc_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
 
-    train_name = 'ext_reorg_roi_g2_0_53'
-    eval_name = 'ext_reorg_roi_g2_16_53'
-
     return D(
         name='ipsc_object_detection',
         root_dir=root_dir,
-        train_name=train_name,
-        eval_name=eval_name,
-        train_split='train',
-        eval_split='validation',
         label_shift=0,
         compressed=0,
         **_shared_dataset_config
@@ -81,10 +79,6 @@ def get_ipsc_video_data():
     return D(
         name='ipsc_video_detection',
         root_dir=root_dir,
-        train_name='',
-        eval_name='',
-        train_split='train',
-        eval_split='validation',
         label_shift=0,
         compressed=1,
         max_disp=0.01,
@@ -135,6 +129,10 @@ def ipsc_post_process(cfg):
                 stride_suffix = f'stride-{stride}'
                 if stride_suffix not in name:
                     name = f'{name}-{stride_suffix}'
+
+        suffix = cfg[f'{mode}_suffix']
+        if suffix:
+            name = f'{name}-{suffix}'
 
         json_name = f'{name}.json'
         if cfg.compressed:
