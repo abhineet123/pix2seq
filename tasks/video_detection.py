@@ -138,12 +138,12 @@ class TaskVideoDetection(task_lib.Task):
             _convert_video_to_image_features,
             num_parallel_calls=tf.data.experimental.AUTOTUNE
         )
-        # dataset = dataset.map(
-        #     lambda x: self.preprocess_single_example(
-        #         x, training,
-        #         batch_duplicates),
-        #     num_parallel_calls=tf.data.experimental.AUTOTUNE
-        # )
+        dataset = dataset.map(
+            lambda x: self.preprocess_single_example(
+                x, training,
+                batch_duplicates),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE
+        )
         return dataset
 
     def debug_transforms(self, batched_examples, vis):
@@ -196,7 +196,7 @@ class TaskVideoDetection(task_lib.Task):
         mconfig = self.config.model
         dconfig = self.config.dataset
 
-        batched_examples = self.debug_transforms(batched_examples, vis=0)
+        # batched_examples = self.debug_transforms(batched_examples, vis=0)
 
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
         ret = build_response_seq_from_video_bboxes(

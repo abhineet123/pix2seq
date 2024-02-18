@@ -74,9 +74,11 @@ class TaskObjectDetection(task_lib.Task):
         if training:
             dataset = dataset.filter(  # Filter out images with no annotations.
                 lambda example: tf.shape(example['label'])[0] > 0)
-        # dataset = dataset.map(
-        #     lambda x: self.preprocess_single_example(x, training, batch_duplicates),
-        #     num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+        dataset = dataset.map(
+            lambda x: self.preprocess_single_example(x, training, batch_duplicates),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
         return dataset
 
     def debug_transforms(self, batched_examples):
@@ -140,7 +142,7 @@ class TaskObjectDetection(task_lib.Task):
         config = self.config.task
         mconfig = self.config.model
 
-        batched_examples = self.debug_transforms(batched_examples)
+        # batched_examples = self.debug_transforms(batched_examples)
 
         # Create input/target seq.
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
