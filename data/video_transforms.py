@@ -1,9 +1,10 @@
 import copy
 
-from data import data_utils
+from data import video_data_utils, data_utils
 from data.transforms import TransformRegistry, Transform
 
 import tensorflow as tf
+
 
 @TransformRegistry.register('record_original_video_size')
 class RecordOriginalVideoSize(Transform):
@@ -38,10 +39,10 @@ class FixedSizeVideoCrop(Transform):
                   tf.minimum(output_size[1], input_size[1] - offset[1]))
         object_coordinate_keys = self.config.get('object_coordinate_keys', [])
 
-        example_out = data_utils.video_crop(example_out, region, self.config.inputs,
+        example_out = video_data_utils.video_crop(example_out, region, self.config.inputs,
                                             object_coordinate_keys)
 
-        example_out['fixed_size_crop_video'] = output_size
+        # example_out['fixed_size_crop_video'] = output_size
 
         return example_out
 
@@ -96,29 +97,78 @@ class ScaleJitterVideo(Transform):
                 video, scaled_size,
                 method=resize_method, antialias=antialias)
             example_out[k] = resized_video
-        example_out['scale_jitter_video'] = scaled_size
+        # example_out['scale_jitter_video'] = scaled_size
         return example_out
 
 
 @TransformRegistry.register('random_horizontal_flip_video')
 class RandomHorizontalFlipVideo(Transform):
     def process_example(self, example: dict[str, tf.Tensor]):
-        example = copy.copy(example)
-        inputs = {k: example[k] for k in self.config.inputs}
-        boxes = {k: example[k] for k in self.config.get('bbox_keys', [])}
-        # keypoints = {k: example[k] for k in self.config.get('keypoints_keys', [])}
-        # polygons = {k: example[k] for k in self.config.get('polygon_keys', [])}
+        out_example = copy.copy(example)
+        length = self.config.length
 
+        inputs = {k: out_example[k] for k in self.config.inputs}
+        boxes = {k: out_example[k] for k in self.config.get('bbox_keys', [])}
         with tf.name_scope('RandomHorizontalFlipVideo'):
             coin_flip = tf.random.uniform([]) > 0.5
             if coin_flip:
                 inputs = {k: tf.image.flip_left_right(v) for k, v in inputs.items()}
-                boxes = {k: data_utils.flip_polygons_left_right(v) for k, v in boxes.items()}
-        example.update(inputs)
-        example.update(boxes)
-        # example.update(keypoints)
-        # example.update(polygons)
-        return example
+                boxes = {k: video_data_utils.flip_video_boxes_left_right(v, length) for k, v in boxes.items()}
+        out_example.update(inputs)
+        out_example.update(boxes)
+        return out_example
+
+
+@TransformRegistry.register('filter_invalid_objects_video')
+class FilterInvalidObjectsVideo(Transform):
+    """Filter objects with invalid bboxes.
+
+    Required fields in config:
+      inputs: names of applicable fields in the example.
+      bbox_key: optional name of the bbox field. Defaults to 'bbox'.
+      filter_keys: optional. Names of fields that, if True, the object will be
+        filtered out. E.g. 'is_crowd', the objects with 'is_crowd=True' will be
+        filtered out.
+    """
+
+    def process_example(self, example: dict[str, tf.Tensor]):
+        out_example = copy.copy(example)
+        bbox_key = 'bbox'
+
+        bboxes = out_example[bbox_key]
+        n_bboxes = tf.shape(bboxes)[0]
+        is_no_box = tf.math.is_nan(bboxes)
+        length = self.config.length
+
+        is_no_box_count = tf.reduce_sum(tf.cast(is_no_box, tf.int32), axis=1)
+        max_no_box_count = 4*(length-1)
+        tf.debugging.Assert(tf.reduce_all(is_no_box_count <= max_no_box_count), [bboxes, is_no_box_count])
+
+        # print(f'filter_invalid_objects: box shape: {tf.shape(bbox)}')
+        # print(f'filter_invalid_objects: bbox: {bbox}')
+        # print(f'filter_invalid_objects: n_bboxes: {n_bboxes}')
+
+        box_valid = None
+        for i in range(length):
+            bbox_idx = 4 * i
+            box_valid_ = tf.logical_or(
+                is_no_box[:, bbox_idx],
+                tf.logical_and(bboxes[:, bbox_idx + 2] > bboxes[:, bbox_idx],
+                               bboxes[:, bbox_idx + 3] > bboxes[:, bbox_idx + 1])
+            )
+            box_valid = box_valid_ if box_valid is None else tf.logical_and(box_valid, box_valid_)
+
+        for k in self.config.get('filter_keys', []):
+            box_valid = tf.logical_and(box_valid, tf.logical_not(out_example[k]))
+        valid_indices = tf.where(box_valid)[:, 0]
+        for k in self.config.inputs:
+            out_example[k] = tf.gather(out_example[k], valid_indices)
+
+        out_bbox = out_example[bbox_key]
+        n_out_bboxes = tf.shape(out_bbox)[0]
+        tf.debugging.Assert(n_out_bboxes > 0, [bboxes, out_bbox])
+
+        return out_example
 
 
 @TransformRegistry.register('inject_noise_bbox_video')
@@ -132,7 +182,7 @@ class InjectNoiseBboxVideo(Transform):
         num_instances = tf.shape(example[bbox_key])[0]
         if num_instances < self.config.max_instances_per_image:
             n_noise_bbox = self.config.max_instances_per_image - num_instances
-            example[bbox_key], example[class_id_key], example[class_name_key] = data_utils.augment_bbox_video(
+            example[bbox_key], example[class_id_key], example[class_name_key] = video_data_utils.augment_bbox_video(
                 bbox=example[bbox_key],
                 class_id=example[class_id_key],
                 class_name=example[class_name_key],
@@ -173,7 +223,7 @@ class PadVideoToMaxSize(Transform):
                 target_width=target_size[1]
             )
 
-        example_out['fixed_size_crop_video'] = target_size
+        # example_out['pad_video_to_max_size'] = target_size
 
         # Adjust the coordinate fields.
         object_coordinate_keys = self.config.get('object_coordinate_keys', [])

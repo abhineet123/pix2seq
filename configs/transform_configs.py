@@ -135,10 +135,11 @@ def get_video_detection_train_transforms(
           length=length,
           bbox_keys=['bbox']),
 
-        # D(name='filter_invalid_objects',
-        #   inputs=instance_feature_names,
-        #   filter_keys=['is_crowd']
-        #   ),
+        D(name='filter_invalid_objects_video',
+          inputs=instance_feature_names,
+          length=length,
+          filter_keys=['is_crowd']
+          ),
 
         D(name='reorder_object_instances',
           inputs=instance_feature_names,

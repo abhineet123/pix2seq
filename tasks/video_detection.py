@@ -138,47 +138,65 @@ class TaskVideoDetection(task_lib.Task):
             _convert_video_to_image_features,
             num_parallel_calls=tf.data.experimental.AUTOTUNE
         )
-        dataset = dataset.map(
-            lambda x: self.preprocess_single_example(
-                x, training,
-                batch_duplicates),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE
-        )
+        # dataset = dataset.map(
+        #     lambda x: self.preprocess_single_example(
+        #         x, training,
+        #         batch_duplicates),
+        #     num_parallel_calls=tf.data.experimental.AUTOTUNE
+        # )
         return dataset
 
-    def debug_transforms(self, batched_examples):
-        single_example = {
-            k: v[0, ...] for k, v in batched_examples.items()
+    def debug_transforms(self, batched_examples, vis):
+        # bbox_np = batched_examples['bbox'].numpy()
+        # class_id_np = batched_examples['class_id'].numpy()
+        # class_name_np = batched_examples['class_name'].numpy()
+        batch_size = batched_examples["video"].shape[0]
+        proc_examples = {
+            k: [] for k, v in batched_examples.items()
         }
-        proc_videos = dict(
-            orig=single_example["video"]
-        )
-        proc_example = copy.copy(single_example)
+        for i in range(batch_size):
+            single_example = {
+                k: v[i, ...] for k, v in batched_examples.items()
+            }
+            proc_videos = dict(
+                orig=single_example["video"]
+            )
+            proc_bboxes = dict(
+                orig=single_example["bbox"]
+            )
+            proc_example = copy.copy(single_example)
+            for t in self.train_transforms:
+                t_name = t.config.name
+                proc_example = t.process_example(proc_example)
 
-        for t in self.train_transforms:
-            t_name = t.config.name
-            proc_example = t.process_example(proc_example)
+                proc_videos[t_name] = proc_example["video"]
+                proc_bboxes[t_name] = proc_example["bbox"]
 
-            proc_videos[t_name] = proc_example["video"]
+                if not vis:
+                    continue
 
-            video = proc_example["video"]
-            video = tf.image.convert_image_dtype(video, tf.uint8)
+                video = proc_example["video"]
+                video = tf.image.convert_image_dtype(video, tf.uint8)
 
-            # video_ids = proc_example["video_id"]
-            file_names = proc_example["file_names"]
+                # video_ids = proc_example["video_id"]
+                file_names = proc_example["file_names"]
 
-            vis_utils.save_video(video, file_names, t_name, self.config.model_dir)
+                vis_utils.save_video(video, file_names, t_name, self.config.model_dir)
+
+            for k, v in proc_examples.items():
+                v.append(proc_example[k])
+
+        for k, v in proc_examples.items():
+            proc_examples[k] = tf.stack(v, axis=0)
+
+        return proc_examples
 
     def preprocess_batched(self, batched_examples, training):
         config = self.config.task
         mconfig = self.config.model
         dconfig = self.config.dataset
 
-        # bbox_np = batched_examples['bbox'].numpy()
-        # class_id_np = batched_examples['class_id'].numpy()
-        # class_name_np = batched_examples['class_name'].numpy()
-
-        # self.debug_transforms(batched_examples)
+        batched_examples = self.debug_transforms(batched_examples, vis=0)
 
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
         ret = build_response_seq_from_video_bboxes(
@@ -250,26 +268,7 @@ class TaskVideoDetection(task_lib.Task):
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
         return examples, pred_seq, logits
 
-    def postprocess_tpu(self, batched_examples, pred_seq, logits,
-                        training=False):  # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
-        """Organizing results after fitting the batched examples in graph.
-
-        Such as updating metrics, putting together results for computing metrics in
-          CPU/numpy mode.
-
-        Note: current implementation only support eval mode where gt are given in
-          metrics as they are not constructed here from input_seq/target_seq.
-
-        Args:
-          batched_examples: a tuple of features (`dict`) and labels (`dict`),
-            containing videos and labels.
-          pred_seq: `int` sequence of shape (bsz, seqlen').
-          logits: `float` sequence of shape (bsz, seqlen', vocab_size).
-          training: `bool` indicating training or inference mode.
-
-        Returns:
-          results for passing to `postprocess_cpu` which runs in CPU mode.
-        """
+    def postprocess_tpu(self, batched_examples, pred_seq, logits, training=False):
         config = self.config.task
         mconfig = self.config.model
         example = batched_examples
@@ -374,10 +373,10 @@ def build_response_seq_from_video_bboxes(
         coord_vocab_shift,
         vid_len,
         class_label_corruption='rand_cls'):
-
     # assert bboxes.shape[-1] % 4 == 0, f"invalid bboxes shape: {bboxes.shape}"
     # n_bboxes_per_vid = int(bboxes.shape[-1] / 4)
-    # assert vid_len == n_bboxes_per_vid, f"Mismatch between vid_len: {vid_len} and n_bboxes_per_vid: {n_bboxes_per_vid}"
+    # assert vid_len == n_bboxes_per_vid, f"Mismatch between vid_len: {vid_len} and n_bboxes_per_vid: {
+    # n_bboxes_per_vid}"
 
     is_no_box = tf.math.is_nan(bboxes)
 
@@ -486,5 +485,3 @@ def build_response_seq_from_video_bboxes(
     token_weights = utils.flatten_non_batch_dims(token_weights, 2)
 
     return response_seq, response_seq_class_m, token_weights
-
-

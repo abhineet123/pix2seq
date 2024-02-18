@@ -291,6 +291,12 @@ def load(FLAGS):
 
     cmd_cfg.training = cfg.training = cfg.mode == TRAIN
 
+    is_video = 'video' in cfg.task.name
+
+    model_root_dir = 'log'
+    if is_video:
+        model_root_dir = os.path.join(model_root_dir, 'video')
+
     if not cfg.model_dir:
         """construct model_dir name from params"""
 
@@ -298,7 +304,7 @@ def load(FLAGS):
             """evaluate on pretrained model but save results in the log folder"""
             assert cfg.pretrained, "cfg.pretrained must be provided for pretrained model eval"
 
-            cfg.model_dir = cfg.pretrained.replace('pretrained', 'log')
+            cfg.model_dir = cfg.pretrained.replace('pretrained', model_root_dir)
         else:
             model_dir_name = f'{cfg.dataset.train_name}'
             if cfg.pretrained:
@@ -313,7 +319,7 @@ def load(FLAGS):
             # if cfg.dist == 2 and cfg.tf_config.task.index > 0:
             #     model_dir_name = f'{model_dir_name}-worker-{cfg.tf_config.task.index}'
 
-            cfg.model_dir = os.path.join('log', model_dir_name)
+            cfg.model_dir = os.path.join(model_root_dir, model_dir_name)
         if not cfg.training and not cfg.eval.pt:
             """load config from model_dir constructed from params"""
             load_from_model(cfg, cfg.model_dir, cmd_cfg)

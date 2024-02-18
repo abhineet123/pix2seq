@@ -74,34 +74,50 @@ class TaskObjectDetection(task_lib.Task):
         if training:
             dataset = dataset.filter(  # Filter out images with no annotations.
                 lambda example: tf.shape(example['label'])[0] > 0)
-        dataset = dataset.map(
-            lambda x: self.preprocess_single_example(x, training, batch_duplicates),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        # dataset = dataset.map(
+        #     lambda x: self.preprocess_single_example(x, training, batch_duplicates),
+        #     num_parallel_calls=tf.data.experimental.AUTOTUNE)
         return dataset
 
     def debug_transforms(self, batched_examples):
-        single_example = {
-            k: v[0, ...] for k, v in batched_examples.items()
-        }
-        proc_videos = dict(
-            orig=single_example["image"]
-        )
-        import copy
-        proc_example = copy.copy(single_example)
+        batch_size = batched_examples["image"].shape[0]
+        proc_examples = {
+                k: [] for k, v in batched_examples.items()
+            }
+        for i in range(batch_size):
+            single_example = {
+                k: v[i, ...] for k, v in batched_examples.items()
+            }
+            proc_videos = dict(
+                orig=single_example["image"]
+            )
+            proc_bboxes = dict(
+                orig=single_example["bbox"]
+            )
+            import copy
+            proc_example = copy.copy(single_example)
 
-        for t in self.train_transforms:
-            t_name = t.config.name
-            proc_example = t.process_example(proc_example)
+            for t in self.train_transforms:
+                t_name = t.config.name
+                proc_example = t.process_example(proc_example)
 
-            proc_videos[t_name] = proc_example["image"]
+                proc_videos[t_name] = proc_example["image"]
+                proc_bboxes[t_name] = proc_example["bbox"]
 
-            # image = proc_example["image"]
-            # image = tf.image.convert_image_dtype(image, tf.uint8)
+                # image = proc_example["image"]
+                # image = tf.image.convert_image_dtype(image, tf.uint8)
 
-            # video_ids = proc_example["video_id"]
-            # file_names = proc_example["file_names"]
+                # video_ids = proc_example["video_id"]
+                # file_names = proc_example["file_names"]
 
-            # vis_utils.save_video(image, file_names, t_name, self.config.model_dir)
+                # vis_utils.save_video(image, file_names, t_name, self.config.model_dir)
+            for k, v in proc_examples.items():
+                v.append(proc_example[k])
+
+        for k, v in proc_examples.items():
+            proc_examples[k] = tf.stack(v, axis=0)
+
+        return proc_examples
 
     def preprocess_batched(self, batched_examples, training):
         """Task-specific preprocessing of batched examples on accelerators (TPUs).
@@ -124,7 +140,7 @@ class TaskObjectDetection(task_lib.Task):
         config = self.config.task
         mconfig = self.config.model
 
-        # self.debug_transforms(batched_examples)
+        batched_examples = self.debug_transforms(batched_examples)
 
         # Create input/target seq.
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""

@@ -163,7 +163,7 @@ def main(unused_argv):
     all these unused imports needed to register the various modules
     """
     from data import datasets  # pylint: disable=unused-import
-    from data import transforms, transforms_video  # pylint: disable=unused-import
+    from data import transforms, video_transforms  # pylint: disable=unused-import
     from metrics import coco_metrics  # pylint: disable=unused-import
     from models import ar_model  # pylint: disable=unused-import
     from models import video_ar_model  # pylint: disable=unused-import

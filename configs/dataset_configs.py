@@ -20,6 +20,8 @@ from configs.config_base import D
 _shared_dataset_config = D(
     batch_duplicates=1,
     cache_dataset=True,
+    scale_jitter=1,
+    fixed_crop=1,
     train_name='',
     eval_name='',
     train_suffix='',
@@ -69,8 +71,6 @@ def get_ipsc_data():
         root_dir=root_dir,
         label_shift=0,
         compressed=0,
-        scale_jitter=1,
-        fixed_crop=1,
         **_shared_dataset_config
     )
 
