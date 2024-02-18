@@ -83,11 +83,11 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eva
 
 <a id="mnist_640_1___resnet_640_"></a>
 ## mnist-640-1       @ resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-1-12_1000,suffix-train,batch-18,pt-1,dbg-1,dyn-1,dist-0,ep-10000,gz
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-1-12_1000,suffix-train,batch-4,pt-1,dbg-1,dyn-1,dist-0,ep-10000,gz
 
 <a id="mnist_640_5___resnet_640_"></a>
 ## mnist-640-5       @ resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-5-12_1000,suffix-train,batch-18,pt-1,dbg-1,dyn-1,dist-0,ep-10000,gz
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-5-12_1000,suffix-train,batch-8,pt-1,dbg-0,dyn-1,dist-1,ep-10000,gz
 
 <a id="g2_16_53___resnet_640_"></a>
 ## g2_16_53       @ resnet-640-->p2s

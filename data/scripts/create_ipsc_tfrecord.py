@@ -92,10 +92,14 @@ def coco_annotations_to_lists(obj_annotations, id_to_name_map):
 
     for ann in obj_annotations:
         (x, y, width, height) = tuple(ann['bbox'])
-        data['xmin'].append(float(x))
-        data['xmax'].append(float(x + width))
-        data['ymin'].append(float(y))
-        data['ymax'].append(float(y + height))
+        xmin, xmax, ymin, ymax = float(x), float(x + width), float(y), float(y + height)
+
+        assert xmax > xmin and ymax > ymin, f"invalid bbox: {[xmin, xmax, ymin, ymax]}"
+
+        data['xmin'].append(xmin)
+        data['xmax'].append(xmax)
+        data['ymin'].append(ymin)
+        data['ymax'].append(ymax)
         data['is_crowd'].append(ann['iscrowd'])
         category_id = int(ann['category_id'])
         data['category_id'].append(category_id)
@@ -107,6 +111,7 @@ def coco_annotations_to_lists(obj_annotations, id_to_name_map):
 
 def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map):
     data = coco_annotations_to_lists(obj_annotations, id_to_name_map)
+
     feature_dict = {
         'image/object/bbox/xmin':
             tfrecord_lib.convert_to_feature(data['xmin']),
@@ -152,6 +157,7 @@ def obj_annotations_to_seg_dict(obj_annotations):
         'image/object/segmentation_v': tfrecord_lib.convert_to_feature(segs),
         'image/object/segmentation_sep': tfrecord_lib.convert_to_feature(seg_sep),
     }
+
 
 def generate_annotations(images, image_dir,
                          # panoptic_masks_dir,
@@ -210,8 +216,9 @@ def create_tf_example(
 
     # Add annotation features.
     if object_ann:
-        obj_feature_dict = obj_annotations_to_feature_dict(object_ann,
-                                                           category_id_to_name_map)
+        obj_feature_dict = obj_annotations_to_feature_dict(
+            object_ann,
+            category_id_to_name_map)
         feature_dict.update(obj_feature_dict)
 
         if enable_masks:

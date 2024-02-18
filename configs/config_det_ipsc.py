@@ -36,6 +36,9 @@ def update_task_config(cfg):
     # if cfg.task.image_size == cfg.model.image_size:
     #     return
 
+    scale_jitter = cfg.dataset.scale_jitter
+    fixed_crop = cfg.dataset.fixed_crop
+
     image_size = cfg.model.image_size
     cfg.task.image_size = image_size
 
@@ -44,20 +47,12 @@ def update_task_config(cfg):
 
     for task in cfg.tasks + [cfg.task, ]:
         task.image_size = image_size
-        try:
-            _ = task.eval_transforms
-        except AttributeError:
-            pass
-        else:
-            task.eval_transforms = transform_configs.get_object_detection_eval_transforms(
+
+        task.eval_transforms = transform_configs.get_object_detection_eval_transforms(
                 image_size, task.max_instances_per_image_test)
-        try:
-            _ = task.train_transforms
-        except AttributeError:
-            pass
-        else:
-            task.train_transforms = transform_configs.get_object_detection_train_transforms(
-                image_size, task.max_instances_per_image)
+
+        task.train_transforms = transform_configs.get_object_detection_train_transforms(
+                image_size, task.max_instances_per_image, scale_jitter=scale_jitter, fixed_crop=fixed_crop)
 
 
 def get_config(config_str=None):
@@ -86,10 +81,6 @@ def get_config(config_str=None):
             quantization_bins=1000,
             max_instances_per_image=max_instances_per_image,
             max_instances_per_image_test=max_instances_per_image_test,
-            train_transforms=transform_configs.get_object_detection_train_transforms(
-                image_size, max_instances_per_image),
-            eval_transforms=transform_configs.get_object_detection_eval_transforms(
-                image_size, max_instances_per_image_test),
             # Train on both ground-truth and (augmented) noisy objects.
             noise_bbox_weight=1.0,
             eos_token_weight=0.1,
@@ -154,6 +145,7 @@ def get_config(config_str=None):
             learning_rate_scaling='none',
         ),
     )
+    update_task_config(config)
 
     # Update model with architecture variant.
     for key, value in architecture_config_map[encoder_variant].items():

@@ -79,6 +79,30 @@ class TaskObjectDetection(task_lib.Task):
             num_parallel_calls=tf.data.experimental.AUTOTUNE)
         return dataset
 
+    def debug_transforms(self, batched_examples):
+        single_example = {
+            k: v[0, ...] for k, v in batched_examples.items()
+        }
+        proc_videos = dict(
+            orig=single_example["image"]
+        )
+        import copy
+        proc_example = copy.copy(single_example)
+
+        for t in self.train_transforms:
+            t_name = t.config.name
+            proc_example = t.process_example(proc_example)
+
+            proc_videos[t_name] = proc_example["image"]
+
+            # image = proc_example["image"]
+            # image = tf.image.convert_image_dtype(image, tf.uint8)
+
+            # video_ids = proc_example["video_id"]
+            # file_names = proc_example["file_names"]
+
+            # vis_utils.save_video(image, file_names, t_name, self.config.model_dir)
+
     def preprocess_batched(self, batched_examples, training):
         """Task-specific preprocessing of batched examples on accelerators (TPUs).
 
@@ -99,6 +123,8 @@ class TaskObjectDetection(task_lib.Task):
         """
         config = self.config.task
         mconfig = self.config.model
+
+        # self.debug_transforms(batched_examples)
 
         # Create input/target seq.
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""

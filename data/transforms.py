@@ -264,9 +264,9 @@ class FilterInvalidObjects(Transform):
     """
 
     def process_example(self, example: dict[str, tf.Tensor]):
-        example = copy.copy(example)
+        out_example = copy.copy(example)
         bbox_key = self.config.get('bbox_key', DEFAULT_BBOX_KEY)
-        bbox = example[bbox_key]
+        bbox = out_example[bbox_key]
         n_bboxes = tf.shape(bbox)[0]
 
         # print(f'filter_invalid_objects: box shape: {tf.shape(bbox)}')
@@ -275,16 +275,16 @@ class FilterInvalidObjects(Transform):
 
         box_valid = tf.logical_and(bbox[:, 2] > bbox[:, 0], bbox[:, 3] > bbox[:, 1])
         for k in self.config.get('filter_keys', []):
-            box_valid = tf.logical_and(box_valid, tf.logical_not(example[k]))
+            box_valid = tf.logical_and(box_valid, tf.logical_not(out_example[k]))
         valid_indices = tf.where(box_valid)[:, 0]
         for k in self.config.inputs:
-            example[k] = tf.gather(example[k], valid_indices)
+            out_example[k] = tf.gather(out_example[k], valid_indices)
 
-        out_bbox = example[bbox_key]
+        out_bbox = out_example[bbox_key]
         n_out_bboxes = tf.shape(out_bbox)[0]
         tf.debugging.Assert(n_out_bboxes > 0, [bbox, out_bbox])
 
-        return example
+        return out_example
 
 
 @TransformRegistry.register('reorder_object_instances')

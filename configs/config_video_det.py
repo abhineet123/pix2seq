@@ -31,7 +31,6 @@ def update_task_config(cfg):
     length = cfg.dataset.length
     max_disp = cfg.dataset.max_disp
 
-
     for task_config in cfg.tasks + [cfg.task, ]:
         task_config.image_size = image_size
 

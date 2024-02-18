@@ -69,7 +69,7 @@ class IPSCObjectDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
           example: `dict` of relevant features and labels.
         """
 
-        img_id = example['image/source_id'],
+        img_id = example['image/source_id']
         new_example = {
             'image': decode_utils.decode_image(example),
             # 'image/id': tf.strings.to_number( tf.int64),

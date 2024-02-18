@@ -22,21 +22,33 @@ def get_object_detection_train_transforms(
         image_size: Tuple[int, int],
         max_instances_per_image: int,
         object_order: str = 'random',
+        scale_jitter=1,
+        fixed_crop=1,
         jitter_scale_min: float = 0.3,
         jitter_scale_max: float = 2.0):
     instance_feature_names = ['bbox', 'label', 'area', 'is_crowd']
     object_coordinate_keys = ['bbox']
-    return [
-        D(name='record_original_image_size'),
-        D(name='scale_jitter',
-          inputs=['image'],
-          target_size=image_size,
-          min_scale=jitter_scale_min,
-          max_scale=jitter_scale_max),
-        D(name='fixed_size_crop',
-          inputs=['image'],
-          target_size=image_size,
-          object_coordinate_keys=object_coordinate_keys),
+
+    train_transforms = [D(name='record_original_image_size'), ]
+    if scale_jitter:
+        print('annoying scale_jitter is enabled')
+        train_transforms.append(
+            D(name='scale_jitter',
+              inputs=['image'],
+              target_size=image_size,
+              min_scale=jitter_scale_min,
+              max_scale=jitter_scale_max)
+        )
+    if fixed_crop:
+        print('equally annoying fixed_crop is enabled')
+        train_transforms.append(
+            D(name='fixed_size_crop',
+              inputs=['image'],
+              target_size=image_size,
+              object_coordinate_keys=object_coordinate_keys),
+        )
+
+    train_transforms += [
         D(name='random_horizontal_flip',
           inputs=['image'],
           bbox_keys=['bbox']),
@@ -58,6 +70,8 @@ def get_object_detection_train_transforms(
           inputs=instance_feature_names,
           max_instances=max_instances_per_image),
     ]
+
+    return train_transforms
 
 
 def get_object_detection_eval_transforms(
@@ -85,6 +99,8 @@ def get_video_detection_train_transforms(
         max_disp: int,
         max_instances_per_image: int,
         object_order: str = 'random',
+        scale_jitter=1,
+        fixed_crop=1,
         jitter_scale_min: float = 0.3,
         jitter_scale_max: float = 2.0):
     instance_feature_names = ['bbox', 'class_id', 'class_name',
@@ -93,19 +109,27 @@ def get_video_detection_train_transforms(
 
     train_transforms = [
         # D(name='record_original_video_size'),
+    ]
+    if scale_jitter:
+        print('annoying scale_jitter is enabled')
+        train_transforms.append(
+            D(name='scale_jitter_video',
+              inputs=['video'],
+              length=length,
+              target_size=image_size,
+              min_scale=jitter_scale_min,
+              max_scale=jitter_scale_max)
+        )
+    if fixed_crop:
+        print('equally annoying fixed_size_crop_video is enabled')
+        train_transforms.append(
+            D(name='fixed_size_crop_video',
+              inputs=['video'],
+              target_size=image_size,
+              object_coordinate_keys=object_coordinate_keys)
+        )
 
-        D(name='scale_jitter_video',
-          inputs=['video'],
-          length=length,
-          target_size=image_size,
-          min_scale=jitter_scale_min,
-          max_scale=jitter_scale_max),
-
-        D(name='fixed_size_crop_video',
-          inputs=['video'],
-          target_size=image_size,
-          object_coordinate_keys=object_coordinate_keys),
-
+    train_transforms += [
         D(name='random_horizontal_flip_video',
           inputs=['video'],
           length=length,
