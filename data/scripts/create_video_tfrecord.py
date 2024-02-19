@@ -238,6 +238,7 @@ class Params(paramparse.CFG):
     def __init__(self):
         paramparse.CFG.__init__(self, cfg_root='cfg/video_tfrecord')
         self.ann_file = ''
+        self.ann_suffix = ''
         self.ann_ext = 'json'
 
         self.frame_gaps = []
@@ -264,13 +265,16 @@ def main(_):
         params.ann_file = f'{params.ann_file}-length-{params.length}'
 
     if params.stride:
-        params.ann_file = f'{params.ann_file}-stride-{params.stride}'
+        params.ann_file = f'{params.ann_file}-stride-{params.ann_suffix}'
 
     if params.frame_gaps:
         ann_files = [f'{params.ann_file}-frame_gap-{frame_gap}' if frame_gap > 1 else params.ann_file
                      for frame_gap in params.frame_gaps]
     else:
         ann_files = [params.ann_file, ]
+
+    if params.ann_suffix:
+        ann_files = [f'{ann_file}-{params.ann_suffix}' for ann_file in ann_files]
 
     # params.ann_file = None
 
