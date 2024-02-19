@@ -265,7 +265,7 @@ def main(_):
         params.ann_file = f'{params.ann_file}-length-{params.length}'
 
     if params.stride:
-        params.ann_file = f'{params.ann_file}-stride-{params.ann_suffix}'
+        params.ann_file = f'{params.ann_file}-stride-{params.stride}'
 
     if params.frame_gaps:
         ann_files = [f'{params.ann_file}-frame_gap-{frame_gap}' if frame_gap > 1 else params.ann_file
