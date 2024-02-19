@@ -115,7 +115,7 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                     continue
 
                 metrics_np_dict = {
-                    metric_name: metric_val.result().numpy() for metric_name, metric_val in trainer.metrics.items()
+                    metric_name: metric_val.result().numpy().item() for metric_name, metric_val in trainer.metrics.items()
                 }
                 metric_val_df = pd.DataFrame.from_dict(metrics_np_dict)
                 progbar.add(1)
