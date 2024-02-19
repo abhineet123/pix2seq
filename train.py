@@ -101,11 +101,11 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 progbar = tf.keras.utils.Progbar(steps_per_epoch)
 
             # step_id = tf.constant(0)
-            for step_id in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
+            for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
 
-                tf.print(f'\rstep {step_id}')
+                # tf.print(f'\rstep {step_id}')
 
                 # nan_metric = 0
                 # for metric_name, metric_val in trainer.metrics.items():
