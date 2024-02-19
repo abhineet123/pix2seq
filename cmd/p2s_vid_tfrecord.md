@@ -25,7 +25,7 @@ python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-2:s
 python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-3:strd-1:proc-12
 <a id="len_9___640_1_mnis_t_"></a>
 ### len-9       @ 640-1/mnist-->p2s_vid_tfrecord
-python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-9:strd-1:proc-12:sfx-train
+python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-9:strd-1:proc-12:suffix-train
 
 <a id="640_3___mnis_t_"></a>
 ## 640-3       @ mnist-->p2s_vid_tfrecord
