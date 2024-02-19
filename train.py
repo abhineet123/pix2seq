@@ -114,10 +114,18 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 if not cfg.eager:
                     continue
 
-                metrics_np_dict = {
-                    metric_name: metric_val.result().numpy().item() for metric_name, metric_val in trainer.metrics.items()
-                }
-                metric_val_df = pd.DataFrame.from_dict(metrics_np_dict)
+                # rows = tuple(trainer.metrics.keys())
+                # cols = ('val',)
+                #
+                # metric_val_df = pd.DataFrame(np.zeros((len(rows), len(cols)), dtype=object), index=rows, columns=cols)
+                # for metric_name, metric_val in trainer.metrics.items():
+                #     metric_val_np = metric_val.result().numpy()
+                #     metric_val_df.loc[metric_name, 'val'] = metric_val_np
+
+                metric_val_df = pd.DataFrame({
+                    metric_name: metric_val.result().numpy().item() for metric_name, metric_val in
+                    trainer.metrics.items()
+                }, index=[0])
                 progbar.add(1)
 
                 # check_ckpt_vars(cfg, trainer)
