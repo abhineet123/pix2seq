@@ -6,7 +6,8 @@ import utils
 from architectures import resnet
 import tensorflow as tf
 
-from architectures.transformers import MLP, DropPath, get_shape, add_cls_token_emb, add_vis_pos_emb, suffix_id
+from architectures.transformers import (MLP, DropPath, get_shape, add_cls_token_emb,
+                                        add_vis_pos_emb, suffix_id, TransformerEncoder)
 
 
 class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
@@ -231,6 +232,87 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
         tokens = self.call_image(images, training)
 
         tokens = utils.unflatten_vid(tokens, self.vid_len)
+
+        tokens = self.transformer_encoder(
+            tokens, None, training=training, ret_list=False)
+
+        # tokens = utils.flatten_vid(tokens)
+        x = self.output_ln(tokens)
+        # x = utils.flatten_vid(x)
+
+        return x
+
+class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
+
+    def __init__(self,
+                 image_height,
+                 image_width,
+                 vid_len,
+                 num_layers,
+                 dim,
+                 mlp_ratio,
+                 num_heads,
+                 drop_path=0.1,
+                 drop_units=0.1,
+                 drop_att=0.,
+                 pos_encoding='learned',
+                 use_cls_token=True,
+                 **kwargs):
+        super(VideoSwinTransformer, self).__init__(**kwargs)
+        self.vid_len = vid_len
+        self.use_cls_token = use_cls_token
+        self.backbone = tf.keras.models.load_model(
+            'TFVideoSwinB_K400_IN1K_P244_W877_32x224', compile=False
+        )
+        self.dropout = tf.keras.layers.Dropout(drop_units)
+        self.stem_projection = tf.keras.layers.Dense(dim, name='stem_projection')
+        self.stem_ln = tf.keras.layers.LayerNormalization(
+            epsilon=1e-6, name='stem_ln')
+        if self.use_cls_token:
+            add_cls_token_emb(self, dim)
+        # if resnet_variant in ['c3']:
+        #     factor = 8.
+        # elif resnet_variant in ['c4', 'dc5']:
+        #     factor = 16.
+        # else:
+        #     factor = 32.
+        factor = 16.
+        self.n_rows = math.ceil(image_height / factor)
+        self.n_cols = math.ceil(image_width / factor)
+        self.vis_pos_emb = add_vis_pos_emb(
+            self,
+            pos_encoding,
+            self.n_rows,
+            self.n_cols,
+            dim,
+            return_only=True,
+        )
+        self.transformer_encoder = TransformerEncoder(
+            num_layers=num_layers,
+            dim=dim,
+            mlp_ratio=mlp_ratio,
+            num_heads=num_heads,
+            vid_len=vid_len,
+            drop_path=drop_path,
+            drop_units=drop_units,
+            drop_att=drop_att,
+            name='transformer_encoder')
+        self.output_ln = tf.keras.layers.LayerNormalization(
+            epsilon=1e-6, name='ouput_ln')
+
+    def call(self, images, training):
+        tokens = self.backbone(images)
+
+        bsz, h, w, num_channels = get_shape(tokens)
+        tokens = tf.reshape(tokens, [bsz, h * w, num_channels])
+        tokens = self.stem_ln(self.stem_projection(self.dropout(tokens, training)))
+
+        tokens_vis_pos_emb = tf.expand_dims(self.vis_pos_emb, 0)
+        tokens = tokens + tokens_vis_pos_emb
+
+        if self.use_cls_token:
+            cls_token = tf.tile(tf.expand_dims(self.cls_token_emb, 0), [bsz, 1, 1])
+            tokens = tf.concat([cls_token, tokens], 1)
 
         tokens = self.transformer_encoder(
             tokens, None, training=training, ret_list=False)

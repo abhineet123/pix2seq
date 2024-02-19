@@ -20,6 +20,7 @@
     - [resnet_640       @ pretrained](#resnet_640___pretrained_)
     - [vit_b       @ pretrained](#vit_b___pretrained_)
     - [vit_l       @ pretrained](#vit_l___pretrained_)
+    - [movinet       @ pretrained](#movinet___pretrained_)
 - [secondary ethernet](#secondary_ethernet_)
 - [bugs](#bug_s_)
     - [annoying_warnings       @ bugs](#annoying_warnings___bugs_)
@@ -187,6 +188,14 @@ gsutil -m cp   "gs://pix2seq/coco_det_finetune/vit_b_640x640/checkpoint"   "gs:/
 gsutil -m cp -r "gs://pix2seq/coco_det_finetune/vit_l_1024x1024"  "gs://pix2seq/coco_det_finetune/vit_l_1333x1333"  "gs://pix2seq/coco_det_finetune/vit_l_640x640"  .
 
 gsutil -m cp -r "gs://pix2seq/coco_det_finetune/vit_l_1024x1024" .
+
+<a id="movinet___pretrained_"></a>
+## movinet       @ pretrained-->p2s_setup
+wget https://storage.googleapis.com/tf_model_garden/vision/movinet/movinet_a2_base.tar.gz
+tar -xvf movinet_a0_base.tar.gz
+ 
+wget https://storage.googleapis.com/tf_model_garden/vision/movinet/movinet_a5_base.tar.gz
+tar -xvf movinet_a5_base.tar.gz
 
 <a id="secondary_ethernet_"></a>
 # secondary ethernet

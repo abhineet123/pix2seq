@@ -29,7 +29,7 @@ from architectures.transformers import FIT
 from architectures.transformers import MLP
 from architectures.transformers import VisionTransformer
 
-from architectures.video_transformers import VideoResNetTransformer
+from architectures.video_transformers import VideoResNetTransformer, VideoSwinTransformer
 
 from models import model as model_lib
 from models import model_utils
@@ -52,7 +52,22 @@ class Model(tf.keras.models.Model):
         self.pos_encoding = self.config.pos_encoding
 
         mlp_ratio = self.config.dim_mlp // self.config.dim_att
-        if self.config.resnet_variant == 'c1':
+        if self.config.resnet_variant == 'swin':
+            self.encoder = VideoSwinTransformer(
+                image_height=self.config.image_size[0],
+                image_width=self.config.image_size[1],
+                vid_len=self.vid_len,
+                num_layers=self.config.num_encoder_layers,
+                dim=self.config.dim_att,
+                mlp_ratio=mlp_ratio,
+                num_heads=self.config.num_heads,
+                drop_path=self.config.drop_path,
+                drop_units=self.config.drop_units,
+                drop_att=self.config.drop_att,
+                pos_encoding=self.config.pos_encoding,
+                use_cls_token=self.config.use_cls_token,
+                name='rest')
+        elif self.config.resnet_variant == 'c1':
             self.encoder = VisionTransformer(
                 self.config.image_size[0], self.config.image_size[1], self.config.patch_size,
                 self.config.num_encoder_layers, self.config.dim_att, mlp_ratio,
