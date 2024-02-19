@@ -108,9 +108,9 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 tf.print(f'\rstep {step_id}')
 
                 for metric_name, metric_val in trainer.metrics.items():
-                    metric_val_np = metric_val.result().numpy()
-                    if np.isnan(metric_val_np):
-                        step = trainer.optimizer.iterations.numpy()
+                    metric_val = metric_val.result()
+                    if tf.math.is_nan(metric_val):
+                        step = trainer.optimizer.iterations
                         logging.error(f'NaN value found for {metric_name} in step {step} so terminating training')
                         break
 

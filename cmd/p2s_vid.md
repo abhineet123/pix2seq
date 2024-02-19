@@ -36,7 +36,7 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,len-3,batch-12,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 <a id="len_9___mnist_640_1_12_1000_resnet_640_"></a>
 ### len-9       @ mnist-640-1-12_1000/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,len-9,batch-4,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,suffix-train
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,len-9,batch-2,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,suffix-train
 
 <a id="mnist_640_5_12_1000___resnet_640_"></a>
 ## mnist-640-5-12_1000       @ resnet-640-->p2s_vid
