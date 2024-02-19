@@ -1,7 +1,9 @@
 import os.path
 
 from absl import logging
+
 import time
+import numpy as np
 
 import utils
 
@@ -132,7 +134,11 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 timestamp = time.time()
                 with tf.name_scope('train'):
                     for metric_name, metric_val in trainer.metrics.items():
-                        tf.summary.scalar(metric_name, metric_val.result().numpy(), global_step)
+                        metric_val_np = metric_val.result().numpy()
+                        if np.isnan(metric_val_np):
+                            logging.error(f'NaN {metric_name} found so terminating training')
+                            break
+                        tf.summary.scalar(metric_name, metric_val_np, global_step)
                     lr = trainer.learning_rate(tf.cast(global_step, dtype=tf.float32))
                     tf.summary.scalar('lr', lr, global_step)
                     tf.summary.scalar('steps_per_sec', steps_per_sec, global_step)

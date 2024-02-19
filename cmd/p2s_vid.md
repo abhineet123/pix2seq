@@ -27,7 +27,7 @@
 ## mnist-640-1-12_1000       @ resnet-640-->p2s_vid
 <a id="len_2___mnist_640_1_12_1000_resnet_640_"></a>
 ### len-2       @ mnist-640-1-12_1000/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,batch-10,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,crop-0,jitter-0
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,crop-0,jitter-0
 <a id="len_3___mnist_640_1_12_1000_resnet_640_"></a>
 ### len-3       @ mnist-640-1-12_1000/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,len-3,batch-12,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
