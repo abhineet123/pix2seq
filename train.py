@@ -107,17 +107,16 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
 
                 tf.print(f'\rstep {step_id}')
 
-                nan_metric = 0
-
-                for metric_name, metric_val in trainer.metrics.items():
-                    metric_val = metric_val.result()
-                    if tf.math.is_nan(metric_val):
-                        step = trainer.optimizer.iterations
-                        logging.error(f'NaN value found for {metric_name} in step {step} so terminating training')
-                        nan_metric = 1
-
-                if nan_metric:
-                    break
+                # nan_metric = 0
+                # for metric_name, metric_val in trainer.metrics.items():
+                #     metric_val = metric_val.result()
+                #     if tf.math.is_nan(metric_val):
+                #         step = trainer.optimizer.iterations
+                #         logging.error(f'NaN value found for {metric_name} in step {step} so terminating training')
+                #         nan_metric = 1
+                #
+                # if nan_metric:
+                #     break
 
                 if not cfg.eager:
                     continue
