@@ -3,7 +3,9 @@ import os.path
 from absl import logging
 
 import time
+
 import numpy as np
+import pandas as pd
 
 import utils
 
@@ -103,9 +105,19 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
 
+                for metric_name, metric_val in trainer.metrics.items():
+                    metric_val_np = metric_val.result().numpy()
+                    if np.isnan(metric_val_np):
+                        logging.error(f'NaN value found for {metric_name} found so terminating training')
+                        break
+
                 if not cfg.eager:
                     continue
 
+                metrics_np_dict = {
+                    metric_name: metric_val.result().numpy() for metric_name, metric_val in trainer.metrics.items()
+                }
+                metric_val_df = pd.DataFrame.from_dict(metrics_np_dict)
                 progbar.add(1)
 
                 # check_ckpt_vars(cfg, trainer)
