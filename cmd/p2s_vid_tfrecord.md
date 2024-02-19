@@ -4,6 +4,7 @@
     - [640-1       @ mnist](#640_1___mnis_t_)
         - [len-2       @ 640-1/mnist](#len_2___640_1_mnis_t_)
         - [len-3       @ 640-1/mnist](#len_3___640_1_mnis_t_)
+        - [len-9       @ 640-1/mnist](#len_9___640_1_mnis_t_)
     - [640-3       @ mnist](#640_3___mnis_t_)
     - [640-5       @ mnist](#640_5___mnis_t_)
 - [ipsc](#ips_c_)
@@ -21,6 +22,9 @@
 python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-2:strd-1
 <a id="len_3___640_1_mnis_t_"></a>
 ### len-3       @ 640-1/mnist-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-3:strd-1:proc-12
+<a id="len_9___640_1_mnis_t_"></a>
+### len-9       @ 640-1/mnist-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-3:strd-1:proc-12
 
 <a id="640_3___mnis_t_"></a>

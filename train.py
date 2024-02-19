@@ -101,14 +101,16 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 progbar = tf.keras.utils.Progbar(steps_per_epoch)
 
             # step_id = tf.constant(0)
-            for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
+            for step_id in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
 
+                tf.print(f'\rstep {step_id.numpy()}')
                 for metric_name, metric_val in trainer.metrics.items():
                     metric_val_np = metric_val.result().numpy()
                     if np.isnan(metric_val_np):
-                        logging.error(f'NaN value found for {metric_name} found so terminating training')
+                        step = trainer.optimizer.iterations.numpy()
+                        logging.error(f'NaN value found for {metric_name} in step {step} so terminating training')
                         break
 
                 if not cfg.eager:
