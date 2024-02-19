@@ -164,7 +164,7 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                     for metric_name, metric_val in trainer.metrics.items():
                         metric_val_np = metric_val.result().numpy()
                         if np.isnan(metric_val_np):
-                            logging.error(f'NaN {metric_name} found so terminating training')
+                            logging.error(f'NaN value found for {metric_name} found so terminating training')
                             nan_metric = 1
                             break
                         tf.summary.scalar(metric_name, metric_val_np, global_step)
