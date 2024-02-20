@@ -227,6 +227,9 @@ probably something to do with the dataset loader
 https://github.com/tensorflow/tensorflow/issues/39122
 https://github.com/tensorflow/tensorflow/issues/39099
 
+``you cannot build your model by calling `build` if your layers do not support float type inputs. instead, in order to instantiate and build your model, call your model on real tensor data (of the correct dtype).``
+This is caused by inheriting from `keras.model` instead of `keras.layers.layer`
+
 <a id="annoying_warnings___bugs_"></a>
 ## annoying_warnings       @ bugs-->p2s_setup
 

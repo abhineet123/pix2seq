@@ -208,7 +208,7 @@ def add_vis_pos_emb(self,
     elif pos_encoding == 'learned':
         assert n_images == 1, "n_images must be 1 for 2d positional encoding"
         vis_pos_emb = self.add_weight(
-            shape=(n_rows * n_cols * n_images, dim), initializer=initializer,
+            shape=(n_rows * n_cols, dim), initializer=initializer,
             name='%s/vis_pos_embedding' % name_prefix)
     elif pos_encoding == 'sin_cos':
         assert n_images == 1, "n_images must be 1 for 2d positional encoding"
@@ -219,7 +219,7 @@ def add_vis_pos_emb(self,
             sin_cos = get_2d_position_codes(
                 n_rows, n_cols, dim, normalization_max=normalization_max)
 
-        vis_pos_emb = tf.reshape(sin_cos, [n_rows * n_cols * n_images, dim])
+        vis_pos_emb = tf.reshape(sin_cos, [n_rows * n_cols, dim])
     else:
         raise ValueError('Unknown pos encoding %s' % pos_encoding)
     if not return_only:

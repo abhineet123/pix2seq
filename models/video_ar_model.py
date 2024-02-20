@@ -54,6 +54,7 @@ class Model(tf.keras.models.Model):
         mlp_ratio = self.config.dim_mlp // self.config.dim_att
         if self.config.resnet_variant == 'swin':
             self.encoder = VideoSwinTransformer(
+                swin_variant=self.config.swin_variant,
                 image_height=self.config.image_size[0],
                 image_width=self.config.image_size[1],
                 vid_len=self.vid_len,
@@ -66,7 +67,7 @@ class Model(tf.keras.models.Model):
                 drop_att=self.config.drop_att,
                 pos_encoding=self.config.pos_encoding,
                 use_cls_token=self.config.use_cls_token,
-                name='rest')
+                name='video_swin')
         elif self.config.resnet_variant == 'c1':
             self.encoder = VisionTransformer(
                 self.config.image_size[0], self.config.image_size[1], self.config.patch_size,

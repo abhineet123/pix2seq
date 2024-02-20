@@ -117,6 +117,11 @@ def main(unused_argv):
         print(f'setting CUDA_VISIBLE_DEVICES to {cfg.gpu}')
         os.environ['CUDA_VISIBLE_DEVICES'] = cfg.gpu
 
+    if cfg.debug:
+        cfg.dist = 0
+    elif cfg.dist == 0:
+        cfg.dist = 1
+
     if cfg.dist == 2:
         tf_config = cfg.tf_config.to_dict()
         if tf_config['task']['index'] < 0:
