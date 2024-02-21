@@ -78,6 +78,7 @@ def build_tasks_and_datasets(
 
     return tasks, mixed_datasets, ds
 
+
 def from_dict(in_dict):
     for key, val in in_dict.items():
         if isinstance(val, list):
@@ -87,6 +88,7 @@ def from_dict(in_dict):
     in_dict = ml_collections.ConfigDict(in_dict)
     return in_dict
 
+
 def from_list(in_list):
     for idx, val in enumerate(in_list):
         if isinstance(val, list):
@@ -94,6 +96,7 @@ def from_list(in_list):
         elif isinstance(val, dict):
             in_list[idx] = from_dict(val)
     return in_list
+
 
 def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
     pt_cfg_filepath = os.path.join(model_dir, 'config.json')
@@ -124,7 +127,6 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
 
     """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts or vice versa"""
 
-
     model_cfg = from_dict(cfg_dict)
     model_cfg = ml_collections.ConfigDict(model_cfg)
 
@@ -148,7 +150,7 @@ def expand_list(val):
         """standard (exclusive) range"""
         end_id = val.find(')')
         assert end_id > 6, f"invalid tuple str: {val}"
-        substr = val[:end_id+1]
+        substr = val[:end_id + 1]
         val_list = val[6:].replace(')', '').split(',')
         val_list = [int(x) for x in val_list]
         val_list = list(range(*val_list))
@@ -157,7 +159,7 @@ def expand_list(val):
     elif val.startswith('irange('):
         end_id = val.find(')')
         assert end_id > 7, f"invalid tuple str: {val}"
-        substr = val[:end_id+1]
+        substr = val[:end_id + 1]
         """inclusive range"""
         val_list = val.replace('irange(', '').replace(')', '').split(',')
         val_list = [int(x) for x in val_list if x]
@@ -169,6 +171,7 @@ def expand_list(val):
         out_str = val.replace(substr, f'{val_list}')
         return out_str
     return val
+
 
 def load_from_json5(json_list, json_root):
     """ml_collections.ConfigDict supports recursive updating for dict but not for list so this
@@ -309,6 +312,8 @@ def load(FLAGS):
             model_dir_name = f'{cfg.dataset.train_name}'
             if cfg.pretrained:
                 pretrained_name = os.path.basename(cfg.pretrained)
+                if cfg.resnet_replace:
+                    pretrained_name=pretrained_name.replace('resnet', cfg.resnet_replace)
                 model_dir_name = f'{pretrained_name}_{model_dir_name}'
 
             if cfg.train.suffix:

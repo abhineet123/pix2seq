@@ -30,6 +30,7 @@ base_config = D(
     eager=1,
     dyn_ram=1,
     debug=1,
+    resnet_replace='',
     gpu='',
 
     model_dir='',

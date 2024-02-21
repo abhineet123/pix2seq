@@ -117,6 +117,10 @@ def main(unused_argv):
         print(f'setting CUDA_VISIBLE_DEVICES to {cfg.gpu}')
         os.environ['CUDA_VISIBLE_DEVICES'] = cfg.gpu
 
+    is_debugging = int(os.environ.get('P2S_DEBUGGING_MODE', 0))
+    if is_debugging:
+        cfg.debug = 1
+
     if cfg.debug:
         cfg.dist = 0
     elif cfg.dist == 0:

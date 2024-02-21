@@ -114,21 +114,17 @@ class TFSwinTransformer3D(keras.layers.Layer):
         # video-swin block computation
         attn_scores_outputs = {}
         for layer in self.basic_layers:
+            x = layer(x, return_attns=return_attns, training=training)
             if return_attns:
-                x, attn_scores = layer(
-                    x, return_attns=return_attns, training=training
-                )
+                x, attn_scores = x
                 attn_scores_outputs[f"{layer.name}_att"] = attn_scores
-            else:
-                x = layer(
-                    x, training=training
-                )
-
         # head branch
-        x = self.norm(x)
-        x = self.avg_pool3d(x)
+        # x = self.norm(x)
+        # x = self.avg_pool3d(x)
 
         # x = self.head(x)
+
+        x = tf.squeeze(x, axis=1)
 
         if return_attns:
             return x, attn_scores_outputs
