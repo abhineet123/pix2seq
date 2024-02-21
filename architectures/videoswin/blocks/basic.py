@@ -29,6 +29,7 @@ class TFBasicLayer(keras.layers.Layer):
 
     def __init__(
             self,
+            length,
             dim,
             depth,
             num_heads,
@@ -44,6 +45,7 @@ class TFBasicLayer(keras.layers.Layer):
             **kwargs
     ):
         super().__init__(**kwargs)
+        self.length = length
         self.window_size = window_size
         self.shift_size = tuple([i // 2 for i in window_size])
         self.depth = depth
@@ -51,6 +53,7 @@ class TFBasicLayer(keras.layers.Layer):
         # build blocks
         self.blocks = [
             TFSwinTransformerBlock3D(
+                length=length,
                 dim=dim,
                 num_heads=num_heads,
                 window_size=window_size,
@@ -80,6 +83,10 @@ class TFBasicLayer(keras.layers.Layer):
         )
 
     def build(self, input_shape):
+        # input_shape = list(input_shape)
+        # if input_shape[1] is None:
+        #     input_shape[1] = self.length
+
         window_size, shift_size = get_window_size(
             input_shape[1:-1], self.window_size, self.shift_size
         )

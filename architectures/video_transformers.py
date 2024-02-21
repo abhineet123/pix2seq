@@ -273,11 +273,11 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
         from architectures.videoswin import VideoSwinB, VideoSwinS, VideoSwinT
 
         if swin_variant == 'b':
-            self.backbone = VideoSwinB()
+            self.backbone = VideoSwinB(length=self.vid_len)
         elif swin_variant == 's':
-            self.backbone = VideoSwinS()
+            self.backbone = VideoSwinS(length=self.vid_len)
         elif swin_variant == 't':
-            self.backbone = VideoSwinT()
+            self.backbone = VideoSwinT(length=self.vid_len)
         else:
             raise AssertionError('invalid swin_variant: {swin_variant}')
 

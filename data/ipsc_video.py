@@ -81,6 +81,10 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
             filenames,
             fn_output_signature=tf.uint8
         )
+        # length = self.config.length
+        # h, w = self.task_config.image_size
+        # frames.set_shape([length, h, w, 3])
+
         frames.set_shape([None, None, None, 3])
 
         # area = bbox = None

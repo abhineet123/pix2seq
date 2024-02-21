@@ -111,7 +111,7 @@ def get_video_detection_train_transforms(
         # D(name='record_original_video_size'),
     ]
     if scale_jitter:
-        print('annoying scale_jitter is enabled')
+        # print('annoying scale_jitter is enabled')
         train_transforms.append(
             D(name='scale_jitter_video',
               inputs=['video'],
@@ -121,7 +121,7 @@ def get_video_detection_train_transforms(
               max_scale=jitter_scale_max)
         )
     if fixed_crop:
-        print('equally annoying fixed_size_crop_video is enabled')
+        # print('equally annoying fixed_size_crop_video is enabled')
         train_transforms.append(
             D(name='fixed_size_crop_video',
               inputs=['video'],

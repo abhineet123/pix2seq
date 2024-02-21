@@ -15,13 +15,15 @@ class TFPatchEmbed3D(keras.layers.Layer):
         
     def __init__(
         self, 
-        patch_size=(2, 4, 4), 
-        in_chans=3, 
+        length,
+        patch_size=(2, 4, 4),
+        in_chans=3,
         embed_dim=96, 
         norm_layer=None,
         **kwargs
     ):
         super().__init__(**kwargs)
+        self.length = length
         self.patch_size = patch_size
         self.in_chans = in_chans
         self.embed_dim = embed_dim

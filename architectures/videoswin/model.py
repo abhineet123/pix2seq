@@ -41,6 +41,7 @@ class TFSwinTransformer3D(keras.layers.Layer):
 
     def __init__(
             self,
+            length,
             patch_size=(4, 4, 4),
             in_chans=3,
             embed_dim=96,
@@ -60,6 +61,7 @@ class TFSwinTransformer3D(keras.layers.Layer):
             **kwargs
     ):
         super().__init__(**kwargs)
+        self.length = length
         self.num_layers = len(depths)
         self.embed_dim = embed_dim
         self.patch_norm = patch_norm
@@ -70,6 +72,7 @@ class TFSwinTransformer3D(keras.layers.Layer):
 
         # split image into non-overlapping patches
         self.patch_embed = TFPatchEmbed3D(
+            length=length,
             patch_size=patch_size,
             in_chans=in_chans,
             embed_dim=embed_dim,
@@ -85,6 +88,7 @@ class TFSwinTransformer3D(keras.layers.Layer):
         self.basic_layers = []
         for i_layer in range(self.num_layers):
             layer = TFBasicLayer(
+                length=length,
                 dim=int(embed_dim * 2 ** i_layer),
                 depth=depths[i_layer],
                 num_heads=num_heads[i_layer],
@@ -142,10 +146,11 @@ class TFSwinTransformer3D(keras.layers.Layer):
         )
 
 
-def VideoSwinT(window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
+def VideoSwinT(length, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
     model = TFSwinTransformer3D(
-        # num_classes=num_classes,
-        patch_size=(2, 4, 4),
+        length=length,
+        # patch_size=(2, 4, 4),
+        patch_size=(length, 4, 4),
         embed_dim=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
@@ -163,10 +168,11 @@ def VideoSwinT(window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
     return model
 
 
-def VideoSwinS(window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
+def VideoSwinS(length, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
     model = TFSwinTransformer3D(
-        # num_classes=num_classes,
-        patch_size=(2, 4, 4),
+        length=length,
+        # patch_size=(2, 4, 4),
+        patch_size=(length, 4, 4),
         embed_dim=96,
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
@@ -184,10 +190,11 @@ def VideoSwinS(window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
     return model
 
 
-def VideoSwinB(window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
+def VideoSwinB(length, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
     model = TFSwinTransformer3D(
-        # num_classes=num_classes,
-        patch_size=(2, 4, 4),
+        length=length,
+        # patch_size=(2, 4, 4),
+        patch_size=(length, 4, 4),
         embed_dim=128,
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],

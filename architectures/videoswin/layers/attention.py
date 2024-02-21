@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-class TFWindowAttention3D(keras.Model):
+class TFWindowAttention3D(keras.layers.Layer):
     """ Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
     Args:
@@ -17,8 +17,9 @@ class TFWindowAttention3D(keras.Model):
         
     def __init__(
         self, 
-        dim, 
-        window_size, 
+        length,
+        dim,
+        window_size,
         num_heads, 
         qkv_bias=True, 
         qk_scale=None, 
@@ -28,6 +29,7 @@ class TFWindowAttention3D(keras.Model):
     ):
         super().__init__(**kwargs)
         # variables
+        self.length = length
         self.dim = dim
         self.window_size = window_size
         self.num_heads = num_heads

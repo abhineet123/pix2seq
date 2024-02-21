@@ -6,6 +6,7 @@
             - [swin-t       @ len-2/mnist-640-1-12_1000/resnet-640](#swin_t___len_2_mnist_640_1_12_1000_resnet_640_)
             - [swin-s       @ len-2/mnist-640-1-12_1000/resnet-640](#swin_s___len_2_mnist_640_1_12_1000_resnet_640_)
         - [len-3       @ mnist-640-1-12_1000/resnet-640](#len_3___mnist_640_1_12_1000_resnet_640_)
+            - [swin-t       @ len-3/mnist-640-1-12_1000/resnet-640](#swin_t___len_3_mnist_640_1_12_1000_resnet_640_)
         - [len-9       @ mnist-640-1-12_1000/resnet-640](#len_9___mnist_640_1_12_1000_resnet_640_)
     - [mnist-640-5-12_1000       @ resnet-640](#mnist_640_5_12_1000___resnet_640_)
         - [len-2       @ mnist-640-5-12_1000/resnet-640](#len_2___mnist_640_5_12_1000_resnet_640_)
@@ -36,7 +37,7 @@
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,mnist-640-1-12_1000,batch-3,dbg-1,dyn-1,ep-10000,ckpt_ep-1
 <a id="swin_t___len_2_mnist_640_1_12_1000_resnet_640_"></a>
 #### swin-t       @ len-2/mnist-640-1-12_1000/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,swin-t
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,batch-3,dbg-1,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
 <a id="swin_s___len_2_mnist_640_1_12_1000_resnet_640_"></a>
 #### swin-s       @ len-2/mnist-640-1-12_1000/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,mnist-640-1-12_1000,batch-3,dbg-1,dyn-1,ep-10000,ckpt_ep-1,swin-s
@@ -44,6 +45,11 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 <a id="len_3___mnist_640_1_12_1000_resnet_640_"></a>
 ### len-3       @ mnist-640-1-12_1000/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,len-3,batch-12,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+<a id="swin_t___len_3_mnist_640_1_12_1000_resnet_640_"></a>
+#### swin-t       @ len-3/mnist-640-1-12_1000/resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,len-3,batch-3,dbg-1,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
+
+
 <a id="len_9___mnist_640_1_12_1000_resnet_640_"></a>
 ### len-9       @ mnist-640-1-12_1000/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,len-9,batch-4,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,suffix-train

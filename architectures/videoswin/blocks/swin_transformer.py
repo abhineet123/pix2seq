@@ -10,7 +10,7 @@ from ..utils import get_window_size
 from ..utils import tf_window_partition
 from ..utils import tf_window_reverse
 
-class TFSwinTransformerBlock3D(keras.Model):
+class TFSwinTransformerBlock3D(keras.layers.Layer):
     """ Swin Transformer Block.
 
     Args:
@@ -29,9 +29,10 @@ class TFSwinTransformerBlock3D(keras.Model):
     """
     
     def __init__(
-        self, 
-        dim, 
-        num_heads, 
+        self,
+        length,
+        dim,
+        num_heads,
         window_size=(2, 7, 7), 
         shift_size=(0, 0, 0),
         mlp_ratio=4., 
@@ -45,6 +46,7 @@ class TFSwinTransformerBlock3D(keras.Model):
         **kwargs
     ):
         super().__init__(**kwargs)
+        self.length = length
         self.dim = dim
         self.num_heads = num_heads
         self.window_size = window_size
@@ -59,8 +61,9 @@ class TFSwinTransformerBlock3D(keras.Model):
         # layers
         self.norm1 = norm_layer(axis=-1, epsilon=1e-05)
         self.attn = TFWindowAttention3D(
-            dim, 
-            window_size=window_size, 
+            length,
+            dim,
+            window_size=window_size,
             num_heads=num_heads, 
             qkv_bias=qkv_bias, 
             qk_scale=qk_scale, 
@@ -77,9 +80,14 @@ class TFSwinTransformerBlock3D(keras.Model):
         )
         
     def build(self, input_shape):
+        # input_shape = list(input_shape)
+        # if input_shape[1] is None:
+        #     input_shape[1] = self.length
+
         self.window_size, self.shift_size = get_window_size(
             input_shape[1:-1], self.window_size, self.shift_size
         )
+
         if any(i > 0 for i in self.shift_size):
             self.roll = True
         else:
