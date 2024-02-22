@@ -180,32 +180,6 @@ class Model(tf.keras.models.Model):
     def infer(self, videos, prompt_seq, encoded=None, max_seq_len=None,
               temperature=1, top_k=1, top_p=1., num_samples=1,
               sampling_callback=None):
-        """Model function call for inference.
-
-        Args:
-          videos: `float` tensor of (bsz, v, h, w, c).
-          prompt_seq: `int` sequence visible to the model of shape (bsz, seqlen),
-            or (bsz, instances, seqlen) if there are multiple sequences per image.
-          encoded: cache for encoded images for decoder. Skip image encoding if this
-            is given.
-          max_seq_len: `int` of max generated sequence length (including prompt).
-          temperature: `float` scalar for scaling the logits before sampling.
-          top_k: `int` scalar for truncating top-k tokens according to logits before
-            token sampling.
-          top_p: `float` scalar specifying the threshold of cumulative probablity
-            for truncating tokens before token sampling.
-          num_samples: `int` number of samples to be generated for each instance.
-          sampling_callback: a callbak `function` that take `next_logits`, and
-            return `next_token`. This is used when users need a specific logic
-            for sampling. Default to `None` with standard free-form sampling.
-
-        Returns:
-          pred_seq: `int` prediction sequence of shape
-              (bsz * instances * num_samples, seqlen)
-          logits: `float` of shape
-              (bsz * instances * num_samples, seqlen, vocab_size)
-          encoded: `float` tensor of encoded images.
-        """
         if encoded is None:
             encoded = self._encode_videos(videos, training=False)
 
@@ -247,54 +221,6 @@ class ARTrainer(model_lib.Trainer):
                 'accuracy_notpad'),
         })
 
-    def debug_loss(self, examples, y_true, y_pred_logits, y_mask):
-        vocab_size = self.config.model.vocab_size
-
-        y_pred = tf.argmax(y_pred_logits, axis=2)
-        y_true_logits = tf.one_hot(y_true, depth=vocab_size)
-
-        y_total = tf.cast(tf.size(y_true), tf.int64)
-        y_correct = tf.math.equal(y_true, y_pred)
-        y_correct_count = tf.reduce_sum(tf.cast(y_correct, tf.int64))
-        y_correct_pc = (y_correct_count / y_total) * 100
-
-        m = tf.keras.metrics.SparseCategoricalAccuracy()
-        m.update_state(y_true, y_pred_logits)
-        accuracy_notpad = m.result().numpy()
-
-        y_true_m = tf.boolean_mask(y_true, y_mask)
-        y_pred_logits_m = tf.boolean_mask(y_pred_logits, y_mask)
-
-        # y_mask_int = tf.cast(y_mask, tf.int64)
-        # y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
-
-        # y_true_logits_masked = tf.one_hot(y_true_m, depth=vocab_size)
-
-        """Don't care about output tokens corresponding to GT tokens marked as padding"""
-        y_total_m = tf.cast(tf.size(y_true_m), tf.int64)
-        y_pred_m = tf.argmax(y_pred_logits_m, axis=1)
-        y_correct_m = tf.math.equal(y_true_m, y_pred_m)
-        y_correct_count_m = tf.reduce_sum(tf.cast(y_correct_m, tf.int64))
-        y_correct_pc_m = (y_correct_count_m / y_total_m) * 100
-
-        # y_cmb = tf.stack((y_true_m, y_pred_m, y_correct_int), axis=0)
-
-        m = tf.keras.metrics.SparseCategoricalAccuracy()
-        m.update_state(y_true_m, y_pred_logits_m)
-        accuracy_notpad_m = m.result().numpy()
-
-        vis_utils.visualize_video(self.config, examples, y_true_logits, y_true, 'GT raw',
-                                  self._category_names)
-        vis_utils.visualize_video(self.config, examples, y_pred_logits, y_pred, 'Pred raw',
-                                  self._category_names)
-
-        vis_utils.visualize_video(self.config, examples, y_true_logits, y_true, 'GT masked',
-                                  self._category_names, y_mask)
-        vis_utils.visualize_video(self.config, examples, y_pred_logits, y_pred, 'Pred masked',
-                                  self._category_names, y_mask)
-
-        print()
-
     def compute_loss(self, preprocess_outputs):
         batched_examples, input_seq, target_seq, token_weights = preprocess_outputs
 
@@ -324,6 +250,7 @@ class ARTrainer(model_lib.Trainer):
         self._metrics['loss_notpad'].update_state(loss_notpad)
         self._metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
 
-        # self.debug_loss(batched_examples, target_seq, logits, y_mask)
+        vis_utils.debug_loss(self.config, self._category_names,
+                             batched_examples, target_seq, logits, y_mask)
 
         return loss

@@ -280,9 +280,16 @@ def load(FLAGS):
 
     cfg.update(cmd_cfg)
 
+    is_video = 'video' in cfg.task.name
+
+    model_root_dir = 'log'
+    if is_video:
+        model_root_dir = os.path.join(model_root_dir, 'video')
+
     if cfg.model_dir:
         assert not cfg.eval.pt, "pre-trained evaluation must be disabled if custom model directory is specified"
         """load config from manually specified model_dirs"""
+        cmd_cfg.model_dir = cfg.model_dir = os.path.join(model_root_dir, cfg.model_dir)
         load_from_model(cfg, cfg.model_dir, cmd_cfg, pt=False)
     else:
         if cfg.pretrained:
@@ -293,12 +300,6 @@ def load(FLAGS):
         ipsc_post_process(cfg.dataset)
 
     cmd_cfg.training = cfg.training = cfg.mode == TRAIN
-
-    is_video = 'video' in cfg.task.name
-
-    model_root_dir = 'log'
-    if is_video:
-        model_root_dir = os.path.join(model_root_dir, 'video')
 
     if not cfg.model_dir:
         """construct model_dir name from params"""

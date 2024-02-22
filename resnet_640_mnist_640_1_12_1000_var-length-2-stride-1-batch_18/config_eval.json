@@ -1,0 +1,408 @@
+{
+  "dataset": {
+    "batch_duplicates": 1,
+    "cache_dataset": true,
+    "category_names_path": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19/mnist_640_1_12_1000_var-length-2-stride-1-train.json.gz",
+    "coco_annotations_dir_for_metrics": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19",
+    "compressed": 1,
+    "db_root_dir": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19",
+    "eval_file_pattern": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19/tfrecord/mnist_640_1_12_1000_var-length-2-stride-1-train*",
+    "eval_filename_for_metrics": "mnist_640_1_12_1000_var-length-2-stride-1-train.json.gz",
+    "eval_frame_gaps": [],
+    "eval_name": "mnist_640_1_12_1000_var-length-2-stride-1-train",
+    "eval_num_examples": 11988,
+    "eval_split": "validation",
+    "eval_stride": 1,
+    "eval_suffix": "train",
+    "fixed_crop": 0,
+    "image_dir": "datasets/mnist_mot/640_1_12_1000_var/Images",
+    "label_shift": 0,
+    "length": 2,
+    "max_disp": 0.01,
+    "name": "ipsc_video_detection",
+    "root_dir": "datasets/mnist_mot/640_1_12_1000_var/Images",
+    "scale_jitter": 0,
+    "train_file_pattern": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19/tfrecord/mnist_640_1_12_1000_var-length-2-stride-1-train*",
+    "train_filename_for_metrics": "mnist_640_1_12_1000_var-length-2-stride-1-train.json.gz",
+    "train_frame_gaps": [],
+    "train_name": "mnist_640_1_12_1000_var-length-2-stride-1-train",
+    "train_num_examples": 11988,
+    "train_split": "train",
+    "train_stride": 1,
+    "train_suffix": "train"
+  },
+  "datasets": [
+    {
+      "batch_duplicates": 1,
+      "cache_dataset": true,
+      "category_names_path": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19/mnist_640_1_12_1000_var-length-2-stride-1.json.gz",
+      "coco_annotations_dir_for_metrics": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19",
+      "compressed": 1,
+      "db_root_dir": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19",
+      "eval_file_pattern": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19/tfrecord/mnist_640_1_12_1000_var-length-2-stride-1*",
+      "eval_filename_for_metrics": "mnist_640_1_12_1000_var-length-2-stride-1.json.gz",
+      "eval_frame_gaps": [],
+      "eval_name": "mnist_640_1_12_1000_var-length-2-stride-1",
+      "eval_num_examples": 11988,
+      "eval_split": "validation",
+      "eval_stride": 1,
+      "eval_suffix": "",
+      "fixed_crop": 0,
+      "image_dir": "datasets/mnist_mot/640_1_12_1000_var/Images",
+      "label_shift": 0,
+      "length": 2,
+      "max_disp": 0.01,
+      "name": "ipsc_video_detection",
+      "root_dir": "datasets/mnist_mot/640_1_12_1000_var/Images",
+      "scale_jitter": 0,
+      "train_file_pattern": "datasets/mnist_mot/640_1_12_1000_var/Images/ytvis19/tfrecord/mnist_640_1_12_1000_var-length-2-stride-1*",
+      "train_filename_for_metrics": "mnist_640_1_12_1000_var-length-2-stride-1.json.gz",
+      "train_frame_gaps": [],
+      "train_name": "mnist_640_1_12_1000_var-length-2-stride-1",
+      "train_num_examples": 11988,
+      "train_split": "train",
+      "train_stride": 1,
+      "train_suffix": ""
+    }
+  ],
+  "debug": 1,
+  "dist": 0,
+  "dyn_ram": 1,
+  "eager": 1,
+  "epochs": 2000,
+  "eval": {
+    "batch_size": 1,
+    "checkpoint_dir": "",
+    "min_score_thresh": 0.1,
+    "pt": 0,
+    "save_csv": 1,
+    "save_vis": 1,
+    "steps": 0,
+    "suffix": [
+      "batch_1"
+    ],
+    "tag": "eval"
+  },
+  "gpu": "",
+  "master": null,
+  "mode": "eval",
+  "model": {
+    "coord_vocab_shift": 1000,
+    "dec_proj_mode": "mlp",
+    "decoder_output_bias": true,
+    "dim_att": 256,
+    "dim_att_dec": 256,
+    "dim_mlp": 1024,
+    "dim_mlp_dec": 1024,
+    "drop_att": 0.0,
+    "drop_path": 0.1,
+    "drop_units": 0.1,
+    "image_size": [
+      640,
+      640
+    ],
+    "max_seq_len": 512,
+    "name": "video_encoder_ar_decoder",
+    "num_decoder_layers": 6,
+    "num_encoder_layers": 6,
+    "num_heads": 8,
+    "num_heads_dec": 8,
+    "patch_size": 16,
+    "pos_encoding": "sin_cos",
+    "pos_encoding_dec": "learned",
+    "pretrained_ckpt": "",
+    "resnet_depth": 50,
+    "resnet_sk_ratio": 0.0,
+    "resnet_variant": "standard",
+    "resnet_width_multiplier": 1,
+    "shared_decoder_embedding": true,
+    "text_vocab_shift": 3000,
+    "use_cls_token": false,
+    "vocab_size": 3000
+  },
+  "model_dir": "resnet_640_mnist_640_1_12_1000_var-length-2-stride-1-batch_18",
+  "optimization": {
+    "beta1": 0.9,
+    "beta2": 0.95,
+    "end_lr_factor": 0.01,
+    "eps": 1e-08,
+    "global_clipnorm": -1,
+    "learning_rate": 3e-05,
+    "learning_rate_scaling": "none",
+    "learning_rate_schedule": "linear",
+    "optimizer": "adamw",
+    "warmup_epochs": 2,
+    "warmup_steps": 0,
+    "weight_decay": 0.05
+  },
+  "pretrained": "pretrained/resnet_640",
+  "resnet_replace": "",
+  "task": {
+    "class_label_corruption": "rand_n_fake_cls",
+    "eos_token_weight": 0.1,
+    "eval_transforms": [
+      {
+        "name": "record_original_video_size"
+      },
+      {
+        "antialias": [
+          true
+        ],
+        "inputs": [
+          "video"
+        ],
+        "length": 2,
+        "name": "resize_video",
+        "target_size": [
+          640,
+          640
+        ]
+      },
+      {
+        "inputs": [
+          "video"
+        ],
+        "length": 2,
+        "name": "pad_video_to_max_size",
+        "object_coordinate_keys": [
+          "bbox"
+        ],
+        "target_size": [
+          640,
+          640
+        ]
+      },
+      {
+        "inputs": [
+          "bbox",
+          "class_id",
+          "class_name",
+          "area",
+          "is_crowd"
+        ],
+        "max_instances": 56,
+        "name": "truncate_or_pad_to_max_instances"
+      }
+    ],
+    "image_size": [
+      640,
+      640
+    ],
+    "max_instances_per_image": 56,
+    "max_instances_per_image_test": 56,
+    "name": "video_detection",
+    "noise_bbox_weight": 1.0,
+    "quantization_bins": 1000,
+    "temperature": 1.0,
+    "top_k": 0,
+    "top_p": 0.4,
+    "train_transforms": [
+      {
+        "bbox_keys": [
+          "bbox"
+        ],
+        "inputs": [
+          "video"
+        ],
+        "length": 2,
+        "name": "random_horizontal_flip_video"
+      },
+      {
+        "filter_keys": [
+          "is_crowd"
+        ],
+        "inputs": [
+          "bbox",
+          "class_id",
+          "class_name",
+          "area",
+          "is_crowd"
+        ],
+        "length": 2,
+        "name": "filter_invalid_objects_video"
+      },
+      {
+        "inputs": [
+          "bbox",
+          "class_id",
+          "class_name",
+          "area",
+          "is_crowd"
+        ],
+        "name": "reorder_object_instances",
+        "order": "random"
+      },
+      {
+        "length": 2,
+        "max_disp": 0.01,
+        "max_instances_per_image": 56,
+        "name": "inject_noise_bbox_video"
+      },
+      {
+        "inputs": [
+          "video"
+        ],
+        "length": 2,
+        "name": "pad_video_to_max_size",
+        "object_coordinate_keys": [
+          "bbox"
+        ],
+        "target_size": [
+          640,
+          640
+        ]
+      },
+      {
+        "inputs": [
+          "bbox",
+          "class_id",
+          "class_name",
+          "area",
+          "is_crowd"
+        ],
+        "max_instances": 56,
+        "name": "truncate_or_pad_to_max_instances"
+      }
+    ],
+    "vocab_id": 20,
+    "weight": 1.0
+  },
+  "tasks": [
+    {
+      "eval_transforms": [
+        {
+          "name": "record_original_video_size"
+        },
+        {
+          "antialias": [
+            true
+          ],
+          "inputs": [
+            "video"
+          ],
+          "length": 2,
+          "name": "resize_video",
+          "target_size": [
+            640,
+            640
+          ]
+        },
+        {
+          "inputs": [
+            "video"
+          ],
+          "length": 2,
+          "name": "pad_video_to_max_size",
+          "object_coordinate_keys": [
+            "bbox"
+          ],
+          "target_size": [
+            640,
+            640
+          ]
+        },
+        {
+          "inputs": [
+            "bbox",
+            "class_id",
+            "class_name",
+            "area",
+            "is_crowd"
+          ],
+          "max_instances": 56,
+          "name": "truncate_or_pad_to_max_instances"
+        }
+      ],
+      "image_size": [
+        640,
+        640
+      ],
+      "max_instances_per_image": 56,
+      "max_instances_per_image_test": 56,
+      "name": "video_detection",
+      "train_transforms": [
+        {
+          "bbox_keys": [
+            "bbox"
+          ],
+          "inputs": [
+            "video"
+          ],
+          "length": 2,
+          "name": "random_horizontal_flip_video"
+        },
+        {
+          "filter_keys": [
+            "is_crowd"
+          ],
+          "inputs": [
+            "bbox",
+            "class_id",
+            "class_name",
+            "area",
+            "is_crowd"
+          ],
+          "length": 2,
+          "name": "filter_invalid_objects_video"
+        },
+        {
+          "inputs": [
+            "bbox",
+            "class_id",
+            "class_name",
+            "area",
+            "is_crowd"
+          ],
+          "name": "reorder_object_instances",
+          "order": "random"
+        },
+        {
+          "length": 2,
+          "max_disp": 0.01,
+          "max_instances_per_image": 56,
+          "name": "inject_noise_bbox_video"
+        },
+        {
+          "inputs": [
+            "video"
+          ],
+          "length": 2,
+          "name": "pad_video_to_max_size",
+          "object_coordinate_keys": [
+            "bbox"
+          ],
+          "target_size": [
+            640,
+            640
+          ]
+        },
+        {
+          "inputs": [
+            "bbox",
+            "class_id",
+            "class_name",
+            "area",
+            "is_crowd"
+          ],
+          "max_instances": 56,
+          "name": "truncate_or_pad_to_max_instances"
+        }
+      ]
+    }
+  ],
+  "train": {
+    "batch_size": 18,
+    "checkpoint_epochs": 1,
+    "checkpoint_steps": 0,
+    "epochs": 10000,
+    "keep_checkpoint_max": 2,
+    "loss_type": "xent",
+    "pt": 0,
+    "steps": 0,
+    "suffix": [
+      "batch_18"
+    ]
+  },
+  "training": false,
+  "use_tpu": 0
+}

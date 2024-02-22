@@ -84,6 +84,56 @@ STANDARD_COLORS = [
 ]
 
 
+def debug_loss(config, _category_names, examples, y_true, y_pred_logits, y_mask):
+    vocab_size = config.model.vocab_size
+
+    y_pred = tf.argmax(y_pred_logits, axis=2)
+    y_true_logits = tf.one_hot(y_true, depth=vocab_size)
+
+    y_total = tf.cast(tf.size(y_true), tf.int64)
+    y_correct = tf.math.equal(y_true, y_pred)
+    y_correct_count = tf.reduce_sum(tf.cast(y_correct, tf.int64))
+    y_correct_pc = (y_correct_count / y_total) * 100
+
+    m = tf.keras.metrics.SparseCategoricalAccuracy()
+    m.update_state(y_true, y_pred_logits)
+    accuracy_notpad = m.result().numpy()
+
+    visualize_video(config, examples, y_true_logits, y_true, 'GT raw',
+                              _category_names)
+    visualize_video(config, examples, y_pred_logits, y_pred, 'Pred raw',
+                              _category_names)
+
+    if y_mask is not None:
+        y_true_m = tf.boolean_mask(y_true, y_mask)
+        y_pred_logits_m = tf.boolean_mask(y_pred_logits, y_mask)
+
+        # y_mask_int = tf.cast(y_mask, tf.int64)
+        # y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
+
+        # y_true_logits_masked = tf.one_hot(y_true_m, depth=vocab_size)
+
+        """Don't care about output tokens corresponding to GT tokens marked as padding"""
+        y_total_m = tf.cast(tf.size(y_true_m), tf.int64)
+        y_pred_m = tf.argmax(y_pred_logits_m, axis=1)
+        y_correct_m = tf.math.equal(y_true_m, y_pred_m)
+        y_correct_count_m = tf.reduce_sum(tf.cast(y_correct_m, tf.int64))
+        y_correct_pc_m = (y_correct_count_m / y_total_m) * 100
+
+        # y_cmb = tf.stack((y_true_m, y_pred_m, y_correct_int), axis=0)
+
+        m = tf.keras.metrics.SparseCategoricalAccuracy()
+        m.update_state(y_true_m, y_pred_logits_m)
+        accuracy_notpad_m = m.result().numpy()
+
+        visualize_video(self.config, examples, y_true_logits, y_true, 'GT masked',
+                                  self._category_names, y_mask)
+        visualize_video(self.config, examples, y_pred_logits, y_pred, 'Pred masked',
+                                  self._category_names, y_mask)
+
+    print()
+
+
 def _force_matplotlib_backend():
     """force the backend of matplotlib to Agg."""
     if matplotlib.get_backend().lower() != 'agg':  # case-insensitive
@@ -1260,7 +1310,7 @@ def visualize_boxes_and_labels_on_video(
             image_name_, image_ext_ = os.path.splitext(image_name)
             vis_name = f'{image_name_}_{video_id_}{image_ext_}'
             vis_path = os.path.join(seq_vis_dir, vis_name)
-            cv2.imwrite(vis_path, image)
+            cv2.imwrite(vis_path, image_vis)
             # cv2.imshow('image', image)
             # cv2.waitKey(100)
 

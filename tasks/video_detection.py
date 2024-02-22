@@ -208,7 +208,11 @@ class TaskVideoDetection(task_lib.Task):
             vid_len=dconfig.length,
             class_label_corruption=config.class_label_corruption)
 
-        """response_seq_cm has random and noise labels by default"""
+        """
+        response_seq_cm has random and noise labels by default
+        target_seq = prompt_seq + response_seq
+        input_seq = prompt_seq + response_seq_cm
+        """
         response_seq, response_seq_cm, token_weights = ret
 
         """
@@ -251,14 +255,18 @@ class TaskVideoDetection(task_lib.Task):
             token_weights)
 
         if training:
+            """passed to trainer.compute_loss which calls model.call"""
             return batched_examples, input_seq, target_seq, token_weights
         else:
-            return batched_examples['video'], response_seq, batched_examples
+            """passed to task.infer which calls model.infer"""
+            return batched_examples, input_seq, target_seq, token_weights
+            # return batched_examples['video'], response_seq, batched_examples
 
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
-        video, _, examples = preprocessed_outputs  # response_seq unused by default
+        examples, input_seq, target_seq, token_weights = preprocessed_outputs  # response_seq unused by default
+        video = examples['video']
         bsz = tf.shape(video)[0]
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id, prompt_shape=(bsz, 1))
@@ -266,6 +274,9 @@ class TaskVideoDetection(task_lib.Task):
             video, prompt_seq, encoded=None,
             max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
+
+        vis_utils.debug_loss(self.config, self._category_names, examples, target_seq, logits, y_mask=None)
+
         return examples, pred_seq, logits
 
     def postprocess_tpu(self, batched_examples, pred_seq, logits, training=False):

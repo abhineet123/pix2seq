@@ -31,7 +31,7 @@ def get_object_detection_train_transforms(
 
     train_transforms = [D(name='record_original_image_size'), ]
     if scale_jitter:
-        print('annoying scale_jitter is enabled')
+        # print('annoying scale_jitter is enabled')
         train_transforms.append(
             D(name='scale_jitter',
               inputs=['image'],
@@ -40,7 +40,7 @@ def get_object_detection_train_transforms(
               max_scale=jitter_scale_max)
         )
     if fixed_crop:
-        print('equally annoying fixed_crop is enabled')
+        # print('equally annoying fixed_crop is enabled')
         train_transforms.append(
             D(name='fixed_size_crop',
               inputs=['image'],

@@ -1,6 +1,5 @@
 {
   "dataset": {
-    "train_suffix": "%0%",
-    "eval_suffix": "%0%",
+    "%mode%_suffix": "%0%",
   }
 }
