@@ -21,8 +21,6 @@ import sys
 
 sys.path.append("/home/abhineet/ipsc/ipsc_data_processing")
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 # env = dict(os.environ)
 # print(env)
 
@@ -40,7 +38,7 @@ flags.DEFINE_string('j5_root', 'configs/j5', 'relative path of the folder contai
 flags.DEFINE_integer('worker_id', 0, 'worker id for multi-machine training')
 FLAGS = flags.FLAGS
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 from utils import to_numpy
@@ -121,10 +119,10 @@ def main(unused_argv):
     if is_debugging:
         cfg.debug = 1
 
-    if cfg.debug:
-        cfg.dist = 0
-    elif cfg.dist == 0:
-        cfg.dist = 1
+    # if cfg.debug:
+    #     cfg.dist = 0
+    # elif cfg.dist == 0:
+    #     cfg.dist = 1
 
     if cfg.dist == 2:
         tf_config = cfg.tf_config.to_dict()
@@ -162,6 +160,7 @@ def main(unused_argv):
 
     if cfg.debug:
         tf.data.experimental.enable_debug_mode()
+        tf.debugging.set_log_device_placement(True)
 
     if cfg.eager:
         tf.config.run_functions_eagerly(True)
@@ -175,7 +174,7 @@ def main(unused_argv):
     from data import transforms, video_transforms  # pylint: disable=unused-import
     from metrics import coco_metrics  # pylint: disable=unused-import
     from models import ar_model  # pylint: disable=unused-import
-    from models import video_ar_model  # pylint: disable=unused-import
+    from models import video_ar_model  # py6lint: disable=unused-import
     from models import image_ar_model  # pylint: disable=unused-import
     from models import image_diffusion_model  # pylint: disable=unused-import
     # from models import latent_diffusion_model  # pylint: disable=unused-import

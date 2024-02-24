@@ -4,6 +4,8 @@ import collections
 import time
 import json
 
+import utils
+
 
 def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     """Perform evaluation."""
@@ -16,10 +18,13 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     with strategy.scope():
         # Restore model checkpoint.
         model = model_lib.ModelRegistry.lookup(cfg.model.name)(cfg)
+
         logging.info('Restoring from %s', ckpt)
         checkpoint = tf.train.Checkpoint(
             model=model, global_step=tf.Variable(0, dtype=tf.int64))
-        checkpoint.restore(ckpt).expect_partial()  # Not restore optimizer.
+        status = checkpoint.restore(ckpt).expect_partial()  # Not restore optimizer.
+        verify_restored = status.assert_consumed
+        verify_existing = status.assert_existing_objects_matched
         global_step = checkpoint.global_step
         logging.info('Performing eval at step %d', global_step.numpy())
 
@@ -82,7 +87,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         cur_step = 0
         img_id = 0
         seq_to_csv_rows = collections.defaultdict(list)
-        print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
+        # print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
 
         while True:
             if eval_steps and cur_step >= eval_steps:
@@ -91,6 +96,11 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             # with summary_writer.as_default():
 
             per_step_outputs = run_single_step(iterator)
+
+            utils.check_checkpoint_restored(
+                strict_verifiers=(),
+                loose_verifiers=[verify_restored, verify_existing])
+
             task.postprocess_cpu(
                 outputs=per_step_outputs,
                 train_step=global_step.numpy(),

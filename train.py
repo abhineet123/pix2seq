@@ -152,6 +152,13 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
             tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
                 train_multiple_steps(data_iterators, tasks)
+
+                """
+                this check happens after the first forward pass because of deferred restoration 
+                in tf.train.Checkpoint
+                which only restores many of the variables after they are created in the first call 
+                when the input shape becomes available
+                """
                 trainer.check_checkpoint_restored()
 
                 cur_step = global_step.numpy()

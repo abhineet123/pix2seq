@@ -251,6 +251,6 @@ class ARTrainer(model_lib.Trainer):
         self._metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
 
         vis_utils.debug_loss(self.config, self._category_names,
-                             batched_examples, target_seq, logits, y_mask)
+                             batched_examples, target_seq, logits, y_mask, y_pred=None)
 
         return loss

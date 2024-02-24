@@ -84,10 +84,18 @@ STANDARD_COLORS = [
 ]
 
 
-def debug_loss(config, _category_names, examples, y_true, y_pred_logits, y_mask):
+def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None, y_pred=None,
+               pred_name='pred', gt_name='gt'):
     vocab_size = config.model.vocab_size
 
-    y_pred = tf.argmax(y_pred_logits, axis=2)
+    if y_pred is None:
+        y_pred = tf.argmax(y_pred_logits, axis=2)
+    else:
+        y_pred_from_logits = tf.argmax(y_pred_logits, axis=2)
+        y_pred_match = tf.math.equal(y_pred, y_pred_from_logits)
+        y_pred_total = tf.cast(tf.size(y_pred), tf.int64)
+        y_pred_match_pc = (tf.reduce_sum(tf.cast(y_pred_match, tf.int64)) / y_pred_total) * 100
+
     y_true_logits = tf.one_hot(y_true, depth=vocab_size)
 
     y_total = tf.cast(tf.size(y_true), tf.int64)
@@ -99,39 +107,50 @@ def debug_loss(config, _category_names, examples, y_true, y_pred_logits, y_mask)
     m.update_state(y_true, y_pred_logits)
     accuracy_notpad = m.result().numpy()
 
-    visualize_video(config, examples, y_true_logits, y_true, 'GT raw',
-                              _category_names)
-    visualize_video(config, examples, y_pred_logits, y_pred, 'Pred raw',
-                              _category_names)
+    from datetime import datetime
 
-    if y_mask is not None:
-        y_true_m = tf.boolean_mask(y_true, y_mask)
-        y_pred_logits_m = tf.boolean_mask(y_pred_logits, y_mask)
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
 
-        # y_mask_int = tf.cast(y_mask, tf.int64)
-        # y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
+    vis_out_dir = os.path.join(config.model_dir, time_stamp)
 
-        # y_true_logits_masked = tf.one_hot(y_true_m, depth=vocab_size)
+    print(f'vis_out_dir: {vis_out_dir}')
+    os.makedirs(vis_out_dir, exist_ok=True)
 
-        """Don't care about output tokens corresponding to GT tokens marked as padding"""
-        y_total_m = tf.cast(tf.size(y_true_m), tf.int64)
-        y_pred_m = tf.argmax(y_pred_logits_m, axis=1)
-        y_correct_m = tf.math.equal(y_true_m, y_pred_m)
-        y_correct_count_m = tf.reduce_sum(tf.cast(y_correct_m, tf.int64))
-        y_correct_pc_m = (y_correct_count_m / y_total_m) * 100
+    bbox_info_gt = visualize_video(
+        config, examples, y_true_logits, y_true, f'{gt_name}', class_names, None, vis_out_dir)
+    bbox_info_pred = visualize_video(
+        config, examples, y_pred_logits, y_pred, f'{pred_name}', class_names, None, vis_out_dir)
 
-        # y_cmb = tf.stack((y_true_m, y_pred_m, y_correct_int), axis=0)
+    if y_mask is None:
+        return bbox_info_gt, bbox_info_pred
 
-        m = tf.keras.metrics.SparseCategoricalAccuracy()
-        m.update_state(y_true_m, y_pred_logits_m)
-        accuracy_notpad_m = m.result().numpy()
+    y_true_m = tf.boolean_mask(y_true, y_mask)
+    y_pred_logits_m = tf.boolean_mask(y_pred_logits, y_mask)
 
-        visualize_video(self.config, examples, y_true_logits, y_true, 'GT masked',
-                                  self._category_names, y_mask)
-        visualize_video(self.config, examples, y_pred_logits, y_pred, 'Pred masked',
-                                  self._category_names, y_mask)
+    # y_mask_int = tf.cast(y_mask, tf.int64)
+    # y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
 
-    print()
+    # y_true_logits_masked = tf.one_hot(y_true_m, depth=vocab_size)
+
+    """Don't care about output tokens corresponding to GT tokens marked as padding"""
+    y_total_m = tf.cast(tf.size(y_true_m), tf.int64)
+    y_pred_m = tf.argmax(y_pred_logits_m, axis=1)
+    y_correct_m = tf.math.equal(y_true_m, y_pred_m)
+    y_correct_count_m = tf.reduce_sum(tf.cast(y_correct_m, tf.int64))
+    y_correct_pc_m = (y_correct_count_m / y_total_m) * 100
+
+    # y_cmb = tf.stack((y_true_m, y_pred_m, y_correct_int), axis=0)
+
+    m = tf.keras.metrics.SparseCategoricalAccuracy()
+    m.update_state(y_true_m, y_pred_logits_m)
+    accuracy_notpad_m = m.result().numpy()
+
+    bbox_info_gt_m = visualize_video(config, examples, y_true_logits, y_true, f'{gt_name} masked',
+                    class_names, y_mask, vis_out_dir)
+    bbox_info_pred_m = visualize_video(config, examples, y_pred_logits, y_pred, f'{pred_name} masked',
+                    class_names, y_mask, vis_out_dir)
+
+    return bbox_info_gt, bbox_info_pred, bbox_info_gt_m, bbox_info_pred_m
 
 
 def _force_matplotlib_backend():
@@ -1073,7 +1092,7 @@ def visualize_boxes_and_labels_on_image_array(
     return image
 
 
-def visualize_video(config, examples, logits, tokens, label, category_names, mask=None):
+def visualize_video(config, examples, logits, tokens, label, category_names, mask, vis_out_dir):
     from tasks import task_utils
 
     videos = examples['video']
@@ -1110,9 +1129,7 @@ def visualize_video(config, examples, logits, tokens, label, category_names, mas
         category_names=category_names,
         min_score_thresh=0
     )
-
     import cv2
-
     for vid_id, video in enumerate(videos_vis):
         for img_id in range(vid_len):
             img = video[img_id, ...]
@@ -1126,13 +1143,14 @@ def visualize_video(config, examples, logits, tokens, label, category_names, mas
 
             import eval_utils
             img = eval_utils.annotate(img, vis_img_name)
-            vis_img_path = os.path.join(config.model_dir, vis_img_name)
+            vis_img_path = os.path.join(vis_out_dir, vis_img_name)
 
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
             cv2.imwrite(vis_img_path, img)
 
-            print()
+            # print()
+    return bboxes_, bboxes_rescaled_, classes_, scores
 
 
 def add_video_summary_with_bbox(

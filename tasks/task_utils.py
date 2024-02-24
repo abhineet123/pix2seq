@@ -108,7 +108,7 @@ def build_prompt_seq_from_task_id(task_vocab_id: int,
 
     Args:
       task_vocab_id: Vocab id for the task.
-      response_seq: an (optional) discerte target sequen with shape (bsz, ..., k).
+      response_seq: an (optional) discrete target sequence with shape (bsz, ..., k).
       prompt_shape: an (optional) tuple for prompt shape. One and only one of
         `response_seq` and `prompt_shape` should be specified.
 

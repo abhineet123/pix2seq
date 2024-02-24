@@ -7,7 +7,7 @@ from decord import VideoReader
 from huggingface_hub import hf_hub_download
 from mpl_toolkits.axes_grid1 import ImageGrid
 warnings.simplefilter(action="ignore")
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import tensorflow as tf
 from tensorflow import keras
@@ -207,8 +207,8 @@ As mentioned, we are using a custom **Kinetics-5** dataset. We will be using **V
 
 backbone_name = "TFVideoSwinB_SSV2_K400_P244_W1677_32x224"
 
-!wget -f'https://github.com/innat/VideoMAE/releases/download/v1.1/{backbone_name}.zip'
-!unzip -q f'/content/{backbone_name}.zip'
+# !wget -f'https://github.com/innat/VideoMAE/releases/download/v1.1/{backbone_name}.zip'
+# !unzip -q f'/content/{backbone_name}.zip'
 
 with strategy.scope():
     # fine-tuned model on kinetics-top5

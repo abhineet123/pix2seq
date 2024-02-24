@@ -878,17 +878,6 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
             epsilon=1e-6, name='ouput_ln')
 
     def call(self, tokens, encoded, training):
-        """Teacher-forced prediction.
-
-        Args:
-          tokens: `int` tokens with shape of (bsz, seqlen, dim).
-          encoded: `float` encoded representations for conditioning with shape of
-            (bsz, size, dim). This can be optional in case of pure decoder.
-          training: `boolean` indicator for training vs test mode.
-
-        Returns:
-          logits of `float` with shape of (bsz, seqlen, vocab_size)
-        """
         _, seqlen = get_shape(tokens)
         seq_pos_emb = tf.expand_dims(self.seq_pos_emb[:seqlen], 0)
         if self.shared_embedding:
@@ -912,32 +901,6 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
 
     def infer(self, prompt, encoded, max_seq_len=None,
               temperature=1.0, top_k=1, top_p=1.0, sampling_callback=None):
-        """Autoregressive (without teacher-forcing) prediction.
-
-        Note: the autoregressive sampling/inference time can be further optimized by
-        caching *transformed* key / value inside multi-head attention for the
-        `encoded` and previously generated tokens, but this may make the code less
-        readable.
-
-        Args:
-          prompt: `int` tokens with shape of (bsz, prompt_len).
-          encoded: `float` encoded representations for conditioning with shape of
-            (bsz, size, dim). This can be optional in case of pure decoder.
-          max_seq_len: `int` of max generated sequence length (including prompt).
-          temperature: `float` scalar for scaling the logits before sampling.
-          top_k: `int` scalar for truncating top-k tokens according to logits before
-            token sampling.
-          top_p: `float` scalar specifying the threshold of cumulative probability
-            for truncating tokens before token sampling.
-          sampling_callback: a callbak `function` that take `next_logits`, and
-            return `next_token`. This is used when users need a specific logic
-            for sampling. Default to `None` with standard free-form sampling.
-
-        Returns:
-          sampled tokens with shape of (bsz, max_seq_len-prompt_len).
-          logits (temperature-scaled) associated with sampled token, in shape of
-            (bsz, max_seq_len-prompt_len, vocab_size).
-        """
         bsz, prompt_len = get_shape(prompt)
         seq_len = self.max_seq_len if max_seq_len is None else max_seq_len
         seq_pos_emb = tf.expand_dims(self.seq_pos_emb, 0)
@@ -1045,8 +1008,8 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
                 loop_vars=[step, caches_var, tokens_var, logits_var])
 
         sampled_tokens = tf.transpose(tokens_var[prompt_len:], [1, 0])
-        sampled_tokens_logits = tf.transpose(logits_var[prompt_len:], [1, 0, 2])
-        return sampled_tokens, sampled_tokens_logits
+        sampled_logits = tf.transpose(logits_var[prompt_len:], [1, 0, 2])
+        return sampled_tokens, sampled_logits
 
 
 def get_layer_config(layers_str):

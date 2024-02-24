@@ -41,15 +41,17 @@ def get_feature_map_for_object_detection():
     }
 
 
-def get_feature_map_for_video():
+def get_feature_map_for_video(length):
     return {
         'video/source_id': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/size': tf.io.FixedLenFeature((2,), tf.int64, (-1, -1)),
         'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),
-        'video/file_names': tf.io.VarLenFeature(tf.string),
-        'video/file_ids': tf.io.VarLenFeature(tf.int64),
+        'video/file_names': tf.io.FixedLenFeature((length,), tf.string),
+        'video/file_ids': tf.io.FixedLenFeature((length,), tf.int64),
+        # 'video/file_names': tf.io.VarLenFeature(tf.string),
+        # 'video/file_ids': tf.io.VarLenFeature(tf.int64),
     }
 
 

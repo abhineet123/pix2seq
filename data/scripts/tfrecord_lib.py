@@ -25,7 +25,7 @@ from absl import logging
 import numpy as np
 from PIL import Image
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 LOG_EVERY = 100
