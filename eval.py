@@ -97,9 +97,10 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
             per_step_outputs = run_single_step(iterator)
 
-            utils.check_checkpoint_restored(
-                strict_verifiers=(),
-                loose_verifiers=[verify_restored, verify_existing])
+            if cur_step == 0:
+                utils.check_checkpoint_restored(
+                    strict_verifiers=(),
+                    loose_verifiers=[verify_restored, verify_existing])
 
             task.postprocess_cpu(
                 outputs=per_step_outputs,
