@@ -85,7 +85,7 @@ STANDARD_COLORS = [
 
 
 def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None, y_pred=None,
-               pred_name='pred', gt_name='gt'):
+               pred_name='pred', gt_name='gt', run_type='train'):
     vocab_size = config.model.vocab_size
 
     if y_pred is None:
@@ -111,7 +111,7 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
 
     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
 
-    vis_out_dir = os.path.join(config.model_dir, time_stamp)
+    vis_out_dir = os.path.join(config.model_dir,f'{run_type}_{time_stamp}')
 
     print(f'vis_out_dir: {vis_out_dir}')
     os.makedirs(vis_out_dir, exist_ok=True)

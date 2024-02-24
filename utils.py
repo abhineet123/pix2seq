@@ -449,7 +449,7 @@ def restore_from_checkpoint(model_dir, allow_partial, **kwargs):
     name_to_shape = None
     if latest_ckpt:
 
-        # ckpt_vars_dict, name_to_shape = save_ckpt_vars(model_dir)
+        ckpt_vars_dict, name_to_shape = save_ckpt_vars(model_dir)
 
         logging.info('Restoring from latest checkpoint: %s', latest_ckpt)
         if allow_partial:

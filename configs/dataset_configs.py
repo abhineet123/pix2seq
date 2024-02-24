@@ -133,7 +133,8 @@ def ipsc_post_process(cfg):
                     name = f'{name}-{stride_suffix}'
 
         suffix = cfg[f'{mode}_suffix']
-        if suffix:
+        """suffix is already in name when the latter is loaded from a trained model config.json"""
+        if suffix and not name.endswith(suffix):
             name = f'{name}-{suffix}'
 
         json_name = f'{name}.json'

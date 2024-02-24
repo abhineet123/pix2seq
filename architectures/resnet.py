@@ -75,7 +75,7 @@ class BatchNormRelu(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
         if self.groups > 0:
             inputs = self.gn(inputs)
         else:
-            inputs = self.bn(inputs, training=training)
+            inputs = self.bn(inputs, training=True)
         if self.relu:
             inputs = tf.nn.relu(inputs)
         return inputs

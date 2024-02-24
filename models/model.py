@@ -62,7 +62,7 @@ class Trainer(abc.ABC):
         model_dir = kwargs['model_dir']
         latest_ckpt, ckpt, self._verify_restored, self._verify_existing, _, _ = utils.restore_from_checkpoint(
             model_dir,
-            allow_partial=True,
+            allow_partial=False,
             model=model, global_step=optimizer.iterations, optimizer=optimizer)
         self._verify_restored_p = None
         self._verify_existing_p = None
