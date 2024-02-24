@@ -37,7 +37,7 @@ class Trainer(abc.ABC):
 
         Args:
           config: object for holding hyperparameters and other configurations.
-          **kwargs: other neccesary configurations to pass for training setup.
+          **kwargs: other necessary configurations to pass for training setup.
         """
         self._config = config
 
