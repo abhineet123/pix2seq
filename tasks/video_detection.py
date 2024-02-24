@@ -233,10 +233,10 @@ class TaskVideoDetection(task_lib.Task):
             max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
-        # bbox_info_gt_infer, bbox_info_pred_infer = vis_utils.debug_loss(
-        #     self.config, self._category_names, examples, target_seq, logits, y_mask=None, y_pred=pred_seq,
-        #     pred_name='pred_infer', gt_name='gt infer', run_type='eval')
-        # bboxes_pred_infer, bboxes_rescaled_pred_infer, classes_pred_infer, scores_pred_infer = bbox_info_pred_infer
+        bbox_info_gt_infer, bbox_info_pred_infer = vis_utils.debug_loss(
+            self.config, self._category_names, examples, target_seq, logits, y_mask=None, y_pred=pred_seq,
+            pred_name='pred_infer', gt_name='gt infer', run_type='eval')
+        bboxes_pred_infer, bboxes_rescaled_pred_infer, classes_pred_infer, scores_pred_infer = bbox_info_pred_infer
 
         return examples, pred_seq, logits
 
