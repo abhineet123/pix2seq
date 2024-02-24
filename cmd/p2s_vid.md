@@ -1,11 +1,16 @@
 <!-- MarkdownTOC -->
 
 - [swin-t-640](#swin_t_64_0_)
+    - [mnist-640-1-12_1000       @ swin-t-640](#mnist_640_1_12_1000___swin_t_640_)
     - [len-2       @ swin-t-640](#len_2___swin_t_640_)
         - [len-3       @ len-2/swin-t-640](#len_3___len_2_swin_t_640_)
-        - [len-5       @ len-2/swin-t-640](#len_5___len_2_swin_t_640_)
+    - [mnist-640-5-12_1000       @ swin-t-640](#mnist_640_5_12_1000___swin_t_640_)
+    - [len-2       @ swin-t-640](#len_2___swin_t_640__1)
+    - [len-3       @ swin-t-640](#len_3___swin_t_640_)
+    - [len-4       @ swin-t-640](#len_4___swin_t_640_)
 - [swin-s-640](#swin_s_64_0_)
-    - [len-2       @ swin-s-640](#len_2___swin_s_640_)
+    - [mnist-640-1-12_1000       @ swin-s-640](#mnist_640_1_12_1000___swin_s_640_)
+        - [len-2       @ mnist-640-1-12_1000/swin-s-640](#len_2___mnist_640_1_12_1000_swin_s_640_)
 - [resnet-640](#resnet_64_0_)
     - [mnist-640-1-12_1000       @ resnet-640](#mnist_640_1_12_1000___resnet_640_)
         - [len-2       @ mnist-640-1-12_1000/resnet-640](#len_2___mnist_640_1_12_1000_resnet_640_)
@@ -36,20 +41,33 @@
 <!-- /MarkdownTOC -->
 <a id="swin_t_64_0_"></a>
 # swin-t-640 
+<a id="mnist_640_1_12_1000___swin_t_640_"></a>
+## mnist-640-1-12_1000       @ swin-t-640-->p2s_vid
 <a id="len_2___swin_t_640_"></a>
 ## len-2       @ swin-t-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,batch-4,dbg-1,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
 <a id="len_3___len_2_swin_t_640_"></a>
 ### len-3       @ len-2/swin-t-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,len-3,batch-4,dbg-1,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
-<a id="len_5___len_2_swin_t_640_"></a>
-### len-5       @ len-2/swin-t-640-->p2s_vid
+
+<a id="mnist_640_5_12_1000___swin_t_640_"></a>
+## mnist-640-5-12_1000       @ swin-t-640-->p2s_vid
+<a id="len_2___swin_t_640__1"></a>
+## len-2       @ swin-t-640-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-5-12_1000,batch-8,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,swin-t
+<a id="len_3___swin_t_640_"></a>
+## len-3       @ swin-t-640-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-5-12_1000,batch-3,dbg-1,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
+<a id="len_4___swin_t_640_"></a>
+## len-4       @ swin-t-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-5-12_1000,batch-3,dbg-1,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
 
 <a id="swin_s_64_0_"></a>
 # swin-s-640 
-<a id="len_2___swin_s_640_"></a>
-## len-2       @ swin-s-640-->p2s_vid
+<a id="mnist_640_1_12_1000___swin_s_640_"></a>
+## mnist-640-1-12_1000       @ swin-s-640-->p2s_vid
+<a id="len_2___mnist_640_1_12_1000_swin_s_640_"></a>
+### len-2       @ mnist-640-1-12_1000/swin-s-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,mnist-640-1-12_1000,batch-3,dbg-1,dyn-1,ep-10000,ckpt_ep-1,swin-s
 
 <a id="resnet_64_0_"></a>
