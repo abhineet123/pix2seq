@@ -14,3 +14,5 @@ pandas
 paramparse
 opencv-python
 compress_json
+scikit-learn
+tabulate
