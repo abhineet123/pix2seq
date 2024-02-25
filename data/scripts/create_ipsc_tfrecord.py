@@ -268,12 +268,15 @@ def main():
         # is_category_thing=is_category_thing
     )
     output_path = os.path.join(params.output_dir, out_name)
+    os.makedirs(output_path, exist_ok=True)
 
     print(f'out_name: {out_name}')
     print(f'output_path: {output_path}')
 
+    tfrecord_pattern = os.path.join(output_path, 'shard')
+
     tfrecord_lib.write_tf_record_dataset(
-        output_path=output_path,
+        output_path=tfrecord_pattern,
         annotation_iterator=annotations_iter,
         process_func=create_tf_example,
         num_shards=params.num_shards,

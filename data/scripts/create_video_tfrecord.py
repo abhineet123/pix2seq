@@ -368,6 +368,7 @@ def main(_):
         image_dir=params.image_dir,
     )
     output_path = os.path.join(params.output_dir, out_name)
+    os.makedirs(output_path, exist_ok=True)
 
     print(f'out_name: {out_name}')
     print(f'output_path: {output_path}')
