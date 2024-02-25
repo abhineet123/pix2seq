@@ -6,6 +6,7 @@
 - [virtualenv](#virtualen_v_)
     - [windows       @ virtualenv](#windows___virtualenv_)
 - [install](#install_)
+    - [eval_utils       @ install](#eval_utils___instal_l_)
     - [win       @ install](#win___instal_l_)
     - [tensorflow       @ install](#tensorflow___instal_l_)
         - [win       @ tensorflow/install](#win___tensorflow_install_)
@@ -71,6 +72,9 @@ pix2seq\Scripts\activate
 # install
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+<a id="eval_utils___instal_l_"></a>
+## eval_utils       @ install-->p2s_setup
+python -m pip install scikit-learn tabulate
 
 <a id="win___instal_l_"></a>
 ## win       @ install-->p2s_setup
