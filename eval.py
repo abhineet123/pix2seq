@@ -87,7 +87,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         cur_step = 0
         img_id = 0
         seq_to_csv_rows = collections.defaultdict(list)
-        vid_cap = collections.defaultdict(None)
+        vid_cap = collections.defaultdict(lambda: None)
         # print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
 
         while True:
