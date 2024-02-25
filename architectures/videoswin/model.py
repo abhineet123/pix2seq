@@ -89,6 +89,7 @@ class TFSwinTransformer3D(keras.layers.Layer):
         for i_layer in range(self.num_layers):
             layer = TFBasicLayer(
                 length=length,
+                patch_size=patch_size,
                 dim=int(embed_dim * 2 ** i_layer),
                 depth=depths[i_layer],
                 num_heads=num_heads[i_layer],
@@ -118,10 +119,14 @@ class TFSwinTransformer3D(keras.layers.Layer):
         # video-swin block computation
         attn_scores_outputs = {}
         for layer in self.basic_layers:
-            x = layer(x, return_attns=return_attns, training=training)
+            """dedicated flow path for return_attns allows tensor shapes to be 
+            resolved better when building the graph"""
             if return_attns:
-                x, attn_scores = x
+                x, attn_scores = layer(x, return_attns=return_attns, training=training)
                 attn_scores_outputs[f"{layer.name}_att"] = attn_scores
+            else:
+                x = layer(x, training=training)
+
         # head branch
         # x = self.norm(x)
         # x = self.avg_pool3d(x)

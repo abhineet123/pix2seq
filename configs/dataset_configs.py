@@ -168,7 +168,7 @@ def ipsc_post_process(cfg):
                 if frame_gaps_suffix not in name:
                     name = f'{name}-{frame_gaps_suffix}'
 
-        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name + '*')
+        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name,  'shard*')
 
     cfg.category_names_path = os.path.join(db_root_dir, cfg.train_filename_for_metrics)
     cfg.coco_annotations_dir_for_metrics = db_root_dir

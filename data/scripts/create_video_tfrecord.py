@@ -372,8 +372,10 @@ def main(_):
     print(f'out_name: {out_name}')
     print(f'output_path: {output_path}')
 
+    tfrecord_pattern = os.path.join(output_path, 'shard')
+
     tfrecord_lib.write_tf_record_dataset(
-        output_path=output_path,
+        output_path=tfrecord_pattern,
         annotation_iterator=annotations_iter,
         process_func=create_video_tf_example,
         num_shards=params.num_shards,

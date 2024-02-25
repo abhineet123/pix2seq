@@ -30,6 +30,7 @@ class TFBasicLayer(keras.layers.Layer):
     def __init__(
             self,
             length,
+            patch_size,
             dim,
             depth,
             num_heads,
@@ -46,6 +47,8 @@ class TFBasicLayer(keras.layers.Layer):
     ):
         super().__init__(**kwargs)
         self.length = length
+        self.patch_size = patch_size
+
         self.window_size = window_size
         self.shift_size = tuple([i // 2 for i in window_size])
         self.depth = depth
@@ -54,6 +57,7 @@ class TFBasicLayer(keras.layers.Layer):
         self.blocks = [
             TFSwinTransformerBlock3D(
                 length=length,
+                patch_size=patch_size,
                 dim=dim,
                 num_heads=num_heads,
                 window_size=window_size,

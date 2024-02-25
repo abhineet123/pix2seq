@@ -103,8 +103,9 @@ def get_video_detection_train_transforms(
         fixed_crop=1,
         jitter_scale_min: float = 0.3,
         jitter_scale_max: float = 2.0):
-    return get_video_detection_eval_transforms(
-        image_size, length, max_instances_per_image)
+
+    # return get_video_detection_eval_transforms(
+    #     image_size, length, max_instances_per_image)
 
     instance_feature_names = ['bbox', 'class_id', 'class_name',
                               'area', 'is_crowd']

@@ -243,7 +243,7 @@ class TFRecordDataset(Dataset):
             file_pattern = self.config.train_file_pattern
         else:
             file_pattern = self.config.eval_file_pattern
-            
+
         print(f'loading tfrecord dataset from  {file_pattern}')
 
         dataset = tf.data.Dataset.list_files(
