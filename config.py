@@ -108,7 +108,7 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
         cfg_dict = json.loads(f.read())
 
     if not pt:
-        cfg.update(ml_collections.ConfigDict(cfg_dict))
+        cfg.update(from_dict(cfg_dict))
         cfg.update(cmd_cfg)
         return
 
