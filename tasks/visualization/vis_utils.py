@@ -111,7 +111,7 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
 
     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
 
-    vis_out_dir = os.path.join(config.model_dir,f'{run_type}_{time_stamp}')
+    vis_out_dir = os.path.join(config.model_dir, f'{run_type}_{time_stamp}')
 
     print(f'vis_out_dir: {vis_out_dir}')
     os.makedirs(vis_out_dir, exist_ok=True)
@@ -146,9 +146,9 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
     accuracy_notpad_m = m.result().numpy()
 
     bbox_info_gt_m = visualize_video(config, examples, y_true_logits, y_true, f'{gt_name} masked',
-                    class_names, y_mask, vis_out_dir)
+                                     class_names, y_mask, vis_out_dir)
     bbox_info_pred_m = visualize_video(config, examples, y_pred_logits, y_pred, f'{pred_name} masked',
-                    class_names, y_mask, vis_out_dir)
+                                       class_names, y_mask, vis_out_dir)
 
     return bbox_info_gt, bbox_info_pred, bbox_info_gt_m, bbox_info_pred_m
 
@@ -186,6 +186,36 @@ def _get_multiplier_for_color_randomness():
     inds = [i for _, i in sorted(zip(abs_distance, range(num_candidates)))]
     return prime_candidates[inds[0]]
 
+
+def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
+    import cv2
+    if vid_cap is not None:
+        vid_cap_seq = vid_cap[seq_id]
+        if vid_cap_seq is None:
+            seq_vis_path = os.path.join(out_vis_dir, seq_id + '.avi')
+            codec = 'LLVM'
+            fps = 5
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            video_h, video_w = image.shape[:2]
+            vid_cap_seq = cv2.VideoWriter(seq_vis_path, fourcc, fps, (video_w, video_h))
+            if vid_cap_seq is None:
+                raise IOError(f'Output video file could not be opened: {seq_vis_path}')
+            print(f'Saving {video_w}x{video_h} {fps} fps {codec} video for {seq_id} to {seq_vis_path}')
+            vid_cap[seq_id] = vid_cap_seq
+        vid_cap_seq.write(image)
+    else:
+        seq_vis_dir = os.path.join(out_vis_dir, seq_id)
+        os.makedirs(seq_vis_dir, exist_ok=True)
+        if video_id_ is not None:
+            image_name_, image_ext_ = os.path.splitext(image_id_)
+            vis_name = f'{image_name_}_{video_id_}{image_ext_}'
+        else:
+            vis_name = image_id_
+        vis_path = os.path.join(seq_vis_dir, vis_name)
+        cv2.imwrite(vis_path, image)
+
+    # cv2.imshow('image', image)
+    # cv2.waitKey(100)
 
 def save_video(video, file_names, t_name, vis_img_dir):
     import cv2
@@ -888,6 +918,7 @@ def visualize_boxes_and_labels_on_image_array(
         scores,
         category_index,
         img_ext='.jpg',
+        vid_cap=None,
         out_vis_dir=None,
         csv_data=None,
         instance_masks=None,
@@ -1080,14 +1111,7 @@ def visualize_boxes_and_labels_on_image_array(
                 keypoint_edge_width=line_thickness // 2)
 
     if out_vis_dir:
-        import cv2
-        # all_video_out = cv2.VideoWriter(vis_out_fname, fourcc, 5, (video_w, video_h))
-        seq_vis_dir = os.path.join(out_vis_dir, seq_id)
-        os.makedirs(seq_vis_dir, exist_ok=True)
-        vis_path = os.path.join(seq_vis_dir, image_id_)
-        cv2.imwrite(vis_path, image)
-        # cv2.imshow('image', image)
-        # cv2.waitKey(100)
+        save_image(image, vid_cap, out_vis_dir, seq_id, image_id_)
 
     return image
 
@@ -1158,7 +1182,9 @@ def add_video_summary_with_bbox(
         video_ids, vid_len,
         filenames,
         file_ids,
-        out_vis_dir=None, csv_data=None,
+        out_vis_dir=None,
+        vid_cap=None,
+        csv_data=None,
         min_score_thresh=0.1):
     k = 0
     vis_videos = []
@@ -1169,6 +1195,7 @@ def add_video_summary_with_bbox(
 
         vis_video = visualize_boxes_and_labels_on_video(
             out_vis_dir=out_vis_dir,
+            vid_cap=vid_cap,
             csv_data=csv_data,
             video_id=video_id_,
             video=video,
@@ -1200,6 +1227,7 @@ def visualize_boxes_and_labels_on_video(
         scores,
         category_index,
         out_vis_dir=None,
+        vid_cap=None,
         csv_data=None,
         use_normalized_coordinates=False,
         max_boxes_to_draw=20,
@@ -1321,16 +1349,7 @@ def visualize_boxes_and_labels_on_video(
         video_vis.append(image_vis)
 
         if out_vis_dir:
-            import cv2
-            # all_video_out = cv2.VideoWriter(vis_out_fname, fourcc, 5, (video_w, video_h))
-            seq_vis_dir = os.path.join(out_vis_dir, seq_id)
-            os.makedirs(seq_vis_dir, exist_ok=True)
-            image_name_, image_ext_ = os.path.splitext(image_name)
-            vis_name = f'{image_name_}_{video_id_}{image_ext_}'
-            vis_path = os.path.join(seq_vis_dir, vis_name)
-            cv2.imwrite(vis_path, image_vis)
-            # cv2.imshow('image', image)
-            # cv2.waitKey(100)
+            save_image(image_vis, vid_cap, out_vis_dir, seq_id, image_name, video_id_)
 
     video_vis = np.stack(video_vis, axis=0)
     return video_vis

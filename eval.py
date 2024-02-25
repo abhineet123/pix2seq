@@ -87,6 +87,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         cur_step = 0
         img_id = 0
         seq_to_csv_rows = collections.defaultdict(list)
+        vid_cap = collections.defaultdict(None)
         # print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
 
         while True:
@@ -106,6 +107,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 outputs=per_step_outputs,
                 train_step=global_step.numpy(),
                 out_vis_dir=out_vis_dir,
+                vid_cap=vid_cap,
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,
                 summary_tag=eval_tag,
@@ -137,6 +139,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             csv_columns.insert(1, 'VideoID')
         # if params.enable_mask:
         #     csv_columns += ['mask_w', 'mask_h', 'mask_counts']
+        for csv_seq_name, vid_cap_seq in vid_cap.items():
+            vid_cap_seq.release()
+
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():
             if not csv_rows:
                 print(f'{csv_seq_name}: no csv data found')

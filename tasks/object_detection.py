@@ -274,6 +274,7 @@ class TaskObjectDetection(task_lib.Task):
                         train_step,
                         # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
                         out_vis_dir=None,
+                        vid_cap=None,
                         csv_data=None,
                         eval_step=None,
                         training=False,
@@ -349,6 +350,7 @@ class TaskObjectDetection(task_lib.Task):
                     images_, bboxes_, bboxes_rescaled_, classes_, scores_, self._category_names,
                     image_ids__, train_step, tag,
                     out_vis_dir=out_vis_dir,
+                    vid_cap=vid_cap,
                     csv_data=csv_data,
                     min_score_thresh=min_score_thresh,
                     max_images_shown=(-1 if ret_results else 3))
@@ -418,7 +420,10 @@ class TaskObjectDetection(task_lib.Task):
 
 def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores, category_names,
                                 image_ids, step, tag, max_images_shown=3,
-                                out_vis_dir=None, csv_data=None, min_score_thresh=0.1):
+                                vid_cap=None,
+                                out_vis_dir=None,
+                                csv_data=None,
+                                min_score_thresh=0.1):
     """Adds image summary with GT / predicted bbox."""
     k = 0
     # del image_ids
@@ -428,6 +433,7 @@ def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores
         keep_indices = np.where(classes_ > 0)[0]
         image = vis_utils.visualize_boxes_and_labels_on_image_array(
             out_vis_dir=out_vis_dir,
+            vid_cap=vid_cap,
             csv_data=csv_data,
             image_id=image_id_,
             image=image_,

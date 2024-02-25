@@ -287,6 +287,7 @@ class TaskVideoDetection(task_lib.Task):
             outputs,
             train_step,
             out_vis_dir=None,
+            vid_cap=None,
             csv_data=None,
             eval_step=None,
             summary_tag='eval',
@@ -322,6 +323,7 @@ class TaskVideoDetection(task_lib.Task):
                 file_ids=file_ids.numpy(),
                 vid_len=self.vid_len,
                 out_vis_dir=out_vis_dir,
+                vid_cap=vid_cap,
                 csv_data=csv_data,
                 min_score_thresh=min_score_thresh,
             )
