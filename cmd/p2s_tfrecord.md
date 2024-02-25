@@ -23,6 +23,7 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-3:12_1000:train:gz
 <a id="640_5___mnis_t_"></a>
 ## 640-5       @ mnist-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:train:gz
+python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:test:gz
 
 <a id="ipsc___tfrecord_"></a>
 # ipsc       @ tfrecord-->p2s_setup
