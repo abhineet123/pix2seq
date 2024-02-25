@@ -34,6 +34,7 @@ These functions often receive an image, perform some visualization on the image.
 The functions do not return a value, instead they modify the image itself.
 """
 import abc
+import copy
 import collections
 import os.path
 
@@ -83,6 +84,51 @@ STANDARD_COLORS = [
     'WhiteSmoke', 'Yellow', 'YellowGreen'
 ]
 
+
+def debug_transforms(transforms, batched_examples, vis, model_dir):
+    # bbox_np = batched_examples['bbox'].numpy()
+    # class_id_np = batched_examples['class_id'].numpy()
+    # class_name_np = batched_examples['class_name'].numpy()
+    batch_size = batched_examples["video"].shape[0]
+    proc_examples = {
+        k: [] for k, v in batched_examples.items()
+    }
+    for i in range(batch_size):
+        single_example = {
+            k: v[i, ...] for k, v in batched_examples.items()
+        }
+        proc_videos = dict(
+            orig=single_example["video"]
+        )
+        proc_bboxes = dict(
+            orig=single_example["bbox"]
+        )
+        proc_example = copy.copy(single_example)
+        for t in transforms:
+            t_name = t.config.name
+            proc_example = t.process_example(proc_example)
+
+            proc_videos[t_name] = proc_example["video"]
+            proc_bboxes[t_name] = proc_example["bbox"]
+
+            if not vis:
+                continue
+
+            video = proc_example["video"]
+            video = tf.image.convert_image_dtype(video, tf.uint8)
+
+            # video_ids = proc_example["video_id"]
+            file_names = proc_example["file_names"]
+
+            save_video(video, file_names, t_name, model_dir)
+
+        for k, v in proc_examples.items():
+            v.append(proc_example[k])
+
+    for k, v in proc_examples.items():
+        proc_examples[k] = tf.stack(v, axis=0)
+
+    return proc_examples
 
 def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None, y_pred=None,
                pred_name='pred', gt_name='gt', run_type='train'):
@@ -189,6 +235,15 @@ def _get_multiplier_for_color_randomness():
 
 def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
     import cv2
+    import eval_utils
+    if video_id_ is not None:
+        image_name_, image_ext_ = os.path.splitext(image_id_)
+        vis_name = f'{image_name_}_{video_id_}{image_ext_}'
+    else:
+        vis_name = image_id_
+
+    image = eval_utils.annotate(image, vis_name)
+
     if vid_cap is not None:
         vid_cap_seq = vid_cap[seq_id]
         if vid_cap_seq is None:
@@ -206,11 +261,6 @@ def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
     else:
         seq_vis_dir = os.path.join(out_vis_dir, seq_id)
         os.makedirs(seq_vis_dir, exist_ok=True)
-        if video_id_ is not None:
-            image_name_, image_ext_ = os.path.splitext(image_id_)
-            vis_name = f'{image_name_}_{video_id_}{image_ext_}'
-        else:
-            vis_name = image_id_
         vis_path = os.path.join(seq_vis_dir, vis_name)
         cv2.imwrite(vis_path, image)
 

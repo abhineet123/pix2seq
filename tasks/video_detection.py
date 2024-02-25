@@ -93,57 +93,13 @@ class TaskVideoDetection(task_lib.Task):
         )
         return dataset
 
-    def debug_transforms(self, batched_examples, vis):
-        # bbox_np = batched_examples['bbox'].numpy()
-        # class_id_np = batched_examples['class_id'].numpy()
-        # class_name_np = batched_examples['class_name'].numpy()
-        batch_size = batched_examples["video"].shape[0]
-        proc_examples = {
-            k: [] for k, v in batched_examples.items()
-        }
-        for i in range(batch_size):
-            single_example = {
-                k: v[i, ...] for k, v in batched_examples.items()
-            }
-            proc_videos = dict(
-                orig=single_example["video"]
-            )
-            proc_bboxes = dict(
-                orig=single_example["bbox"]
-            )
-            proc_example = copy.copy(single_example)
-            for t in self.train_transforms:
-                t_name = t.config.name
-                proc_example = t.process_example(proc_example)
-
-                proc_videos[t_name] = proc_example["video"]
-                proc_bboxes[t_name] = proc_example["bbox"]
-
-                if not vis:
-                    continue
-
-                video = proc_example["video"]
-                video = tf.image.convert_image_dtype(video, tf.uint8)
-
-                # video_ids = proc_example["video_id"]
-                file_names = proc_example["file_names"]
-
-                vis_utils.save_video(video, file_names, t_name, self.config.model_dir)
-
-            for k, v in proc_examples.items():
-                v.append(proc_example[k])
-
-        for k, v in proc_examples.items():
-            proc_examples[k] = tf.stack(v, axis=0)
-
-        return proc_examples
-
     def preprocess_batched(self, batched_examples, training):
         config = self.config.task
         mconfig = self.config.model
         dconfig = self.config.dataset
 
-        # batched_examples = self.debug_transforms(batched_examples, vis=0)
+        # batched_examples = vis_utils.debug_transforms(self.train_transforms, batched_examples,
+        #                                               vis=0, model_dir=self.config.model_dir)
 
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
         ret = build_response_seq_from_video_bboxes(

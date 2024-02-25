@@ -110,7 +110,8 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 <a id="on_test___len_2_mnist_640_5_12_1000_resnet_640_"></a>
 #### on-test       @ len-2/mnist-640-5-12_1000/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,vid_det,m-resnet_640_mnist_640_5_12_1000_var-length-2-stride-1-train-batch_18,mnist-640-5-12_1000,batch-36,save-vis-1,dbg-0,dyn-1,dist-0,suffix-test
-
+`strd-2`
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,vid_det,m-resnet_640_mnist_640_5_12_1000_var-length-2-stride-1-train-batch_18,mnist-640-5-12_1000,strd-2,batch-48,save-vis-1,dbg-0,dyn-1,dist-0,suffix-test
 
 <a id="len_9___mnist_640_5_12_1000_resnet_640_"></a>
 ### len-9       @ mnist-640-5-12_1000/resnet-640-->p2s_vid
