@@ -193,7 +193,7 @@ def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
         vid_cap_seq = vid_cap[seq_id]
         if vid_cap_seq is None:
             seq_vis_path = os.path.join(out_vis_dir, seq_id + '.avi')
-            codec = 'LLVM'
+            codec = 'HFYU'
             fps = 5
             fourcc = cv2.VideoWriter_fourcc(*codec)
             video_h, video_w = image.shape[:2]
