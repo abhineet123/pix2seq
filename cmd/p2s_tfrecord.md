@@ -1,5 +1,9 @@
 <!-- MarkdownTOC -->
 
+- [detrac       @ tfrecord](#detrac___tfrecord_)
+    - [0_19       @ detrac](#0_19___detrac_)
+    - [0_9       @ detrac](#0_9___detrac_)
+    - [640-1       @ detrac](#640_1___detrac_)
 - [mnist       @ tfrecord](#mnist___tfrecord_)
     - [640-1       @ mnist](#640_1___mnis_t_)
     - [640-3       @ mnist](#640_3___mnis_t_)
@@ -12,6 +16,18 @@
     - [ext_reorg_roi_g2_38_53       @ ipsc](#ext_reorg_roi_g2_38_53___ipsc_)
 
 <!-- /MarkdownTOC -->
+<a id="detrac___tfrecord_"></a>
+# detrac       @ tfrecord-->p2s_setup
+<a id="0_19___detrac_"></a>
+## 0_19       @ detrac-->p2s_tfrecord
+python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-0_19:gz
+<a id="0_9___detrac_"></a>
+## 0_9       @ detrac-->p2s_tfrecord
+python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-0_9:gz
+
+<a id="640_1___detrac_"></a>
+## 640-1       @ detrac-->p2s_tfrecord
+python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-1:12_1000:train:gz
 <a id="mnist___tfrecord_"></a>
 # mnist       @ tfrecord-->p2s_setup
 <a id="640_1___mnis_t_"></a>

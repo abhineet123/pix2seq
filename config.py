@@ -317,10 +317,10 @@ def load(FLAGS):
                     pretrained_name=pretrained_name.replace('resnet', cfg.resnet_replace)
                 model_dir_name = f'{pretrained_name}_{model_dir_name}'
 
-            if cfg.train.suffix:
-                print(f'cfg.train.suffix: {cfg.train.suffix}')
-                suffix = '-'.join(cfg.train.suffix)
-                model_dir_name = f'{model_dir_name}-{suffix}'
+            if cfg.train.save_suffix:
+                print(f'train.save_suffix: {cfg.train.save_suffix}')
+                save_suffix = '-'.join(cfg.train.save_suffix)
+                model_dir_name = f'{model_dir_name}-{save_suffix}'
 
             # if cfg.dist == 2 and cfg.tf_config.task.index > 0:
             #     model_dir_name = f'{model_dir_name}-worker-{cfg.tf_config.task.index}'

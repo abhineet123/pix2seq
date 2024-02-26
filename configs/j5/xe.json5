@@ -1,6 +1,6 @@
 {
   "train": {
-	"suffix": "xe",
+		"save_suffix": ["xe",],
 	},
 	"tf_config": {
 	"cluster": {

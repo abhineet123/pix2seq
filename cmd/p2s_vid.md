@@ -12,7 +12,9 @@
     - [mnist-640-1-12_1000       @ swin-s](#mnist_640_1_12_1000___swin_s_)
         - [len-2       @ mnist-640-1-12_1000/swin-s](#len_2___mnist_640_1_12_1000_swin_s_)
 - [resnet-640](#resnet_64_0_)
-    - [detrac-non_empty-0_9       @ resnet-640](#detrac_non_empty_0_9___resnet_640_)
+    - [detrac-non_empty       @ resnet-640](#detrac_non_empty___resnet_640_)
+        - [0_19       @ detrac-non_empty/resnet-640](#0_19___detrac_non_empty_resnet_64_0_)
+        - [0_9       @ detrac-non_empty/resnet-640](#0_9___detrac_non_empty_resnet_64_0_)
     - [mnist-640-1-12_1000       @ resnet-640](#mnist_640_1_12_1000___resnet_640_)
         - [len-2       @ mnist-640-1-12_1000/resnet-640](#len_2___mnist_640_1_12_1000_resnet_640_)
             - [on-train       @ len-2/mnist-640-1-12_1000/resnet-640](#on_train___len_2_mnist_640_1_12_1000_resnet_640_)
@@ -73,8 +75,14 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 
 <a id="resnet_64_0_"></a>
 # resnet-640 
-<a id="detrac_non_empty_0_9___resnet_640_"></a>
-## detrac-non_empty-0_9       @ resnet-640-->p2s_vid
+<a id="detrac_non_empty___resnet_640_"></a>
+## detrac-non_empty       @ resnet-640-->p2s_vid
+<a id="0_19___detrac_non_empty_resnet_64_0_"></a>
+### 0_19       @ detrac-non_empty/resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,detrac-non_empty-0_19,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+
+<a id="0_9___detrac_non_empty_resnet_64_0_"></a>
+### 0_9       @ detrac-non_empty/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,detrac-non_empty-0_9,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 
 <a id="mnist_640_1_12_1000___resnet_640_"></a>

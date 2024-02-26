@@ -1,7 +1,7 @@
 {
 	"dist": 2,
 	"train": {
-	"suffix": ["gxe",],
+		"save_suffix": ["gxe",],
 	},
 	"tf_config": {
 	"cluster": {

@@ -60,6 +60,9 @@ class Params(paramparse.CFG):
         self.output_dir = ''
         self.xml_output_file = ''
 
+        self.start_seq_id = 0
+        self.end_seq_id = -1
+
 
 def load_instance_annotations(annotation_path):
     print(f'Reading coco annotations from {annotation_path}')
@@ -237,6 +240,10 @@ def main():
 
     if params.ann_suffix:
         params.ann_file = f'{params.ann_file}-{params.ann_suffix}'
+
+    if params.start_seq_id > 0 or params.end_seq_id >= 0:
+        assert params.end_seq_id >= params.start_seq_id, "end_seq_id must to be >= start_seq_id"
+        params.ann_file = f'{params.ann_file}-seq-{params.start_seq_id}_{params.end_seq_id}'
 
     params.ann_file = os.path.join(params.image_dir, f'{params.ann_file}.{params.ann_ext}')
 
