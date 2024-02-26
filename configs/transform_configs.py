@@ -94,15 +94,13 @@ def get_object_detection_eval_transforms(
 
 
 def get_video_detection_train_transforms(
+        cfg,
         image_size: Tuple[int, int],
         length: int,
         max_disp: int,
         max_instances_per_image: int,
         object_order: str = 'random',
-        scale_jitter=1,
-        fixed_crop=1,
-        jitter_scale_min: float = 0.3,
-        jitter_scale_max: float = 2.0):
+):
 
     # return get_video_detection_eval_transforms(
     #     image_size, length, max_instances_per_image)
@@ -114,17 +112,17 @@ def get_video_detection_train_transforms(
     train_transforms = [
         # D(name='record_original_video_size'),
     ]
-    if scale_jitter:
+    if cfg.scale_jitter:
         # print('annoying scale_jitter is enabled')
         train_transforms.append(
             D(name='scale_jitter_video',
               inputs=['video'],
               length=length,
               target_size=image_size,
-              min_scale=jitter_scale_min,
-              max_scale=jitter_scale_max)
+              min_scale=cfg.jitter_scale_min,
+              max_scale=cfg.jitter_scale_max)
         )
-    if fixed_crop:
+    if cfg.fixed_crop:
         # print('equally annoying fixed_size_crop_video is enabled')
         train_transforms.append(
             D(name='fixed_size_crop_video',
@@ -168,6 +166,7 @@ def get_video_detection_train_transforms(
 
 
 def get_video_detection_eval_transforms(
+        cfg,
         image_size: Tuple[int, int],
         length: int,
         max_instances_per_image: int,

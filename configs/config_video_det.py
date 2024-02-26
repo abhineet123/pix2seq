@@ -30,8 +30,6 @@ def update_task_config(cfg):
     max_seq_len = cfg.model.max_seq_len
     length = cfg.dataset.length
     max_disp = cfg.dataset.max_disp
-    scale_jitter = cfg.dataset.scale_jitter
-    fixed_crop = cfg.dataset.fixed_crop
 
     for task_config in cfg.tasks + [cfg.task, ]:
         task_config.image_size = image_size
@@ -43,9 +41,10 @@ def update_task_config(cfg):
         task_config.max_instances_per_image_test = max_instances_per_image_test
 
         task_config.train_transforms = transform_configs.get_video_detection_train_transforms(
-            image_size, length, max_disp, max_instances_per_image,
-            fixed_crop=fixed_crop, scale_jitter=scale_jitter)
+            cfg.dataset.transforms,
+            image_size, length, max_disp, max_instances_per_image)
         task_config.eval_transforms = transform_configs.get_video_detection_eval_transforms(
+            cfg.dataset.transforms,
             image_size, length, max_instances_per_image_test)
 
 

@@ -17,6 +17,13 @@
 import os
 from configs.config_base import D
 
+_transforms_config = D(
+    scale_jitter=1,
+    fixed_crop=1,
+    jitter_scale_min=0.3,
+    jitter_scale_max=2.0
+)
+
 _shared_dataset_config = D(
     batch_duplicates=1,
     cache_dataset=True,
@@ -28,6 +35,7 @@ _shared_dataset_config = D(
     eval_suffix='',
     train_split='train',
     eval_split='validation',
+    transforms=_transforms_config
 )
 
 # IPSC_NAME_TO_NUM = dict(
@@ -168,7 +176,7 @@ def ipsc_post_process(cfg):
                 if frame_gaps_suffix not in name:
                     name = f'{name}-{frame_gaps_suffix}'
 
-        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name,  'shard*')
+        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name, 'shard*')
 
     cfg.category_names_path = os.path.join(db_root_dir, cfg.train_filename_for_metrics)
     cfg.coco_annotations_dir_for_metrics = db_root_dir

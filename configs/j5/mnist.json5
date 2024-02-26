@@ -2,10 +2,14 @@
   "dataset": {
 	root_dir: "datasets/mnist_mot/%0%_%1%_%2%_var/Images",
     %mode%_name: "mnist_%0%_%1%_%2%_var",
-	scale_jitter: 0,
-	fixed_crop: 0,
 	train_suffix: 'train',
 	eval_suffix: 'test',
+	transforms:{
+		scale_jitter: 0,
+		fixed_crop: 0,
+		jitter_scale_min: 0.8,
+		jitter_scale_max: 2.0,
+	},
 
   }
 }

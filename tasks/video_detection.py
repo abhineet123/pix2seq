@@ -85,12 +85,12 @@ class TaskVideoDetection(task_lib.Task):
             _convert_video_to_image_features,
             num_parallel_calls=tf.data.experimental.AUTOTUNE
         )
-        dataset = dataset.map(
-            lambda x: self.preprocess_single_example(
-                x, training,
-                batch_duplicates),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE
-        )
+        # dataset = dataset.map(
+        #     lambda x: self.preprocess_single_example(
+        #         x, training,
+        #         batch_duplicates),
+        #     num_parallel_calls=tf.data.experimental.AUTOTUNE
+        # )
         return dataset
 
     def preprocess_batched(self, batched_examples, training):
@@ -98,8 +98,8 @@ class TaskVideoDetection(task_lib.Task):
         mconfig = self.config.model
         dconfig = self.config.dataset
 
-        # batched_examples = vis_utils.debug_transforms(self.train_transforms, batched_examples,
-        #                                               vis=0, model_dir=self.config.model_dir)
+        batched_examples = vis_utils.debug_transforms(self.train_transforms, batched_examples,
+                                                      vis=0, model_dir=self.config.model_dir)
 
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
         ret = build_response_seq_from_video_bboxes(
@@ -173,13 +173,13 @@ class TaskVideoDetection(task_lib.Task):
         # video = tf.identity(video).gpu()
         bsz = tf.shape(video)[0]
 
-        if self.config.debug:
-            raw_logits = model(video, input_seq, training=False)
-            bbox_info_gt, bbox_info_pred = vis_utils.debug_loss(
-                self.config, self._category_names, examples, target_seq,
-                raw_logits, y_mask=None, pred_name='pred_raw',
-                gt_name='gt raw', run_type='eval')
-            bboxes_pred, bboxes_rescaled_pred, classes_pred, scores_pred = bbox_info_pred
+        # if self.config.debug:
+        #     raw_logits = model(video, input_seq, training=False)
+        #     bbox_info_gt, bbox_info_pred = vis_utils.debug_loss(
+        #         self.config, self._category_names, examples, target_seq,
+        #         raw_logits, y_mask=None, pred_name='pred_raw',
+        #         gt_name='gt raw', run_type='eval')
+        #     bboxes_pred, bboxes_rescaled_pred, classes_pred, scores_pred = bbox_info_pred
 
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id,
@@ -190,11 +190,11 @@ class TaskVideoDetection(task_lib.Task):
             max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
-        if self.config.debug:
-            bbox_info_gt_infer, bbox_info_pred_infer = vis_utils.debug_loss(
-                self.config, self._category_names, examples, target_seq, logits, y_mask=None, y_pred=pred_seq,
-                pred_name='pred_infer', gt_name='gt infer', run_type='eval')
-            bboxes_pred_infer, bboxes_rescaled_pred_infer, classes_pred_infer, scores_pred_infer = bbox_info_pred_infer
+        # if self.config.debug:
+        #     bbox_info_gt_infer, bbox_info_pred_infer = vis_utils.debug_loss(
+        #         self.config, self._category_names, examples, target_seq, logits, y_mask=None, y_pred=pred_seq,
+        #         pred_name='pred_infer', gt_name='gt infer', run_type='eval')
+        #     bboxes_pred_infer, bboxes_rescaled_pred_infer, classes_pred_infer, scores_pred_infer = bbox_info_pred_infer
 
         return examples, pred_seq, logits
 
