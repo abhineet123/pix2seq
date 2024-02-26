@@ -10,7 +10,7 @@
 		scale_jitter: 1,
 		fixed_crop: 1,
 		jitter_scale_min: 0.8,
-		jitter_scale_max: 2.0,
+		jitter_scale_max: 1.2,
 	},
   }
 }
