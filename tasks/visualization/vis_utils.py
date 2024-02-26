@@ -159,7 +159,7 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
 
     vis_out_dir = os.path.join(config.model_dir, f'{run_type}_{time_stamp}')
 
-    print(f'vis_out_dir: {vis_out_dir}')
+    # print(f'vis_out_dir: {vis_out_dir}')
     os.makedirs(vis_out_dir, exist_ok=True)
 
     bbox_info_gt = visualize_video(
