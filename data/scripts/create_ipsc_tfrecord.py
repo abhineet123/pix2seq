@@ -49,7 +49,7 @@ from data.scripts import tfrecord_lib
 class Params(paramparse.CFG):
 
     def __init__(self):
-        paramparse.CFG.__init__(self, cfg_root='cfg/tfrecord')
+        paramparse.CFG.__init__(self, cfg_prefix='p2s_tfrecord')
         self.ann_file = ''
         self.ann_suffix = ''
         self.image_dir = ''

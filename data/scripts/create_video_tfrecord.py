@@ -236,7 +236,7 @@ def create_video_tf_example(
 
 class Params(paramparse.CFG):
     def __init__(self):
-        paramparse.CFG.__init__(self, cfg_root='cfg/video_tfrecord')
+        paramparse.CFG.__init__(self, cfg_prefix='p2s_vid_tfrecord')
         self.ann_file = ''
         self.ann_suffix = ''
         self.ann_ext = 'json'
@@ -250,6 +250,9 @@ class Params(paramparse.CFG):
         self.save_fg_json = 0
         self.num_shards = 32
         self.output_dir = ''
+
+        self.start_seq_id = 0
+        self.end_seq_id = -1
 
 
 def main(_):
@@ -275,6 +278,10 @@ def main(_):
 
     if params.ann_suffix:
         ann_files = [f'{ann_file}-{params.ann_suffix}' for ann_file in ann_files]
+
+    if params.start_seq_id > 0 or params.end_seq_id >= 0:
+        assert params.end_seq_id >= params.start_seq_id, "end_seq_id must to be >= start_seq_id"
+        ann_files = [f'{ann_file}-seq-{params.start_seq_id}_{params.end_seq_id}' for ann_file in ann_files]
 
     # params.ann_file = None
 
