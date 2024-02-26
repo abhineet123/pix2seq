@@ -7,8 +7,8 @@
 	eval_suffix: "%0%-seq-%1%",
 
 	transforms:{
-		scale_jitter: 0,
-		fixed_crop: 0,
+		scale_jitter: 1,
+		fixed_crop: 1,
 		jitter_scale_min: 0.8,
 		jitter_scale_max: 2.0,
 	},
