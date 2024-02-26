@@ -4,6 +4,7 @@
     %mode%_name: "detrac",
 	scale_jitter: 1,
 	fixed_crop: 1,
-	%mode%_suffix: "%0%-seq-%1%"",
+	train_suffix: "%0%-seq-%1%",
+	eval_suffix: "%0%-seq-%1%",
   }
 }
