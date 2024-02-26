@@ -28,7 +28,7 @@
 python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-2:strd-1
 <a id="0_9___detrac_"></a>
 ## 0_9       @ detrac-->p2s_vid_tfrecord
-python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-2:strd-1
+python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_9:gz:len-2:strd-1
 
 <a id="mnist___tfrecord_"></a>
 # mnist       @ tfrecord-->p2s_setup

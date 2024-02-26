@@ -1,0 +1,9 @@
+{
+  "dataset": {
+	root_dir: "datasets/DETRAC/Images",
+    %mode%_name: "detrac",
+	scale_jitter: 1,
+	fixed_crop: 1,
+	%mode%_suffix: "%0%-seq-%1%"",
+  }
+}
