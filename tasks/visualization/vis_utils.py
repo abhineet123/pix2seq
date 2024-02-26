@@ -56,6 +56,8 @@ from six.moves import range
 from six.moves import zip
 import tensorflow.compat.v1 as tf
 
+from eval_utils import draw_box
+
 _TITLE_LEFT_MARGIN = 10
 _TITLE_TOP_MARGIN = 10
 STANDARD_COLORS = [
@@ -93,6 +95,13 @@ def debug_transforms(transforms, batched_examples, vis, model_dir):
     proc_examples = {
         k: [] for k, v in batched_examples.items()
     }
+    from datetime import datetime
+
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
+    vis_img_dir = os.path.join(model_dir, f"debug_transforms_{time_stamp}")
+
+    os.makedirs(vis_img_dir, exist_ok=True)
+
     for i in range(batch_size):
         single_example = {
             k: v[i, ...] for k, v in batched_examples.items()
@@ -103,8 +112,10 @@ def debug_transforms(transforms, batched_examples, vis, model_dir):
         proc_bboxes = dict(
             orig=single_example["bbox"]
         )
+        save_video_sample(single_example, 'orig', 0, vis_img_dir)
+
         proc_example = copy.copy(single_example)
-        for t in transforms:
+        for t_id, t in enumerate(transforms):
             t_name = t.config.name
             proc_example = t.process_example(proc_example)
 
@@ -114,13 +125,7 @@ def debug_transforms(transforms, batched_examples, vis, model_dir):
             if not vis:
                 continue
 
-            video = proc_example["video"]
-            video = tf.image.convert_image_dtype(video, tf.uint8)
-
-            # video_ids = proc_example["video_id"]
-            file_names = proc_example["file_names"]
-
-            save_video(video, file_names, t_name, model_dir)
+            save_video_sample(proc_example, t_name, t_id+1, vis_img_dir)
 
         for k, v in proc_examples.items():
             v.append(proc_example[k])
@@ -129,6 +134,7 @@ def debug_transforms(transforms, batched_examples, vis, model_dir):
         proc_examples[k] = tf.stack(v, axis=0)
 
     return proc_examples
+
 
 def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None, y_pred=None,
                pred_name='pred', gt_name='gt', run_type='train'):
@@ -269,28 +275,51 @@ def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
     # cv2.imshow('image', image)
     # cv2.waitKey(100)
 
-def save_video(video, file_names, t_name, vis_img_dir):
+
+def save_video_sample(proc_example, t_name, t_id, vis_img_dir):
     import cv2
 
-    out_img = video[0].numpy()
+    video = proc_example["video"]
+    bboxes = proc_example["bbox"]
+    class_names = proc_example["class_name"]
+    file_names = proc_example["file_names"]
+    # video_ids = proc_example["video_id"]
 
-    # video_np = [img.numpy() for img in video]
-    # out_img = np.concatenate(video_np, axis=1)
+    video = tf.image.convert_image_dtype(video, tf.uint8)
 
-    file_name = file_names[0].numpy()
-    file_name = file_name.decode('utf-8')
+    for i, (image, file_name) in enumerate(zip(video, file_names)):
+        image_np = image.numpy()
+        file_name_np = file_name.numpy()
+        file_name_np = file_name_np.decode('utf-8')
 
-    img_name = os.path.basename(file_name)
-    seq_name = os.path.basename(os.path.dirname(file_name))
+        img_name = os.path.basename(file_name_np)
+        img_name, img_ext = os.path.splitext(img_name)
 
-    vis_img_name = f'{t_name} {seq_name} {img_name}'
+        seq_name = os.path.basename(os.path.dirname(file_name_np))
 
-    vis_img_path = os.path.join(vis_img_dir, vis_img_name)
+        vis_img_name = f'{seq_name} {img_name} {t_id:04d} {t_name}'
 
-    cv2.imwrite(vis_img_path, out_img)
+        vis_img_path = os.path.join(vis_img_dir, f'{vis_img_name}{img_ext}')
 
-    print(f'vis_img_path: {vis_img_path}')
-    print()
+        bbox_id = i * 4
+        for bbox, class_name in zip(bboxes, class_names):
+            class_name = class_name.numpy().decode('utf-8')
+            bbox_np = bbox.numpy()
+            bbox_np_ = bbox_np[bbox_id:bbox_id + 4]
+            if np.any(np.isnan(bbox_np_)):
+                assert np.all(np.isnan(bbox_np_)), "either all or none of the bounding box coordinates can be NAN"
+
+            ymin, xmin, ymax, xmax = bbox_np_
+            # xmin, ymin, xmax, ymax = bbox_np_
+            draw_box(image_np, [xmin, ymin, xmax, ymax], _id=class_name,
+                     color='green', thickness=1, norm=True, xywh=False)
+
+        # video_np = [img.numpy() for img in video]
+        # out_img = np.concatenate(video_np, axis=1)
+        cv2.imwrite(vis_img_path, image_np)
+
+        print(f'vis_img_path: {vis_img_path}')
+        print()
 
 
 def save_image_array_as_png(image, output_path):

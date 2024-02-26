@@ -19,27 +19,24 @@ from configs.config_base import D
 
 
 def get_object_detection_train_transforms(
+        cfg,
         image_size: Tuple[int, int],
         max_instances_per_image: int,
-        object_order: str = 'random',
-        scale_jitter=1,
-        fixed_crop=1,
-        jitter_scale_min: float = 0.3,
-        jitter_scale_max: float = 2.0):
+):
     instance_feature_names = ['bbox', 'label', 'area', 'is_crowd']
     object_coordinate_keys = ['bbox']
 
     train_transforms = [D(name='record_original_image_size'), ]
-    if scale_jitter:
+    if cfg.scale_jitter:
         # print('annoying scale_jitter is enabled')
         train_transforms.append(
             D(name='scale_jitter',
               inputs=['image'],
               target_size=image_size,
-              min_scale=jitter_scale_min,
-              max_scale=jitter_scale_max)
+              min_scale=cfg.jitter_scale_min,
+              max_scale=cfg.jitter_scale_max)
         )
-    if fixed_crop:
+    if cfg.fixed_crop:
         # print('equally annoying fixed_crop is enabled')
         train_transforms.append(
             D(name='fixed_size_crop',
@@ -59,7 +56,7 @@ def get_object_detection_train_transforms(
           filter_keys=['is_crowd']),
         D(name='reorder_object_instances',
           inputs=instance_feature_names,
-          order=object_order),
+          order=cfg.object_order),
         D(name='inject_noise_bbox',
           max_instances_per_image=max_instances_per_image),
         D(name='pad_image_to_max_size',
@@ -99,9 +96,7 @@ def get_video_detection_train_transforms(
         length: int,
         max_disp: int,
         max_instances_per_image: int,
-        object_order: str = 'random',
 ):
-
     # return get_video_detection_eval_transforms(
     #     image_size, length, max_instances_per_image)
 
@@ -130,7 +125,14 @@ def get_video_detection_train_transforms(
               target_size=image_size,
               object_coordinate_keys=object_coordinate_keys)
         )
-
+    else:
+        train_transforms.append(
+            D(name='resize_video',
+              inputs=['video'],
+              length=length,
+              antialias=[True],
+              target_size=image_size)
+        )
     train_transforms += [
         D(name='random_horizontal_flip_video',
           inputs=['video'],
@@ -145,7 +147,7 @@ def get_video_detection_train_transforms(
 
         D(name='reorder_object_instances',
           inputs=instance_feature_names,
-          order=object_order),
+          order=cfg.object_order),
 
         D(name='inject_noise_bbox_video',
           length=length,

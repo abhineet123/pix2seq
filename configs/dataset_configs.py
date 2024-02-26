@@ -21,7 +21,8 @@ _transforms_config = D(
     scale_jitter=1,
     fixed_crop=1,
     jitter_scale_min=0.3,
-    jitter_scale_max=2.0
+    jitter_scale_max=2.0,
+    object_order='random',
 )
 
 _shared_dataset_config = D(
