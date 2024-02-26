@@ -290,7 +290,7 @@ class Params(paramparse.CFG):
 
         self.start_seq_id = 0
         self.end_seq_id = -1
-        
+
         self.vis = 0
 
 

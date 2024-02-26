@@ -54,6 +54,8 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
           example: `dict` of relevant features and labels.
         """
         h, w = int(example['video/height']), int(example['video/width'])
+        # h, w = self.task_config.image_size
+
         num_frames = int(example['video/num_frames'])
 
         filenames = example['video/file_names']
@@ -82,7 +84,9 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
             fn_output_signature=tf.uint8
         )
         length = self.config.length
-        h, w = self.task_config.image_size
+
+        scale = 1. / utils.tf_float32((h, w))
+        # scale = 1. / utils.tf_float32(tf.shape(example['image'])[:2])
 
         # frames.set_shape([length, h, w, 3])
         frames.set_shape([length, None, None, 3])
@@ -92,7 +96,6 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
 
         area = decode_utils.decode_video_areas(example, self.config.length)
         bbox = decode_utils.decode_video_boxes(example, self.config.length)
-        scale = 1. / utils.tf_float32((h, w))
         bbox = utils.scale_points(bbox, scale)
 
         new_example = {
