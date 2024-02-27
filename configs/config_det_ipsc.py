@@ -49,10 +49,13 @@ def update_task_config(cfg):
         task.image_size = image_size
 
         task.eval_transforms = transform_configs.get_object_detection_eval_transforms(
-                image_size, task.max_instances_per_image_test)
+            cfg.dataset.transforms,
+            image_size, task.max_instances_per_image_test)
 
         task.train_transforms = transform_configs.get_object_detection_train_transforms(
-                image_size, task.max_instances_per_image, scale_jitter=scale_jitter, fixed_crop=fixed_crop)
+            cfg.dataset.transforms,
+            image_size, task.max_instances_per_image,
+        )
 
 
 def get_config(config_str=None):

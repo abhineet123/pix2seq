@@ -72,6 +72,7 @@ def get_object_detection_train_transforms(
 
 
 def get_object_detection_eval_transforms(
+        cfg,
         image_size: Tuple[int, int],
         max_instances_per_image: int):
     return [
