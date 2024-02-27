@@ -22,6 +22,7 @@ import sys
 import cv2
 
 sys.path.append(os.getcwd())
+sys.path.append("/home/abhineet/ipsc/ipsc_data_processing")
 
 from absl import app
 # from absl import flags
@@ -397,7 +398,9 @@ def main(_):
         annotation_iterator=annotations_iter,
         process_func=create_video_tf_example,
         num_shards=params.num_shards,
-        multiple_processes=params.n_proc)
+        multiple_processes=params.n_proc,
+        iter_len=len(video_info),
+    )
 
     print(f'out_name: {out_name}')
     print(f'output_path: {output_path}')

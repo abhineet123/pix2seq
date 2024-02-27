@@ -21,6 +21,7 @@ import os
 import sys
 
 sys.path.append(os.getcwd())
+sys.path.append("/home/abhineet/ipsc/ipsc_data_processing")
 
 # from absl import app
 # from absl import flags
@@ -192,17 +193,18 @@ def generate_annotations(images, image_dir,
             vis_utils.vis_json_ann(image, object_ann, category_id_to_name_map,
                                    image_dir, is_video=False)
 
-
-        yield (image, image_dir,
-               # panoptic_masks_dir,
-               category_id_to_name_map,
-               object_ann,
-               enable_masks,
-               # caption_ann,
-               # keypoint_ann,
-               # panoptic_ann,
-               # is_category_thing,
-               )
+        yield (
+            image,
+            image_dir,
+            # panoptic_masks_dir,
+            category_id_to_name_map,
+            object_ann,
+            enable_masks,
+            # caption_ann,
+            # keypoint_ann,
+            # panoptic_ann,
+            # is_category_thing,
+        )
 
 
 def create_tf_example(
@@ -296,7 +298,9 @@ def main():
         annotation_iterator=annotations_iter,
         process_func=create_tf_example,
         num_shards=params.num_shards,
-        multiple_processes=params.n_proc)
+        multiple_processes=params.n_proc,
+        iter_len=len(image_info),
+    )
 
     print(f'out_name: {out_name}')
     print(f'output_path: {output_path}')

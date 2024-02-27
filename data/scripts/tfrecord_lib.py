@@ -20,6 +20,7 @@ import io
 import itertools
 import multiprocessing
 import os.path
+from tqdm import tqdm
 
 from absl import logging
 import numpy as np
@@ -156,7 +157,9 @@ def encode_mask_as_png(mask):
 
 def write_tf_record_dataset(output_path, annotation_iterator,
                             process_func, num_shards,
-                            multiple_processes=None, unpack_arguments=True):
+                            iter_len,
+                            multiple_processes=None,
+                            unpack_arguments=True):
     """Iterates over annotations, processes them and writes into TFRecords.
 
     Args:
@@ -194,17 +197,17 @@ def write_tf_record_dataset(output_path, annotation_iterator,
         if unpack_arguments:
             tf_example_iterator = pool.starmap(process_func, annotation_iterator)
         else:
-            tf_example_iterator = pool.imap(process_func, annotation_iterator)
+            tf_example_iterator = pool.i6map(process_func, annotation_iterator)
     else:
         if unpack_arguments:
             tf_example_iterator = itertools.starmap(process_func, annotation_iterator)
         else:
             tf_example_iterator = map(process_func, annotation_iterator)
 
-    for idx, (tf_example, num_annotations_skipped) in enumerate(
-            tf_example_iterator):
-        if idx % LOG_EVERY == 0:
-            logging.info('On image %d', idx)
+    for idx, (tf_example, num_annotations_skipped) in tqdm(enumerate(
+            tf_example_iterator), total=iter_len):
+        # if idx % LOG_EVERY == 0:
+        #     logging.info('On image %d', idx)
 
         total_num_annotations_skipped += num_annotations_skipped
         writers[idx % num_shards].write(tf_example.SerializeToString())

@@ -35,11 +35,8 @@ def get_category_names(
     Returns:
       Dictionary with the format {1: {"name": "Person"}, ...}
     """
-    if not category_names_path:
-        print(
-            'category_names_path not specified, default category names will be used'
-        )
-        return {i: {'name': str(i)} for i in range(10000)}
+    assert category_names_path, "category_names_path must be provided"
+
     print(f'Loading category names from {category_names_path}')
     if category_names_path.endswith('.json.gz'):
         import compress_json
@@ -48,6 +45,9 @@ def get_category_names(
         with open(category_names_path, 'r') as f:
             annotations = json.load(f)
     category_names = {c['id']: c for c in annotations['categories']}
+
+    assert 0 not in category_names.keys(), "class IDs must to be > 0"
+
     return category_names
 
 
