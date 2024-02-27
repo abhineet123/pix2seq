@@ -42,7 +42,14 @@ def get_object_detection_train_transforms(
             D(name='fixed_size_crop',
               inputs=['image'],
               target_size=image_size,
-              object_coordinate_keys=object_coordinate_keys),
+              object_coordinate_keys=object_coordinate_keys)
+        )
+    else:
+        train_transforms.append(
+            D(name='resize_image',
+              inputs=['image'],
+              antialias=[True],
+              target_size=image_size)
         )
 
     train_transforms += [
