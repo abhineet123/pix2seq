@@ -28,6 +28,7 @@ from models import model as model_lib
 from models import model_utils
 import tensorflow as tf
 
+from tasks import task_utils
 
 @model_lib.ModelRegistry.register('encoder_ar_decoder')
 class Model(tf.keras.models.Model):
@@ -194,6 +195,9 @@ class ARTrainer(model_lib.Trainer):
           **kwargs: other neccesary configurations to pass for training setup.
         """
         super().__init__(config, **kwargs)
+        self._category_names = task_utils.get_category_names(
+            config.dataset.get('category_names_path'))
+
         self._metrics.update({
             'loss_notpad': tf.keras.metrics.Mean('loss_notpad'),
             'accuracy_notpad': tf.keras.metrics.SparseCategoricalAccuracy(
@@ -202,7 +206,8 @@ class ARTrainer(model_lib.Trainer):
 
     def compute_loss(self, preprocess_outputs):
         """Compute loss based on model outputs and targets."""
-        image, input_seq, target_seq, token_weights = preprocess_outputs
+        examples, input_seq, target_seq, token_weights = preprocess_outputs
+        image = examples["image"]
 
         target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
         token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)
@@ -220,10 +225,21 @@ class ARTrainer(model_lib.Trainer):
                 tf.reduce_sum(token_weights_notpad) + 1e-9)
 
         # update metrics
+        y_mask = tf.greater(token_weights_notpad, 0)
+
+        y_true = tf.boolean_mask(target_seq, y_mask)
+        y_pred_logits = tf.boolean_mask(logits, y_mask)
+
         self._metrics['loss_notpad'].update_state(loss_notpad)
         self._metrics['accuracy_notpad'].update_state(
-            tf.boolean_mask(target_seq, tf.greater(token_weights_notpad, 0)),
-            tf.boolean_mask(logits, tf.greater(token_weights_notpad, 0)))
+            y_true,
+            y_pred_logits,
+        )
+
+        if self.config.debug:
+            from tasks.visualization import vis_utils
+            vis_utils.debug_loss(self.config, self._category_names, examples, target_seq,
+                                 logits, y_mask, y_pred=None, run_type='train', is_video=False)
 
         return loss
 

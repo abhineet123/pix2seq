@@ -81,68 +81,13 @@ class TaskObjectDetection(task_lib.Task):
 
         return dataset
 
-    def debug_transforms(self, batched_examples):
-        batch_size = batched_examples["image"].shape[0]
-        proc_examples = {
-                k: [] for k, v in batched_examples.items()
-            }
-        for i in range(batch_size):
-            single_example = {
-                k: v[i, ...] for k, v in batched_examples.items()
-            }
-            proc_videos = dict(
-                orig=single_example["image"]
-            )
-            proc_bboxes = dict(
-                orig=single_example["bbox"]
-            )
-            import copy
-            proc_example = copy.copy(single_example)
-
-            for t in self.train_transforms:
-                t_name = t.config.name
-                proc_example = t.process_example(proc_example)
-
-                proc_videos[t_name] = proc_example["image"]
-                proc_bboxes[t_name] = proc_example["bbox"]
-
-                # image = proc_example["image"]
-                # image = tf.image.convert_image_dtype(image, tf.uint8)
-
-                # video_ids = proc_example["video_id"]
-                # file_names = proc_example["file_names"]
-
-                # vis_utils.save_video(image, file_names, t_name, self.config.model_dir)
-            for k, v in proc_examples.items():
-                v.append(proc_example[k])
-
-        for k, v in proc_examples.items():
-            proc_examples[k] = tf.stack(v, axis=0)
-
-        return proc_examples
-
     def preprocess_batched(self, batched_examples, training):
-        """Task-specific preprocessing of batched examples on accelerators (TPUs).
-
-        Typical operations in this preprocessing step for detection task:
-          - Quantization and serialization of object instances.
-          - Creating the input sequence, target sequence, and token weights.
-
-        Args:
-          batched_examples: tuples of feature and label tensors that are
-            preprocessed, batched, and stored with `dict`.
-          training: bool.
-
-        Returns:
-          images: `float` of shape (bsz, h, w, c)
-          input_seq: `int` of shape (bsz, seqlen).
-          target_seq: `int` of shape (bsz, seqlen).
-          token_weights: `float` of shape (bsz, seqlen).
-        """
         config = self.config.task
         mconfig = self.config.model
 
-        # batched_examples = self.debug_transforms(batched_examples)
+        # batched_examples = vis_utils.debug_image_transforms(
+        #     self.train_transforms, batched_examples,
+        #     vis=1, model_dir=self.config.model_dir)
 
         # Create input/target seq.
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
@@ -195,14 +140,15 @@ class TaskObjectDetection(task_lib.Task):
             token_weights)
 
         if training:
-            return batched_examples['image'], input_seq, target_seq, token_weights
+            return batched_examples, input_seq, target_seq, token_weights
         else:
-            return batched_examples['image'], response_seq, batched_examples
+            return batched_examples, input_seq, response_seq
 
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
-        image, _, examples = preprocessed_outputs  # response_seq unused by default
+        examples, input_seq, response_seq  = preprocessed_outputs  # response_seq unused by default
+        image = examples["image"]
         bsz = tf.shape(image)[0]
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id, prompt_shape=(bsz, 1))
@@ -346,14 +292,16 @@ class TaskObjectDetection(task_lib.Task):
                 bboxes_, bboxes_rescaled_, classes_, scores_ = (
                     bboxes_.numpy(), bboxes_rescaled_.numpy(), classes_.numpy(), scores_.numpy())
                 images_ = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
-                ret_images += add_image_summary_with_bbox(
+                ret_images += vis_utils.add_image_summary_with_bbox(
                     images_, bboxes_, bboxes_rescaled_, classes_, scores_, self._category_names,
-                    image_ids__, train_step, tag,
+                    image_ids__,
+                    # train_step, tag,
+                    # max_images_shown=(-1 if ret_results else 3)
                     out_vis_dir=out_vis_dir,
                     vid_cap=vid_cap,
                     csv_data=csv_data,
                     min_score_thresh=min_score_thresh,
-                    max_images_shown=(-1 if ret_results else 3))
+                )
 
         logging.info('Done post-process')
         if ret_results:
@@ -416,43 +364,6 @@ class TaskObjectDetection(task_lib.Task):
         """Reset states of metrics accumulators."""
         if self._coco_metrics:
             self._coco_metrics.reset_states()
-
-
-def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores, category_names,
-                                image_ids, step, tag, max_images_shown=3,
-                                vid_cap=None,
-                                out_vis_dir=None,
-                                csv_data=None,
-                                min_score_thresh=0.1):
-    """Adds image summary with GT / predicted bbox."""
-    k = 0
-    # del image_ids
-    new_images = []
-    for image_id_, image_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(image_ids, images, bboxes,
-                                                                              bboxes_rescaled, scores, classes):
-        keep_indices = np.where(classes_ > 0)[0]
-        image = vis_utils.visualize_boxes_and_labels_on_image_array(
-            out_vis_dir=out_vis_dir,
-            vid_cap=vid_cap,
-            csv_data=csv_data,
-            image_id=image_id_,
-            image=image_,
-            bboxes_rescaled=bboxes_rescaled_[keep_indices],
-            boxes=boxes_[keep_indices],
-            classes=classes_[keep_indices],
-            scores=scores_[keep_indices],
-            category_index=category_names,
-            use_normalized_coordinates=True,
-            min_score_thresh=min_score_thresh,
-            max_boxes_to_draw=100)
-        new_images.append(image)
-
-        # new_images.append(tf.image.convert_image_dtype(image, tf.float32))
-        k += 1
-        # if max_images_shown >= 0 and k >= max_images_shown:
-        #     break
-    # tf.summary.image(tag, new_images, step=step, max_outputs=max_images_shown)
-    return new_images
 
 
 def build_response_seq_from_bbox(bbox,

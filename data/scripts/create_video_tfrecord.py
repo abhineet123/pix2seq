@@ -30,6 +30,7 @@ from absl import logging
 
 import paramparse
 from data.scripts import tfrecord_lib
+from tasks.visualization import vis_utils
 
 
 def save_ytvis_annotations(json_dict, json_path):
@@ -184,37 +185,6 @@ def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map, vid_len):
     return feature_dict
 
 
-def vis_video(video, object_anns, category_id_to_name_map, image_dir):
-    from eval_utils import draw_box, annotate
-
-    file_names_to_img = {}
-    for object_ann in object_anns:
-        bboxes = object_ann["bboxes"]
-        category_id = object_ann['category_id']
-        class_name = category_id_to_name_map[category_id]
-        file_names = video['file_names']
-        for file_name, bbox in zip(file_names, bboxes):
-            try:
-                img = file_names_to_img[file_name]
-            except KeyError:
-                img_path = os.path.join(image_dir, file_name)
-                img = cv2.imread(img_path)
-                file_names_to_img[file_name] = img
-
-            if bbox is None:
-                continue
-
-            cx, cy, w, h = bbox
-            draw_box(img, [cx, cy, w, h], _id=class_name,
-                     color='green', thickness=1, norm=False, xywh=True)
-            file_names_to_img[file_name] = img
-
-    for file_name, img in file_names_to_img.items():
-        img = annotate(img, file_name)
-        cv2.imshow('img', img)
-        cv2.waitKey(1)
-
-
 def generate_video_annotations(
         videos,
         category_id_to_name_map,
@@ -227,7 +197,7 @@ def generate_video_annotations(
         object_anns = vid_to_obj_ann.get(video['id'], {})
 
         if vis:
-            vis_video(video, object_anns, category_id_to_name_map, image_dir)
+            vis_utils.vis_json_ann(video, object_anns, category_id_to_name_map, image_dir)
 
         yield (
             video,

@@ -31,6 +31,7 @@ import paramparse
 
 import vocab
 from data.scripts import tfrecord_lib
+from tasks.visualization import vis_utils
 
 
 # flags.DEFINE_string('image_dir', './datasets/ipsc/well3/all_frames_roi', 'Directory containing images.')
@@ -54,6 +55,8 @@ class Params(paramparse.CFG):
         self.ann_suffix = ''
         self.image_dir = ''
         self.enable_masks = 1
+        self.vis = 0
+
         self.n_proc = 0
         self.ann_ext = 'json'
         self.num_shards = 32
@@ -167,6 +170,7 @@ def generate_annotations(images, image_dir,
                          category_id_to_name_map,
                          img_to_obj_ann,
                          enable_masks,
+                         vis,
                          # img_to_cap_ann,
                          # img_to_key_ann,
                          # img_to_pan_ann,
@@ -181,6 +185,11 @@ def generate_annotations(images, image_dir,
         # keypoint_ann = img_to_key_ann.get(image['id'], {})
         #
         # panoptic_ann = img_to_pan_ann.get(image['id'], {})
+
+        if vis:
+            vis_utils.vis_json_ann(image, object_ann, category_id_to_name_map,
+                                   image_dir, is_video=False)
+
 
         yield (image, image_dir,
                # panoptic_masks_dir,
@@ -269,6 +278,7 @@ def main():
         category_id_to_name_map=category_id_to_name_map,
         img_to_obj_ann=img_to_obj_ann,
         enable_masks=params.enable_masks,
+        vis=params.vis,
         # img_to_cap_ann=img_to_cap_ann,
         # img_to_key_ann=img_to_key_ann,
         # img_to_pan_ann=img_to_pan_ann,

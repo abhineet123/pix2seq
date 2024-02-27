@@ -56,7 +56,7 @@ from six.moves import range
 from six.moves import zip
 import tensorflow.compat.v1 as tf
 
-from eval_utils import draw_box
+from eval_utils import draw_box, annotate
 
 _TITLE_LEFT_MARGIN = 10
 _TITLE_TOP_MARGIN = 10
@@ -86,8 +86,97 @@ STANDARD_COLORS = [
     'WhiteSmoke', 'Yellow', 'YellowGreen'
 ]
 
+def vis_json_ann(video, object_anns, category_id_to_name_map, image_dir, is_video=True):
+    from eval_utils import draw_box, annotate
 
-def debug_transforms(transforms, batched_examples, vis, model_dir):
+    file_names_to_img = {}
+    for object_ann in object_anns:
+        if is_video:
+            bboxes = object_ann["bboxes"]
+            file_names = video['file_names']
+        else:
+            bboxes =[object_ann["bbox"], ]
+            file_names = [video['file_name'], ]
+
+        category_id = object_ann['category_id']
+        class_name = category_id_to_name_map[category_id]
+        for file_name, bbox in zip(file_names, bboxes):
+            try:
+                img = file_names_to_img[file_name]
+            except KeyError:
+                img_path = os.path.join(image_dir, file_name)
+                img = cv2.imread(img_path)
+                file_names_to_img[file_name] = img
+
+            if bbox is None:
+                continue
+
+            cx, cy, w, h = bbox
+            draw_box(img, [cx, cy, w, h], _id=class_name,
+                     color='green', thickness=1, norm=False, xywh=True)
+            file_names_to_img[file_name] = img
+
+    for file_name, img in file_names_to_img.items():
+        img = annotate(img, file_name)
+        cv2.imshow('img', img)
+        cv2.waitKey(1)
+
+def debug_image_transforms(train_transforms, batched_examples, model_dir, vis):
+    batch_size = batched_examples["image"].shape[0]
+    proc_examples = {
+            k: [] for k, v in batched_examples.items()
+        }
+
+    from datetime import datetime
+
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
+    vis_img_dir = os.path.join(model_dir, f"debug_transforms_{time_stamp}")
+
+    os.makedirs(vis_img_dir, exist_ok=True)
+
+    for i in range(batch_size):
+        single_example = {
+            k: v[i, ...] for k, v in batched_examples.items()
+        }
+        proc_videos = dict(
+            orig=single_example["image"]
+        )
+        proc_bboxes = dict(
+            orig=single_example["bbox"]
+        )
+        import copy
+        proc_example = copy.copy(single_example)
+
+        save_image_sample(single_example, 'orig', 0, vis_img_dir)
+
+        for t_id, t in enumerate(train_transforms):
+            t_name = t.config.name
+            proc_example = t.process_example(proc_example)
+
+            proc_videos[t_name] = proc_example["image"]
+            proc_bboxes[t_name] = proc_example["bbox"]
+
+            if not vis:
+                continue
+
+            save_image_sample(proc_example, t_name, t_id+1, vis_img_dir)
+
+            # image = proc_example["image"]
+            # image = tf.image.convert_image_dtype(image, tf.uint8)
+
+            # video_ids = proc_example["video_id"]
+            # file_names = proc_example["file_names"]
+
+            # vis_utils.save_video(image, file_names, t_name, self.config.model_dir)
+        for k, v in proc_examples.items():
+            v.append(proc_example[k])
+
+    for k, v in proc_examples.items():
+        proc_examples[k] = tf.stack(v, axis=0)
+
+    return proc_examples
+
+def debug_video_transforms(transforms, batched_examples, vis, model_dir):
     # bbox_np = batched_examples['bbox'].numpy()
     # class_id_np = batched_examples['class_id'].numpy()
     # class_name_np = batched_examples['class_name'].numpy()
@@ -137,7 +226,7 @@ def debug_transforms(transforms, batched_examples, vis, model_dir):
 
 
 def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None, y_pred=None,
-               pred_name='pred', gt_name='gt', run_type='train'):
+               pred_name='pred', gt_name='gt', run_type='train', is_video=True):
     vocab_size = config.model.vocab_size
 
     if y_pred is None:
@@ -168,9 +257,14 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
     # print(f'vis_out_dir: {vis_out_dir}')
     os.makedirs(vis_out_dir, exist_ok=True)
 
-    bbox_info_gt = visualize_video(
+    if is_video:
+        vis_fn = visualize_video
+    else:
+        vis_fn = visualize_image
+
+    bbox_info_gt = vis_fn(
         config, examples, y_true_logits, y_true, f'{gt_name}', class_names, None, vis_out_dir)
-    bbox_info_pred = visualize_video(
+    bbox_info_pred = vis_fn(
         config, examples, y_pred_logits, y_pred, f'{pred_name}', class_names, None, vis_out_dir)
 
     if y_mask is None:
@@ -197,9 +291,9 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
     m.update_state(y_true_m, y_pred_logits_m)
     accuracy_notpad_m = m.result().numpy()
 
-    bbox_info_gt_m = visualize_video(config, examples, y_true_logits, y_true, f'{gt_name} masked',
+    bbox_info_gt_m = vis_fn(config, examples, y_true_logits, y_true, f'{gt_name} masked',
                                      class_names, y_mask, vis_out_dir)
-    bbox_info_pred_m = visualize_video(config, examples, y_pred_logits, y_pred, f'{pred_name} masked',
+    bbox_info_pred_m = vis_fn(config, examples, y_pred_logits, y_pred, f'{pred_name} masked',
                                        class_names, y_mask, vis_out_dir)
 
     return bbox_info_gt, bbox_info_pred, bbox_info_gt_m, bbox_info_pred_m
@@ -280,9 +374,9 @@ def save_video_sample(proc_example, t_name, t_id, vis_img_dir):
     import cv2
 
     video = proc_example["video"]
-    bboxes = proc_example["bbox"]
     class_names = proc_example["class_name"]
     file_names = proc_example["file_names"]
+    bboxes = proc_example["bbox"]
     # video_ids = proc_example["video_id"]
 
     video = tf.image.convert_image_dtype(video, tf.uint8)
@@ -320,6 +414,45 @@ def save_video_sample(proc_example, t_name, t_id, vis_img_dir):
 
         print(f'vis_img_path: {vis_img_path}')
         print()
+
+def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
+    import cv2
+
+    image = [proc_example["image"], ]
+    file_name = proc_example["image/id"]
+    class_ids = proc_example["label"]
+    bboxes = proc_example["bbox"]
+
+    image = tf.image.convert_image_dtype(image, tf.uint8)
+
+    image_np = image.numpy().squeeze()
+    for bbox, class_id in zip(bboxes, class_ids):
+        class_id = class_id.numpy()
+        bbox_np_ = bbox.numpy()
+
+        ymin, xmin, ymax, xmax = bbox_np_
+        draw_box(image_np, [xmin, ymin, xmax, ymax], _id=class_id,
+                 color='green', thickness=1, norm=True, xywh=False)
+
+    file_name_np = file_name.numpy()
+    file_name_np = file_name_np.decode('utf-8')
+
+    img_name = os.path.basename(file_name_np)
+    img_name, img_ext = os.path.splitext(img_name)
+    if not img_ext:
+        img_ext='.jpg'
+
+    seq_name = os.path.basename(os.path.dirname(file_name_np))
+
+    vis_img_name = f'{seq_name} {img_name} {t_id:04d} {t_name}'
+
+    vis_img_path = os.path.join(vis_img_dir, f'{vis_img_name}{img_ext}')
+
+    image_np = annotate(image_np, vis_img_name)
+    cv2.imwrite(vis_img_path, image_np)
+
+    print(f'vis_img_path: {vis_img_path}')
+    print()
 
 
 def save_image_array_as_png(image, output_path):
@@ -1133,8 +1266,12 @@ def visualize_boxes_and_labels_on_image_array(
                                                             len(STANDARD_COLORS)]
 
     seq_id = 'generic'
-    image_id = image_id.astype(str)
-    image_id_ = str(image_id.item())
+    if isinstance(image_id, bytes):
+        image_id_ = image_id.decode('utf-8')
+    else:
+        image_id = image_id.astype(str)
+        image_id_ = str(image_id.item())
+
     if '/' in image_id_:
         seq_id, image_id_ = image_id_.split('/')
 
@@ -1197,6 +1334,55 @@ def visualize_boxes_and_labels_on_image_array(
     return image
 
 
+def visualize_image(config, examples, logits, tokens, label, category_names, mask, vis_out_dir):
+    from tasks import task_utils
+
+    images = examples['image']
+    tconfig = config.task
+    mconfig = config.model
+
+    classes, bboxes, scores = task_utils.decode_object_seq_to_bbox(
+        logits, tokens, tconfig.quantization_bins,
+        mconfig.coord_vocab_shift)
+
+    image_size = images.shape[1:3].as_list()
+    scale = utils.tf_float32(image_size)
+
+    bboxes_rescaled = utils.scale_points(bboxes, scale)
+    image_ids = examples['image/id']
+
+    image_ids_, bboxes_, bboxes_rescaled_, classes_, scores_, images_ = (
+        image_ids.numpy(),
+        bboxes.numpy(),
+        bboxes_rescaled.numpy(),
+        classes.numpy(),
+        scores.numpy(),
+        tf.image.convert_image_dtype(images, tf.uint8).numpy(),
+    )
+    ret_images = add_image_summary_with_bbox(
+        images_, bboxes_, bboxes_rescaled_, classes_, scores_,
+        category_names, image_ids_,
+        min_score_thresh=0
+    )
+    import cv2
+    for img_id, img in enumerate(ret_images):
+        img_path = image_ids_[img_id].decode('utf-8')
+
+        img_name = os.path.basename(img_path)
+        seq_name = os.path.basename(os.path.dirname(img_path))
+
+        vis_img_name = f'{label} {seq_name} {img_name}'
+
+        import eval_utils
+        img = eval_utils.annotate(img, vis_img_name)
+        vis_img_path = os.path.join(vis_out_dir, f'{vis_img_name}.jpg')
+
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+        cv2.imwrite(vis_img_path, img)
+
+    return bboxes_, bboxes_rescaled_, classes_, scores
+
 def visualize_video(config, examples, logits, tokens, label, category_names, mask, vis_out_dir):
     from tasks import task_utils
 
@@ -1257,6 +1443,43 @@ def visualize_video(config, examples, logits, tokens, label, category_names, mas
             # print()
     return bboxes_, bboxes_rescaled_, classes_, scores
 
+
+def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores, category_names,
+                                image_ids,
+                                # step, tag, max_images_shown=3,
+                                vid_cap=None,
+                                out_vis_dir=None,
+                                csv_data=None,
+                                min_score_thresh=0.1):
+    """Adds image summary with GT / predicted bbox."""
+    k = 0
+    # del image_ids
+    new_images = []
+    for image_id_, image_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(image_ids, images, bboxes,
+                                                                              bboxes_rescaled, scores, classes):
+        keep_indices = np.where(classes_ > 0)[0]
+        image = visualize_boxes_and_labels_on_image_array(
+            out_vis_dir=out_vis_dir,
+            vid_cap=vid_cap,
+            csv_data=csv_data,
+            image_id=image_id_,
+            image=image_,
+            bboxes_rescaled=bboxes_rescaled_[keep_indices],
+            boxes=boxes_[keep_indices],
+            classes=classes_[keep_indices],
+            scores=scores_[keep_indices],
+            category_index=category_names,
+            use_normalized_coordinates=True,
+            min_score_thresh=min_score_thresh,
+            max_boxes_to_draw=100)
+        new_images.append(image)
+
+        # new_images.append(tf.image.convert_image_dtype(image, tf.float32))
+        k += 1
+        # if max_images_shown >= 0 and k >= max_images_shown:
+        #     break
+    # tf.summary.image(tag, new_images, step=step, max_outputs=max_images_shown)
+    return new_images
 
 def add_video_summary_with_bbox(
         videos, bboxes, bboxes_rescaled, classes, scores, category_names,
