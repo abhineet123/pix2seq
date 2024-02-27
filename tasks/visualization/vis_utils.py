@@ -1359,13 +1359,13 @@ def visualize_image(config, examples, logits, tokens, label, category_names, mas
         scores.numpy(),
         tf.image.convert_image_dtype(images, tf.uint8).numpy(),
     )
-    ret_images = add_image_summary_with_bbox(
+    vis_images = add_image_summary_with_bbox(
         images_, bboxes_, bboxes_rescaled_, classes_, scores_,
         category_names, image_ids_,
         min_score_thresh=0
     )
     import cv2
-    for img_id, img in enumerate(ret_images):
+    for img_id, img in enumerate(vis_images):
         img_path = image_ids_[img_id].decode('utf-8')
 
         img_name = os.path.basename(img_path)

@@ -71,6 +71,9 @@ def load_ytvis_annotations(annotation_path, vid_id_offset):
     category_id_to_name_map = dict(
         (element['id'], element['name']) for element in annotations['categories'])
 
+    assert 0 not in category_id_to_name_map.keys(), "class IDs must to be > 0"
+
+
     vid_to_ann = collections.defaultdict(list)
     for ann in annotations['annotations']:
         ann['video_id'] += vid_id_offset
