@@ -1,6 +1,9 @@
 <!-- MarkdownTOC -->
 
 - [resnet-640](#resnet_64_0_)
+    - [detrac-non_empty       @ resnet-640](#detrac_non_empty___resnet_640_)
+        - [0_19       @ detrac-non_empty/resnet-640](#0_19___detrac_non_empty_resnet_64_0_)
+        - [0_9       @ detrac-non_empty/resnet-640](#0_9___detrac_non_empty_resnet_64_0_)
     - [mnist-640-1       @ resnet-640](#mnist_640_1___resnet_640_)
     - [mnist-640-5       @ resnet-640](#mnist_640_5___resnet_640_)
             - [on-test       @ mnist-640-5/resnet-640](#on_test___mnist_640_5_resnet_640_)
@@ -53,6 +56,16 @@
 
 <a id="resnet_64_0_"></a>
 # resnet-640 
+<a id="detrac_non_empty___resnet_640_"></a>
+## detrac-non_empty       @ resnet-640-->p2s
+<a id="0_19___detrac_non_empty_resnet_64_0_"></a>
+### 0_19       @ detrac-non_empty/resnet-640-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detrac-non_empty-0_19,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+
+<a id="0_9___detrac_non_empty_resnet_64_0_"></a>
+### 0_9       @ detrac-non_empty/resnet-640-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detrac-non_empty-0_9,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+
 <a id="mnist_640_1___resnet_640_"></a>
 ## mnist-640-1       @ resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-1-12_1000,suffix-train,batch-4,pt-1,dbg-1,dyn-1,dist-0,ep-10000,gz

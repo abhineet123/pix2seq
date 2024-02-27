@@ -79,11 +79,11 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 ## detrac-non_empty       @ resnet-640-->p2s_vid
 <a id="0_19___detrac_non_empty_resnet_64_0_"></a>
 ### 0_19       @ detrac-non_empty/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,detrac-non_empty-0_19,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 
 <a id="0_9___detrac_non_empty_resnet_64_0_"></a>
 ### 0_9       @ detrac-non_empty/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,detrac-non_empty-0_9,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_9,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 
 <a id="mnist_640_1_12_1000___resnet_640_"></a>
 ## mnist-640-1-12_1000       @ resnet-640-->p2s_vid
