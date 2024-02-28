@@ -72,6 +72,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
         print(f'\nwriting vis images to: {out_vis_dir}\n')
 
+    seq_to_csv_rows = collections.defaultdict(list)
+    seq_to_vid_cap = collections.defaultdict(lambda: None)
+
     with strategy.scope():
         @tf.function
         def run_single_step(dataset_iter):
@@ -86,8 +89,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         start_time = timestamp = time.time()
         cur_step = 0
         img_id = 0
-        seq_to_csv_rows = collections.defaultdict(list)
-        vid_cap = collections.defaultdict(lambda: None)
+
         # print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
 
         while True:
@@ -101,13 +103,14 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             if cur_step == 0:
                 utils.check_checkpoint_restored(
                     strict_verifiers=(),
-                    loose_verifiers=[verify_restored, verify_existing])
+                    loose_verifiers=[verify_restored, verify_existing],
+                )
 
             task.postprocess_cpu(
                 outputs=per_step_outputs,
                 train_step=global_step.numpy(),
                 out_vis_dir=out_vis_dir,
-                vid_cap=vid_cap,
+                vid_cap=seq_to_vid_cap,
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,
                 summary_tag=eval_tag,
@@ -139,7 +142,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             csv_columns.insert(1, 'VideoID')
         # if params.enable_mask:
         #     csv_columns += ['mask_w', 'mask_h', 'mask_counts']
-        for csv_seq_name, vid_cap_seq in vid_cap.items():
+        for seq_name, vid_cap_seq in seq_to_vid_cap.items():
             vid_cap_seq.release()
 
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():

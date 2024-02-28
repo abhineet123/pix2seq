@@ -3,8 +3,7 @@
 	root_dir: "datasets/DETRAC/Images",
     %mode%_name: "detrac",
 
-	train_suffix: "%0%-seq-%1%",
-	eval_suffix: "%0%-seq-%1%",
+	%mode%_suffix: "%0%-seq-%1%",
 
 	transforms:{
 		scale_jitter: 0,

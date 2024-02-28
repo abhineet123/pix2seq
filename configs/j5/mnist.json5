@@ -4,6 +4,7 @@
     %mode%_name: "mnist_%0%_%1%_%2%_var",
 	train_suffix: 'train',
 	eval_suffix: 'test',
+	%mode%_suffix: '%%3%%',
 	transforms:{
 		scale_jitter: 0,
 		fixed_crop: 0,

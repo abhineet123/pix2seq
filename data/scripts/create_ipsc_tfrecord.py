@@ -34,6 +34,8 @@ import vocab
 from data.scripts import tfrecord_lib
 from tasks.visualization import vis_utils
 
+from eval_utils import add_suffix
+
 
 # flags.DEFINE_string('image_dir', './datasets/ipsc/well3/all_frames_roi', 'Directory containing images.')
 # # flags.DEFINE_string('ann_file', './datasets/ipsc/well3/all_frames_roi/ext_reorg_roi_g2_0_53.json',
@@ -66,6 +68,9 @@ class Params(paramparse.CFG):
 
         self.start_seq_id = 0
         self.end_seq_id = -1
+
+        self.start_frame_id = 0
+        self.end_frame_id = -1
 
 
 def load_instance_annotations(annotation_path):
@@ -256,7 +261,12 @@ def main():
 
     if params.start_seq_id > 0 or params.end_seq_id >= 0:
         assert params.end_seq_id >= params.start_seq_id, "end_seq_id must to be >= start_seq_id"
-        params.ann_file = f'{params.ann_file}-seq-{params.start_seq_id}_{params.end_seq_id}'
+        seq_sufix = f'seq-{params.start_seq_id}_{params.end_seq_id}'
+        params.ann_file = add_suffix( params.ann_file, seq_sufix, sep='-')
+
+    if params.start_frame_id > 0 or params.end_frame_id >= 0:
+        frame_suffix = f'frame-{params.start_frame_id}_{params.end_frame_id}'
+        params.ann_file = add_suffix( params.ann_file, frame_suffix, sep='-')
 
     params.ann_file = os.path.join(params.image_dir, f'{params.ann_file}.{params.ann_ext}')
 

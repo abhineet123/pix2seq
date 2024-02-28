@@ -86,6 +86,7 @@ STANDARD_COLORS = [
     'WhiteSmoke', 'Yellow', 'YellowGreen'
 ]
 
+
 def vis_json_ann(video, object_anns, category_id_to_name_map, image_dir, is_video=True):
     from eval_utils import draw_box, annotate
 
@@ -95,7 +96,7 @@ def vis_json_ann(video, object_anns, category_id_to_name_map, image_dir, is_vide
             bboxes = object_ann["bboxes"]
             file_names = video['file_names']
         else:
-            bboxes =[object_ann["bbox"], ]
+            bboxes = [object_ann["bbox"], ]
             file_names = [video['file_name'], ]
 
         category_id = object_ann['category_id']
@@ -121,11 +122,12 @@ def vis_json_ann(video, object_anns, category_id_to_name_map, image_dir, is_vide
         cv2.imshow('img', img)
         cv2.waitKey(1)
 
+
 def debug_image_transforms(train_transforms, batched_examples, model_dir, vis):
     batch_size = batched_examples["image"].shape[0]
     proc_examples = {
-            k: [] for k, v in batched_examples.items()
-        }
+        k: [] for k, v in batched_examples.items()
+    }
 
     from datetime import datetime
 
@@ -159,7 +161,7 @@ def debug_image_transforms(train_transforms, batched_examples, model_dir, vis):
             if not vis:
                 continue
 
-            save_image_sample(proc_example, t_name, t_id+1, vis_img_dir)
+            save_image_sample(proc_example, t_name, t_id + 1, vis_img_dir)
 
             # image = proc_example["image"]
             # image = tf.image.convert_image_dtype(image, tf.uint8)
@@ -175,6 +177,7 @@ def debug_image_transforms(train_transforms, batched_examples, model_dir, vis):
         proc_examples[k] = tf.stack(v, axis=0)
 
     return proc_examples
+
 
 def debug_video_transforms(transforms, batched_examples, vis, model_dir):
     # bbox_np = batched_examples['bbox'].numpy()
@@ -214,7 +217,7 @@ def debug_video_transforms(transforms, batched_examples, vis, model_dir):
             if not vis:
                 continue
 
-            save_video_sample(proc_example, t_name, t_id+1, vis_img_dir)
+            save_video_sample(proc_example, t_name, t_id + 1, vis_img_dir)
 
         for k, v in proc_examples.items():
             v.append(proc_example[k])
@@ -292,9 +295,9 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
     accuracy_notpad_m = m.result().numpy()
 
     bbox_info_gt_m = vis_fn(config, examples, y_true_logits, y_true, f'{gt_name} masked',
-                                     class_names, y_mask, vis_out_dir)
+                            class_names, y_mask, vis_out_dir)
     bbox_info_pred_m = vis_fn(config, examples, y_pred_logits, y_pred, f'{pred_name} masked',
-                                       class_names, y_mask, vis_out_dir)
+                              class_names, y_mask, vis_out_dir)
 
     return bbox_info_gt, bbox_info_pred, bbox_info_gt_m, bbox_info_pred_m
 
@@ -348,8 +351,8 @@ def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
         vid_cap_seq = vid_cap[seq_id]
         if vid_cap_seq is None:
             # codec, ext = 'HFYU', 'avi'
-            # codec, ext = 'MP4V', 'mp4'
-            codec, ext = 'MJPG', 'avi'
+            codec, ext = 'MP4V', 'mp4'
+            # codec, ext = 'MJPG', 'avi'
             fps = 5
             fourcc = cv2.VideoWriter_fourcc(*codec)
             seq_vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
@@ -415,6 +418,7 @@ def save_video_sample(proc_example, t_name, t_id, vis_img_dir):
         print(f'vis_img_path: {vis_img_path}')
         print()
 
+
 def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
     import cv2
 
@@ -440,7 +444,7 @@ def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
     img_name = os.path.basename(file_name_np)
     img_name, img_ext = os.path.splitext(img_name)
     if not img_ext:
-        img_ext='.jpg'
+        img_ext = '.jpg'
 
     seq_name = os.path.basename(os.path.dirname(file_name_np))
 
@@ -1150,55 +1154,6 @@ def visualize_boxes_and_labels_on_image_array(
         skip_scores=False,
         skip_labels=False,
         skip_track_ids=False):
-    """Overlay labeled boxes on an image with formatted scores and label names.
-
-    This function groups boxes that correspond to the same location
-    and creates a display string for each detection and overlays these
-    on the image. Note that this function modifies the image in place, and returns
-    that same image.
-
-    Args:
-      image: uint8 numpy array with shape (img_height, img_width, 3)
-      boxes: a numpy array of shape [N, 4]
-      classes: a numpy array of shape [N]. Note that class indices are 1-based,
-        and match the keys in the label map.
-      scores: a numpy array of shape [N] or None.  If scores=None, then this
-        function assumes that the boxes to be plotted are groundtruth boxes and
-        plot all boxes as black with no classes or scores.
-      category_index: a dict containing category dictionaries (each holding
-        category index `id` and category name `name`) keyed by category indices.
-      instance_masks: a numpy array of shape [N, image_height, image_width] with
-        values ranging between 0 and 1, can be None.
-      instance_boundaries: a numpy array of shape [N, image_height, image_width]
-        with values ranging between 0 and 1, can be None.
-      keypoints: a numpy array of shape [N, num_keypoints, 2], can be None
-      keypoint_edges: A list of tuples with keypoint indices that specify which
-        keypoints should be connected by an edge, e.g. [(0, 1), (2, 4)] draws
-        edges from keypoint 0 to 1 and from keypoint 2 to 4.
-      track_ids: a numpy array of shape [N] with unique track ids. If provided,
-        color-coding of boxes will be determined by these ids, and not the class
-        indices.
-      use_normalized_coordinates: whether boxes is to be interpreted as normalized
-        coordinates or not.
-      max_boxes_to_draw: maximum number of boxes to visualize.  If None, draw all
-        boxes.
-      min_score_thresh: minimum score threshold for a box to be visualized
-      agnostic_mode: boolean (default: False) controlling whether to evaluate in
-        class-agnostic mode or not.  This mode will display scores but ignore
-        classes.
-      line_thickness: integer (default: 4) controlling line width of the boxes.
-      groundtruth_box_visualization_color: box color for visualizing groundtruth
-        boxes
-      skip_boxes: whether to skip the drawing of bounding boxes.
-      skip_scores: whether to skip score when drawing a single detection
-      skip_labels: whether to skip label when drawing a single detection
-      skip_track_ids: whether to skip track id when drawing a single detection
-
-    Returns:
-      uint8 numpy array with shape (img_height, img_width, 3) with overlaid boxes.
-    """
-    # Create a display string (and color) for every box location, group any boxes
-    # that correspond to the same location.
     box_to_display_str_map = collections.defaultdict(list)
     box_to_color_map = collections.defaultdict(str)
     box_to_rescaled_map = {}
@@ -1383,6 +1338,7 @@ def visualize_image(config, examples, logits, tokens, label, category_names, mas
 
     return bboxes_, bboxes_rescaled_, classes_, scores
 
+
 def visualize_video(config, examples, logits, tokens, label, category_names, mask, vis_out_dir):
     from tasks import task_utils
 
@@ -1455,8 +1411,8 @@ def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores
     k = 0
     # del image_ids
     new_images = []
-    for image_id_, image_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(image_ids, images, bboxes,
-                                                                              bboxes_rescaled, scores, classes):
+    for image_id_, image_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
+            image_ids, images, bboxes, bboxes_rescaled, scores, classes):
         keep_indices = np.where(classes_ > 0)[0]
         image = visualize_boxes_and_labels_on_image_array(
             out_vis_dir=out_vis_dir,
@@ -1480,6 +1436,7 @@ def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores
         #     break
     # tf.summary.image(tag, new_images, step=step, max_outputs=max_images_shown)
     return new_images
+
 
 def add_video_summary_with_bbox(
         videos, bboxes, bboxes_rescaled, classes, scores, category_names,

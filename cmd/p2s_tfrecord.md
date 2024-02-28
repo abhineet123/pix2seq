@@ -4,9 +4,9 @@
     - [0_19       @ detrac](#0_19___detrac_)
     - [0_9       @ detrac](#0_9___detrac_)
     - [49_68       @ detrac](#49_68___detrac_)
-    - [640-1       @ detrac](#640_1___detrac_)
 - [mnist       @ tfrecord](#mnist___tfrecord_)
     - [640-1       @ mnist](#640_1___mnis_t_)
+    - [640-1       @ mnist](#640_1___mnis_t__1)
     - [640-3       @ mnist](#640_3___mnis_t_)
     - [640-5       @ mnist](#640_5___mnis_t_)
 - [ipsc       @ tfrecord](#ipsc___tfrecord_)
@@ -29,12 +29,12 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-0_9:gz
 ## 49_68       @ detrac-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-49_68:gz
 
-<a id="640_1___detrac_"></a>
-## 640-1       @ detrac-->p2s_tfrecord
-python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-1:12_1000:train:gz
 <a id="mnist___tfrecord_"></a>
 # mnist       @ tfrecord-->p2s_setup
 <a id="640_1___mnis_t_"></a>
+## 640-1       @ mnist-->p2s_tfrecord
+python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-1:12_1000:train:gz
+<a id="640_1___mnis_t__1"></a>
 ## 640-1       @ mnist-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-1:12_1000:train:gz
 <a id="640_3___mnis_t_"></a>
@@ -44,6 +44,8 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-3:12_1000:train:gz
 ## 640-5       @ mnist-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:train:gz
 python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:test:gz
+
+python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:test:seq-0_5:frame-0_5:gz
 
 <a id="ipsc___tfrecord_"></a>
 # ipsc       @ tfrecord-->p2s_setup

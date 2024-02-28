@@ -258,26 +258,6 @@ class TaskObjectDetection(task_lib.Task):
          # is_crowd
          ) = new_outputs
 
-        if self.config.task.get('eval_outputs_json_path', None):
-            annotations = build_annotations(image_ids.numpy(),
-                                            pred_classes.numpy(),
-                                            pred_bboxes_rescaled.numpy(),
-                                            scores.numpy(),
-                                            len(self.eval_output_annotations))
-            self.eval_output_annotations.extend(annotations)
-
-        # Log/accumulate metrics.
-        # if self._coco_metrics:
-        #     self._coco_metrics.record_prediction(
-        #         image_ids, pred_bboxes_rescaled, pred_classes, scores)
-        #     if not self._coco_metrics.gt_annotations_path:
-        #         self._coco_metrics.record_groundtruth(
-        #             image_ids,
-        #             gt_bboxes_rescaled,
-        #             gt_classes,
-        #             areas=area,
-        #             is_crowds=is_crowd)
-
         # Image summary.
         if eval_step <= 10 or ret_results:
             image_ids_ = image_ids.numpy().flatten().astype(str)

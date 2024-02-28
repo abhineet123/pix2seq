@@ -30,6 +30,7 @@ import tensorflow as tf
 
 from tasks import task_utils
 
+
 @model_lib.ModelRegistry.register('encoder_ar_decoder')
 class Model(tf.keras.models.Model):
     """Inputs images and returns activations."""
@@ -236,10 +237,11 @@ class ARTrainer(model_lib.Trainer):
             y_pred_logits,
         )
 
-        if self.config.debug:
-            from tasks.visualization import vis_utils
-            vis_utils.debug_loss(self.config, self._category_names, examples, target_seq,
-                                 logits, y_mask, y_pred=None, run_type='train', is_video=False)
+        # if self.config.debug:
+        #     from tasks.visualization import vis_utils
+        #     vis_utils.debug_loss(
+        #         self.config, self._category_names, examples, target_seq,
+        #         logits, y_mask, y_pred=None, run_type='train',is_video=False)
 
         return loss
 

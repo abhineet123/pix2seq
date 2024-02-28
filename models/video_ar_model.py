@@ -250,8 +250,8 @@ class VideoARTrainer(model_lib.Trainer):
         self._metrics['loss_notpad'].update_state(loss_notpad)
         self._metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
 
-        if self.config.debug:
-            vis_utils.debug_loss(self.config, self._category_names,batched_examples, target_seq,
-                                 logits, y_mask, y_pred=None, run_type='train')
+        # if self.config.debug:
+        #     vis_utils.debug_loss(self.config, self._category_names,batched_examples, target_seq,
+        #                          logits, y_mask, y_pred=None, run_type='train')
 
         return loss
