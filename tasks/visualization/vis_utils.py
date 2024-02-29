@@ -1,45 +1,11 @@
-# coding=utf-8
-# Copyright 2022 The Pix2Seq Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-# Source: https://github.com/google/automl/tree/master/efficientdet/visualize/vis_utils.py
-# Copyright 2020 Google Research. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""A set of functions that are used for visualization.
-
-These functions often receive an image, perform some visualization on the image.
-The functions do not return a value, instead they modify the image itself.
-"""
 import abc
 import copy
 import collections
 import os.path
 
 import matplotlib
-import matplotlib.pyplot as plt  # pylint: disable=g-import-not-at-top
+import matplotlib.pyplot as plt
+
 import numpy as np
 import PIL.Image as Image
 import PIL.ImageColor as ImageColor
@@ -56,7 +22,7 @@ from six.moves import range
 from six.moves import zip
 import tensorflow.compat.v1 as tf
 
-from eval_utils import draw_box, annotate
+from eval_utils import draw_box, annotate, resize_ar_video
 
 _TITLE_LEFT_MARGIN = 10
 _TITLE_TOP_MARGIN = 10
@@ -353,6 +319,11 @@ def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
     if vid_cap is not None:
         vid_cap_seq = vid_cap[seq_id]
         if vid_cap_seq is None:
+            for seq_id_, vid_cap_ in vid_cap.items():
+                if vid_cap_ is not None:
+                    vid_cap_.release()
+                    vid_cap[seq_id_] = None
+
             # codec, ext = 'hfyu', 'avi'
             codec, ext = 'mp4v', 'mp4'
             # codec, ext = 'mjpg', 'avi'
@@ -1446,15 +1417,29 @@ def add_video_summary_with_bbox(
         video_ids, vid_len,
         filenames,
         file_ids,
+        unpadded_size,
+        orig_size,
         out_vis_dir=None,
         vid_cap=None,
         csv_data=None,
-        min_score_thresh=0.1):
+        min_score_thresh=0.1,
+
+):
     k = 0
     vis_videos = []
-    for video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
+    for iter_data in zip(
             video_ids, videos, filenames, file_ids, bboxes,
-            bboxes_rescaled, scores, classes):
+            bboxes_rescaled, scores, classes, unpadded_size, orig_size):
+
+        (video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_,
+         scores_, classes_, unpadded_size_, orig_size_) = iter_data
+
+        unpadded_h,  unpadded_w = map(int, unpadded_size_)
+        video_cropped = video[:, :unpadded_h, :unpadded_w, :]
+
+        orig_h,  orig_w = map(int, orig_size_)
+        video_resized = resize_ar_video(video_cropped, height=orig_h,  width=orig_w, strict=True)
+
         keep_indices = np.where(classes_ > 0)[0]
 
         vis_video = visualize_boxes_and_labels_on_video(
@@ -1462,7 +1447,7 @@ def add_video_summary_with_bbox(
             vid_cap=vid_cap,
             csv_data=csv_data,
             video_id=video_id_,
-            video=video,
+            video=video_resized,
             file_names=filenames_,
             file_ids=file_ids_,
             vid_len=vid_len,
@@ -1599,6 +1584,8 @@ def visualize_boxes_and_labels_on_video(
                 }
                 csv_data[seq_id].append(row)
 
+            """box_rescaled not actually used for visualization which is why they seem correct in spite of not cropping and resizing the 
+            transformed image into the original shape"""
             image_vis = draw_bounding_box_on_image_array(
                 image_vis,
                 ymin,

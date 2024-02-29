@@ -115,10 +115,22 @@ def main(unused_argv):
     #     print(f'setting CUDA_VISIBLE_DEVICES to {cfg.gpu}')
     #     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.gpu
 
-    is_debugging = int(os.environ.get('P2S_DEBUGGING_MODE', 0))
+    # is_debugging = int(os.environ.get('P2S_DEBUGGING_MODE', 0))
+    # if is_debugging:
+    #     cfg.debug = 1
+    #     cfg.dist = 0
 
-    if is_debugging:
+    import sys
+
+    gettrace = getattr(sys, 'gettrace', None)
+
+    if gettrace is None:
+        print('No sys.gettrace')
+    elif gettrace():
+        print('running in pycharm debugger')
         cfg.debug = 1
+        cfg.eager = 1
+        cfg.dyn_ram = 1
         cfg.dist = 0
 
     # if cfg.debug:

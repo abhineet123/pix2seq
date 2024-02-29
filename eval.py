@@ -6,6 +6,8 @@ import json
 
 import utils
 
+from eval_utils import profile
+
 
 def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     """Perform evaluation."""
@@ -28,27 +30,11 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         global_step = checkpoint.global_step
         logging.info('Performing eval at step %d', global_step.numpy())
 
-    def single_step(examples):
-        preprocessed_outputs = task.preprocess_batched(examples, training=False)
-        infer_outputs = task.infer(model, preprocessed_outputs)
-        postprocessed_outputs = task.postprocess_tpu(*infer_outputs)
-        return postprocessed_outputs
-
-    # from datetime import datetime
-    # timestamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
-
-    # out_csv_dir_name = "csv"
-    # val_json = config.eval_filename_for_metrics
-    # ckpt_dir = os.path.dirname(ckpt)
     ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
     json_name = cfg.dataset.eval_filename_for_metrics
 
     assert json_name, "eval_filename_for_metrics must be provided for evaluation"
-    while True:
-        json_name_ = os.path.splitext(os.path.basename(json_name))[0]
-        if json_name_ == json_name:
-            break
-        json_name = json_name_
+    json_name = os.path.basename(json_name).split(os.extsep)[0]
 
     out_dir = os.path.join(cfg.model_dir, f'{ckpt_name}-{json_name}')
 
@@ -77,6 +63,12 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     seq_to_csv_rows = collections.defaultdict(list)
     seq_to_vid_cap = collections.defaultdict(lambda: None)
 
+    def single_step(examples):
+        preprocessed_outputs = task.preprocess_batched(examples, training=False)
+        infer_outputs = task.infer(model, preprocessed_outputs)
+        postprocessed_outputs = task.postprocess_tpu(*infer_outputs)
+        return postprocessed_outputs
+
     with strategy.scope():
         @tf.function
         def run_single_step(dataset_iter):
@@ -100,7 +92,24 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             # try:
             # with summary_writer.as_default():
 
-            per_step_outputs = run_single_step(iterator)
+            if cfg.eager:
+                enable_profiling = cfg.eval.profile
+                _times = collections.OrderedDict()
+                _rel_times = collections.OrderedDict()
+                with profile('iterator', _times, _rel_times, enable_profiling, show=True):
+                    examples = next(iterator)
+                with profile('preprocess_batched', _times, _rel_times, enable_profiling, show=True):
+                    preprocessed_outputs = task.preprocess_batched(examples, training=False)
+                with profile('infer', _times, _rel_times, enable_profiling, show=True):
+                    infer_outputs = task.infer(model, preprocessed_outputs)
+                with profile('postprocess_tpu', _times, _rel_times, enable_profiling, show=True):
+                    per_step_outputs = task.postprocess_tpu(*infer_outputs)
+
+                if enable_profiling:
+                    print(f'times: {_times}')
+                    print(f'rel_times: {_rel_times}')
+            else:
+                per_step_outputs = run_single_step(iterator)
 
             if cur_step == 0:
                 utils.check_checkpoint_restored(
@@ -145,7 +154,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         # if params.enable_mask:
         #     csv_columns += ['mask_w', 'mask_h', 'mask_counts']
         for seq_name, vid_cap_seq in seq_to_vid_cap.items():
-            vid_cap_seq.release()
+            if vid_cap_seq is not None:
+                vid_cap_seq.release()
 
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():
             if not csv_rows:

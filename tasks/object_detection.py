@@ -253,7 +253,6 @@ class TaskObjectDetection(task_lib.Task):
             # logging.info('Copying output at index %d to cpu for cpu post-process', i)
             new_outputs.append(tf.identity(outputs[i]))
         (images, image_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
-         # pylint: disable=unbalanced-tuple-unpacking
          scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
          # is_crowd
          ) = new_outputs
@@ -261,18 +260,19 @@ class TaskObjectDetection(task_lib.Task):
         # Image summary.
         image_ids_ = image_ids.numpy().flatten().astype(str)
         image_ids__ = list(image_ids_)
-        gt_tuple = (gt_bboxes, gt_classes, scores * 0. + 1., 'gt')  # pylint: disable=unused-variable
+        # gt_tuple = (gt_bboxes, gt_classes, scores * 0. + 1., 'gt')
         pred_tuple = (pred_bboxes, pred_bboxes_rescaled, pred_classes, scores, 'pred')
         vis_list = [pred_tuple]  # exclude gt for simplicity.
         ret_images = []
         for bboxes_, bboxes_rescaled_, classes_, scores_, tag_ in vis_list:
-            tag = summary_tag + '/' + task_utils.join_if_not_none(
-                [tag_, 'bbox', eval_step], '_')
+            # tag = summary_tag + '/' + task_utils.join_if_not_none(
+            #     [tag_, 'bbox', eval_step], '_')
             bboxes_, bboxes_rescaled_, classes_, scores_ = (
                 bboxes_.numpy(), bboxes_rescaled_.numpy(), classes_.numpy(), scores_.numpy())
             images_ = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
             ret_images += vis_utils.add_image_summary_with_bbox(
-                images_, bboxes_, bboxes_rescaled_, classes_, scores_, self._category_names,
+                images_, bboxes_, bboxes_rescaled_, classes_, scores_,
+                self._category_names,
                 image_ids__,
                 # train_step, tag,
                 # max_images_shown=(-1 if ret_results else 3)

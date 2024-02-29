@@ -38,6 +38,7 @@ train_config = D(
 eval_config = D(
     save_vis=0,
     save_csv=1,
+    profile=0,
     tag='eval',
     checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
     min_score_thresh=0.1,

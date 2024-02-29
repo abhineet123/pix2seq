@@ -237,6 +237,7 @@ class TaskVideoDetection(task_lib.Task):
         return (
             videos, video_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
             scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
+            orig_video_size, unpadded_video_size,
             file_names, file_ids
         )
 
@@ -260,31 +261,32 @@ class TaskVideoDetection(task_lib.Task):
          pred_bboxes, pred_bboxes_rescaled,
          pred_classes, scores, gt_classes,
          gt_bboxes, gt_bboxes_rescaled, area,
+         orig_video_size, unpadded_video_size,
          file_names, file_ids
          ) = new_outputs
 
-        # video_ids__ = list(video_ids_)
-        # gt_tuple = (gt_bboxes, gt_classes, scores * 0. + 1., 'gt')  # pylint: disable=unused-variable
-        pred_tuple = (pred_bboxes, pred_bboxes_rescaled, pred_classes, scores, 'pred')
-        vis_list = [pred_tuple]  # exclude gt for simplicity.
-        # ret_images = []
-        for bboxes_, bboxes_rescaled_, classes_, scores_, tag_ in vis_list:
-            bboxes_, bboxes_rescaled_, classes_, scores_ = (
-                bboxes_.numpy(), bboxes_rescaled_.numpy(), classes_.numpy(), scores_.numpy())
-            videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
-            vis_utils.add_video_summary_with_bbox(
-                videos_, bboxes_, bboxes_rescaled_,
-                classes_, scores_,
-                category_names=self._category_names,
-                video_ids=video_ids.numpy(),
-                filenames=file_names.numpy(),
-                file_ids=file_ids.numpy(),
-                vid_len=self.vid_len,
-                out_vis_dir=out_vis_dir,
-                vid_cap=vid_cap,
-                csv_data=csv_data,
-                min_score_thresh=min_score_thresh,
-            )
+        unpadded_video_size = unpadded_video_size.numpy()
+        orig_video_size = orig_video_size.numpy()
+
+        bboxes_, bboxes_rescaled_, classes_, scores_ = (
+            pred_bboxes.numpy(), pred_bboxes_rescaled.numpy(), pred_classes.numpy(), scores.numpy())
+        videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
+
+        vis_utils.add_video_summary_with_bbox(
+            videos_, bboxes_, bboxes_rescaled_,
+            classes_, scores_,
+            category_names=self._category_names,
+            video_ids=video_ids.numpy(),
+            filenames=file_names.numpy(),
+            file_ids=file_ids.numpy(),
+            vid_len=self.vid_len,
+            out_vis_dir=out_vis_dir,
+            vid_cap=vid_cap,
+            csv_data=csv_data,
+            min_score_thresh=min_score_thresh,
+            unpadded_size=unpadded_video_size,
+            orig_size=orig_video_size,
+        )
 
     def compute_scalar_metrics(self, step):
         """Returns a dict containing scalar metrics to log."""
