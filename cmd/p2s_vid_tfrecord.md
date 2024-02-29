@@ -2,8 +2,11 @@
 
 - [detrac       @ tfrecord](#detrac___tfrecord_)
     - [0_19       @ detrac](#0_19___detrac_)
+        - [strd-2       @ 0_19/detrac](#strd_2___0_19_detra_c_)
     - [0_9       @ detrac](#0_9___detrac_)
+        - [strd-2       @ 0_9/detrac](#strd_2___0_9_detrac_)
     - [49_68       @ detrac](#49_68___detrac_)
+        - [strd-2       @ 49_68/detrac](#strd_2___49_68_detrac_)
 - [mnist       @ tfrecord](#mnist___tfrecord_)
     - [640-1       @ mnist](#640_1___mnis_t_)
         - [len-2       @ 640-1/mnist](#len_2___640_1_mnis_t_)
@@ -27,12 +30,23 @@
 <a id="0_19___detrac_"></a>
 ## 0_19       @ detrac-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-2:strd-1
+<a id="strd_2___0_19_detra_c_"></a>
+### strd-2       @ 0_19/detrac-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-2:strd-2
+
 <a id="0_9___detrac_"></a>
 ## 0_9       @ detrac-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_9:gz:len-2:strd-1
+<a id="strd_2___0_9_detrac_"></a>
+### strd-2       @ 0_9/detrac-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_9:gz:len-2:strd-2
+
 <a id="49_68___detrac_"></a>
 ## 49_68       @ detrac-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:gz:len-2:strd-1
+<a id="strd_2___49_68_detrac_"></a>
+### strd-2       @ 49_68/detrac-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:gz:len-2:strd-2
 
 <a id="mnist___tfrecord_"></a>
 # mnist       @ tfrecord-->p2s_setup

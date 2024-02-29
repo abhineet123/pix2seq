@@ -132,7 +132,7 @@ def ipsc_post_process(ds_cfg, training):
     #     cfg.eval_name = cfg.train_name
 
     if training:
-        modes = ['train', 'eval']
+        modes = ['train']
     else:
         modes = ['eval']
 
