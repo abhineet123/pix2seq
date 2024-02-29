@@ -36,9 +36,6 @@ def update_task_config(cfg):
     # if cfg.task.image_size == cfg.model.image_size:
     #     return
 
-    scale_jitter = cfg.dataset.scale_jitter
-    fixed_crop = cfg.dataset.fixed_crop
-
     image_size = cfg.model.image_size
     cfg.task.image_size = image_size
 
