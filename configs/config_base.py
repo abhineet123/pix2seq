@@ -22,6 +22,35 @@ def D(**kwargs):
     return ml_collections.ConfigDict(initial_dictionary=kwargs)
 
 
+train_eval_config = D(
+    steps=0,
+    save_suffix=[],
+    pt=1,
+    batch_size=32,
+    start_seq_id=0,
+    end_seq_id=-1,
+    start_frame_id=0,
+    end_frame_id=-1,
+)
+train_config = D(
+    epochs=500,
+    checkpoint_epochs=1,
+    checkpoint_steps=0,  # set to >0 to override checkpoint_epochs.
+    keep_checkpoint_max=2,
+    loss_type='xent',
+)
+eval_config = D(
+    save_vis=0,
+    save_csv=1,
+    tag='eval',
+    checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
+    min_score_thresh=0.1,
+
+)
+
+eval_config.update(train_eval_config)
+train_config.update(train_eval_config)
+
 base_config = D(
     mode="train",
     use_tpu=0,
@@ -36,30 +65,8 @@ base_config = D(
     model_dir='',
     pretrained='',
 
-    train=D(
-        save_suffix=[],
-        pt=1,
-        batch_size=32,
-        epochs=500,
-        steps=0,  # set to >0 to override epochs.
-        checkpoint_epochs=1,
-        checkpoint_steps=0,  # set to >0 to override checkpoint_epochs.
-        keep_checkpoint_max=2,
-        loss_type='xent',
-    ),
-
-    eval=D(
-        pt=0,
-        save_suffix=[],
-        save_vis=0,
-        save_csv=1,
-        tag='eval',
-        checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
-        # checkpoint_dir=get_coco_finetuned_checkpoint(encoder_variant, image_size[0]),
-        batch_size=1,  # needs to be divisible by total eval examples.
-        steps=0,  # 0 means eval over full validation set.
-        min_score_thresh=0.1,
-    ),
+    train=train_config,
+    eval=eval_config,
 )
 
 architecture_config_map = {

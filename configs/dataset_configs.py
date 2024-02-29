@@ -125,6 +125,7 @@ def ipsc_post_process(cfg):
         cfg.eval_name = cfg.train_name
 
     for mode in ['train', 'eval']:
+        mode_cfg = cfg[f'{mode}']
         name = cfg[f'{mode}_name']
         if is_video:
             if cfg.length:
@@ -140,6 +141,15 @@ def ipsc_post_process(cfg):
                 stride_suffix = f'stride-{stride}'
                 if stride_suffix not in name:
                     name = f'{name}-{stride_suffix}'
+
+        if mode_cfg.start_seq_id > 0 or mode_cfg.end_seq_id >= 0:
+            assert mode_cfg.end_seq_id >= mode_cfg.start_seq_id, "end_seq_id must to be >= start_seq_id"
+            seq_sufix = f'seq-{mode_cfg.start_seq_id}_{mode_cfg.end_seq_id}'
+            name = f'{name}-{seq_sufix}'
+
+        if mode_cfg.start_frame_id > 0 or mode_cfg.end_frame_id >= 0:
+            frame_suffix = f'frame-{mode_cfg.start_frame_id}_{mode_cfg.end_frame_id}'
+            name = f'{name}-{frame_suffix}'
 
         suffix = cfg[f'{mode}_suffix']
         """suffix is already in name when the latter is loaded from a trained model config.json"""
