@@ -115,10 +115,11 @@ def main(unused_argv):
     #     print(f'setting CUDA_VISIBLE_DEVICES to {cfg.gpu}')
     #     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.gpu
 
-
     is_debugging = int(os.environ.get('P2S_DEBUGGING_MODE', 0))
+
     if is_debugging:
         cfg.debug = 1
+        cfg.dist = 0
 
     # if cfg.debug:
     #     cfg.dist = 0
@@ -133,7 +134,6 @@ def main(unused_argv):
         os.environ.pop('TF_CONFIG', None)
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
 
-    environ = os.environ
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
         if cfg.dyn_ram:
