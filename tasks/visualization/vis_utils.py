@@ -345,8 +345,8 @@ def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
     else:
         vis_name = image_id_
 
-    print(f'seq_id: {seq_id}')
-    print(f'image_id_: {image_id_}')
+    # print(f'seq_id: {seq_id}')
+    # print(f'image_id_: {image_id_}')
 
     image = eval_utils.annotate(image, vis_name)
 
