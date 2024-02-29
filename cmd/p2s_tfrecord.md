@@ -10,11 +10,11 @@
     - [640-3       @ mnist](#640_3___mnis_t_)
     - [640-5       @ mnist](#640_5___mnis_t_)
 - [ipsc       @ tfrecord](#ipsc___tfrecord_)
-    - [ext_reorg_roi_g2_16_53       @ ipsc](#ext_reorg_roi_g2_16_53___ipsc_)
-    - [ext_reorg_roi_g2_0_1       @ ipsc](#ext_reorg_roi_g2_0_1___ipsc_)
-    - [ext_reorg_roi_g2_0_15       @ ipsc](#ext_reorg_roi_g2_0_15___ipsc_)
-    - [ext_reorg_roi_g2_0_37       @ ipsc](#ext_reorg_roi_g2_0_37___ipsc_)
-    - [ext_reorg_roi_g2_38_53       @ ipsc](#ext_reorg_roi_g2_38_53___ipsc_)
+    - [16_53       @ ipsc](#16_53___ipsc_)
+    - [g2_0_1       @ ipsc](#g2_0_1___ipsc_)
+    - [g2_0_15       @ ipsc](#g2_0_15___ipsc_)
+    - [g2_0_37       @ ipsc](#g2_0_37___ipsc_)
+    - [38_53       @ ipsc](#38_53___ipsc_)
 
 <!-- /MarkdownTOC -->
 <a id="detrac___tfrecord_"></a>
@@ -49,19 +49,22 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:test:seq-0_
 
 <a id="ipsc___tfrecord_"></a>
 # ipsc       @ tfrecord-->p2s_setup
-python3 data/scripts/create_ipsc_tfrecord.py
-<a id="ext_reorg_roi_g2_16_53___ipsc_"></a>
-## ext_reorg_roi_g2_16_53       @ ipsc-->p2s_tfrecord
+
+<a id="16_53___ipsc_"></a>
+## 16_53       @ ipsc-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_16_53.json --n_proc=0
-<a id="ext_reorg_roi_g2_0_1___ipsc_"></a>
-## ext_reorg_roi_g2_0_1       @ ipsc-->p2s_tfrecord
+
+python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:frame-16_53:gz
+
+<a id="g2_0_1___ipsc_"></a>
+## g2_0_1       @ ipsc-->p2s_tfrecord
 python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_1.json --n_proc=0
-<a id="ext_reorg_roi_g2_0_15___ipsc_"></a>
-## ext_reorg_roi_g2_0_15       @ ipsc-->p2s_tfrecord
+<a id="g2_0_15___ipsc_"></a>
+## g2_0_15       @ ipsc-->p2s_tfrecord
 python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_15.json --n_proc=0
-<a id="ext_reorg_roi_g2_0_37___ipsc_"></a>
-## ext_reorg_roi_g2_0_37       @ ipsc-->p2s_tfrecord
+<a id="g2_0_37___ipsc_"></a>
+## g2_0_37       @ ipsc-->p2s_tfrecord
 python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_37.json --n_proc=0
-<a id="ext_reorg_roi_g2_38_53___ipsc_"></a>
-## ext_reorg_roi_g2_38_53       @ ipsc-->p2s_tfrecord
+<a id="38_53___ipsc_"></a>
+## 38_53       @ ipsc-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_38_53.json --n_proc=0
