@@ -30,12 +30,24 @@ _shared_dataset_config = D(
     cache_dataset=True,
     scale_jitter=1,
     fixed_crop=1,
+
     train_name='',
     eval_name='',
     train_suffix='',
     eval_suffix='',
     train_split='train',
     eval_split='validation',
+
+    train_start_seq_id=0,
+    train_end_seq_id=-1,
+    train_start_frame_id=0,
+    train_end_frame_id=-1,
+
+    eval_start_seq_id=0,
+    eval_end_seq_id=-1,
+    eval_start_frame_id=0,
+    eval_end_frame_id=-1,
+
     transforms=_transforms_config
 )
 
@@ -99,7 +111,6 @@ def get_ipsc_video_data():
         train_frame_gaps=[],
         eval_stride=1,
         eval_frame_gaps=[],
-
         **_shared_dataset_config
     )
 
@@ -125,7 +136,6 @@ def ipsc_post_process(cfg):
         cfg.eval_name = cfg.train_name
 
     for mode in ['train', 'eval']:
-        mode_cfg = cfg[f'{mode}']
         name = cfg[f'{mode}_name']
         if is_video:
             if cfg.length:
@@ -142,19 +152,23 @@ def ipsc_post_process(cfg):
                 if stride_suffix not in name:
                     name = f'{name}-{stride_suffix}'
 
-        if mode_cfg.start_seq_id > 0 or mode_cfg.end_seq_id >= 0:
-            assert mode_cfg.end_seq_id >= mode_cfg.start_seq_id, "end_seq_id must to be >= start_seq_id"
-            seq_sufix = f'seq-{mode_cfg.start_seq_id}_{mode_cfg.end_seq_id}'
-            name = f'{name}-{seq_sufix}'
-
-        if mode_cfg.start_frame_id > 0 or mode_cfg.end_frame_id >= 0:
-            frame_suffix = f'frame-{mode_cfg.start_frame_id}_{mode_cfg.end_frame_id}'
-            name = f'{name}-{frame_suffix}'
-
         suffix = cfg[f'{mode}_suffix']
         """suffix is already in name when the latter is loaded from a trained model config.json"""
         if suffix and not name.endswith(suffix):
             name = f'{name}-{suffix}'
+
+        start_seq_id = cfg[f'{mode}_start_seq_id']
+        end_seq_id = cfg[f'{mode}_end_seq_id']
+        if start_seq_id > 0 or end_seq_id >= 0:
+            assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
+            seq_sufix = f'seq-{start_seq_id}_{end_seq_id}'
+            name = f'{name}-{seq_sufix}'
+
+        start_frame_id = cfg[f'{mode}_start_frame_id']
+        end_frame_id = cfg[f'{mode}_end_frame_id']
+        if start_frame_id > 0 or end_frame_id >= 0:
+            frame_suffix = f'frame-{start_frame_id}_{end_frame_id}'
+            name = f'{name}-{frame_suffix}'
 
         json_name = f'{name}.json'
         if cfg.compressed:

@@ -25,12 +25,8 @@ def D(**kwargs):
 train_eval_config = D(
     steps=0,
     save_suffix=[],
-    pt=1,
+    pt=0,
     batch_size=32,
-    start_seq_id=0,
-    end_seq_id=-1,
-    start_frame_id=0,
-    end_frame_id=-1,
 )
 train_config = D(
     epochs=500,
@@ -45,7 +41,6 @@ eval_config = D(
     tag='eval',
     checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
     min_score_thresh=0.1,
-
 )
 
 eval_config.update(train_eval_config)
