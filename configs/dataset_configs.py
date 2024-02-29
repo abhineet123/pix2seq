@@ -28,25 +28,26 @@ _transforms_config = D(
 _shared_dataset_config = D(
     batch_duplicates=1,
     cache_dataset=True,
-    scale_jitter=1,
-    fixed_crop=1,
 
     train_name='',
-    eval_name='',
     train_suffix='',
-    eval_suffix='',
     train_split='train',
-    eval_split='validation',
-
+    train_filename_for_metrics='',
     train_start_seq_id=0,
     train_end_seq_id=-1,
     train_start_frame_id=0,
     train_end_frame_id=-1,
+    train_num_examples=-1,
 
+    eval_name='',
+    eval_filename_for_metrics='',
+    eval_suffix='',
+    eval_split='validation',
     eval_start_seq_id=0,
     eval_end_seq_id=-1,
     eval_start_frame_id=0,
     eval_end_frame_id=-1,
+    eval_num_examples=-1,
 
     transforms=_transforms_config
 )
@@ -69,11 +70,6 @@ COCO_VAL_TFRECORD_PATTERN = 'gs://pix2seq/multi_task/data/coco/tfrecord/val*'
 COCO_ANNOTATIONS_DIR = '/tmp/coco_annotations'
 
 _shared_coco_dataset_config = D(
-    # train_file_pattern=COCO_TRAIN_TFRECORD_PATTERN,
-    # eval_file_pattern=COCO_VAL_TFRECORD_PATTERN,
-    train_num_examples=118287,
-    eval_num_examples=5000,
-
     # Directory of annotations used by the metrics.
     # Also need to set train_filename_for_metrics and eval_filename_for_metrics.
     # If unset, groundtruth annotations should be specified via
@@ -132,11 +128,15 @@ def ipsc_post_process(cfg):
 
     cfg.db_root_dir = db_root_dir
 
-    if not cfg.eval_name:
-        cfg.eval_name = cfg.train_name
+    # if not cfg.eval_name:
+    #     cfg.eval_name = cfg.train_name
 
     for mode in ['train', 'eval']:
         name = cfg[f'{mode}_name']
+        if not name:
+            print(f'skipping {mode} postprocessing with no name specified')
+            continue
+
         if is_video:
             if cfg.length:
                 length_suffix = f'length-{cfg.length}'
@@ -210,39 +210,39 @@ def ipsc_post_process(cfg):
 dataset_configs = {
     'ipsc_object_detection': get_ipsc_data(),
     'ipsc_video_detection': get_ipsc_video_data(),
-    'coco/2017_object_detection':
-        D(
-            name='coco/2017_object_detection',
-            train_filename_for_metrics='instances_train2017.json',
-            eval_filename_for_metrics='instances_val2017.json',
-            category_names_path=os.path.join(
-                _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
-                'instances_val2017.json'),
-            **_shared_coco_dataset_config
-        ),
-    'coco/2017_instance_segmentation':
-        D(
-            name='coco/2017_instance_segmentation',
-            train_filename_for_metrics='instances_train2017.json',
-            eval_filename_for_metrics='instances_val2017.json',
-            category_names_path=os.path.join(
-                _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
-                'instances_val2017.json'),
-            **_shared_coco_dataset_config
-        ),
-    'coco/2017_keypoint_detection':
-        D(
-            name='coco/2017_keypoint_detection',
-            train_filename_for_metrics='person_keypoints_train2017.json',
-            eval_filename_for_metrics='person_keypoints_val2017.json',
-            category_names_path=os.path.join(
-                _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
-                'person_keypoints_val2017.json'),
-            **_shared_coco_dataset_config
-        ),
-    'coco/2017_captioning':
-        D(name='coco/2017_captioning',
-          train_filename_for_metrics='captions_train2017_eval_compatible.json',
-          eval_filename_for_metrics='captions_val2017_eval_compatible.json',
-          **_shared_coco_dataset_config),
+    # 'coco/2017_object_detection':
+    #     D(
+    #         name='coco/2017_object_detection',
+    #         train_filename_for_metrics='instances_train2017.json',
+    #         eval_filename_for_metrics='instances_val2017.json',
+    #         category_names_path=os.path.join(
+    #             _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
+    #             'instances_val2017.json'),
+    #         **_shared_coco_dataset_config
+    #     ),
+    # 'coco/2017_instance_segmentation':
+    #     D(
+    #         name='coco/2017_instance_segmentation',
+    #         train_filename_for_metrics='instances_train2017.json',
+    #         eval_filename_for_metrics='instances_val2017.json',
+    #         category_names_path=os.path.join(
+    #             _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
+    #             'instances_val2017.json'),
+    #         **_shared_coco_dataset_config
+    #     ),
+    # 'coco/2017_keypoint_detection':
+    #     D(
+    #         name='coco/2017_keypoint_detection',
+    #         train_filename_for_metrics='person_keypoints_train2017.json',
+    #         eval_filename_for_metrics='person_keypoints_val2017.json',
+    #         category_names_path=os.path.join(
+    #             _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
+    #             'person_keypoints_val2017.json'),
+    #         **_shared_coco_dataset_config
+    #     ),
+    # 'coco/2017_captioning':
+    #     D(name='coco/2017_captioning',
+    #       train_filename_for_metrics='captions_train2017_eval_compatible.json',
+    #       eval_filename_for_metrics='captions_val2017_eval_compatible.json',
+    #       **_shared_coco_dataset_config),
 }

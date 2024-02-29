@@ -42,6 +42,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     # ckpt_dir = os.path.dirname(ckpt)
     ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
     json_name = cfg.dataset.eval_filename_for_metrics
+
+    assert json_name, "eval_filename_for_metrics must be provided for evaluation"
     while True:
         json_name_ = os.path.splitext(os.path.basename(json_name))[0]
         if json_name_ == json_name:
