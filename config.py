@@ -295,11 +295,12 @@ def load(FLAGS):
         if cfg.pretrained:
             load_from_model(cfg, cfg.pretrained, cmd_cfg, pt=True)
 
+    cmd_cfg.training = cfg.training = cfg.mode == TRAIN
+
     if cfg.dataset.name.startswith('ipsc'):
         from configs.dataset_configs import ipsc_post_process
-        ipsc_post_process(cfg.dataset)
+        ipsc_post_process(cfg.dataset, cfg.training)
 
-    cmd_cfg.training = cfg.training = cfg.mode == TRAIN
 
     if not cfg.model_dir:
         """construct model_dir name from params"""

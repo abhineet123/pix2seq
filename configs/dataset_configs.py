@@ -111,13 +111,13 @@ def get_ipsc_video_data():
     )
 
 
-def ipsc_post_process(cfg):
+def ipsc_post_process(ds_cfg, training):
     import os
 
-    is_video = 'video' in cfg.name
+    is_video = 'video' in ds_cfg.name
 
-    root_dir = cfg.root_dir
-    cfg.image_dir = root_dir
+    root_dir = ds_cfg.root_dir
+    ds_cfg.image_dir = root_dir
 
     if is_video:
         db_root_dir = os.path.join(root_dir, 'ytvis19')
@@ -126,55 +126,60 @@ def ipsc_post_process(cfg):
         db_root_dir = root_dir
         db_type = 'images'
 
-    cfg.db_root_dir = db_root_dir
+    ds_cfg.db_root_dir = db_root_dir
 
     # if not cfg.eval_name:
     #     cfg.eval_name = cfg.train_name
 
-    for mode in ['train', 'eval']:
-        name = cfg[f'{mode}_name']
+    if training:
+        modes = ['train', 'eval']
+    else:
+        modes = ['eval']
+
+    for mode in modes:
+        name = ds_cfg[f'{mode}_name']
         if not name:
             print(f'skipping {mode} postprocessing with no name specified')
             continue
 
         if is_video:
-            if cfg.length:
-                length_suffix = f'length-{cfg.length}'
+            if ds_cfg.length:
+                length_suffix = f'length-{ds_cfg.length}'
                 if length_suffix not in name:
                     name = f'{name}-{length_suffix}'
             try:
-                stride = cfg[f'{mode}_stride']
+                stride = ds_cfg[f'{mode}_stride']
             except KeyError:
-                stride = cfg[f'{mode}_stride'] = cfg[f'stride']
+                stride = ds_cfg[f'{mode}_stride'] = ds_cfg[f'stride']
 
             if stride:
                 stride_suffix = f'stride-{stride}'
                 if stride_suffix not in name:
                     name = f'{name}-{stride_suffix}'
 
-        suffix = cfg[f'{mode}_suffix']
+        suffix = ds_cfg[f'{mode}_suffix']
         """suffix is already in name when the latter is loaded from a trained model config.json"""
         if suffix and not name.endswith(suffix):
             name = f'{name}-{suffix}'
 
-        start_seq_id = cfg[f'{mode}_start_seq_id']
-        end_seq_id = cfg[f'{mode}_end_seq_id']
+        start_seq_id = ds_cfg[f'{mode}_start_seq_id']
+        end_seq_id = ds_cfg[f'{mode}_end_seq_id']
         if start_seq_id > 0 or end_seq_id >= 0:
             assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
             seq_sufix = f'seq-{start_seq_id}_{end_seq_id}'
             name = f'{name}-{seq_sufix}'
 
-        start_frame_id = cfg[f'{mode}_start_frame_id']
-        end_frame_id = cfg[f'{mode}_end_frame_id']
+        start_frame_id = ds_cfg[f'{mode}_start_frame_id']
+        end_frame_id = ds_cfg[f'{mode}_end_frame_id']
         if start_frame_id > 0 or end_frame_id >= 0:
             frame_suffix = f'frame-{start_frame_id}_{end_frame_id}'
             name = f'{name}-{frame_suffix}'
 
         json_name = f'{name}.json'
-        if cfg.compressed:
+        if ds_cfg.compressed:
             json_name += '.gz'
         json_path = os.path.join(db_root_dir, json_name)
-        if cfg.compressed:
+        if ds_cfg.compressed:
             import compress_json
             json_dict = compress_json.load(json_path)
         else:
@@ -184,27 +189,27 @@ def ipsc_post_process(cfg):
 
         num_examples = len(json_dict[db_type])
 
-        cfg[f'{mode}_name'] = name
+        ds_cfg[f'{mode}_name'] = name
         # cfg[f'{mode}_json_name'] = json_name
         # cfg[f'{mode}_json_path'] = json_path
-        cfg[f'{mode}_num_examples'] = num_examples
-        cfg[f'{mode}_filename_for_metrics'] = json_name
+        ds_cfg[f'{mode}_num_examples'] = num_examples
+        ds_cfg[f'{mode}_filename_for_metrics'] = json_name
 
         if is_video:
             try:
-                frame_gaps = cfg[f'{mode}_frame_gaps']
+                frame_gaps = ds_cfg[f'{mode}_frame_gaps']
             except KeyError:
-                frame_gaps = cfg[f'{mode}_frame_gaps'] = []
+                frame_gaps = ds_cfg[f'{mode}_frame_gaps'] = []
 
             if len(frame_gaps) > 1:
                 frame_gaps_suffix = 'fg_' + '_'.join(map(str, frame_gaps))
                 if frame_gaps_suffix not in name:
                     name = f'{name}-{frame_gaps_suffix}'
 
-        cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name, 'shard*')
+        ds_cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name, 'shard*')
 
-    cfg.category_names_path = os.path.join(db_root_dir, cfg.train_filename_for_metrics)
-    cfg.coco_annotations_dir_for_metrics = db_root_dir
+    ds_cfg.category_names_path = os.path.join(db_root_dir, ds_cfg.train_filename_for_metrics)
+    ds_cfg.coco_annotations_dir_for_metrics = db_root_dir
 
 
 dataset_configs = {
