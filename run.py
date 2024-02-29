@@ -111,9 +111,10 @@ def main(unused_argv):
 
     cfg = config.load(FLAGS)
 
-    if cfg.gpu:
-        print(f'setting CUDA_VISIBLE_DEVICES to {cfg.gpu}')
-        os.environ['CUDA_VISIBLE_DEVICES'] = cfg.gpu
+    # if cfg.gpu:
+    #     print(f'setting CUDA_VISIBLE_DEVICES to {cfg.gpu}')
+    #     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.gpu
+
 
     is_debugging = int(os.environ.get('P2S_DEBUGGING_MODE', 0))
     if is_debugging:
@@ -132,8 +133,8 @@ def main(unused_argv):
         os.environ.pop('TF_CONFIG', None)
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
 
+    environ = os.environ
     gpus = tf.config.list_physical_devices('GPU')
-
     if gpus:
         if cfg.dyn_ram:
             try:
@@ -141,14 +142,14 @@ def main(unused_argv):
                     tf.config.experimental.set_memory_growth(gpu, True)
             except RuntimeError as e:
                 raise e
-        if cfg.dist != 2:
-            """
-            some weird and annoying conflicts between MultiWorkerMirroredStrategy init and gpu setup
-            resulting in catch-22 type situation where strategy must be inited before gpu setup and 
-            gpu setup cannot be done after strategy init
-            """
-            logical_gpus = tf.config.list_logical_devices('GPU')
-            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+        # if cfg.dist != 2:
+        #     """
+        #     some weird and annoying conflicts between MultiWorkerMirroredStrategy init and gpu setup
+        #     resulting in catch-22 type situation where strategy must be inited before gpu setup and
+        #     gpu setup cannot be done after strategy init
+        #     """
+        #     logical_gpus = tf.config.list_logical_devices('GPU')
+        #     print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
 
     tf.config.set_soft_device_placement(True)
 
@@ -160,12 +161,16 @@ def main(unused_argv):
 
     if cfg.debug:
         tf.data.experimental.enable_debug_mode()
-        tf.debugging.set_log_device_placement(True)
+        # tf.debugging.set_log_device_placement(True)
 
     if cfg.eager:
         tf.config.run_functions_eagerly(True)
     else:
         tf.config.run_functions_eagerly(False)
+
+    # tf.config.set_visible_devices(gpus[1:], 'GPU')
+    # logical_devices = tf.config.list_logical_devices('GPU')
+    # assert len(logical_devices) == len(gpus) - 1
 
     """
     all these unused imports needed to register the various modules

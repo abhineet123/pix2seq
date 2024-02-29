@@ -345,14 +345,17 @@ def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
     else:
         vis_name = image_id_
 
+    print(f'seq_id: {seq_id}')
+    print(f'image_id_: {image_id_}')
+
     image = eval_utils.annotate(image, vis_name)
 
     if vid_cap is not None:
         vid_cap_seq = vid_cap[seq_id]
         if vid_cap_seq is None:
-            # codec, ext = 'HFYU', 'avi'
-            codec, ext = 'MP4V', 'mp4'
-            # codec, ext = 'MJPG', 'avi'
+            # codec, ext = 'hfyu', 'avi'
+            codec, ext = 'mp4v', 'mp4'
+            # codec, ext = 'mjpg', 'avi'
             fps = 5
             fourcc = cv2.VideoWriter_fourcc(*codec)
             seq_vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
