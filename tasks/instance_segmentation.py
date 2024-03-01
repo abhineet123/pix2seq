@@ -372,7 +372,7 @@ def add_image_summary_with_mask(image_ids, images, bboxes, masks, classes, score
     """Adds image summary with GT / predicted points."""
     new_images = []
     for image_id, image_, boxes_, masks_, classes_, scores_ in zip(image_ids, images, bboxes, masks,
-                                                         classes, scores):
+                                                                   classes, scores):
         keep_indices = np.where(classes_ > 0)[0]
         image = vis_utils.visualize_boxes_and_labels_on_image_array(
             image_id=image_id,
@@ -383,7 +383,8 @@ def add_image_summary_with_mask(image_ids, images, bboxes, masks, classes, score
             category_index=category_names,
             instance_masks=masks_[keep_indices],
             use_normalized_coordinates=True,
-            max_boxes_to_draw=100)
+            max_boxes_to_draw=100,
+        )
         new_images.append(tf.image.convert_image_dtype(image, tf.float32))
     tf.summary.image(tag, new_images, step=step)
     return new_images

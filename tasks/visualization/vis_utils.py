@@ -302,7 +302,10 @@ def _get_multiplier_for_color_randomness():
     return prime_candidates[inds[0]]
 
 
-def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
+def save_image(
+        image, vid_cap, out_vis_dir, seq_id, image_id_,
+        video_id_=None, unpadded_size=None, orig_size=None,
+):
     import cv2
     import eval_utils
     if video_id_ is not None:
@@ -313,6 +316,14 @@ def save_image(image, vid_cap, out_vis_dir, seq_id, image_id_, video_id_=None):
 
     # print(f'seq_id: {seq_id}')
     # print(f'image_id_: {image_id_}')
+
+    if unpadded_size is not None:
+        unpadded_h, unpadded_w = map(int, unpadded_size)
+        image = image[:unpadded_h, :unpadded_w, :]
+
+    # if orig_size is not None:
+    #     orig_h, orig_w = map(int, orig_size)
+    #     image = resize_ar(image, height=orig_h, width=orig_w, strict=True)
 
     image = eval_utils.annotate(image, vis_name)
 
@@ -510,30 +521,6 @@ def draw_bounding_box_on_image(image,
                                thickness=4,
                                display_str_list=(),
                                use_normalized_coordinates=True):
-    """Adds a bounding box to an image.
-
-    Bounding box coordinates can be specified in either absolute (pixel) or
-    normalized coordinates by setting the use_normalized_coordinates argument.
-
-    Each string in display_str_list is displayed on a separate line above the
-    bounding box in black text on a rectangle filled with the input 'color'.
-    If the top of the bounding box extends to the edge of the image, the strings
-    are displayed below the bounding box.
-
-    Args:
-      image: a PIL.Image object.
-      ymin: ymin of bounding box.
-      xmin: xmin of bounding box.
-      ymax: ymax of bounding box.
-      xmax: xmax of bounding box.
-      color: color to draw bounding box. Default is red.
-      thickness: line thickness. Default value is 4.
-      display_str_list: list of strings to display in box (each to be shown on its
-        own line).
-      use_normalized_coordinates: If True (default), treat coordinates ymin, xmin,
-        ymax, xmax as relative to the image.  Otherwise treat coordinates as
-        absolute.
-    """
     draw = ImageDraw.Draw(image)
     im_width, im_height = image.size
     if use_normalized_coordinates:
@@ -1127,7 +1114,10 @@ def visualize_boxes_and_labels_on_image_array(
         skip_boxes=False,
         skip_scores=False,
         skip_labels=False,
-        skip_track_ids=False):
+        skip_track_ids=False,
+        unpadded_size=None,
+        orig_size=None,
+):
     box_to_display_str_map = collections.defaultdict(list)
     box_to_color_map = collections.defaultdict(str)
     box_to_rescaled_map = {}
@@ -1258,7 +1248,8 @@ def visualize_boxes_and_labels_on_image_array(
                 keypoint_edge_width=line_thickness // 2)
 
     if out_vis_dir:
-        save_image(image, vid_cap, out_vis_dir, seq_id, image_id_)
+        save_image(image, vid_cap, out_vis_dir, seq_id, image_id_,
+                   unpadded_size=unpadded_size, orig_size=orig_size)
 
     return image
 
@@ -1391,12 +1382,6 @@ def add_image_summary_with_bbox(
             image_ids, images, bboxes, bboxes_rescaled, scores, classes, unpadded_size, orig_size):
         keep_indices = np.where(classes_ > 0)[0]
 
-        unpadded_h, unpadded_w = map(int, unpadded_size_)
-        image_ = image_[:, :unpadded_h, :unpadded_w, :]
-
-        # orig_h, orig_w = map(int, orig_size_)
-        # image_ = image_(image_, height=orig_h, width=orig_w, strict=True)
-
         image = visualize_boxes_and_labels_on_image_array(
             out_vis_dir=out_vis_dir,
             vid_cap=vid_cap,
@@ -1410,7 +1395,10 @@ def add_image_summary_with_bbox(
             category_index=category_names,
             use_normalized_coordinates=True,
             min_score_thresh=min_score_thresh,
-            max_boxes_to_draw=100)
+            max_boxes_to_draw=100,
+            unpadded_size=unpadded_size_,
+            orig_size=orig_size_,
+        )
         new_images.append(image)
 
         # new_images.append(tf.image.convert_image_dtype(image, tf.float32))
@@ -1426,8 +1414,8 @@ def add_video_summary_with_bbox(
         video_ids, vid_len,
         filenames,
         file_ids,
-        unpadded_size,
-        orig_size,
+        unpadded_size=None,
+        orig_size=None,
         out_vis_dir=None,
         vid_cap=None,
         csv_data=None,
@@ -1441,12 +1429,6 @@ def add_video_summary_with_bbox(
             bboxes_rescaled, scores, classes, unpadded_size, orig_size):
         (video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_,
          scores_, classes_, unpadded_size_, orig_size_) = iter_data
-
-        unpadded_h, unpadded_w = map(int, unpadded_size_)
-        video = video[:, :unpadded_h, :unpadded_w, :]
-
-        # orig_h, orig_w = map(int, orig_size_)
-        # video = resize_ar_video(video, height=orig_h, width=orig_w, strict=True)
 
         keep_indices = np.where(classes_ > 0)[0]
 
@@ -1466,7 +1448,11 @@ def add_video_summary_with_bbox(
             category_index=category_names,
             use_normalized_coordinates=True,
             min_score_thresh=min_score_thresh,
-            max_boxes_to_draw=100)
+            unpadded_size=unpadded_size_,
+            orig_size=orig_size_,
+            max_boxes_to_draw=100,
+
+        )
         vis_videos.append(vis_video)
         k += 1
     return vis_videos
@@ -1495,6 +1481,8 @@ def visualize_boxes_and_labels_on_video(
         skip_boxes=False,
         skip_scores=False,
         skip_labels=False,
+        unpadded_size=None,
+        orig_size=None,
 ):
     box_to_display_str_map = collections.defaultdict(list)
     box_to_color_map = collections.defaultdict(str)
@@ -1609,7 +1597,8 @@ def visualize_boxes_and_labels_on_video(
         video_vis.append(image_vis)
 
         if out_vis_dir:
-            save_image(image_vis, vid_cap, out_vis_dir, seq_id, image_name, video_id_)
+            save_image(image_vis, vid_cap, out_vis_dir, seq_id, image_name, video_id_,
+                       unpadded_size=unpadded_size, orig_size=orig_size)
 
     video_vis = np.stack(video_vis, axis=0)
     return video_vis
