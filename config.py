@@ -194,6 +194,10 @@ def load_from_json5(json_list, json_root):
     for json_data in json_list:
         json_vars = json_data.split('-')
         json_name, json_vars = json_vars[0], json_vars[1:]
+
+        if json_name.startswith('_') and json_name.endswith('_'):
+            json_name = json_name.strip('_')
+
         json_path = json_name + '.json5'
         if json_root:
             json_path = os.path.join(json_root, json_path)

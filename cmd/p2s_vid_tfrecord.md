@@ -11,7 +11,10 @@
     - [640-1       @ mnist](#640_1___mnis_t_)
         - [len-2       @ 640-1/mnist](#len_2___640_1_mnis_t_)
         - [test       @ 640-1/mnist](#test___640_1_mnis_t_)
+            - [strd-2       @ test/640-1/mnist](#strd_2___test_640_1_mnist_)
         - [len-3       @ 640-1/mnist](#len_3___640_1_mnis_t_)
+        - [test       @ 640-1/mnist](#test___640_1_mnis_t__1)
+            - [strd-3       @ test/640-1/mnist](#strd_3___test_640_1_mnist_)
         - [len-9       @ 640-1/mnist](#len_9___640_1_mnis_t_)
     - [640-3       @ mnist](#640_3___mnis_t_)
     - [640-5       @ mnist](#640_5___mnis_t_)
@@ -58,11 +61,20 @@ python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-2:s
 <a id="test___640_1_mnis_t_"></a>
 ### test       @ 640-1/mnist-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-2:strd-1:test
+<a id="strd_2___test_640_1_mnist_"></a>
+#### strd-2       @ test/640-1/mnist-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-2:strd-2:test
 
 <a id="len_3___640_1_mnis_t_"></a>
 ### len-3       @ 640-1/mnist-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-3:strd-1:proc-12
+<a id="test___640_1_mnis_t__1"></a>
+### test       @ 640-1/mnist-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-3:strd-1:test
+<a id="strd_3___test_640_1_mnist_"></a>
+#### strd-3       @ test/640-1/mnist-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-3:strd-3:test
+
 <a id="len_9___640_1_mnis_t_"></a>
 ### len-9       @ 640-1/mnist-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=mnist:640-1:12_1000:gz:len-9:strd-1:proc-12:train

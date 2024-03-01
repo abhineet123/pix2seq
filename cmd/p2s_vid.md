@@ -4,6 +4,8 @@
     - [mnist-640-1-12_1000       @ swin-t](#mnist_640_1_12_1000___swin_t_)
     - [len-2       @ swin-t](#len_2___swin_t_)
         - [len-3       @ len-2/swin-t](#len_3___len_2_swin_t_)
+            - [on-train       @ len-3/len-2/swin-t](#on_train___len_3_len_2_swin_t_)
+            - [on-test       @ len-3/len-2/swin-t](#on_test___len_3_len_2_swin_t_)
     - [mnist-640-5-12_1000       @ swin-t](#mnist_640_5_12_1000___swin_t_)
     - [len-2       @ swin-t](#len_2___swin_t__1)
     - [len-3       @ swin-t](#len_3___swin_t_)
@@ -57,9 +59,18 @@
 <a id="len_2___swin_t_"></a>
 ## len-2       @ swin-t-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,batch-4,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
+
 <a id="len_3___len_2_swin_t_"></a>
 ### len-3       @ len-2/swin-t-->p2s_vid
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,mnist-640-1-12_1000,len-3,batch-4,dbg-1,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
+<a id="on_train___len_3_len_2_swin_t_"></a>
+#### on-train       @ len-3/len-2/swin-t-->p2s_vid
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=m-swin_t_640_mnist_640_1_12_1000_var-length-3-stride-1-batch_4,_eval_,vid_det,mnist-640-1-12_1000-train,batch-32,save-vis-1,dbg-0,dyn-1,dist-0
+<a id="on_test___len_3_len_2_swin_t_"></a>
+#### on-test       @ len-3/len-2/swin-t-->p2s_vid
+`strd-3`
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=m-swin_t_640_mnist_640_1_12_1000_var-length-3-stride-1-batch_4,_eval_,vid_det,mnist-640-1-12_1000-test,strd-3,batch-32,save-vis-1,dbg-0,dyn-1,dist-0
+
 
 <a id="mnist_640_5_12_1000___swin_t_"></a>
 ## mnist-640-5-12_1000       @ swin-t-->p2s_vid
