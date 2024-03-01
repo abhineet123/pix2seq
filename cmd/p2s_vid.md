@@ -98,7 +98,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,vid_det,m-resnet_640_detrac-length-2-stride-1-non_empty-seq-0_9-batch_18,detrac-non_empty-49_68,batch-1,save-vis-1,dbg-0,dyn-1,dist-0
 <a id="strd_2___on_49_68_0_9_detrac_resnet_640_"></a>
 ##### strd-2       @ on-49_68/0_9/detrac/resnet-640-->p2s_vid
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,vid_det,m-resnet_640_detrac-length-2-stride-2-non_empty-seq-0_9-batch_18,detrac-non_empty-49_68,strd-2,batch-48,save-vis-1,dbg-0,dyn-1,dist-0
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=m-resnet_640_detrac-length-2-stride-1-non_empty-seq-0_9-batch_18,eval,vid_det,detrac-non_empty-49_68,strd-2,batch-48,save-vis-1,dbg-0,dyn-1,dist-0
 
 
 <a id="mnist_640_1_12_1000___resnet_640_"></a>

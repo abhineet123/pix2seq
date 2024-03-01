@@ -212,6 +212,7 @@ class TaskObjectDetection(task_lib.Task):
 
         return (images, image_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
                 scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
+                orig_image_size, unpadded_image_size,
                 # is_crowd
                 )
 
@@ -228,25 +229,6 @@ class TaskObjectDetection(task_lib.Task):
                         ret_results=False,
                         min_score_thresh=0.1,
                         ):
-        """CPU post-processing of outputs.
-
-        Such as computing the metrics, log image summary.
-
-        Note: current implementation only support eval mode where gt are given in
-          metrics as they are not given here in outputs.
-
-        Args:
-          outputs: a tuple of tensor passed from `postprocess_tpu`.
-          train_step: `int` scalar indicating training step of current model or
-            the checkpoint.
-          eval_step: `int` scalar indicating eval step for the given checkpoint.
-          training: `bool` indicating training or inference mode.
-          summary_tag: `string` of name scope for result summary.
-          ret_results: whether to return visualization images.
-
-        Returns:
-          A dict of visualization images if ret_results, else None.
-        """
         # Copy outputs to cpu.
         new_outputs = []
         for i in range(len(outputs)):
@@ -254,33 +236,33 @@ class TaskObjectDetection(task_lib.Task):
             new_outputs.append(tf.identity(outputs[i]))
         (images, image_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
          scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
+         orig_image_size, unpadded_image_size,
          # is_crowd
          ) = new_outputs
+
+        unpadded_image_size = unpadded_image_size.numpy()
+        orig_image_size = orig_image_size.numpy()
 
         # Image summary.
         image_ids_ = image_ids.numpy().flatten().astype(str)
         image_ids__ = list(image_ids_)
-        # gt_tuple = (gt_bboxes, gt_classes, scores * 0. + 1., 'gt')
-        pred_tuple = (pred_bboxes, pred_bboxes_rescaled, pred_classes, scores, 'pred')
-        vis_list = [pred_tuple]  # exclude gt for simplicity.
         ret_images = []
-        for bboxes_, bboxes_rescaled_, classes_, scores_, tag_ in vis_list:
-            # tag = summary_tag + '/' + task_utils.join_if_not_none(
-            #     [tag_, 'bbox', eval_step], '_')
-            bboxes_, bboxes_rescaled_, classes_, scores_ = (
-                bboxes_.numpy(), bboxes_rescaled_.numpy(), classes_.numpy(), scores_.numpy())
-            images_ = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
-            ret_images += vis_utils.add_image_summary_with_bbox(
-                images_, bboxes_, bboxes_rescaled_, classes_, scores_,
-                self._category_names,
-                image_ids__,
-                # train_step, tag,
-                # max_images_shown=(-1 if ret_results else 3)
-                out_vis_dir=out_vis_dir,
-                vid_cap=vid_cap,
-                csv_data=csv_data,
-                min_score_thresh=min_score_thresh,
-            )
+        bboxes_, bboxes_rescaled_, classes_, scores_ = (
+            pred_bboxes.numpy(), pred_bboxes_rescaled.numpy(), pred_classes.numpy(), scores.numpy())
+        images_ = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
+        ret_images += vis_utils.add_image_summary_with_bbox(
+            images_, bboxes_, bboxes_rescaled_, classes_, scores_,
+            self._category_names,
+            image_ids__,
+            # train_step, tag,
+            # max_images_shown=(-1 if ret_results else 3)
+            out_vis_dir=out_vis_dir,
+            vid_cap=vid_cap,
+            csv_data=csv_data,
+            min_score_thresh=min_score_thresh,
+            unpadded_size=unpadded_image_size,
+            orig_size=orig_image_size,
+        )
 
         if ret_results:
             return ret_images

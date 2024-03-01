@@ -131,6 +131,7 @@ def main(unused_argv):
         cfg.debug = 1
         cfg.eager = 1
         cfg.dyn_ram = 1
+        cfg.eval.profile = 1
         cfg.dist = 0
 
     # if cfg.debug:

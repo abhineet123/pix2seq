@@ -22,7 +22,7 @@ from six.moves import range
 from six.moves import zip
 import tensorflow.compat.v1 as tf
 
-from eval_utils import draw_box, annotate, resize_ar_video
+from eval_utils import draw_box, annotate, resize_ar_video, resize_ar
 
 _TITLE_LEFT_MARGIN = 10
 _TITLE_TOP_MARGIN = 10
@@ -1374,20 +1374,29 @@ def visualize_video(config, examples, logits, tokens, label, category_names, mas
     return bboxes_, bboxes_rescaled_, classes_, scores
 
 
-def add_image_summary_with_bbox(images, bboxes, bboxes_rescaled, classes, scores, category_names,
-                                image_ids,
-                                # step, tag, max_images_shown=3,
-                                vid_cap=None,
-                                out_vis_dir=None,
-                                csv_data=None,
-                                min_score_thresh=0.1):
-    """Adds image summary with GT / predicted bbox."""
+def add_image_summary_with_bbox(
+        images, bboxes, bboxes_rescaled, classes, scores, category_names,
+        image_ids,
+        unpadded_size,
+        orig_size,
+        vid_cap=None,
+        out_vis_dir=None,
+        csv_data=None,
+        min_score_thresh=0.1,
+
+):
     k = 0
-    # del image_ids
     new_images = []
-    for image_id_, image_, boxes_, bboxes_rescaled_, scores_, classes_ in zip(
-            image_ids, images, bboxes, bboxes_rescaled, scores, classes):
+    for image_id_, image_, boxes_, bboxes_rescaled_, scores_, classes_, unpadded_size_, orig_size_ in zip(
+            image_ids, images, bboxes, bboxes_rescaled, scores, classes, unpadded_size, orig_size):
         keep_indices = np.where(classes_ > 0)[0]
+
+        unpadded_h, unpadded_w = map(int, unpadded_size_)
+        image_ = image_[:, :unpadded_h, :unpadded_w, :]
+
+        # orig_h, orig_w = map(int, orig_size_)
+        # image_ = image_(image_, height=orig_h, width=orig_w, strict=True)
+
         image = visualize_boxes_and_labels_on_image_array(
             out_vis_dir=out_vis_dir,
             vid_cap=vid_cap,
@@ -1430,15 +1439,14 @@ def add_video_summary_with_bbox(
     for iter_data in zip(
             video_ids, videos, filenames, file_ids, bboxes,
             bboxes_rescaled, scores, classes, unpadded_size, orig_size):
-
         (video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_,
          scores_, classes_, unpadded_size_, orig_size_) = iter_data
 
-        unpadded_h,  unpadded_w = map(int, unpadded_size_)
-        video_cropped = video[:, :unpadded_h, :unpadded_w, :]
+        unpadded_h, unpadded_w = map(int, unpadded_size_)
+        video = video[:, :unpadded_h, :unpadded_w, :]
 
-        orig_h,  orig_w = map(int, orig_size_)
-        video_resized = resize_ar_video(video_cropped, height=orig_h,  width=orig_w, strict=True)
+        # orig_h, orig_w = map(int, orig_size_)
+        # video = resize_ar_video(video, height=orig_h, width=orig_w, strict=True)
 
         keep_indices = np.where(classes_ > 0)[0]
 
@@ -1447,7 +1455,7 @@ def add_video_summary_with_bbox(
             vid_cap=vid_cap,
             csv_data=csv_data,
             video_id=video_id_,
-            video=video_resized,
+            video=video,
             file_names=filenames_,
             file_ids=file_ids_,
             vid_len=vid_len,
@@ -1584,7 +1592,8 @@ def visualize_boxes_and_labels_on_video(
                 }
                 csv_data[seq_id].append(row)
 
-            """box_rescaled not actually used for visualization which is why they seem correct in spite of not cropping and resizing the 
+            """box_rescaled not actually used for visualization which is why they seem correct in spite of not 
+            cropping and resizing the 
             transformed image into the original shape"""
             image_vis = draw_bounding_box_on_image_array(
                 image_vis,
