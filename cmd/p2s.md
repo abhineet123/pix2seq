@@ -65,10 +65,10 @@
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detrac-non_empty-0_19,batch-18,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,gz
 <a id="on_train___0_19_detrac_non_empty_resnet_640_"></a>
 #### on-train       @ 0_19/detrac-non_empty/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_detrac-non_empty-seq-0_19-batch_18,detrac-non_empty-0_19,batch-96,save-vis-1,dbg-0,dyn-1,dist-0
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_detrac-non_empty-seq-0_19-batch_18,detrac-non_empty-0_19,batch-48,save-vis-1,dbg-0,dyn-1,dist-0
 <a id="on_test___0_19_detrac_non_empty_resnet_640_"></a>
 #### on-test       @ 0_19/detrac-non_empty/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_detrac-non_empty-seq-0_19-batch_18,detrac-non_empty-0_19,batch-96,save-vis-1,dbg-0,dyn-1,dist-0
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_detrac-non_empty-seq-0_19-batch_18,detrac-non_empty-49_68,batch-48,save-vis-1,dbg-0,dyn-1,dist-0
 
 <a id="0_9___detrac_non_empty_resnet_64_0_"></a>
 ### 0_9       @ detrac-non_empty/resnet-640-->p2s
