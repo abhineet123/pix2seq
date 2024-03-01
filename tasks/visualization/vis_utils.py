@@ -325,6 +325,8 @@ def save_image(
     #     orig_h, orig_w = map(int, orig_size)
     #     image = resize_ar(image, height=orig_h, width=orig_w, strict=True)
 
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
     image = eval_utils.annotate(image, vis_name)
 
     if vid_cap is not None:
