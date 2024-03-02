@@ -155,19 +155,7 @@ class Model(tf.keras.models.Model):
         # encoded = utils.unflatten_vid(encoded, self.vid_len)
         return encoded
 
-    def call(self, images, seq,
-             training=True):  # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
-        """Model function call for *training*.
-
-        Args:
-          images: `float` tensor of (bsz, h, w, c).
-          seq: `int` sequence visible to the model of shape (bsz, seqlen),
-            or (bsz, instances, seqlen) if there are multiple sequences per image.
-          training: `bool` indicator.
-
-        Returns:
-          logits for each predicted tokens of (bsz * instances, seqlen, vocab_size).
-        """
+    def call(self, images, seq, training=True):
         with tf.name_scope(''):  # for other functions to have the same name scope.
             encoded = self._encode_videos(images, training)
 

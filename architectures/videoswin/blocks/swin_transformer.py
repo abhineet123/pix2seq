@@ -199,12 +199,17 @@ class TFSwinTransformerBlock3D(keras.layers.Layer):
     def call(self, x, mask_matrix=None, return_attns=False, training=None):
 
         shortcut = x
-        x = self.first_forward(
-            x, mask_matrix, return_attns, training
-        )
+
 
         if return_attns:
-            x, attn_scores = x
+            x, attn_scores = self.first_forward(
+            x, mask_matrix, return_attns=True, training=training
+        )
+
+        else:
+            x = self.first_forward(
+                x, mask_matrix, return_attns=False, training=training
+            )
 
         x = shortcut + self.drop_path(x)
         x = x + self.second_forward(x, training)

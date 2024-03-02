@@ -52,11 +52,22 @@ class Model(tf.keras.models.Model):
                 name='vit')
         else:
             self.encoder = ResNetTransformer(
-                config.image_size[0], config.image_size[1], config.resnet_variant,
-                config.resnet_depth, config.resnet_width_multiplier,
-                config.resnet_sk_ratio, config.num_encoder_layers, config.dim_att,
-                mlp_ratio, config.num_heads, config.drop_path, config.drop_units,
-                config.drop_att, config.pos_encoding, config.use_cls_token,
+                image_height=config.image_size[0],
+                image_width=config.image_size[1],
+                resnet_variant=config.resnet_variant,
+                resnet_depth=config.resnet_depth,
+                resnet_width_multiplier=config.resnet_width_multiplier,
+                resnet_sk_ratio=config.resnet_sk_ratio,
+                num_layers=config.num_encoder_layers,
+                dim=config.dim_att,
+                mlp_ratio=mlp_ratio,
+                num_heads=config.num_heads,
+                drop_path=config.drop_path,
+                drop_units=config.drop_units,
+                drop_att=config.drop_att,
+                pos_encoding=config.pos_encoding,
+                use_cls_token=config.use_cls_token,
+
                 name='rest')
 
         mlp_ratio_dec = config.dim_mlp_dec // config.dim_att_dec
@@ -76,11 +87,19 @@ class Model(tf.keras.models.Model):
                                     config.drop_units, name='proj/mlp')
 
         self.decoder = AutoregressiveDecoder(
-            config.vocab_size, config.max_seq_len, config.num_decoder_layers,
-            config.dim_att_dec, mlp_ratio_dec, config.num_heads_dec,
-            config.drop_path, config.drop_units, config.drop_att,
-            config.pos_encoding_dec, config.shared_decoder_embedding,
-            config.decoder_output_bias, name='ar_decoder')
+            config.vocab_size,
+            config.max_seq_len,
+            config.num_decoder_layers,
+            config.dim_att_dec,
+            mlp_ratio_dec,
+            config.num_heads_dec,
+            config.drop_path,
+            config.drop_units,
+            config.drop_att,
+            config.pos_encoding_dec,
+            config.shared_decoder_embedding,
+            config.decoder_output_bias,
+            name='ar_decoder')
 
     def _tile_vis_output(self, vis_output, seq):
         """Tile vis_output per seq.
