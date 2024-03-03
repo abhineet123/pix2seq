@@ -1,6 +1,6 @@
 {
   "dataset": {
-    "%mode%_name": "ext_reorg_roi_g2",
+    "%mode%_name": "ext_reorg_roi_g2-%0%",
 	transforms:{
 		scale_jitter: 0,
 		fixed_crop: 0,
