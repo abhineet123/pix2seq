@@ -77,12 +77,13 @@ python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detra
 <a id="mnist_640_1___resnet_640_"></a>
 ## mnist-640-1       @ resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-1-12_1000-train,batch-4,pt-1,dbg-1,dyn-1,dist-0,ep-10000,gz
+
 <a id="mnist_640_5___resnet_640_"></a>
 ## mnist-640-5       @ resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-5-12_1000-train,batch-18,pt-1,dbg-0,dyn-1,dist-0,ep-10000,gz
 <a id="on_test___mnist_640_5_resnet_640_"></a>
 #### on-test       @ mnist-640-5/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_mnist_640_5_12_1000_var-train-batch_18,mnist-640-5-12_1000-test,batch-96,save-vis-1,dbg-0,dyn-1,dist-0
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_mnist_640_5_12_1000_var-train-batch_18,mnist-640-5-12_1000-test,batch-96,save-vis-1,dbg-0,dyn-1,dist-0
 `seq-0-5,frame-0-5`
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_mnist_640_5_12_1000_var-train-batch_18,mnist-640-5-12_1000-test,seq-0-5,frame-0-5,batch-3,save-vis-1,dbg-0,dyn-1,dist-0
 
