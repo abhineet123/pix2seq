@@ -229,11 +229,11 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 
 <a id="ipsc_16_53___resnet_640_"></a>
 ## ipsc-16_53       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,strd-1,batch-16,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 
 <a id="ipsc_0_37___resnet_640_"></a>
 ## ipsc-0_37       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_0_37,len-2,strd-1,batch-16,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,strd-1,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 <a id="fg_4___ipsc_0_37_resnet_640_"></a>
 ### fg-4       @ ipsc-0_37/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_0_37,len-2,strd-1,fg-4,batch-16,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
