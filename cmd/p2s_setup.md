@@ -116,7 +116,7 @@ wget https://developer.download.nvidia.com/compute/cuda/12.2.2/local_installers/
 sudo dpkg -i cuda-repo-ubuntu2204-12-2-local_12.2.2-535.104.05-1_amd64.deb
 sudo cp /var/cuda-repo-ubuntu2204-12-2-local/cuda-*-keyring.gpg /usr/share/keyrings/
 sudo apt-get update
-sudo apt-get -y install cuda-12-2
+sudo apt-get install cuda-12-2
 
 ```
 
@@ -124,6 +124,9 @@ sudo apt-get -y install cuda-12-2
 ### all       @ tensorflow/install-->p2s_setup
 download cudnn tar from
 https://developer.nvidia.com/rdp/cudnn-download
+```
+wget https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
+```
 and extract into cuda-12.2/targets/ folder
 ```
 tar xvf cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
@@ -240,4 +243,8 @@ This is caused by inheriting from `keras.model` instead of `keras.layers.layer`
 ~/.virtualenvs/pix2seq/lib/python3.10/site-packages/tensorflow_addons/utils/ensure_tf_install.py:53
 
 ~/.virtualenvs/pix2seq/lib/python3.10/site-packages/tensorflow_addons/utils/tfa_eol_msg.py:53
+
+``segmentation fault while loading checkpoint in graph mode in WSL``
+something to do with running multiple evaluations in graph mode and possibly trying to checkpoint at the same time or some such thing a maybe excessive CPU usage or possibly excessive RAM usage although htop does not indicate any such thing happening
+
 

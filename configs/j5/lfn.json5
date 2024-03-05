@@ -1,0 +1,8 @@
+{
+  "model": {
+    "late_fusion": 1,
+  }
+  "train": {
+    "save_suffix": ['lfn',],
+  }
+}

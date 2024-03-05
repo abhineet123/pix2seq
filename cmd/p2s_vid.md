@@ -49,11 +49,14 @@
     - [ipsc-5_9       @ resnet-640](#ipsc_5_9___resnet_640_)
         - [batch-8       @ ipsc-5_9/resnet-640](#batch_8___ipsc_5_9_resnet_64_0_)
             - [on-g2_0_4       @ batch-8/ipsc-5_9/resnet-640](#on_g2_0_4___batch_8_ipsc_5_9_resnet_64_0_)
-            - [on-g2_5_9       @ batch-8/ipsc-5_9/resnet-640](#on_g2_5_9___batch_8_ipsc_5_9_resnet_64_0_)
+            - [on-5_9       @ batch-8/ipsc-5_9/resnet-640](#on_5_9___batch_8_ipsc_5_9_resnet_64_0_)
         - [fg-4       @ ipsc-5_9/resnet-640](#fg_4___ipsc_5_9_resnet_64_0_)
     - [ipsc-16_53       @ resnet-640](#ipsc_16_53___resnet_640_)
+        - [on-0_15       @ ipsc-16_53/resnet-640](#on_0_15___ipsc_16_53_resnet_64_0_)
+        - [on-54_126       @ ipsc-16_53/resnet-640](#on_54_126___ipsc_16_53_resnet_64_0_)
     - [ipsc-0_37       @ resnet-640](#ipsc_0_37___resnet_640_)
-        - [fg-4       @ ipsc-0_37/resnet-640](#fg_4___ipsc_0_37_resnet_640_)
+        - [on-54_126       @ ipsc-0_37/resnet-640](#on_54_126___ipsc_0_37_resnet_640_)
+    - [ipsc-0_37-fg-4       @ resnet-640](#ipsc_0_37_fg_4___resnet_640_)
 
 <!-- /MarkdownTOC -->
 <a id="swin_t_"></a>
@@ -219,8 +222,8 @@ python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-12094_0_4,batch-4,save-vis-1,dbg-1,dyn-1
 **12094_short**
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-12094_short_0_4,batch-4,save-vis-1,dbg-1,dyn-1
-<a id="on_g2_5_9___batch_8_ipsc_5_9_resnet_64_0_"></a>
-#### on-g2_5_9       @ batch-8/ipsc-5_9/resnet-640-->p2s_vid
+<a id="on_5_9___batch_8_ipsc_5_9_resnet_64_0_"></a>
+#### on-5_9       @ batch-8/ipsc-5_9/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_5_9,batch-4,save-vis-1,dbg-1,dyn-1
 
 <a id="fg_4___ipsc_5_9_resnet_64_0_"></a>
@@ -230,10 +233,20 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 <a id="ipsc_16_53___resnet_640_"></a>
 ## ipsc-16_53       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+<a id="on_0_15___ipsc_16_53_resnet_64_0_"></a>
+### on-0_15       @ ipsc-16_53/resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-0_15,len-2,strd-1,batch-36,save-vis-1,dbg-0,dyn-1
+<a id="on_54_126___ipsc_16_53_resnet_64_0_"></a>
+### on-54_126       @ ipsc-16_53/resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-54_126,len-2,strd-1,batch-36,save-vis-1,dbg-0,dyn-1
 
 <a id="ipsc_0_37___resnet_640_"></a>
 ## ipsc-0_37       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,strd-1,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
-<a id="fg_4___ipsc_0_37_resnet_640_"></a>
-### fg-4       @ ipsc-0_37/resnet-640-->p2s_vid
+<a id="on_54_126___ipsc_0_37_resnet_640_"></a>
+### on-54_126       @ ipsc-0_37/resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-54_126,len-2,strd-1,batch-36,save-vis-1,dbg-0,dyn-1
+
+<a id="ipsc_0_37_fg_4___resnet_640_"></a>
+## ipsc-0_37-fg-4       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_0_37,len-2,strd-1,fg-4,batch-16,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1

@@ -106,6 +106,7 @@ def get_config(config_str=None):
         use_cls_token=False,
         shared_decoder_embedding=True,
         decoder_output_bias=True,
+        late_fusion=0,
         patch_size=16,
         drop_path=0.1,
         drop_units=0.1,

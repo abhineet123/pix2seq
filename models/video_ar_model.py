@@ -93,6 +93,7 @@ class Model(tf.keras.models.Model):
                 drop_att=self.config.drop_att,
                 pos_encoding=self.config.pos_encoding,
                 use_cls_token=self.config.use_cls_token,
+                late_fusion=self.config.late_fusion,
                 name='rest')
 
         mlp_ratio_dec = self.config.dim_mlp_dec // self.config.dim_att_dec

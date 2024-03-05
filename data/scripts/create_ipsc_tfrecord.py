@@ -265,7 +265,7 @@ def main():
         params.ann_file = add_suffix( params.ann_file, seq_sufix, sep='-')
 
     if params.start_frame_id > 0 or params.end_frame_id >= 0:
-        frame_suffix = f'frame-{params.start_frame_id}_{params.end_frame_id}'
+        frame_suffix = f'{params.start_frame_id}_{params.end_frame_id}'
         params.ann_file = add_suffix( params.ann_file, frame_suffix, sep='-')
 
     params.ann_file = os.path.join(params.image_dir, f'{params.ann_file}.{params.ann_ext}')

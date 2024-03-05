@@ -105,6 +105,7 @@ class VideoTransformerEncoder(tf.keras.layers.Layer):  # pylint: disable=missing
                  mlp_ratio,
                  num_heads,
                  vid_len,
+                 late_fusion,
                  drop_path=0.1,
                  drop_units=0.1,
                  drop_att=0.,
@@ -118,6 +119,7 @@ class VideoTransformerEncoder(tf.keras.layers.Layer):  # pylint: disable=missing
 
         self.vid_len = vid_len
         self.num_layers = num_layers
+        self.late_fusion = late_fusion
         self.enc_layers = [
             VideoTransformerEncoderLayer(
                 dim=dim,
@@ -127,7 +129,7 @@ class VideoTransformerEncoder(tf.keras.layers.Layer):  # pylint: disable=missing
                 drop_path=drop_path,
                 drop_units=drop_units,
                 drop_att=drop_att,
-                cross_attention=True if i == num_layers - 1 else False,
+                cross_attention=False if late_fusion or i < num_layers - 1 else True,
                 self_attention=self_attention,
                 use_ffn_ln=use_ffn_ln,
                 ln_scale_shift=ln_scale_shift,
@@ -151,6 +153,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
                  image_height,
                  image_width,
                  vid_len,
+                 late_fusion,
                  resnet_variant,
                  resnet_depth,
                  resnet_width_multiplier,
@@ -162,13 +165,14 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
                  drop_path=0.1,
                  drop_units=0.1,
                  drop_att=0.,
-                 pos_encoding='learned',
+                 pos_encoding='sin_cos',
                  use_cls_token=True,
                  **kwargs):
         super(VideoResNetTransformer, self).__init__(**kwargs)
         self.dim = dim
         self.vid_len = vid_len
         self.use_cls_token = use_cls_token
+        self.late_fusion = late_fusion
         self.resnet = resnet.resnet(
             resnet_depth=resnet_depth,
             width_multiplier=resnet_width_multiplier,
@@ -188,6 +192,9 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             factor = 32.
         self.n_rows = math.ceil(image_height / factor)
         self.n_cols = math.ceil(image_width / factor)
+        if late_fusion:
+            pos_encoding = 'learned_3d'
+
         self.vis_pos_emb = add_vis_pos_emb(
             self,
             pos_encoding,
@@ -202,6 +209,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             mlp_ratio=mlp_ratio,
             num_heads=num_heads,
             vid_len=vid_len,
+            late_fusion=late_fusion,
             drop_path=drop_path,
             drop_units=drop_units,
             drop_att=drop_att,
@@ -209,31 +217,34 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
         self.output_ln = tf.keras.layers.LayerNormalization(
             epsilon=1e-6, name='ouput_ln')
 
-    def call_image(self, images, training):
+    def call(self, videos, training):
+        b, t, h, w, c = get_shape(videos)
 
-        hidden_stack, _ = self.resnet(images, training)
+        videos = utils.flatten_vid(videos)
+
+        hidden_stack, _ = self.resnet(videos, training)
         """last feature layer"""
         tokens = hidden_stack[-1]
 
-        bsz, h, w, num_channels = get_shape(tokens)
-        tokens = tf.reshape(tokens, [bsz, h * w, num_channels])
+        bt, fh, fw, fc = get_shape(tokens)
+        n_feat = fh * fw
+        tokens = tf.reshape(tokens, [bt, n_feat, fc])
         tokens = self.stem_ln(self.stem_projection(self.dropout(tokens, training)))
+
+        if self.late_fusion:
+            tokens = utils.unflatten_vid(tokens, self.vid_len)
 
         tokens_vis_pos_emb = tf.expand_dims(self.vis_pos_emb, 0)
         tokens = tokens + tokens_vis_pos_emb
 
         if self.use_cls_token:
-            cls_token = tf.tile(tf.expand_dims(self.cls_token_emb, 0), [bsz, 1, 1])
+            cls_token = tf.tile(tf.expand_dims(self.cls_token_emb, 0), [bt, 1, 1])
             tokens = tf.concat([cls_token, tokens], 1)
 
-        return tokens
-
-    def call(self, images, training):
-        images = utils.flatten_vid(images)
-
-        tokens = self.call_image(images, training)
-
-        tokens = utils.unflatten_vid(tokens, self.vid_len)
+        if self.late_fusion:
+            tokens = tf.reshape(tokens, [b, t * n_feat, fc])
+        else:
+            tokens = utils.unflatten_vid(tokens, self.vid_len)
 
         tokens = self.transformer_encoder(
             tokens, None, training=training, ret_list=False)

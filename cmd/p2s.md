@@ -9,27 +9,27 @@
     - [mnist-640-1       @ resnet-640](#mnist_640_1___resnet_640_)
     - [mnist-640-5       @ resnet-640](#mnist_640_5___resnet_640_)
             - [on-test       @ mnist-640-5/resnet-640](#on_test___mnist_640_5_resnet_640_)
-    - [g2_16_53       @ resnet-640](#g2_16_53___resnet_640_)
-        - [batch-18       @ g2_16_53/resnet-640](#batch_18___g2_16_53_resnet_64_0_)
-            - [on-g2_0_15       @ batch-18/g2_16_53/resnet-640](#on_g2_0_15___batch_18_g2_16_53_resnet_640_)
-            - [on-g2_54_126       @ batch-18/g2_16_53/resnet-640](#on_g2_54_126___batch_18_g2_16_53_resnet_640_)
-        - [batch-4-scratch       @ g2_16_53/resnet-640](#batch_4_scratch___g2_16_53_resnet_64_0_)
-            - [on-g2_0_15       @ batch-4-scratch/g2_16_53/resnet-640](#on_g2_0_15___batch_4_scratch_g2_16_53_resnet_64_0_)
-            - [on-g2_54_126       @ batch-4-scratch/g2_16_53/resnet-640](#on_g2_54_126___batch_4_scratch_g2_16_53_resnet_64_0_)
-        - [dist-1       @ g2_16_53/resnet-640](#dist_1___g2_16_53_resnet_64_0_)
-        - [local       @ g2_16_53/resnet-640](#local___g2_16_53_resnet_64_0_)
-        - [xe       @ g2_16_53/resnet-640](#xe___g2_16_53_resnet_64_0_)
-            - [on-g2_0_15       @ xe/g2_16_53/resnet-640](#on_g2_0_15___xe_g2_16_53_resnet_640_)
-            - [on-g2_54_126       @ xe/g2_16_53/resnet-640](#on_g2_54_126___xe_g2_16_53_resnet_640_)
-        - [gx       @ g2_16_53/resnet-640](#gx___g2_16_53_resnet_64_0_)
-        - [gxe       @ g2_16_53/resnet-640](#gxe___g2_16_53_resnet_64_0_)
-            - [on-g2_0_15       @ gxe/g2_16_53/resnet-640](#on_g2_0_15___gxe_g2_16_53_resnet_64_0_)
-            - [on-g2_54_126       @ gxe/g2_16_53/resnet-640](#on_g2_54_126___gxe_g2_16_53_resnet_64_0_)
+    - [ipsc-16_53       @ resnet-640](#ipsc_16_53___resnet_640_)
+        - [batch-18       @ ipsc-16_53/resnet-640](#batch_18___ipsc_16_53_resnet_64_0_)
+            - [on-0_15       @ batch-18/ipsc-16_53/resnet-640](#on_0_15___batch_18_ipsc_16_53_resnet_640_)
+            - [on-54_126       @ batch-18/ipsc-16_53/resnet-640](#on_54_126___batch_18_ipsc_16_53_resnet_640_)
+        - [batch-4-scratch       @ ipsc-16_53/resnet-640](#batch_4_scratch___ipsc_16_53_resnet_64_0_)
+            - [on-g2_0_15       @ batch-4-scratch/ipsc-16_53/resnet-640](#on_g2_0_15___batch_4_scratch_ipsc_16_53_resnet_64_0_)
+            - [on-g2_54_126       @ batch-4-scratch/ipsc-16_53/resnet-640](#on_g2_54_126___batch_4_scratch_ipsc_16_53_resnet_64_0_)
+        - [dist-1       @ ipsc-16_53/resnet-640](#dist_1___ipsc_16_53_resnet_64_0_)
+        - [local       @ ipsc-16_53/resnet-640](#local___ipsc_16_53_resnet_64_0_)
+        - [xe       @ ipsc-16_53/resnet-640](#xe___ipsc_16_53_resnet_64_0_)
+            - [on-g2_0_15       @ xe/ipsc-16_53/resnet-640](#on_g2_0_15___xe_ipsc_16_53_resnet_640_)
+            - [on-g2_54_126       @ xe/ipsc-16_53/resnet-640](#on_g2_54_126___xe_ipsc_16_53_resnet_640_)
+        - [gx       @ ipsc-16_53/resnet-640](#gx___ipsc_16_53_resnet_64_0_)
+        - [gxe       @ ipsc-16_53/resnet-640](#gxe___ipsc_16_53_resnet_64_0_)
+            - [on-g2_0_15       @ gxe/ipsc-16_53/resnet-640](#on_g2_0_15___gxe_ipsc_16_53_resnet_64_0_)
+            - [on-g2_54_126       @ gxe/ipsc-16_53/resnet-640](#on_g2_54_126___gxe_ipsc_16_53_resnet_64_0_)
     - [g2_0_37       @ resnet-640](#g2_0_37___resnet_640_)
         - [batch_6       @ g2_0_37/resnet-640](#batch_6___g2_0_37_resnet_640_)
         - [gxe       @ g2_0_37/resnet-640](#gxe___g2_0_37_resnet_640_)
             - [on-g2_38_53       @ gxe/g2_0_37/resnet-640](#on_g2_38_53___gxe_g2_0_37_resnet_640_)
-    - [g2_16_53       @ resnet-640](#g2_16_53___resnet_640__1)
+    - [g2_16_53       @ resnet-640](#g2_16_53___resnet_640_)
         - [batch_6       @ g2_16_53/resnet-640](#batch_6___g2_16_53_resnet_64_0_)
     - [pt       @ resnet-640](#pt___resnet_640_)
         - [on-mninstmot       @ pt/resnet-640](#on_mninstmot___pt_resnet_64_0_)
@@ -87,60 +87,60 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 `seq-0-5,frame-0-5`
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_mnist_640_5_12_1000_var-train-batch_18,mnist-640-5-12_1000-test,seq-0-5,frame-0-5,batch-3,save-vis-1,dbg-0,dyn-1,dist-0
 
-<a id="g2_16_53___resnet_640_"></a>
-## g2_16_53       @ resnet-640-->p2s
-<a id="batch_18___g2_16_53_resnet_64_0_"></a>
-### batch-18       @ g2_16_53/resnet-640-->p2s
+<a id="ipsc_16_53___resnet_640_"></a>
+## ipsc-16_53       @ resnet-640-->p2s
+<a id="batch_18___ipsc_16_53_resnet_64_0_"></a>
+### batch-18       @ ipsc-16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc,frame-16-53,batch-18,dbg-0,dyn-1,dist-0,ep-10000,gz
-<a id="on_g2_0_15___batch_18_g2_16_53_resnet_640_"></a>
-#### on-g2_0_15       @ batch-18/g2_16_53/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_16_53-batch_6,ipsc-g2_0_15,batch-32,save-vis-1
-<a id="on_g2_54_126___batch_18_g2_16_53_resnet_640_"></a>
-#### on-g2_54_126       @ batch-18/g2_16_53/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_16_53-batch_6,ipsc-g2_54_126,batch-32,save-vis-1
+<a id="on_0_15___batch_18_ipsc_16_53_resnet_640_"></a>
+#### on-0_15       @ batch-18/ipsc-16_53/resnet-640-->p2s
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-frame-16_53-batch_18,_eval_,ipsc-0_15,batch-36,save-vis-1,dbg-0,dyn-1
+<a id="on_54_126___batch_18_ipsc_16_53_resnet_640_"></a>
+#### on-54_126       @ batch-18/ipsc-16_53/resnet-640-->p2s
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-frame-16_53-batch_18,_eval_,ipsc-54_126,batch-36,save-vis-1,dbg-0,dyn-1
 
-<a id="batch_4_scratch___g2_16_53_resnet_64_0_"></a>
-### batch-4-scratch       @ g2_16_53/resnet-640-->p2s
+<a id="batch_4_scratch___ipsc_16_53_resnet_64_0_"></a>
+### batch-4-scratch       @ ipsc-16_53/resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-g2_16_53,batch-4,scratch,dbg-1,dyn-1
-<a id="on_g2_0_15___batch_4_scratch_g2_16_53_resnet_64_0_"></a>
-#### on-g2_0_15       @ batch-4-scratch/g2_16_53/resnet-640-->p2s
+<a id="on_g2_0_15___batch_4_scratch_ipsc_16_53_resnet_64_0_"></a>
+#### on-g2_0_15       @ batch-4-scratch/ipsc-16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_16_53-batch_4-scratch,ipsc-g2_0_15,batch-32,save-vis-1
-<a id="on_g2_54_126___batch_4_scratch_g2_16_53_resnet_64_0_"></a>
-#### on-g2_54_126       @ batch-4-scratch/g2_16_53/resnet-640-->p2s
+<a id="on_g2_54_126___batch_4_scratch_ipsc_16_53_resnet_64_0_"></a>
+#### on-g2_54_126       @ batch-4-scratch/ipsc-16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_16_53-batch_4-scratch,ipsc-g2_54_126,batch-32,save-vis-1
 
-<a id="dist_1___g2_16_53_resnet_64_0_"></a>
-### dist-1       @ g2_16_53/resnet-640-->p2s
+<a id="dist_1___ipsc_16_53_resnet_64_0_"></a>
+### dist-1       @ ipsc-16_53/resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-g2_16_53,batch-12,dist-1,dbg-0,dyn-0
 
-<a id="local___g2_16_53_resnet_64_0_"></a>
-### local       @ g2_16_53/resnet-640-->p2s
+<a id="local___ipsc_16_53_resnet_64_0_"></a>
+### local       @ ipsc-16_53/resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-g2_16_53,batch-4,dbg-0,dyn-1,local-0,gpu-0
 
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-g2_16_53,batch-4,dbg-0,dyn-1,local-1,gpu-1
 
-<a id="xe___g2_16_53_resnet_64_0_"></a>
-### xe       @ g2_16_53/resnet-640-->p2s
+<a id="xe___ipsc_16_53_resnet_64_0_"></a>
+### xe       @ ipsc-16_53/resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-g2_16_53,batch-32,dbg-0,dyn-1,xe
-<a id="on_g2_0_15___xe_g2_16_53_resnet_640_"></a>
-#### on-g2_0_15       @ xe/g2_16_53/resnet-640-->p2s
+<a id="on_g2_0_15___xe_ipsc_16_53_resnet_640_"></a>
+#### on-g2_0_15       @ xe/ipsc-16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_16_53-batch_32-xe,ipsc-g2_0_15,batch-64,save-vis-1,dist-0
-<a id="on_g2_54_126___xe_g2_16_53_resnet_640_"></a>
-#### on-g2_54_126       @ xe/g2_16_53/resnet-640-->p2s
+<a id="on_g2_54_126___xe_ipsc_16_53_resnet_640_"></a>
+#### on-g2_54_126       @ xe/ipsc-16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_16_53-batch_32-xe,ipsc-g2_54_126,batch-64,save-vis-1,dist-0
 
-<a id="gx___g2_16_53_resnet_64_0_"></a>
-### gx       @ g2_16_53/resnet-640-->p2s
+<a id="gx___ipsc_16_53_resnet_64_0_"></a>
+### gx       @ ipsc-16_53/resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-g2_16_53,batch-36,dbg-0,dyn-1,gx
 
-<a id="gxe___g2_16_53_resnet_64_0_"></a>
-### gxe       @ g2_16_53/resnet-640-->p2s
+<a id="gxe___ipsc_16_53_resnet_64_0_"></a>
+### gxe       @ ipsc-16_53/resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-g2_16_53,ep-500,batch-48,dbg-0,dyn-0,gxe
-<a id="on_g2_0_15___gxe_g2_16_53_resnet_64_0_"></a>
-#### on-g2_0_15       @ gxe/g2_16_53/resnet-640-->p2s
+<a id="on_g2_0_15___gxe_ipsc_16_53_resnet_64_0_"></a>
+#### on-g2_0_15       @ gxe/ipsc-16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_16_53-batch_48-gxe,ipsc-g2_0_15,batch-32,save-vis-1,dist-1
-<a id="on_g2_54_126___gxe_g2_16_53_resnet_64_0_"></a>
-#### on-g2_54_126       @ gxe/g2_16_53/resnet-640-->p2s
+<a id="on_g2_54_126___gxe_ipsc_16_53_resnet_64_0_"></a>
+#### on-g2_54_126       @ gxe/ipsc-16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_16_53-batch_48-gxe,ipsc-g2_54_126,batch-32,save-vis-1,dist-1
 
 <a id="g2_0_37___resnet_640_"></a>
@@ -155,7 +155,7 @@ python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-g2_0
 #### on-g2_38_53       @ gxe/g2_0_37/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=eval,m-resnet_640_ext_reorg_roi_g2_0_37-batch_48-gxe,ipsc-g2_38_53,batch-16,save-vis-1,conf-0
 
-<a id="g2_16_53___resnet_640__1"></a>
+<a id="g2_16_53___resnet_640_"></a>
 ## g2_16_53       @ resnet-640-->p2s
 <a id="batch_6___g2_16_53_resnet_64_0_"></a>
 ### batch_6       @ g2_16_53/resnet-640-->p2s
