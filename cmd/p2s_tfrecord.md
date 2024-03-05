@@ -53,7 +53,7 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:test:seq-0_
 
 <a id="16_53___ipsc_"></a>
 ## 16_53       @ ipsc-->p2s_tfrecord
-python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:frame-16_53:gz
+python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:16_53:gz
 
 <a id="0_1___ipsc_"></a>
 ## 0_1       @ ipsc-->p2s_tfrecord
@@ -63,10 +63,10 @@ python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_1.json
 python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_15.json --n_proc=0
 <a id="0_37___ipsc_"></a>
 ## 0_37       @ ipsc-->p2s_tfrecord
-python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_37.json --n_proc=0
+python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:0_37:gz
 <a id="38_53___ipsc_"></a>
 ## 38_53       @ ipsc-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_38_53.json --n_proc=0
 <a id="54_126___ipsc_"></a>
 ## 54_126       @ ipsc-->p2s_tfrecord
-python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:frame-54_126:gz
+python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:54_126:gz
