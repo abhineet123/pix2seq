@@ -54,6 +54,8 @@
     - [ipsc-16_53       @ resnet-640](#ipsc_16_53___resnet_640_)
         - [on-0_15       @ ipsc-16_53/resnet-640](#on_0_15___ipsc_16_53_resnet_64_0_)
         - [on-54_126       @ ipsc-16_53/resnet-640](#on_54_126___ipsc_16_53_resnet_64_0_)
+            - [strd-1       @ on-54_126/ipsc-16_53/resnet-640](#strd_1___on_54_126_ipsc_16_53_resnet_64_0_)
+            - [strd-2       @ on-54_126/ipsc-16_53/resnet-640](#strd_2___on_54_126_ipsc_16_53_resnet_64_0_)
     - [ipsc-0_37       @ resnet-640](#ipsc_0_37___resnet_640_)
         - [on-54_126       @ ipsc-0_37/resnet-640](#on_54_126___ipsc_0_37_resnet_640_)
     - [ipsc-0_37-fg-4       @ resnet-640](#ipsc_0_37_fg_4___resnet_640_)
@@ -238,7 +240,12 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-0_15,len-2,strd-1,batch-36,save-vis-1,dbg-0,dyn-1
 <a id="on_54_126___ipsc_16_53_resnet_64_0_"></a>
 ### on-54_126       @ ipsc-16_53/resnet-640-->p2s_vid
+<a id="strd_1___on_54_126_ipsc_16_53_resnet_64_0_"></a>
+#### strd-1       @ on-54_126/ipsc-16_53/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-54_126,len-2,strd-1,batch-36,save-vis-1,dbg-0,dyn-1
+<a id="strd_2___on_54_126_ipsc_16_53_resnet_64_0_"></a>
+#### strd-2       @ on-54_126/ipsc-16_53/resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-54_126,len-2,strd-2,batch-36,save-vis-1,dbg-0,dyn-1
 
 <a id="ipsc_0_37___resnet_640_"></a>
 ## ipsc-0_37       @ resnet-640-->p2s_vid
