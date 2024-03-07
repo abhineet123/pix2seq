@@ -32,6 +32,65 @@ import numpy as np
 import vocab
 import tensorflow as tf
 
+def check_ckpt_vars(cfg, trainer):
+    cur_step_ = trainer.optimizer.iterations.numpy()
+    ckpt_vars_pt = trainer.ckpt_vars_p
+
+    if cur_step_ != 1 or ckpt_vars_pt is None:
+        return
+
+    name_to_shape_pt = trainer.name_to_shape_p
+    trainer.checkpoint_manager.save(cur_step_)
+    ckpt_vars, name_to_shape = save_ckpt_vars(cfg.model_dir)
+
+    ckpt_names_pt = set(k for k in ckpt_vars_pt['name'] if 'optimizer' not in k)
+    ckpt_names = set(k for k in ckpt_vars['name'] if 'optimizer' not in k)
+
+    ckpt_names_file = os.path.join(cfg.model_dir, 'ckpt_names.txt')
+    with open(ckpt_names_file, 'w') as fid:
+        fid.write('\n'.join(ckpt_names))
+
+    ckpt_names_pt_file = os.path.join(cfg.model_dir, 'ckpt_names_pt.txt')
+    with open(ckpt_names_pt_file, 'w') as fid:
+        fid.write('\n'.join(ckpt_names_pt))
+
+    unmatched_names_model = ckpt_names - ckpt_names_pt
+    unmatched_names_pt = ckpt_names_pt - ckpt_names
+
+    matched_names = ckpt_names.intersection(ckpt_names_pt)
+
+    if unmatched_names_model:
+        unmatched_names_model_file = os.path.join(cfg.model_dir, 'unmatched_names_model.txt')
+        with open(unmatched_names_model_file, 'w') as fid:
+            fid.write('\n'.join(unmatched_names_model))
+
+    if unmatched_names_pt:
+        unmatched_names_pt_file = os.path.join(cfg.model_dir, 'unmatched_names_pt.txt')
+        with open(unmatched_names_pt_file, 'w') as fid:
+            fid.write('\n'.join(unmatched_names_pt))
+
+    unmatched_shapes = {
+        name: (name_to_shape_pt[name], name_to_shape[name])
+        for name in matched_names
+        if name_to_shape_pt[name] != name_to_shape[name]
+    }
+
+    if unmatched_shapes:
+        names = list(unmatched_shapes.keys())
+        unmatched_shapes_dict = dict(
+            name=names,
+            shapes=[unmatched_shapes[name] for name in names]
+        )
+
+        import pandas as pd
+        unmatched_shapes_df = pd.DataFrame.from_dict(unmatched_shapes_dict)
+
+        unmatched_shapes_csv = os.path.join(cfg.model_dir, 'unmatched_shapes.csv')
+        print(f'saving unmatched_shapes to {unmatched_shapes_csv}')
+        unmatched_shapes_df.to_csv(
+            unmatched_shapes_csv,
+            index=False,
+        )
 
 def json_serializable(val):
     try:

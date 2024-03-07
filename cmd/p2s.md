@@ -10,7 +10,7 @@
     - [mnist-640-5       @ resnet-640](#mnist_640_5___resnet_640_)
             - [on-test       @ mnist-640-5/resnet-640](#on_test___mnist_640_5_resnet_640_)
     - [ipsc-16_53       @ resnet-640](#ipsc_16_53___resnet_640_)
-        - [on-0_15       @ ipsc-16_53/resnet-640](#on_0_15___ipsc_16_53_resnet_64_0_)
+        - [on-16_53       @ ipsc-16_53/resnet-640](#on_16_53___ipsc_16_53_resnet_64_0_)
         - [on-54_126       @ ipsc-16_53/resnet-640](#on_54_126___ipsc_16_53_resnet_64_0_)
     - [ipsc-0_37       @ resnet-640](#ipsc_0_37___resnet_640_)
         - [on-54_126       @ ipsc-0_37/resnet-640](#on_54_126___ipsc_0_37_resnet_640_)
@@ -90,9 +90,9 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 <a id="ipsc_16_53___resnet_640_"></a>
 ## ipsc-16_53       @ resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc,frame-16-53,batch-18,dbg-0,dyn-1,dist-0,ep-10000,gz
-<a id="on_0_15___ipsc_16_53_resnet_64_0_"></a>
-### on-0_15       @ ipsc-16_53/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-frame-16_53-batch_18,_eval_,ipsc-0_15,batch-36,save-vis-1,dbg-0,dyn-1
+<a id="on_16_53___ipsc_16_53_resnet_64_0_"></a>
+### on-16_53       @ ipsc-16_53/resnet-640-->p2s
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-frame-16_53-batch_18,_eval_,ipsc-16_53,batch-36,save-vis-1,dbg-0,dyn-1
 <a id="on_54_126___ipsc_16_53_resnet_64_0_"></a>
 ### on-54_126       @ ipsc-16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-frame-16_53-batch_18,_eval_,ipsc-54_126,batch-36,save-vis-1,dbg-0,dyn-1

@@ -4,72 +4,10 @@ from absl import logging
 
 import time
 
+
 import numpy as np
-import pandas as pd
 
-import utils
-
-
-def check_ckpt_vars(cfg, trainer):
-    cur_step_ = trainer.optimizer.iterations.numpy()
-    ckpt_vars_pt = trainer.ckpt_vars_p
-
-    if cur_step_ != 1 or ckpt_vars_pt is None:
-        return
-
-    name_to_shape_pt = trainer.name_to_shape_p
-    trainer.checkpoint_manager.save(cur_step_)
-    ckpt_vars, name_to_shape = utils.save_ckpt_vars(cfg.model_dir)
-
-    ckpt_names_pt = set(k for k in ckpt_vars_pt['name'] if 'optimizer' not in k)
-    ckpt_names = set(k for k in ckpt_vars['name'] if 'optimizer' not in k)
-
-    ckpt_names_file = os.path.join(cfg.model_dir, 'ckpt_names.txt')
-    with open(ckpt_names_file, 'w') as fid:
-        fid.write('\n'.join(ckpt_names))
-
-    ckpt_names_pt_file = os.path.join(cfg.model_dir, 'ckpt_names_pt.txt')
-    with open(ckpt_names_pt_file, 'w') as fid:
-        fid.write('\n'.join(ckpt_names_pt))
-
-    unmatched_names_model = ckpt_names - ckpt_names_pt
-    unmatched_names_pt = ckpt_names_pt - ckpt_names
-
-    matched_names = ckpt_names.intersection(ckpt_names_pt)
-
-    if unmatched_names_model:
-        unmatched_names_model_file = os.path.join(cfg.model_dir, 'unmatched_names_model.txt')
-        with open(unmatched_names_model_file, 'w') as fid:
-            fid.write('\n'.join(unmatched_names_model))
-
-    if unmatched_names_pt:
-        unmatched_names_pt_file = os.path.join(cfg.model_dir, 'unmatched_names_pt.txt')
-        with open(unmatched_names_pt_file, 'w') as fid:
-            fid.write('\n'.join(unmatched_names_pt))
-
-    unmatched_shapes = {
-        name: (name_to_shape_pt[name], name_to_shape[name])
-        for name in matched_names
-        if name_to_shape_pt[name] != name_to_shape[name]
-    }
-
-    if unmatched_shapes:
-        names = list(unmatched_shapes.keys())
-        unmatched_shapes_dict = dict(
-            name=names,
-            shapes=[unmatched_shapes[name] for name in names]
-        )
-
-        import pandas as pd
-        unmatched_shapes_df = pd.DataFrame.from_dict(unmatched_shapes_dict)
-
-        unmatched_shapes_csv = os.path.join(cfg.model_dir, 'unmatched_shapes.csv')
-        print(f'saving unmatched_shapes to {unmatched_shapes_csv}')
-        unmatched_shapes_df.to_csv(
-            unmatched_shapes_csv,
-            index=False,
-        )
-
+import eval
 
 def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
         strategy, model_lib, tf):
@@ -128,11 +66,11 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 # for metric_name, metric_val in trainer.metrics.items():
                 #     metric_val_np = metric_val.result().numpy()
                 #     metric_val_df.loc[metric_name, 'val'] = metric_val_np
+                # metric_val_df = pd.DataFrame({
+                #     metric_name: metric_val.result().numpy().item() for metric_name, metric_val in
+                #     trainer.metrics.items()
+                # }, index=[0])
 
-                metric_val_df = pd.DataFrame({
-                    metric_name: metric_val.result().numpy().item() for metric_name, metric_val in
-                    trainer.metrics.items()
-                }, index=[0])
                 progbar.add(1)
 
                 # check_ckpt_vars(cfg, trainer)
@@ -162,8 +100,13 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 trainer.check_checkpoint_restored()
 
                 cur_step = global_step.numpy()
-                # if cfg.dist != 2 or cfg.worker_idx == 0:
+
                 trainer.checkpoint_manager.save(cur_step)
+                with tf.name_scope('val'):
+                    ckpt = trainer.checkpoint_manager.latest_checkpoint
+                    cfg.eval.save_csv = cfg.eval.save_vis = False
+                    result = eval.run(cfg, datasets[0], tasks[0], cfg.eval.steps, ckpt, strategy, model_lib, tf)
+
                 steps_per_sec = steps_per_epoch / (time.time() - timestamp)
                 timestamp = time.time()
                 with tf.name_scope('train'):
@@ -180,6 +123,8 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                     lr = trainer.learning_rate(tf.cast(global_step, dtype=tf.float32))
                     tf.summary.scalar('lr', lr, global_step)
                     tf.summary.scalar('steps_per_sec', steps_per_sec, global_step)
+
+
                 summary_writer.flush()
             progress = cur_step / float(train_steps) * 100
             eta = (train_steps - cur_step) / steps_per_sec / 60.

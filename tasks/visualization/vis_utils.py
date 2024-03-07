@@ -264,8 +264,9 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
                             class_names, y_mask, vis_out_dir)
     bbox_info_pred_m = vis_fn(config, examples, y_pred_logits, y_pred, f'{pred_name} masked',
                               class_names, y_mask, vis_out_dir)
+    metrics_info = [y_correct_pc_m, accuracy_notpad_m]
 
-    return bbox_info_gt, bbox_info_pred, bbox_info_gt_m, bbox_info_pred_m
+    return bbox_info_gt, bbox_info_pred, bbox_info_gt_m, bbox_info_pred_m, metrics_info
 
 
 def _force_matplotlib_backend():

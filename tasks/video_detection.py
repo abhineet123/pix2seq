@@ -174,13 +174,13 @@ class TaskVideoDetection(task_lib.Task):
         # video = tf.identity(video).gpu()
         bsz = tf.shape(video)[0]
 
-        # if self.config.debug:
-        #     raw_logits = model(video, input_seq, training=False)
-        #     bbox_info_gt, bbox_info_pred = vis_utils.debug_loss(
-        #         self.config, self._category_names, examples, target_seq,
-        #         raw_logits, y_mask=None, pred_name='pred_raw',
-        #         gt_name='gt raw', run_type='eval')
-        #     bboxes_pred, bboxes_rescaled_pred, classes_pred, scores_pred = bbox_info_pred
+        if self.config.debug == 2 or self.config.get_loss:
+            raw_logits = model(video, input_seq, training=False)
+            bbox_info_gt, bbox_info_pred = vis_utils.debug_loss(
+                self.config, self._category_names, examples, target_seq,
+                raw_logits, y_mask=None, pred_name='pred_raw',
+                gt_name='gt raw', run_type='eval')
+            bboxes_pred, bboxes_rescaled_pred, classes_pred, scores_pred = bbox_info_pred
 
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id,

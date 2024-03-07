@@ -11,11 +11,11 @@
     - [640-5       @ mnist](#640_5___mnis_t_)
 - [ipsc       @ tfrecord](#ipsc___tfrecord_)
     - [16_53       @ ipsc](#16_53___ipsc_)
+    - [0_37       @ ipsc](#0_37___ipsc_)
+    - [54_126       @ ipsc](#54_126___ipsc_)
     - [0_1       @ ipsc](#0_1___ipsc_)
     - [0_15       @ ipsc](#0_15___ipsc_)
-    - [0_37       @ ipsc](#0_37___ipsc_)
     - [38_53       @ ipsc](#38_53___ipsc_)
-    - [54_126       @ ipsc](#54_126___ipsc_)
 
 <!-- /MarkdownTOC -->
 <a id="detrac___tfrecord_"></a>
@@ -54,6 +54,13 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:test:seq-0_
 <a id="16_53___ipsc_"></a>
 ## 16_53       @ ipsc-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:16_53:gz
+<a id="0_37___ipsc_"></a>
+## 0_37       @ ipsc-->p2s_tfrecord
+python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:0_37:gz
+<a id="38_53___ipsc_"></a>
+<a id="54_126___ipsc_"></a>
+## 54_126       @ ipsc-->p2s_tfrecord
+python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:54_126:gz
 
 <a id="0_1___ipsc_"></a>
 ## 0_1       @ ipsc-->p2s_tfrecord
@@ -61,12 +68,6 @@ python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_1.json
 <a id="0_15___ipsc_"></a>
 ## 0_15       @ ipsc-->p2s_tfrecord
 python data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_0_15.json --n_proc=0
-<a id="0_37___ipsc_"></a>
-## 0_37       @ ipsc-->p2s_tfrecord
-python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:0_37:gz
 <a id="38_53___ipsc_"></a>
 ## 38_53       @ ipsc-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py --ann_file=ext_reorg_roi_g2_38_53.json --n_proc=0
-<a id="54_126___ipsc_"></a>
-## 54_126       @ ipsc-->p2s_tfrecord
-python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:54_126:gz
