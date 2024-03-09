@@ -7,13 +7,13 @@ import time
 import numpy as np
 
 
-def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
+def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_per_epoch, num_train_examples,
         strategy, model_lib, tf):
     if cfg.train.pt:
         assert cfg.pretrained, "cfg.pretrained must be provided to load pt and continue training from pretrained model"
         cfg.model.pretrained_ckpt = cfg.pretrained
 
-    def val_step(examples, model):
+    def single_val_step(examples, model):
         preprocessed_outputs = [
             t.preprocess_batched(e, training=False) for e, t in zip(examples, tasks)]
         val_outputs = [t.infer(model, o) for o, t in zip(preprocessed_outputs, tasks)]
@@ -27,12 +27,56 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
         val_data_iters = [iter(dataset) for dataset in val_datasets]
         summary_writer = tf.summary.create_file_writer(cfg.model_dir)
 
+        is_greater = lambda x, y: x > y
+        is_smaller = lambda x, y: x < y
+        is_better = dict(
+            loss=is_smaller,
+            loss_notpad=is_smaller,
+            correct_pc=is_greater,
+            accuracy_notpad=is_greater,
+        )
+        best_val_metrics = dict(
+            loss=np.inf,
+            loss_notpad=np.inf,
+            correct_pc=0,
+            accuracy_notpad=0,
+        )
+
+        val_ckpt_managers = {
+            metric_name: tf.train.CheckpointManager(
+                tf.train.Checkpoint(model=trainer.model), os.path.join(cfg.model_dir, f'best-val-{metric_name}'), 1)
+            for metric_name in best_val_metrics.keys()
+        }
+
         @tf.function
         def validate(data_iterators):
-            outputs = strategy.run(val_step, ([next(it) for it in data_iterators], trainer.model))
-            if outputs is not None:
-                outputs = [strategy.gather(t, axis=0) for t in outputs]
-            return outputs
+            progbar = None
+            if cfg.eager:
+                progbar = tf.keras.utils.Progbar(val_steps)
+            metrics_dict = {
+                metric_name: tf.zeros((val_steps,), dtype=tf.float32)
+                for metric_name in best_val_metrics.keys()
+            }
+
+            for step_id in tf.range(val_steps):  # using tf.range prevents unroll.
+                with tf.name_scope(''):  # prevent `while_` prefix for variable names.
+                    val_outputs = strategy.run(single_val_step, ([next(it) for it in data_iterators], trainer.model))
+                    if val_outputs is not None:
+                        val_outputs = [strategy.gather(o, axis=0) for o in val_outputs]
+                    loss, loss_notpad, correct_pc, accuracy_notpad = val_outputs[0]
+                    metrics = dict(
+                        loss=loss,
+                        loss_notpad=loss_notpad,
+                        correct_pc=correct_pc,
+                        accuracy_notpad=accuracy_notpad,
+                    )
+                    metrics_dict = {
+                        metric_name: tf.tensor_scatter_nd(metric_val, step_id, metrics[metric_name])
+                        for metric_name, metric_val in best_val_metrics.keys()
+                    }
+                    if cfg.eager:
+                        progbar.add(1)
+            return metrics_dict
 
         @tf.function
         def train_multiple_steps(data_iterators, tasks):
@@ -96,26 +140,6 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
         # trainer.checkpoint_manager.save(cur_step)
         # ckpt_vars_0 = utils.save_ckpt_vars(cfg.model_dir)
 
-        is_greater = lambda x, y: x > y
-        is_smaller = lambda x, y: x < y
-        is_better = dict(
-            loss=is_smaller,
-            loss_notpad=is_smaller,
-            correct_pc=is_greater,
-            accuracy_notpad=is_greater,
-        )
-        best_val_metrics = dict(
-            loss=np.inf,
-            loss_notpad=np.inf,
-            correct_pc=0,
-            accuracy_notpad=0,
-        )
-
-        val_ckpt_managers = {
-            metric_name: tf.train.CheckpointManager(
-                tf.train.Checkpoint(model=trainer.model), os.path.join(cfg.model_dir, f'best-val-{metric_name}'), 1)
-            for metric_name in best_val_metrics.keys()
-        }
         best_val_metrics_json = os.path.join(cfg.model_dir, "best_val_metrics.json")
 
         if os.path.exists(best_val_metrics_json):
@@ -145,17 +169,16 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
                 trainer.checkpoint_manager.save(cur_step)
 
                 if cfg.train.val_epochs and cur_epoch % cfg.train.val_epochs == 0:
+                    tf.print(f'validating epoch {cur_epoch} with {val_steps} steps...')
+
                     for t in tasks:
                         t.config.validation = True
+                    val_metrics = validate(val_data_iters)
+                    val_metrics = {
+                        metric_name: tf.reduce_mean(metric_val)
+                        for metric_name, metric_val in val_metrics.items()
+                    }
 
-                    val_outputs = validate(val_data_iters)
-                    loss, loss_notpad, correct_pc, accuracy_notpad = val_outputs[0]
-                    val_metrics = dict(
-                        loss=loss,
-                        loss_notpad=loss_notpad,
-                        correct_pc=correct_pc,
-                        accuracy_notpad=accuracy_notpad,
-                    )
                     for t in tasks:
                         t.config.validation = False
 

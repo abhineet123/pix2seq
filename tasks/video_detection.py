@@ -32,7 +32,6 @@ from metrics import metric_utils
 from tasks import task as task_lib
 from tasks import task_utils
 from tasks.visualization import vis_utils
-from models import model_utils
 
 import tensorflow as tf
 
@@ -187,6 +186,8 @@ class TaskVideoDetection(task_lib.Task):
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
         if self.config.validation:
+            from models import model_utils
+
             is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
             token_weights_notpad = tf.where(
                 is_padding, tf.zeros_like(token_weights), token_weights)
@@ -198,7 +199,7 @@ class TaskVideoDetection(task_lib.Task):
                     tf.reduce_sum(token_weights_notpad) + 1e-9)
 
             y_mask = tf.greater(token_weights_notpad, 0)
-            y_correct_pc_m, accuracy_notpad_m = vis_utils.val_metrics(target_seq, pred_seq, logits, y_mask)
+            y_correct_pc_m, accuracy_notpad_m = model_utils.val_metrics(target_seq, pred_seq, logits, y_mask)
             return loss, loss_notpad, y_correct_pc_m, accuracy_notpad_m
 
         # if self.config.debug:

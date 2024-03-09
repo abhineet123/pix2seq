@@ -142,12 +142,13 @@ class TaskObjectDetection(task_lib.Task):
         if training:
             return batched_examples, input_seq, target_seq, token_weights
         else:
-            return batched_examples, input_seq, response_seq
+            return batched_examples, input_seq, response_seq, target_seq, token_weights
 
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
-        examples, input_seq, response_seq  = preprocessed_outputs  # response_seq unused by default
+        examples, input_seq, response_seq, target_seq, token_weights = preprocessed_outputs  # response_seq unused by
+        # default
         image = examples["image"]
         bsz = tf.shape(image)[0]
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
@@ -156,6 +157,23 @@ class TaskObjectDetection(task_lib.Task):
             image, prompt_seq, encoded=None,
             max_seq_len=(config.max_instances_per_image_test * 5 + 1),
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
+
+        if self.config.validation:
+            from models import model_utils
+
+            is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
+            token_weights_notpad = tf.where(
+                is_padding, tf.zeros_like(token_weights), token_weights)
+            losses = model_utils.get_loss(
+                logits, target_seq, self.config.train.loss_type)
+            loss = tf.reduce_sum(losses * token_weights) / (
+                    tf.reduce_sum(token_weights) + 1e-9)
+            loss_notpad = tf.reduce_sum(losses * token_weights_notpad) / (
+                    tf.reduce_sum(token_weights_notpad) + 1e-9)
+
+            y_mask = tf.greater(token_weights_notpad, 0)
+            y_correct_pc_m, accuracy_notpad_m = model_utils.val_metrics(target_seq, pred_seq, logits, y_mask)
+            return loss, loss_notpad, y_correct_pc_m, accuracy_notpad_m
         # if True:  # Sanity check by using gt response_seq as pred_seq.
         #   pred_seq = preprocessed_outputs[1]
         #   logits = tf.one_hot(pred_seq, mconfig.vocab_size)

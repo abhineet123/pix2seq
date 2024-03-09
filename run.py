@@ -228,11 +228,6 @@ def main(unused_argv):
             train_dataset, cfg.train.steps, cfg.train.epochs,
             cfg.train.batch_size)
 
-        print(f'cfg.train.steps: {cfg.train.steps}')
-        print(f'cfg.train.epochs: {cfg.train.epochs}')
-        print(f'cfg.train.batch_size: {cfg.train.batch_size}')
-        print(f'train_steps: {train_steps}')
-
         eval_steps = utils.get_eval_steps(
             train_dataset, cfg.eval.steps, cfg.eval.batch_size)
         checkpoint_steps = utils.get_checkpoint_steps(
@@ -240,9 +235,16 @@ def main(unused_argv):
             cfg.train.checkpoint_epochs, cfg.train.batch_size)
         checkpoint_steps = min(checkpoint_steps, train_steps)
 
+        print(f'cfg.train.steps: {cfg.train.steps}')
+        print(f'cfg.train.epochs: {cfg.train.epochs}')
+        print(f'cfg.train.batch_size: {cfg.train.batch_size}')
+        print(f'train_steps: {train_steps}')
+        print(f'eval_steps: {eval_steps}')
+        print(f'checkpoint_steps: {checkpoint_steps}')
+
     if cfg.training:
         import train
-        train.run(cfg, train_datasets, val_datasets, tasks, train_steps, checkpoint_steps,
+        train.run(cfg, train_datasets, val_datasets, tasks, train_steps, eval_steps, checkpoint_steps,
                   train_dataset.num_train_examples, strategy, model_lib, tf)
     else:
         # For eval, only one task and one dataset is passed in.
