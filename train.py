@@ -14,9 +14,10 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
         cfg.model.pretrained_ckpt = cfg.pretrained
 
     def val_step(examples, task, model):
-        preprocessed_outputs = task.preprocess_batched(examples, training=False)
+        preprocessed_outputs = [
+            t.preprocess_batched(e, training=False) for e, t in zip(examples, tasks)]
         task.config.validation = True
-        val_outputs = task.infer(model, preprocessed_outputs)
+        val_outputs = [t.infer(model, o) for o, t in zip(preprocessed_outputs, tasks)]
         return val_outputs
 
     with strategy.scope():
@@ -24,13 +25,13 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
             cfg, model_dir=cfg.model_dir,
             num_train_examples=num_train_examples, train_steps=train_steps)
         train_data_iters = [iter(dataset) for dataset in train_datasets]
-        val_data_iters = iter(val_datasets)
+        val_data_iters = [iter(dataset) for dataset in val_datasets]
         summary_writer = tf.summary.create_file_writer(cfg.model_dir)
 
         @tf.function
         def validate(data_iterators):
             outputs = strategy.run(val_step, ([next(it) for it in data_iterators],
-                                              tasks[0], trainer.model))
+                                              tasks, trainer.model))
             if outputs is not None:
                 outputs = [strategy.gather(t, axis=0) for t in outputs]
             return outputs
@@ -144,7 +145,8 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
                 trainer.checkpoint_manager.save(cur_step)
 
                 if cfg.train.val_epochs and cur_epoch % cfg.train.val_epochs == 0:
-                    loss_notpad, correct_pc, accuracy_notpad = validate(val_data_iters)
+                    val_outputs = validate(val_data_iters)
+                    loss_notpad, correct_pc, accuracy_notpad = val_outputs[0]
                     val_metrics = dict(
                         loss_notpad=loss_notpad,
                         correct_pc=correct_pc,
