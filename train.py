@@ -53,11 +53,15 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             progbar = None
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(val_steps)
+
             metrics_dict = {
-                metric_name: tf.zeros((val_steps,), dtype=tf.float32)
+                metric_name:  tf.TensorArray(tf.float32, size=val_steps)
                 for metric_name in best_val_metrics.keys()
             }
-
+            # metrics_dict = {
+            #     metric_name: []
+            #     for metric_name in best_val_metrics.keys()
+            # }
             for step_id in tf.range(val_steps):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     val_outputs = strategy.run(single_val_step, ([next(it) for it in data_iterators], trainer.model))
@@ -70,12 +74,16 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                         correct_pc=correct_pc,
                         accuracy_notpad=accuracy_notpad,
                     )
-                    metrics_dict = {
-                        metric_name: tf.tensor_scatter_nd(metric_val, step_id, metrics[metric_name])
-                        for metric_name, metric_val in best_val_metrics.keys()
-                    }
+                    for metric_name, metric_val in metrics.items():
+                        metrics_dict[metric_name] = metrics_dict[metric_name].write(step_id, metric_val)
+                        # metrics_dict[metric_name].append(metric_val)
+
                     if cfg.eager:
                         progbar.add(1)
+            metrics_dict = {
+                metric_name: metric_val.stack()
+                for metric_name, metric_val in metrics_dict.items()
+            }
             return metrics_dict
 
         @tf.function

@@ -172,7 +172,7 @@ def ipsc_post_process(ds_cfg, training):
         start_frame_id = ds_cfg[f'{mode}_start_frame_id']
         end_frame_id = ds_cfg[f'{mode}_end_frame_id']
         if start_frame_id > 0 or end_frame_id >= 0:
-            frame_suffix = f'frame-{start_frame_id}_{end_frame_id}'
+            frame_suffix = f'{start_frame_id}_{end_frame_id}'
             name = f'{name}-{frame_suffix}'
 
         json_name = f'{name}.json'

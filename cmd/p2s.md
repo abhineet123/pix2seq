@@ -7,6 +7,7 @@
             - [on-test       @ 0_19/detrac-non_empty/resnet-640](#on_test___0_19_detrac_non_empty_resnet_640_)
         - [0_9       @ detrac-non_empty/resnet-640](#0_9___detrac_non_empty_resnet_64_0_)
     - [mnist-640-1       @ resnet-640](#mnist_640_1___resnet_640_)
+        - [frame-0-1       @ mnist-640-1/resnet-640](#frame_0_1___mnist_640_1_resnet_640_)
     - [mnist-640-5       @ resnet-640](#mnist_640_5___resnet_640_)
             - [on-test       @ mnist-640-5/resnet-640](#on_test___mnist_640_5_resnet_640_)
     - [ipsc-0_1       @ resnet-640](#ipsc_0_1___resnet_640_)
@@ -78,6 +79,9 @@ python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detra
 <a id="mnist_640_1___resnet_640_"></a>
 ## mnist-640-1       @ resnet-640-->p2s
 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-1-12_1000-train,batch-4,pt-1,dbg-1,dyn-1,dist-0,ep-10000,gz
+<a id="frame_0_1___mnist_640_1_resnet_640_"></a>
+### frame-0-1       @ mnist-640-1/resnet-640-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=val-1,mnist-640-1-12_1000-train,frame-2-3,batch-12,train,resnet-640,mnist-640-1-12_1000-train,frame-0-1,batch-6,pt-1,dbg-0,dyn-1,dist-0,ep-10000,gz
 
 <a id="mnist_640_5___resnet_640_"></a>
 ## mnist-640-5       @ resnet-640-->p2s
