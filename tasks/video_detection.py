@@ -199,7 +199,7 @@ class TaskVideoDetection(task_lib.Task):
 
             y_mask = tf.greater(token_weights_notpad, 0)
             y_correct_pc_m, accuracy_notpad_m = vis_utils.val_metrics(target_seq, pred_seq, logits, y_mask)
-            return loss_notpad, y_correct_pc_m, accuracy_notpad_m
+            return loss, loss_notpad, y_correct_pc_m, accuracy_notpad_m
 
         # if self.config.debug:
         #     bbox_info_gt_infer, bbox_info_pred_infer = vis_utils.debug_loss(

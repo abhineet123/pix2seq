@@ -13,10 +13,9 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
         assert cfg.pretrained, "cfg.pretrained must be provided to load pt and continue training from pretrained model"
         cfg.model.pretrained_ckpt = cfg.pretrained
 
-    def val_step(examples, task, model):
+    def val_step(examples, model):
         preprocessed_outputs = [
             t.preprocess_batched(e, training=False) for e, t in zip(examples, tasks)]
-        task.config.validation = True
         val_outputs = [t.infer(model, o) for o, t in zip(preprocessed_outputs, tasks)]
         return val_outputs
 
@@ -101,12 +100,14 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
         is_greater = lambda x, y: x > y
         is_smaller = lambda x, y: x < y
         is_better = dict(
+            loss=is_smaller,
             loss_notpad=is_smaller,
             correct_pc=is_greater,
             accuracy_notpad=is_greater,
         )
         best_val_metrics = dict(
-            loss_notpad=0,
+            loss=np.inf,
+            loss_notpad=np.inf,
             correct_pc=0,
             accuracy_notpad=0,
         )
@@ -145,13 +146,20 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
                 trainer.checkpoint_manager.save(cur_step)
 
                 if cfg.train.val_epochs and cur_epoch % cfg.train.val_epochs == 0:
+                    for t in tasks:
+                        t.config.validation = True
+
                     val_outputs = validate(val_data_iters)
-                    loss_notpad, correct_pc, accuracy_notpad = val_outputs[0]
+                    loss, loss_notpad, correct_pc, accuracy_notpad = val_outputs[0]
                     val_metrics = dict(
+                        loss=loss,
                         loss_notpad=loss_notpad,
                         correct_pc=correct_pc,
                         accuracy_notpad=accuracy_notpad,
                     )
+                    for t in tasks:
+                        t.config.validation = False
+
                     with tf.name_scope('val'):
                         for metric_name, metric_val in val_metrics.items():
                             metric_val_np = metric_val.numpy()
