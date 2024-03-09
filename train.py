@@ -146,10 +146,10 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                             if is_better[metric_name](metric_val, best_val_metrics[metric_name]):
                                 import json
                                 print(f'found better val {metric_name}: {metric_val_np}')
+                                best_val_metrics[metric_name] = metric_val_np.item()
+                                val_ckpt_managers[metric_name].save(cur_step)
                                 with open(best_val_metrics_json, 'w') as f:
                                     f.write(json.dumps(best_val_metrics, indent=4))
-                                best_val_metrics[metric_name] = metric_val
-                                val_ckpt_managers[metric_name].save(cur_step)
 
                 exit()
                 train_multiple_steps(train_data_iters, tasks)
