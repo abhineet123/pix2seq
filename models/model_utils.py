@@ -300,7 +300,7 @@ def val_metrics(y_true, y_pred, y_pred_logits, y_mask):
 
     m = tf.keras.metrics.SparseCategoricalAccuracy()
     m.update_state(y_true_m, y_pred_logits_m)
-    accuracy_notpad_m = m.result().numpy()
+    accuracy_notpad_m = m.result()
 
     return y_correct_pc_m, accuracy_notpad_m
 
