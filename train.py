@@ -29,8 +29,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, 
 
         @tf.function
         def validate(data_iterators):
-            outputs = strategy.run(val_step, ([next(it) for it in data_iterators],
-                                              tasks, trainer.model))
+            outputs = strategy.run(val_step, ([next(it) for it in data_iterators], trainer.model))
             if outputs is not None:
                 outputs = [strategy.gather(t, axis=0) for t in outputs]
             return outputs
