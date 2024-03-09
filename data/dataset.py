@@ -244,7 +244,8 @@ class TFRecordDataset(Dataset):
         else:
             file_pattern = self.config.eval_file_pattern
 
-        print(f'loading tfrecord dataset from  {file_pattern}')
+        db_type='training' if training else 'evaluation'
+        print(f'loading {db_type} tfrecord dataset from  {file_pattern}')
 
         dataset = tf.data.Dataset.list_files(
             file_pattern,
