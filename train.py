@@ -54,37 +54,31 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(val_steps)
 
-            metrics_dict = {
-                metric_name:  tf.TensorArray(tf.float32, size=val_steps)
-                for metric_name in best_val_metrics.keys()
-            }
-            # metrics_dict = {
-            #     metric_name: []
-            #     for metric_name in best_val_metrics.keys()
-            # }
-            for step_id in tf.range(val_steps):  # using tf.range prevents unroll.
-                with tf.name_scope(''):  # prevent `while_` prefix for variable names.
+            loss = tf.TensorArray(tf.float32, size=val_steps)
+            loss_notpad = tf.TensorArray(tf.float32, size=val_steps)
+            correct_pc = tf.TensorArray(tf.float32, size=val_steps)
+            accuracy_notpad = tf.TensorArray(tf.float32, size=val_steps)
+
+            for step_id in tf.range(val_steps):
+                with tf.name_scope(''):
                     val_outputs = strategy.run(single_val_step, ([next(it) for it in data_iterators], trainer.model))
                     if val_outputs is not None:
                         val_outputs = [strategy.gather(o, axis=0) for o in val_outputs]
-                    loss, loss_notpad, correct_pc, accuracy_notpad = val_outputs[0]
-                    metrics = dict(
-                        loss=loss,
-                        loss_notpad=loss_notpad,
-                        correct_pc=correct_pc,
-                        accuracy_notpad=accuracy_notpad,
-                    )
-                    for metric_name, metric_val in metrics.items():
-                        metrics_dict[metric_name] = metrics_dict[metric_name].write(step_id, metric_val)
-                        # metrics_dict[metric_name].append(metric_val)
+                    loss_, loss_notpad_, correct_pc_, accuracy_notpad_ = val_outputs[0]
+                    loss = loss.write(step_id, loss_)
+                    loss_notpad = loss.write(step_id, loss_notpad_)
+                    correct_pc = loss.write(step_id, correct_pc_)
+                    accuracy_notpad = loss.write(step_id, accuracy_notpad_)
 
                     if cfg.eager:
                         progbar.add(1)
-            metrics_dict = {
-                metric_name: metric_val.stack()
-                for metric_name, metric_val in metrics_dict.items()
-            }
-            return metrics_dict
+
+            loss = loss.stack()
+            loss_notpad = loss_notpad.stack()
+            correct_pc = correct_pc.stack()
+            accuracy_notpad = accuracy_notpad.stack()
+
+            return loss, loss_notpad, correct_pc, accuracy_notpad
 
         @tf.function
         def train_multiple_steps(data_iterators, tasks):
@@ -182,16 +176,20 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                     for t in tasks:
                         t.config.validation = True
                     val_metrics = validate(val_data_iters)
-                    val_metrics = {
-                        metric_name: tf.reduce_mean(metric_val)
-                        for metric_name, metric_val in val_metrics.items()
-                    }
+                    loss, loss_notpad, correct_pc, accuracy_notpad = val_metrics
+
+                    val_metrics_dict = dict(
+                        loss=tf.reduce_mean(loss),
+                        loss_notpad=tf.reduce_mean(loss_notpad),
+                        correct_pc=tf.reduce_mean(correct_pc),
+                        accuracy_notpad=tf.reduce_mean(accuracy_notpad),
+                    )
 
                     for t in tasks:
                         t.config.validation = False
 
                     with tf.name_scope('val'):
-                        for metric_name, metric_val in val_metrics.items():
+                        for metric_name, metric_val in val_metrics_dict.items():
                             metric_val_np = metric_val.numpy()
                             tf.summary.scalar(metric_name, metric_val_np, global_step)
 
