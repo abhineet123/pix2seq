@@ -44,6 +44,7 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-1:12_1000:train:frame
 <a id="frame_2_3___640_1_mnis_t_"></a>
 ### frame-2_3       @ 640-1/mnist-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-1:12_1000:train:frame-2_3:gz
+python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-1:12_1000:test:frame-2_3:gz
 <a id="640_3___mnis_t_"></a>
 ## 640-3       @ mnist-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-3:12_1000:train:gz
@@ -56,7 +57,6 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:test:seq-0_
 
 <a id="ipsc___tfrecord_"></a>
 # ipsc       @ tfrecord-->p2s_setup
-
 <a id="0_1___ipsc_"></a>
 ## 0_1       @ ipsc-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:0_1:gz

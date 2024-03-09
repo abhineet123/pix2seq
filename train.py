@@ -24,7 +24,6 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             cfg, model_dir=cfg.model_dir,
             num_train_examples=num_train_examples, train_steps=train_steps)
         train_data_iters = [iter(dataset) for dataset in train_datasets]
-        val_data_iters = [iter(dataset) for dataset in val_datasets]
         summary_writer = tf.summary.create_file_writer(cfg.model_dir)
 
         is_greater = lambda x, y: x > y
@@ -122,8 +121,6 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             cur_epoch += 1
             tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
-
-
                 train_multiple_steps(train_data_iters, tasks)
 
                 """
@@ -160,6 +157,9 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
 
                     for t in tasks:
                         t.config.validation = True
+
+                    val_data_iters = [iter(dataset) for dataset in val_datasets]
+
                     val_metrics = validate_multiple_steps(val_data_iters)
                     val_metrics_dict = dict(
                         loss=tf.reduce_mean(val_metrics[0]),
