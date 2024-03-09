@@ -188,7 +188,7 @@ def main(unused_argv):
     """
     all these unused imports needed to register the various modules
     """
-    from data import datasets  # pylint: disable=unused-import
+    from data import train_datasets  # pylint: disable=unused-import
     from data import transforms, video_transforms  # pylint: disable=unused-import
     from metrics import coco_metrics  # pylint: disable=unused-import
     from models import ar_model  # pylint: disable=unused-import
@@ -217,12 +217,15 @@ def main(unused_argv):
         if 'datasets' not in cfg or len(cfg.datasets) == 1 or not cfg.training:
             cfg.datasets = [cfg.dataset]
 
-        """dataset is simply the last dses"""
-        tasks, dses, dataset = config.build_tasks_and_datasets(cfg, cfg.training, task_lib)
+        """dataset is simply the last entry in datasets"""
+        tasks, train_datasets, train_dataset = config.build_tasks_and_datasets(
+            cfg, training=cfg.training, task_lib=task_lib)
+        _, val_datasets, val_dataset = config.build_tasks_and_datasets(
+            cfg, training=False, task_lib=task_lib)
 
         # Calculate steps stuff using last task info (assuming all tasks the same.)
         train_steps = utils.get_train_steps(
-            dataset, cfg.train.steps, cfg.train.epochs,
+            train_dataset, cfg.train.steps, cfg.train.epochs,
             cfg.train.batch_size)
 
         print(f'cfg.train.steps: {cfg.train.steps}')
@@ -231,19 +234,19 @@ def main(unused_argv):
         print(f'train_steps: {train_steps}')
 
         eval_steps = utils.get_eval_steps(
-            dataset, cfg.eval.steps, cfg.eval.batch_size)
+            train_dataset, cfg.eval.steps, cfg.eval.batch_size)
         checkpoint_steps = utils.get_checkpoint_steps(
-            dataset, cfg.train.checkpoint_steps,
+            train_dataset, cfg.train.checkpoint_steps,
             cfg.train.checkpoint_epochs, cfg.train.batch_size)
         checkpoint_steps = min(checkpoint_steps, train_steps)
 
     if cfg.training:
         import train
-        train.run(cfg, dses, tasks, train_steps, checkpoint_steps,
-                  dataset.num_train_examples, strategy, model_lib, tf)
+        train.run(cfg, train_datasets, val_datasets, tasks, train_steps, checkpoint_steps,
+                  train_dataset.num_train_examples, strategy, model_lib, tf)
     else:
         # For eval, only one task and one dataset is passed in.
-        assert len(dses) == 1, 'Only one dataset is accepted in eval.'
+        assert len(train_datasets) == 1, 'Only one dataset is accepted in eval.'
         assert len(tasks) == 1, 'Only one task is accepted in eval.'
 
         checkpoint_dir = cfg.eval.get('checkpoint_dir', None)
@@ -263,7 +266,7 @@ def main(unused_argv):
         import eval
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):
-            result = eval.run(cfg, dses[0], tasks[0], eval_steps, ckpt, strategy,
+            result = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
                               model_lib, tf)
             logging.info('Eval complete. Exiting...')
             break

@@ -71,6 +71,7 @@ class Params(paramparse.CFG):
 
         self.start_frame_id = 0
         self.end_frame_id = -1
+        self.frame_stride = 1
 
 
 def load_instance_annotations(annotation_path):
@@ -264,8 +265,11 @@ def main():
         seq_sufix = f'seq-{params.start_seq_id}_{params.end_seq_id}'
         params.ann_file = add_suffix( params.ann_file, seq_sufix, sep='-')
 
-    if params.start_frame_id > 0 or params.end_frame_id >= 0:
+    if params.start_frame_id > 0 or params.end_frame_id >= 0 or params.frame_stride > 1:
         frame_suffix = f'{params.start_frame_id}_{params.end_frame_id}'
+        if params.frame_stride > 1:
+            frame_suffix = f'{frame_suffix}_{params.frame_stride}'
+
         params.ann_file = add_suffix( params.ann_file, frame_suffix, sep='-')
 
     params.ann_file = os.path.join(params.image_dir, f'{params.ann_file}.{params.ann_ext}')

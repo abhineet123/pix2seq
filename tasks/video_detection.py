@@ -28,9 +28,12 @@ import utils
 import vocab
 from metrics import metric_registry
 from metrics import metric_utils
+
 from tasks import task as task_lib
 from tasks import task_utils
 from tasks.visualization import vis_utils
+from models import model_utils
+
 import tensorflow as tf
 
 
@@ -174,14 +177,6 @@ class TaskVideoDetection(task_lib.Task):
         # video = tf.identity(video).gpu()
         bsz = tf.shape(video)[0]
 
-        if self.config.debug == 2 or self.config.get_loss:
-            raw_logits = model(video, input_seq, training=False)
-            bbox_info_gt, bbox_info_pred = vis_utils.debug_loss(
-                self.config, self._category_names, examples, target_seq,
-                raw_logits, y_mask=None, pred_name='pred_raw',
-                gt_name='gt raw', run_type='eval')
-            bboxes_pred, bboxes_rescaled_pred, classes_pred, scores_pred = bbox_info_pred
-
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id,
             prompt_shape=(bsz, 1))
@@ -190,6 +185,21 @@ class TaskVideoDetection(task_lib.Task):
             video, prompt_seq, encoded=None,
             max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
+
+        if self.config.validation:
+            is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
+            token_weights_notpad = tf.where(
+                is_padding, tf.zeros_like(token_weights), token_weights)
+            losses = model_utils.get_loss(
+                logits, target_seq, self.config.train.loss_type)
+            loss = tf.reduce_sum(losses * token_weights) / (
+                    tf.reduce_sum(token_weights) + 1e-9)
+            loss_notpad = tf.reduce_sum(losses * token_weights_notpad) / (
+                    tf.reduce_sum(token_weights_notpad) + 1e-9)
+
+            y_mask = tf.greater(token_weights_notpad, 0)
+            y_correct_pc_m, accuracy_notpad_m = vis_utils.val_metrics(target_seq, pred_seq, logits, y_mask)
+            return loss_notpad, y_correct_pc_m, accuracy_notpad_m
 
         # if self.config.debug:
         #     bbox_info_gt_infer, bbox_info_pred_infer = vis_utils.debug_loss(
@@ -254,6 +264,7 @@ class TaskVideoDetection(task_lib.Task):
             min_score_thresh=0.1,
             ret_results=False,
     ):
+        """move to cpu"""
         new_outputs = []
         for i in range(len(outputs)):
             new_outputs.append(tf.identity(outputs[i]))

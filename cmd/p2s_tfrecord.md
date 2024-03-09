@@ -61,6 +61,8 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:0_37:gz
 <a id="54_126___ipsc_"></a>
 ## 54_126       @ ipsc-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:54_126:gz
+python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:54_126:gz:strd-5
+python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:54_126:gz:strd-8
 
 <a id="0_1___ipsc_"></a>
 ## 0_1       @ ipsc-->p2s_tfrecord

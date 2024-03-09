@@ -34,6 +34,7 @@ train_config = D(
     checkpoint_steps=0,  # set to >0 to override checkpoint_epochs.
     keep_checkpoint_max=2,
     loss_type='xent',
+    val_epochs=1,
 )
 eval_config = D(
     save_vis=0,

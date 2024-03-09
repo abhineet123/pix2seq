@@ -4,24 +4,36 @@ from absl import logging
 
 import time
 
-
 import numpy as np
 
-import eval
 
-def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
+def run(cfg, train_datasets, val_datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
         strategy, model_lib, tf):
     if cfg.train.pt:
         assert cfg.pretrained, "cfg.pretrained must be provided to load pt and continue training from pretrained model"
         cfg.model.pretrained_ckpt = cfg.pretrained
-    """Main training logic."""
+
+    def val_step(examples, task, model):
+        preprocessed_outputs = task.preprocess_batched(examples, training=False)
+        task.config.validation = True
+        val_outputs = task.infer(model, preprocessed_outputs)
+        return val_outputs
+
     with strategy.scope():
-        # Setup training elements.
         trainer = model_lib.TrainerRegistry.lookup(cfg.model.name)(
             cfg, model_dir=cfg.model_dir,
             num_train_examples=num_train_examples, train_steps=train_steps)
-        data_iterators = [iter(dataset) for dataset in datasets]
+        train_data_iters = [iter(dataset) for dataset in train_datasets]
+        val_data_iters = iter(val_datasets)
         summary_writer = tf.summary.create_file_writer(cfg.model_dir)
+
+        @tf.function
+        def validate(data_iterators):
+            outputs = strategy.run(val_step, ([next(it) for it in data_iterators],
+                                              tasks[0], trainer.model))
+            if outputs is not None:
+                outputs = [strategy.gather(t, axis=0) for t in outputs]
+            return outputs
 
         @tf.function
         def train_multiple_steps(data_iterators, tasks):
@@ -85,11 +97,39 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
         # trainer.checkpoint_manager.save(cur_step)
         # ckpt_vars_0 = utils.save_ckpt_vars(cfg.model_dir)
 
+        is_greater = lambda x, y: x > y
+        is_smaller = lambda x, y: x < y
+        is_better = dict(
+            loss_notpad=is_smaller,
+            correct_pc=is_greater,
+            accuracy_notpad=is_greater,
+        )
+        best_val_metrics = dict(
+            loss_notpad=0,
+            correct_pc=0,
+            accuracy_notpad=0,
+        )
+
+        val_ckpt_managers = {
+            metric_name: tf.train.CheckpointManager(
+                tf.train.Checkpoint(model=trainer.model), os.path.join(cfg.model_dir, f'best-val-{metric_name}'), 1)
+            for metric_name in best_val_metrics.keys()
+        }
+        best_val_metrics_json = os.path.join(cfg.model_dir, "best_val_metrics.json")
+
+        if os.path.exists(best_val_metrics_json):
+            print(f'loading best_val_metrics from {best_val_metrics_json}')
+            import json
+
+            with open(best_val_metrics_json, 'r') as f:
+                best_val_metrics = json.loads(f.read())
+            print(f'best_val_metrics:\n{best_val_metrics}')
+
         while cur_step < train_steps:
             cur_epoch += 1
             tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
-                train_multiple_steps(data_iterators, tasks)
+                train_multiple_steps(train_data_iters, tasks)
 
                 """
                 this check happens after the first forward pass because of deferred restoration 
@@ -102,10 +142,26 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                 cur_step = global_step.numpy()
 
                 trainer.checkpoint_manager.save(cur_step)
-                with tf.name_scope('val'):
-                    ckpt = trainer.checkpoint_manager.latest_checkpoint
-                    cfg.eval.save_csv = cfg.eval.save_vis = False
-                    result = eval.run(cfg, datasets[0], tasks[0], cfg.eval.steps, ckpt, strategy, model_lib, tf)
+
+                if cfg.train.val_epochs and cur_epoch % cfg.train.val_epochs == 0:
+                    loss_notpad, correct_pc, accuracy_notpad = validate(val_data_iters)
+                    val_metrics = dict(
+                        loss_notpad=loss_notpad,
+                        correct_pc=correct_pc,
+                        accuracy_notpad=accuracy_notpad,
+                    )
+                    with tf.name_scope('val'):
+                        for metric_name, metric_val in val_metrics.items():
+                            metric_val_np = metric_val.numpy()
+                            tf.summary.scalar(metric_name, metric_val_np, global_step)
+
+                            if is_better[metric_name](metric_val, best_val_metrics[metric_name]):
+                                import json
+                                print(f'found better val {metric_name}: {metric_val_np}')
+                                with open(best_val_metrics_json, 'w') as f:
+                                    f.write(json.dumps(best_val_metrics, indent=4))
+                                best_val_metrics[metric_name] = metric_val
+                                val_ckpt_managers[metric_name].save(cur_step)
 
                 steps_per_sec = steps_per_epoch / (time.time() - timestamp)
                 timestamp = time.time()
@@ -123,7 +179,6 @@ def run(cfg, datasets, tasks, train_steps, steps_per_epoch, num_train_examples,
                     lr = trainer.learning_rate(tf.cast(global_step, dtype=tf.float32))
                     tf.summary.scalar('lr', lr, global_step)
                     tf.summary.scalar('steps_per_sec', steps_per_sec, global_step)
-
 
                 summary_writer.flush()
             progress = cur_step / float(train_steps) * 100
