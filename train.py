@@ -122,36 +122,8 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             cur_epoch += 1
             tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
-                if cfg.train.val_epochs and cur_epoch % cfg.train.val_epochs == 0:
-                    tf.print(f'validating epoch {cur_epoch} with {val_steps} steps...')
 
-                    for t in tasks:
-                        t.config.validation = True
-                    val_metrics = validate_multiple_steps(val_data_iters)
-                    val_metrics_dict = dict(
-                        loss=tf.reduce_mean(val_metrics[0]),
-                        loss_notpad=tf.reduce_mean(val_metrics[1]),
-                        correct_pc=tf.reduce_mean(val_metrics[2]),
-                        accuracy_notpad=tf.reduce_mean(val_metrics[3]),
-                    )
 
-                    for t in tasks:
-                        t.config.validation = False
-
-                    with tf.name_scope('val'):
-                        for metric_name, metric_val in val_metrics_dict.items():
-                            metric_val_np = metric_val.numpy()
-                            tf.summary.scalar(metric_name, metric_val_np, global_step)
-
-                            if is_better[metric_name](metric_val, best_val_metrics[metric_name]):
-                                import json
-                                print(f'found better val {metric_name}: {metric_val_np}')
-                                best_val_metrics[metric_name] = metric_val_np.item()
-                                val_ckpt_managers[metric_name].save(cur_step)
-                                with open(best_val_metrics_json, 'w') as f:
-                                    f.write(json.dumps(best_val_metrics, indent=4))
-
-                exit()
                 train_multiple_steps(train_data_iters, tasks)
 
                 """
@@ -182,6 +154,35 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                     lr = trainer.learning_rate(tf.cast(global_step, dtype=tf.float32))
                     tf.summary.scalar('lr', lr, global_step)
                     tf.summary.scalar('steps_per_sec', steps_per_sec, global_step)
+
+                if cfg.train.val_epochs and cur_epoch % cfg.train.val_epochs == 0:
+                    tf.print(f'validating epoch {cur_epoch} with {val_steps} steps...')
+
+                    for t in tasks:
+                        t.config.validation = True
+                    val_metrics = validate_multiple_steps(val_data_iters)
+                    val_metrics_dict = dict(
+                        loss=tf.reduce_mean(val_metrics[0]),
+                        loss_notpad=tf.reduce_mean(val_metrics[1]),
+                        correct_pc=tf.reduce_mean(val_metrics[2]),
+                        accuracy_notpad=tf.reduce_mean(val_metrics[3]),
+                    )
+
+                    for t in tasks:
+                        t.config.validation = False
+
+                    with tf.name_scope('val'):
+                        for metric_name, metric_val in val_metrics_dict.items():
+                            metric_val_np = metric_val.numpy()
+                            tf.summary.scalar(metric_name, metric_val_np, global_step)
+
+                            if is_better[metric_name](metric_val, best_val_metrics[metric_name]):
+                                import json
+                                print(f'found better val {metric_name}: {metric_val_np}')
+                                best_val_metrics[metric_name] = metric_val_np.item()
+                                val_ckpt_managers[metric_name].save(cur_step)
+                                with open(best_val_metrics_json, 'w') as f:
+                                    f.write(json.dumps(best_val_metrics, indent=4))
 
                 summary_writer.flush()
             progress = cur_step / float(train_steps) * 100
