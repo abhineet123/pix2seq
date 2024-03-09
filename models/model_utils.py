@@ -281,7 +281,7 @@ def get_loss(logits, label_seq, loss_type):
         raise ValueError('Unknown loss type {}'.format(loss_type))
     return loss
 
-def val_metrics(y_true, y_pred, y_pred_logits, y_mask):
+def get_val_metrics(y_true, y_pred, y_pred_logits, y_mask, m):
     y_true_m = tf.boolean_mask(y_true, y_mask)
     y_pred_m = tf.boolean_mask(y_pred, y_mask)
     y_pred_logits_m = tf.boolean_mask(y_pred_logits, y_mask)
@@ -298,7 +298,6 @@ def val_metrics(y_true, y_pred, y_pred_logits, y_mask):
     # y_correct_from_logits_count_m = tf.reduce_sum(tf.cast(y_correct_from_logits_m, tf.int64))
     # y_correct_from_logits_pc_m = (y_correct_from_logits_count_m / y_total_m) * 100
 
-    m = tf.keras.metrics.SparseCategoricalAccuracy()
     m.update_state(y_true_m, y_pred_logits_m)
     accuracy_notpad_m = m.result()
 

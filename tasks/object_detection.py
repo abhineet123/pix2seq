@@ -172,7 +172,8 @@ class TaskObjectDetection(task_lib.Task):
                     tf.reduce_sum(token_weights_notpad) + 1e-9)
 
             y_mask = tf.greater(token_weights_notpad, 0)
-            y_correct_pc_m, accuracy_notpad_m = model_utils.val_metrics(target_seq, pred_seq, logits, y_mask)
+            y_correct_pc_m, accuracy_notpad_m = model_utils.get_val_metrics(
+                target_seq, pred_seq, logits, y_mask, self.val_m)
             return loss, loss_notpad, y_correct_pc_m, accuracy_notpad_m
         # if True:  # Sanity check by using gt response_seq as pred_seq.
         #   pred_seq = preprocessed_outputs[1]

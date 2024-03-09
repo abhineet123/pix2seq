@@ -81,7 +81,7 @@ python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detra
 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-1-12_1000-train,batch-4,pt-1,dbg-1,dyn-1,dist-0,ep-10000,gz
 <a id="frame_0_1___mnist_640_1_resnet_640_"></a>
 ### frame-0-1       @ mnist-640-1/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py --j5=val-1,mnist-640-1-12_1000-train,frame-2-3,batch-12,train,resnet-640,mnist-640-1-12_1000-train,frame-0-1,batch-6,pt-1,dbg-0,dyn-1,dist-0,ep-10000,gz
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=val-1,mnist-640-1-12_1000-train,frame-2-3,batch-12,train,resnet-640,mnist-640-1-12_1000-train,frame-0-1,batch-6,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-0
 
 <a id="mnist_640_5___resnet_640_"></a>
 ## mnist-640-5       @ resnet-640-->p2s

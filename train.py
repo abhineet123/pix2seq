@@ -49,7 +49,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         }
 
         @tf.function
-        def validate(data_iterators):
+        def validate_multiple_steps(data_iterators):
             progbar = None
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(val_steps)
@@ -65,20 +65,15 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                     if val_outputs is not None:
                         val_outputs = [strategy.gather(o, axis=0) for o in val_outputs]
                     loss_, loss_notpad_, correct_pc_, accuracy_notpad_ = val_outputs[0]
-                    loss = loss.write(step_id, loss_)
-                    loss_notpad = loss.write(step_id, loss_notpad_)
-                    correct_pc = loss.write(step_id, correct_pc_)
-                    accuracy_notpad = loss.write(step_id, accuracy_notpad_)
+                    loss = loss.write(step_id, tf.cast(loss_, tf.float32))
+                    loss_notpad = loss_notpad.write(step_id, tf.cast(loss_notpad_, tf.float32))
+                    correct_pc = correct_pc.write(step_id, tf.cast(correct_pc_, tf.float32))
+                    accuracy_notpad = accuracy_notpad.write(step_id, tf.cast(accuracy_notpad_, tf.float32))
 
                     if cfg.eager:
                         progbar.add(1)
 
-            loss = loss.stack()
-            loss_notpad = loss_notpad.stack()
-            correct_pc = correct_pc.stack()
-            accuracy_notpad = accuracy_notpad.stack()
-
-            return loss, loss_notpad, correct_pc, accuracy_notpad
+            return loss.stack(), loss_notpad.stack(), correct_pc.stack(), accuracy_notpad.stack()
 
         @tf.function
         def train_multiple_steps(data_iterators, tasks):
@@ -95,43 +90,14 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(steps_per_epoch)
 
-            # step_id = tf.constant(0)
             for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
 
-                # tf.print(f'\rstep {step_id}')
-
-                # nan_metric = 0
-                # for metric_name, metric_val in trainer.metrics.items():
-                #     metric_val = metric_val.result()
-                #     if tf.math.is_nan(metric_val):
-                #         step = trainer.optimizer.iterations
-                #         logging.error(f'NaN value found for {metric_name} in step {step} so terminating training')
-                #         nan_metric = 1
-                #
-                # if nan_metric:
-                #     break
-
                 if not cfg.eager:
                     continue
 
-                # rows = tuple(trainer.metrics.keys())
-                # cols = ('val',)
-                #
-                # metric_val_df = pd.DataFrame(np.zeros((len(rows), len(cols)), dtype=object), index=rows, columns=cols)
-                # for metric_name, metric_val in trainer.metrics.items():
-                #     metric_val_np = metric_val.result().numpy()
-                #     metric_val_df.loc[metric_name, 'val'] = metric_val_np
-                # metric_val_df = pd.DataFrame({
-                #     metric_name: metric_val.result().numpy().item() for metric_name, metric_val in
-                #     trainer.metrics.items()
-                # }, index=[0])
-
                 progbar.add(1)
-
-                # check_ckpt_vars(cfg, trainer)
-                # print()
 
         global_step = trainer.optimizer.iterations
         cur_step = global_step.numpy()
@@ -156,33 +122,17 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             cur_epoch += 1
             tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
-                train_multiple_steps(train_data_iters, tasks)
-
-                """
-                this check happens after the first forward pass because of deferred restoration 
-                in tf.train.Checkpoint
-                which only restores many of the variables after they are created in the first call 
-                when the input shape becomes available
-                """
-                trainer.check_checkpoint_restored()
-
-                cur_step = global_step.numpy()
-
-                trainer.checkpoint_manager.save(cur_step)
-
                 if cfg.train.val_epochs and cur_epoch % cfg.train.val_epochs == 0:
                     tf.print(f'validating epoch {cur_epoch} with {val_steps} steps...')
 
                     for t in tasks:
                         t.config.validation = True
-                    val_metrics = validate(val_data_iters)
-                    loss, loss_notpad, correct_pc, accuracy_notpad = val_metrics
-
+                    val_metrics = validate_multiple_steps(val_data_iters)
                     val_metrics_dict = dict(
-                        loss=tf.reduce_mean(loss),
-                        loss_notpad=tf.reduce_mean(loss_notpad),
-                        correct_pc=tf.reduce_mean(correct_pc),
-                        accuracy_notpad=tf.reduce_mean(accuracy_notpad),
+                        loss=tf.reduce_mean(val_metrics[0]),
+                        loss_notpad=tf.reduce_mean(val_metrics[1]),
+                        correct_pc=tf.reduce_mean(val_metrics[2]),
+                        accuracy_notpad=tf.reduce_mean(val_metrics[3]),
                     )
 
                     for t in tasks:
@@ -200,6 +150,21 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                                     f.write(json.dumps(best_val_metrics, indent=4))
                                 best_val_metrics[metric_name] = metric_val
                                 val_ckpt_managers[metric_name].save(cur_step)
+
+                exit()
+                train_multiple_steps(train_data_iters, tasks)
+
+                """
+                this check happens after the first forward pass because of deferred restoration 
+                in tf.train.Checkpoint
+                which only restores many of the variables after they are created in the first call 
+                when the input shape becomes available
+                """
+                trainer.check_checkpoint_restored()
+
+                cur_step = global_step.numpy()
+
+                trainer.checkpoint_manager.save(cur_step)
 
                 steps_per_sec = steps_per_epoch / (time.time() - timestamp)
                 timestamp = time.time()
