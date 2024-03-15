@@ -224,7 +224,14 @@ class ARTrainer(model_lib.Trainer):
                 'accuracy_notpad'),
         })
 
-    def compute_loss(self, preprocess_outputs):
+        self._val_metrics.update({
+            'loss_notpad': tf.keras.metrics.Mean('loss_notpad'),
+            'correct_pc': tf.keras.metrics.Mean('correct_pc'),
+            'accuracy_notpad': tf.keras.metrics.SparseCategoricalAccuracy(
+                'accuracy_notpad'),
+        })
+
+    def compute_loss(self, preprocess_outputs, validation):
         """Compute loss based on model outputs and targets."""
         examples, input_seq, target_seq, token_weights = preprocess_outputs
         image = examples["image"]
@@ -232,6 +239,7 @@ class ARTrainer(model_lib.Trainer):
         target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
         token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)
         token_weights = utils.tf_float32(token_weights)
+
         is_padding = tf.equal(target_seq, 0)  # padding tokens.
         token_weights_notpad = tf.where(
             is_padding, tf.zeros_like(token_weights), token_weights)
@@ -250,17 +258,27 @@ class ARTrainer(model_lib.Trainer):
         y_true = tf.boolean_mask(target_seq, y_mask)
         y_pred_logits = tf.boolean_mask(logits, y_mask)
 
-        self._metrics['loss_notpad'].update_state(loss_notpad)
-        self._metrics['accuracy_notpad'].update_state(
-            y_true,
-            y_pred_logits,
-        )
-
-        # if self.config.debug:
-        #     from tasks.visualization import vis_utils
-        #     vis_utils.debug_loss(
-        #         self.config, self._category_names, examples, target_seq,
-        #         logits, y_mask, y_pred=None, run_type='train',is_video=False)
+        if validation:
+            self._val_metrics['loss_notpad'].update_state(loss_notpad)
+            self._val_metrics['accuracy_notpad'].update_state(
+                y_true,
+                y_pred_logits,
+            )
+            y_mask = tf.greater(token_weights_notpad, 0)
+            y_correct = model_utils.get_val_metrics(
+                target_seq, logits, y_mask)
+            self._val_metrics['correct_pc'].update_state(y_correct)
+        else:
+            self._metrics['loss_notpad'].update_state(loss_notpad)
+            self._metrics['accuracy_notpad'].update_state(
+                y_true,
+                y_pred_logits,
+            )
+            # if self.config.debug:
+            #     from tasks.visualization import vis_utils
+            #     vis_utils.debug_loss(
+            #         self.config, self._category_names, examples, target_seq,
+            #         logits, y_mask, y_pred=None, run_type='train',is_video=False)
 
         return loss
 

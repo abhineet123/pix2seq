@@ -13,6 +13,7 @@ NAMED_JSON_VARS = ['mode']
 def build_tasks_and_datasets(
         cfg: ml_collections.ConfigDict,
         training: bool,
+        validation: bool,
         task_lib):
     from data import dataset as dataset_lib
 
@@ -46,6 +47,8 @@ def build_tasks_and_datasets(
             t_name_to_t_config_map[t_config.name].weight += t_config.weight
         t_name_to_weights_map[t_config.name].append(t_config.weight)
         t_name_to_ds_config_map[t_config.name].append(ds_config)
+        
+    ds = None
 
     # For each task, create the Task instance and the dataset instance.
     for t_name, t_config in t_name_to_t_config_map.items():
@@ -71,6 +74,7 @@ def build_tasks_and_datasets(
                     cfg.train.batch_size if training else cfg.eval.batch_size
                 ),
                 training=training,
+                validation=validation,
             )
             input_fns.append(input_fn)
         mixed_ds = dataset_lib.mix_datasets(input_fns, ds_weights)
@@ -318,7 +322,7 @@ def load(FLAGS):
             if cfg.pretrained:
                 pretrained_name = os.path.basename(cfg.pretrained)
                 if cfg.resnet_replace:
-                    pretrained_name=pretrained_name.replace('resnet', cfg.resnet_replace)
+                    pretrained_name = pretrained_name.replace('resnet', cfg.resnet_replace)
                 model_dir_name = f'{pretrained_name}_{model_dir_name}'
 
             if cfg.train.save_suffix:

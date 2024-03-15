@@ -62,8 +62,11 @@ class Task(abc.ABC):
         return self.config.task.vocab_id
 
     @abc.abstractmethod
-    def preprocess_single(self, dataset: tf.data.Dataset, batch_duplicates: int,
-                          training: bool):
+    def preprocess_single(self, dataset: tf.data.Dataset,
+                          batch_duplicates: int,
+                          training: bool,
+                          validation: bool,
+                          ):
         """Task-specific preprocessing of individual example in the dataset.
 
         Args:
@@ -76,7 +79,7 @@ class Task(abc.ABC):
           A dataset.
         """
 
-    def preprocess_single_example(self, example, training, batch_duplicates=1):
+    def preprocess_single_example(self, example, training, validation, batch_duplicates=1):
         """Preprocessing of a single example.
 
         This should be called in preprocess_single.
@@ -90,7 +93,7 @@ class Task(abc.ABC):
         Returns:
           A dict of name to Tensor.
         """
-        if training:
+        if training or validation:
             example_list = []
             for _ in range(batch_duplicates):
                 example_ = copy.copy(example)

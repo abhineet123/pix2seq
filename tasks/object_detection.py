@@ -55,7 +55,7 @@ class TaskObjectDetection(task_lib.Task):
         # if self.config.task.get('eval_outputs_json_path', None):
         #     self.eval_output_annotations = []
 
-    def preprocess_single(self, dataset, batch_duplicates, training):
+    def preprocess_single(self, dataset, batch_duplicates, training, validation):
         """Task-specific preprocessing of individual example in the dataset.
 
         Typical operations in this preprocessing step for detection task:
@@ -76,7 +76,8 @@ class TaskObjectDetection(task_lib.Task):
                 lambda example: tf.shape(example['label'])[0] > 0)
 
         dataset = dataset.map(
-            lambda x: self.preprocess_single_example(x, training, batch_duplicates),
+            lambda x: self.preprocess_single_example(
+                x, training, validation, batch_duplicates),
             num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
         return dataset
@@ -158,23 +159,28 @@ class TaskObjectDetection(task_lib.Task):
             max_seq_len=(config.max_instances_per_image_test * 5 + 1),
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
-        if self.config.validation:
-            from models import model_utils
+        # if self.config.validation:
+        #     from models import model_utils
+        #
+        #     target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
+        #     token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)
+        #     token_weights = utils.tf_float32(token_weights)
+        #
+        #     is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
+        #     token_weights_notpad = tf.where(
+        #         is_padding, tf.zeros_like(token_weights), token_weights)
+        #     losses = model_utils.get_loss(
+        #         logits, target_seq, self.config.train.loss_type)
+        #     loss = tf.reduce_sum(losses * token_weights) / (
+        #             tf.reduce_sum(token_weights) + 1e-9)
+        #     loss_notpad = tf.reduce_sum(losses * token_weights_notpad) / (
+        #             tf.reduce_sum(token_weights_notpad) + 1e-9)
+        #
+        #     y_mask = tf.greater(token_weights_notpad, 0)
+        #     y_correct_pc_m, accuracy_notpad_m = model_utils.get_val_metrics(
+        #         target_seq, pred_seq, logits, y_mask, self.val_m)
+        #     return loss, loss_notpad, y_correct_pc_m, accuracy_notpad_m
 
-            is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
-            token_weights_notpad = tf.where(
-                is_padding, tf.zeros_like(token_weights), token_weights)
-            losses = model_utils.get_loss(
-                logits, target_seq, self.config.train.loss_type)
-            loss = tf.reduce_sum(losses * token_weights) / (
-                    tf.reduce_sum(token_weights) + 1e-9)
-            loss_notpad = tf.reduce_sum(losses * token_weights_notpad) / (
-                    tf.reduce_sum(token_weights_notpad) + 1e-9)
-
-            y_mask = tf.greater(token_weights_notpad, 0)
-            y_correct_pc_m, accuracy_notpad_m = model_utils.get_val_metrics(
-                target_seq, pred_seq, logits, y_mask, self.val_m)
-            return loss, loss_notpad, y_correct_pc_m, accuracy_notpad_m
         # if True:  # Sanity check by using gt response_seq as pred_seq.
         #   pred_seq = preprocessed_outputs[1]
         #   logits = tf.one_hot(pred_seq, mconfig.vocab_size)

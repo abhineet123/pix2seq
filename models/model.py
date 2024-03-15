@@ -78,6 +78,7 @@ class Trainer(abc.ABC):
             ckpt, model_dir, config.train.keep_checkpoint_max)
 
         # Setup metrics.
+
         self._metrics = {
             'total_num_params': tf.keras.metrics.Mean('total_num_params'),
             'grad_global_norm': tf.keras.metrics.Mean('grad_global_norm'),
@@ -85,6 +86,13 @@ class Trainer(abc.ABC):
             'loss': tf.keras.metrics.Mean('loss'),
         }
         self._metrics.update({
+            f'loss_{t.name}': tf.keras.metrics.Mean(f'loss_{t.name}')
+            for t in config.tasks})
+
+        self._val_metrics = {
+            'loss': tf.keras.metrics.Mean('loss'),
+        }
+        self._val_metrics.update({
             f'loss_{t.name}': tf.keras.metrics.Mean(f'loss_{t.name}')
             for t in config.tasks})
 
@@ -109,7 +117,7 @@ class Trainer(abc.ABC):
         grads = []
         for i, (o, task) in enumerate(zip(preprocessed_outputs, tasks)):
             with tf.GradientTape() as tape:
-                loss_t = self.compute_loss(o)
+                loss_t = self.compute_loss(o, validation=False)
                 task_loss_metrics[f'loss_{task.config.task.name}'] = loss_t
                 loss += loss_t * task.config.task.weight
                 trainable_variables = self._model.trainable_variables
@@ -134,8 +142,23 @@ class Trainer(abc.ABC):
         self._print_params = False
         # logging.info('train_step ends...')
 
+    def val_step(self, examples, tasks):
+        preprocessed_outputs = [
+            t.preprocess_batched(e, training=False) for e, t in zip(examples, tasks)]
+
+        loss = 0
+        task_loss_metrics = {}
+        for i, (o, task) in enumerate(zip(preprocessed_outputs, tasks)):
+            loss_t = self.compute_loss(o, validation=True)
+            loss += loss_t * task.config.task.weight
+            task_loss_metrics[f'loss_{task.config.task.name}'] = loss_t
+
+        self._val_metrics['loss'].update_state(loss)
+        for k, v in task_loss_metrics.items():
+            self._val_metrics[k].update_state(v)
+
     @abc.abstractmethod
-    def compute_loss(self, preprocessed_outputs):
+    def compute_loss(self, preprocessed_outputs, validation):
         """Compute loss based on model outputs and targets."""
 
     def check_checkpoint_restored(self):
@@ -170,6 +193,11 @@ class Trainer(abc.ABC):
     def learning_rate(self):
         """Returns learning rate scheduling instance."""
         return self._learning_rate
+
+    @property
+    def val_metrics(self):
+        """Returns metrics instance."""
+        return self._val_metrics
 
     @property
     def metrics(self):

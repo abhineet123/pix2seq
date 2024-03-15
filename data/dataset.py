@@ -91,7 +91,10 @@ class Dataset(abc.ABC):
     def pipeline(self,
                  process_single_example: Callable[[tf.data.Dataset, int, bool],
                  tf.data.Dataset],
-                 global_batch_size: int, training: bool):
+                 global_batch_size: int,
+                 training: bool,
+                 validation: bool,
+                 ):
         """Data pipeline from name to preprocessed examples.
 
         Args:
@@ -144,7 +147,7 @@ class Dataset(abc.ABC):
             )
             if process_single_example:
                 dataset = process_single_example(
-                    dataset, config.batch_duplicates, training)
+                    dataset, config.batch_duplicates, training, validation)
 
             # TODO(b/181662974): Revert this and support non-even batch sizes.
             # dataset = dataset.batch(batch_size, drop_remainder=training)

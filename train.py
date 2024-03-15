@@ -13,11 +13,11 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         assert cfg.pretrained, "cfg.pretrained must be provided to load pt and continue training from pretrained model"
         cfg.model.pretrained_ckpt = cfg.pretrained
 
-    def single_val_step(examples, model):
-        preprocessed_outputs = [
-            t.preprocess_batched(e, training=False) for e, t in zip(examples, tasks)]
-        val_outputs = [t.infer(model, o) for o, t in zip(preprocessed_outputs, tasks)]
-        return val_outputs
+    # def single_val_step(examples):
+    #     preprocessed_outputs = [
+    #         t.preprocess_batched(e, training=False) for e, t in zip(examples, tasks)]
+    #     val_outputs = [trainer.val_step(o, t) for o, t in zip(preprocessed_outputs, tasks)]
+    #     return val_outputs
 
     with strategy.scope():
         trainer = model_lib.TrainerRegistry.lookup(cfg.model.name)(
@@ -49,30 +49,27 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
 
         @tf.function
         def validate_multiple_steps(data_iterators):
+            val_step = lambda xs, ts=tasks: trainer.val_step(xs, ts)
+
             progbar = None
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(val_steps)
 
-            loss = tf.TensorArray(tf.float32, size=val_steps)
-            loss_notpad = tf.TensorArray(tf.float32, size=val_steps)
-            correct_pc = tf.TensorArray(tf.float32, size=val_steps)
-            accuracy_notpad = tf.TensorArray(tf.float32, size=val_steps)
-
             for step_id in tf.range(val_steps):
                 with tf.name_scope(''):
-                    val_outputs = strategy.run(single_val_step, ([next(it) for it in data_iterators], trainer.model))
-                    if val_outputs is not None:
-                        val_outputs = [strategy.gather(o, axis=0) for o in val_outputs]
-                    loss_, loss_notpad_, correct_pc_, accuracy_notpad_ = val_outputs[0]
-                    loss = loss.write(step_id, tf.cast(loss_, tf.float32))
-                    loss_notpad = loss_notpad.write(step_id, tf.cast(loss_notpad_, tf.float32))
-                    correct_pc = correct_pc.write(step_id, tf.cast(correct_pc_, tf.float32))
-                    accuracy_notpad = accuracy_notpad.write(step_id, tf.cast(accuracy_notpad_, tf.float32))
+                    strategy.run(val_step, ([next(it) for it in data_iterators],))
+                    # if val_outputs is not None:
+                    #     val_outputs = [strategy.gather(o, axis=0) for o in val_outputs]
+                    # loss_, loss_notpad_, correct_pc_, accuracy_notpad_ = val_outputs[0]
+                    # loss = loss.write(step_id, tf.cast(loss_, tf.float32))
+                    # loss_notpad = loss_notpad.write(step_id, tf.cast(loss_notpad_, tf.float32))
+                    # correct_pc = correct_pc.write(step_id, tf.cast(correct_pc_, tf.float32))
+                    # accuracy_notpad = accuracy_notpad.write(step_id, tf.cast(accuracy_notpad_, tf.float32))
 
                     if cfg.eager:
                         progbar.add(1)
 
-            return loss.stack(), loss_notpad.stack(), correct_pc.stack(), accuracy_notpad.stack()
+            # return loss.stack(), loss_notpad.stack(), correct_pc.stack(), accuracy_notpad.stack()
 
         @tf.function
         def train_multiple_steps(data_iterators, tasks):
@@ -137,10 +134,13 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
 
                 steps_per_sec = steps_per_epoch / (time.time() - timestamp)
                 timestamp = time.time()
+                train_metrics_dict = {}
                 with tf.name_scope('train'):
                     nan_metric = 0
                     for metric_name, metric_val in trainer.metrics.items():
                         metric_val_np = metric_val.result().numpy()
+                        train_metrics_dict[metric_name] = metric_val_np
+
                         if np.isnan(metric_val_np):
                             logging.error(f'NaN value found for {metric_name} so terminating training')
                             nan_metric = 1
@@ -155,34 +155,33 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 if cfg.train.val_epochs and cur_epoch % cfg.train.val_epochs == 0:
                     tf.print(f'validating epoch {cur_epoch} with {val_steps} steps...')
 
-                    for t in tasks:
-                        t.config.validation = True
-
                     val_data_iters = [iter(dataset) for dataset in val_datasets]
 
-                    val_metrics = validate_multiple_steps(val_data_iters)
-                    val_metrics_dict = dict(
-                        loss=tf.reduce_mean(val_metrics[0]),
-                        loss_notpad=tf.reduce_mean(val_metrics[1]),
-                        correct_pc=tf.reduce_mean(val_metrics[2]),
-                        accuracy_notpad=tf.reduce_mean(val_metrics[3]),
-                    )
-
-                    for t in tasks:
-                        t.config.validation = False
+                    validate_multiple_steps(val_data_iters)
 
                     with tf.name_scope('val'):
-                        for metric_name, metric_val in val_metrics_dict.items():
-                            metric_val_np = metric_val.numpy()
+
+                        val_metrics_dict = dict()
+                        nan_metric = 0
+                        for metric_name, metric_val in trainer.val_metrics.items():
+                            metric_val_np = metric_val.result().numpy()
+                            val_metrics_dict[metric_name] = metric_val_np
+                            if np.isnan(metric_val_np):
+                                logging.error(f'NaN value found for {metric_name} so terminating training')
+                                nan_metric = 1
+                                break
+
                             tf.summary.scalar(metric_name, metric_val_np, global_step)
 
                             if is_better[metric_name](metric_val, best_val_metrics[metric_name]):
                                 import json
-                                print(f'found better val {metric_name}: {metric_val_np}')
+                                print(f'found better validation {metric_name}: {metric_val_np}')
                                 best_val_metrics[metric_name] = metric_val_np.item()
                                 val_ckpt_managers[metric_name].save(cur_step)
                                 with open(best_val_metrics_json, 'w') as f:
                                     f.write(json.dumps(best_val_metrics, indent=4))
+                        if nan_metric:
+                            break
 
                 summary_writer.flush()
             progress = cur_step / float(train_steps) * 100

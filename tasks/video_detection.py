@@ -65,7 +65,7 @@ class TaskVideoDetection(task_lib.Task):
         if self.config.task.get('eval_outputs_json_path', None):
             self.eval_output_annotations = []
 
-    def preprocess_single(self, dataset, batch_duplicates, training):
+    def preprocess_single(self, dataset, batch_duplicates, training, validation):
         def _convert_video_to_image_features(example):
             new_example = dict(
                 # orig_video_size=video_shape_2[1:3],
@@ -89,8 +89,7 @@ class TaskVideoDetection(task_lib.Task):
         )
         dataset = dataset.map(
             lambda x: self.preprocess_single_example(
-                x, training,
-                batch_duplicates),
+                x, training, validation, batch_duplicates),
             num_parallel_calls=tf.data.experimental.AUTOTUNE
         )
         return dataset

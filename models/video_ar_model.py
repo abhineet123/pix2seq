@@ -209,8 +209,14 @@ class VideoARTrainer(model_lib.Trainer):
             'accuracy_notpad': tf.keras.metrics.SparseCategoricalAccuracy(
                 'accuracy_notpad'),
         })
+        self._val_metrics.update({
+            'loss_notpad': tf.keras.metrics.Mean('loss_notpad'),
+            'correct_pc': tf.keras.metrics.Mean('correct_pc'),
+            'accuracy_notpad': tf.keras.metrics.SparseCategoricalAccuracy(
+                'accuracy_notpad'),
+        })
 
-    def compute_loss(self, preprocess_outputs):
+    def compute_loss(self, preprocess_outputs, validation):
         batched_examples, input_seq, target_seq, token_weights = preprocess_outputs
 
         videos = batched_examples['video']
@@ -236,11 +242,19 @@ class VideoARTrainer(model_lib.Trainer):
         y_pred_logits = tf.boolean_mask(logits, y_mask)
 
         # update metrics
-        self._metrics['loss_notpad'].update_state(loss_notpad)
-        self._metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
+        if validation:
+            self._val_metrics['loss_notpad'].update_state(loss_notpad)
+            self._val_metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
+            y_mask = tf.greater(token_weights_notpad, 0)
+            y_correct = model_utils.get_val_metrics(
+                target_seq, logits, y_mask)
+            self._val_metrics['correct_pc'].update_state(y_correct)
+        else:
+            self._metrics['loss_notpad'].update_state(loss_notpad)
+            self._metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
 
-        # if self.config.debug:
-        #     vis_utils.debug_loss(self.config, self._category_names,batched_examples, target_seq,
-        #                          logits, y_mask, y_pred=None, run_type='train')
+            # if self.config.debug:
+            #     vis_utils.debug_loss(self.config, self._category_names,batched_examples, target_seq,
+            #                          logits, y_mask, y_pred=None, run_type='train')
 
         return loss

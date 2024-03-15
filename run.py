@@ -219,17 +219,13 @@ def main(unused_argv):
 
         """dataset is simply the last entry in datasets"""
         tasks, train_datasets, train_dataset = config.build_tasks_and_datasets(
-            cfg, training=cfg.training, task_lib=task_lib)
-        _, val_datasets, val_dataset = config.build_tasks_and_datasets(
-            cfg, training=False, task_lib=task_lib)
-
+            cfg, training=cfg.training, validation=False, task_lib=task_lib)
         # Calculate steps stuff using last task info (assuming all tasks the same.)
         train_steps = utils.get_train_steps(
             train_dataset, cfg.train.steps, cfg.train.epochs,
             cfg.train.batch_size)
 
-        eval_steps = utils.get_eval_steps(
-            train_dataset, cfg.eval.steps, cfg.eval.batch_size)
+    if cfg.training:
         checkpoint_steps = utils.get_checkpoint_steps(
             train_dataset, cfg.train.checkpoint_steps,
             cfg.train.checkpoint_epochs, cfg.train.batch_size)
@@ -239,13 +235,20 @@ def main(unused_argv):
         print(f'cfg.train.epochs: {cfg.train.epochs}')
         print(f'cfg.train.batch_size: {cfg.train.batch_size}')
         print(f'train_steps: {train_steps}')
-        print(f'eval_steps: {eval_steps}')
         print(f'checkpoint_steps: {checkpoint_steps}')
 
-    if cfg.training:
+        val_datasets = eval_steps = None
+        if cfg.train.val_epochs:
+            _, val_datasets, val_dataset = config.build_tasks_and_datasets(
+                cfg, training=False, validation=True, task_lib=task_lib)
+
+            eval_steps = utils.get_eval_steps(
+                val_dataset, cfg.eval.steps, cfg.eval.batch_size)
+            print(f'eval_steps: {eval_steps}')
+
         import train
-        train.run(cfg, train_datasets, val_datasets, tasks, train_steps, eval_steps, checkpoint_steps,
-                  train_dataset.num_train_examples, strategy, model_lib, tf)
+        train.run(cfg, train_datasets, val_datasets, tasks, train_steps, eval_steps,
+                  checkpoint_steps, train_dataset.num_train_examples, strategy, model_lib, tf)
     else:
         # For eval, only one task and one dataset is passed in.
         assert len(train_datasets) == 1, 'Only one dataset is accepted in eval.'
@@ -268,7 +271,7 @@ def main(unused_argv):
         import eval
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):
-            result = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
+            result = eval.run(cfg, train_datasets[0], tasks[0], train_steps, ckpt, strategy,
                               model_lib, tf)
             logging.info('Eval complete. Exiting...')
             break

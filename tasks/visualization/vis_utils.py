@@ -72,6 +72,7 @@ def vis_json_ann(video, object_anns, category_id_to_name_map, image_dir, is_vide
                 img = file_names_to_img[file_name]
             except KeyError:
                 img_path = os.path.join(image_dir, file_name)
+                assert os.path.isfile(img_path), f"nonexistent img_path: {img_path}"
                 img = cv2.imread(img_path)
                 file_names_to_img[file_name] = img
 
@@ -86,7 +87,7 @@ def vis_json_ann(video, object_anns, category_id_to_name_map, image_dir, is_vide
     for file_name, img in file_names_to_img.items():
         img = annotate(img, file_name)
         cv2.imshow('img', img)
-        cv2.waitKey(1)
+        cv2.waitKey(100)
 
 
 def debug_image_transforms(train_transforms, batched_examples, model_dir, vis):
@@ -192,7 +193,6 @@ def debug_video_transforms(transforms, batched_examples, vis, model_dir):
         proc_examples[k] = tf.stack(v, axis=0)
 
     return proc_examples
-
 
 
 def _force_matplotlib_backend():
@@ -368,6 +368,12 @@ def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
 
     image_np = annotate(image_np, vis_img_name)
     cv2.imwrite(vis_img_path, image_np)
+
+    cv2.imshow('image_np', image_np)
+    k = cv2.waitKey(0)
+
+    if k == 27:
+        exit()
 
     print(f'vis_img_path: {vis_img_path}')
     print()

@@ -281,10 +281,11 @@ def get_loss(logits, label_seq, loss_type):
         raise ValueError('Unknown loss type {}'.format(loss_type))
     return loss
 
-def get_val_metrics(y_true, y_pred, y_pred_logits, y_mask, m):
+def get_val_metrics(y_true, y_pred_logits, y_mask):
     y_true_m = tf.boolean_mask(y_true, y_mask)
+
+    y_pred = tf.argmax(y_pred_logits, axis=2)
     y_pred_m = tf.boolean_mask(y_pred, y_mask)
-    y_pred_logits_m = tf.boolean_mask(y_pred_logits, y_mask)
 
     """Don't care about output tokens corresponding to GT tokens marked as padding"""
     y_total_m = tf.cast(tf.size(y_true_m), tf.int64)
@@ -293,15 +294,7 @@ def get_val_metrics(y_true, y_pred, y_pred_logits, y_mask, m):
     y_correct_count_m = tf.reduce_sum(tf.cast(y_correct_m, tf.int64))
     y_correct_pc_m = (y_correct_count_m / y_total_m) * 100
 
-    # y_pred_from_logits_m = tf.argmax(y_pred_logits_m, axis=1)
-    # y_correct_from_logits_m = tf.math.equal(y_true_m, y_pred_from_logits_m)
-    # y_correct_from_logits_count_m = tf.reduce_sum(tf.cast(y_correct_from_logits_m, tf.int64))
-    # y_correct_from_logits_pc_m = (y_correct_from_logits_count_m / y_total_m) * 100
-
-    m.update_state(y_true_m, y_pred_logits_m)
-    accuracy_notpad_m = m.result()
-
-    return y_correct_pc_m, accuracy_notpad_m
+    return y_correct_pc_m
 
 def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None, y_pred=None,
                pred_name='pred', gt_name='gt', run_type='train', is_video=True):

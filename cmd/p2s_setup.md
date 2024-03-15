@@ -13,6 +13,8 @@
         - [wsl-gpu       @ tensorflow/install](#wsl_gpu___tensorflow_install_)
         - [ubuntu22.04       @ tensorflow/install](#ubuntu22_04___tensorflow_install_)
         - [all       @ tensorflow/install](#all___tensorflow_install_)
+            - [12.2       @ all/tensorflow/install](#12_2___all_tensorflow_install_)
+            - [12.3       @ all/tensorflow/install](#12_3___all_tensorflow_install_)
     - [netifaces       @ install](#netifaces___instal_l_)
 - [soft-links](#soft_link_s_)
 - [pretrained](#pretraine_d_)
@@ -124,14 +126,26 @@ sudo apt-get install cuda-12-2
 ### all       @ tensorflow/install-->p2s_setup
 download cudnn tar from
 https://developer.nvidia.com/rdp/cudnn-download
+<a id="12_2___all_tensorflow_install_"></a>
 ```
 wget https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
 ```
 and extract into cuda-12.2/targets/ folder
 ```
 tar xvf cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
+```
+<a id="12_2___all_tensorflow_install_"></a>
+#### 12.2       @ all/tensorflow/install-->p2s_setup
+```
 sudo mv cudnn-linux-x86_64-8.9.7.29_cuda12-archive/lib/* /usr/local/cuda-12.2/targets/x86_64-linux/lib/
 sudo mv cudnn-linux-x86_64-8.9.7.29_cuda12-archive/include/* /usr/local/cuda-12.2/targets/x86_64-linux/include/
+```
+<a id="12_3___all_tensorflow_install_"></a>
+#### 12.3       @ all/tensorflow/install-->p2s_setup
+```
+sudo mv cudnn-linux-x86_64-8.9.7.29_cuda12-archive/lib/* /usr/local/cuda-12.3/targets/x86_64-linux/lib/
+sudo mv cudnn-linux-x86_64-8.9.7.29_cuda12-archive/include/* /usr/local/cuda-12.3/targets/x86_64-linux/include/
+
 ```
 
 add following environment variables to bashrc as well as the pycharm debug configuration window
