@@ -159,13 +159,15 @@ class TaskVideoDetection(task_lib.Task):
             tf.cast(config.eos_token_weight, token_weights.dtype),
             token_weights)
 
-        if training:
-            """passed to trainer.compute_loss which calls model.call"""
-            return batched_examples, input_seq, target_seq, token_weights
-        else:
-            """passed to task.infer which calls model.infer"""
-            return batched_examples, input_seq, target_seq, token_weights
-            # return batched_examples['video'], response_seq, batched_examples
+        return batched_examples, input_seq, target_seq, token_weights
+
+        # if training:
+        #     """passed to trainer.compute_loss which calls model.call"""
+        #     return batched_examples, input_seq, target_seq, token_weights
+        # else:
+        #     """passed to task.infer which calls model.infer"""
+        #     return batched_examples, input_seq, target_seq, token_weights
+        #     # return batched_examples['video'], response_seq, batched_examples
 
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""

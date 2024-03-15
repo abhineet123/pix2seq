@@ -142,7 +142,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                         train_metrics_dict[metric_name] = metric_val_np
 
                         if np.isnan(metric_val_np):
-                            logging.error(f'NaN value found for {metric_name} so terminating training')
+                            logging.error(f'NaN value found for training {metric_name} so terminating training')
                             nan_metric = 1
                             break
                         tf.summary.scalar(metric_name, metric_val_np, global_step)
@@ -164,22 +164,27 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                         val_metrics_dict = dict()
                         nan_metric = 0
                         for metric_name, metric_val in trainer.val_metrics.items():
-                            metric_val_np = metric_val.result().numpy()
+                            metric_val_np = metric_val.result().numpy().item()
                             val_metrics_dict[metric_name] = metric_val_np
                             if np.isnan(metric_val_np):
-                                logging.error(f'NaN value found for {metric_name} so terminating training')
+                                logging.error(f'NaN value found for validation {metric_name} so terminating training')
                                 nan_metric = 1
                                 break
 
                             tf.summary.scalar(metric_name, metric_val_np, global_step)
 
-                            if is_better[metric_name](metric_val, best_val_metrics[metric_name]):
-                                import json
-                                print(f'found better validation {metric_name}: {metric_val_np}')
-                                best_val_metrics[metric_name] = metric_val_np.item()
-                                val_ckpt_managers[metric_name].save(cur_step)
-                                with open(best_val_metrics_json, 'w') as f:
-                                    f.write(json.dumps(best_val_metrics, indent=4))
+                            try:
+                                best_metric_val = best_val_metrics[metric_name]
+                            except KeyError:
+                                continue
+                            else:
+                                if is_better[metric_name](metric_val_np, best_metric_val):
+                                    import json
+                                    print(f'found better validation {metric_name}: {metric_val_np}')
+                                    best_val_metrics[metric_name] = metric_val_np
+                                    val_ckpt_managers[metric_name].save(cur_step)
+                                    with open(best_val_metrics_json, 'w') as f:
+                                        f.write(json.dumps(best_val_metrics, indent=4))
                         if nan_metric:
                             break
 

@@ -231,6 +231,7 @@ def main(unused_argv):
             cfg.train.checkpoint_epochs, cfg.train.batch_size)
         checkpoint_steps = min(checkpoint_steps, train_steps)
 
+        print()
         print(f'cfg.train.steps: {cfg.train.steps}')
         print(f'cfg.train.epochs: {cfg.train.epochs}')
         print(f'cfg.train.batch_size: {cfg.train.batch_size}')
@@ -244,7 +245,12 @@ def main(unused_argv):
 
             eval_steps = utils.get_eval_steps(
                 val_dataset, cfg.eval.steps, cfg.eval.batch_size)
+
+            print()
+            print(f'cfg.eval.steps: {cfg.eval.steps}')
+            print(f'cfg.eval.batch_size: {cfg.eval.batch_size}')
             print(f'eval_steps: {eval_steps}')
+            print()
 
         import train
         train.run(cfg, train_datasets, val_datasets, tasks, train_steps, eval_steps,

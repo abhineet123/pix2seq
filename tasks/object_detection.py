@@ -140,15 +140,17 @@ class TaskObjectDetection(task_lib.Task):
             tf.zeros_like(token_weights) + config.eos_token_weight,
             token_weights)
 
-        if training:
-            return batched_examples, input_seq, target_seq, token_weights
-        else:
-            return batched_examples, input_seq, response_seq, target_seq, token_weights
+        return batched_examples, input_seq, target_seq, token_weights
+
+        # if training:
+        #     return batched_examples, input_seq, target_seq, token_weights
+        # else:
+        #     return batched_examples, input_seq, response_seq, target_seq, token_weights
 
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
-        examples, input_seq, response_seq, target_seq, token_weights = preprocessed_outputs  # response_seq unused by
+        examples, input_seq, target_seq, token_weights = preprocessed_outputs  # response_seq unused by
         # default
         image = examples["image"]
         bsz = tf.shape(image)[0]
