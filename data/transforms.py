@@ -77,6 +77,7 @@ class RecordOriginalImageSize(Transform):
         example[orig_image_size_key] = tf.shape(example[image_key])[:2]
         return example
 
+
 @TransformRegistry.register('convert_image_dtype_float32')
 class ConvertImageDtypeFloat32(Transform):
     """Convert image dtype to float32.
@@ -150,6 +151,9 @@ class ScaleJitter(Transform):
         )
         scaled_size = tf.cast(tf.multiply(input_size, scale), tf.int32)
 
+        example['scale_jitter/scale'] = scale
+        example['scale_jitter/scaled_size'] = scaled_size
+
         num_inputs = len(self.config.inputs)
         resize_methods = self.config.get('resize_method', ['bilinear'] * num_inputs)
         antialias_list = self.config.get('antialias', [False] * num_inputs)
@@ -186,6 +190,13 @@ class FixedSizeCrop(Transform):
         region = (offset[0], offset[1],
                   tf.minimum(output_size[0], input_size[0] - offset[0]),
                   tf.minimum(output_size[1], input_size[1] - offset[1]))
+
+        example['fixed_size_crop/input_size'] = input_size
+        example['fixed_size_crop/output_size'] = output_size
+        example['fixed_size_crop/max_offset'] = max_offset
+        example['fixed_size_crop/offset'] = offset
+        example['fixed_size_crop/region'] = region
+
         object_coordinate_keys = self.config.get('object_coordinate_keys', [])
 
         return data_utils.crop(example, region, self.config.inputs,
@@ -226,7 +237,6 @@ class RandomHorizontalFlip(Transform):
         example.update(keypoints)
         example.update(polygons)
         return example
-
 
 
 @TransformRegistry.register('random_color_jitter')
@@ -282,7 +292,7 @@ class FilterInvalidObjects(Transform):
 
         out_bbox = out_example[bbox_key]
         n_out_bboxes = tf.shape(out_bbox)[0]
-        tf.debugging.Assert(n_out_bboxes > 0, [bbox, out_bbox])
+        # tf.debugging.Assert(n_out_bboxes > 0, [bbox, out_bbox])
 
         return out_example
 
@@ -416,6 +426,45 @@ class PadImageToMaxSize(Transform):
                 example[key] = data_utils.flatten_points(
                     data_utils.unflatten_points(example[key]) * scale)
         return example
+
+
+@TransformRegistry.register('scale_objs')
+class ScaleObjects(Transform):
+    """Pad image to target size (height, width, 3).
+
+    - Replace input fields with padded images.
+    - Re-scale object_coordinate fields to the paddded image.
+    - Add "unpadded_image_size" which contains the image size of the
+      augmented but unpadded image. This can be used to scale the bbox for
+      visualization on the processed image.
+
+    Padding gets added on bottom and right.
+
+    Required fields in config:
+      inputs: names of applicable fields in the example.
+      target_size: (height, width) tuple.
+      background_val: optional list of background pixel value. Default to 0.3.
+      object_coordinate_keys: optional list of strings. Keys for coordinate
+        features that describe objects, e.g. 'bbox' for object detection.
+    """
+
+    def process_example(self, example: dict[str, tf.Tensor]):
+        example = copy.copy(example)
+
+        image = example['image']
+        height, width = tf.shape(image)[:2]
+
+        image_h, image_w = example['image/height'], example['image/width']
+
+        object_coordinate_keys = self.config.object_coordinate_keys
+        scale = 1. / utils.tf_float32([height, width])
+        for key in object_coordinate_keys:
+            example[key] = data_utils.flatten_points(
+                data_utils.unflatten_points(example[key]) * scale)
+        return example
+
+
+6
 
 
 @TransformRegistry.register('truncate_or_pad_to_max_instances')

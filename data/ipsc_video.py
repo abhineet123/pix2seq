@@ -85,9 +85,6 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         )
         length = self.config.length
 
-        scale = 1. / utils.tf_float32((h, w))
-        # scale = 1. / utils.tf_float32(tf.shape(example['image'])[:2])
-
         # frames.set_shape([length, h, w, 3])
         frames.set_shape([length, None, None, 3])
         # frames.set_shape([None, None, None, 3])
@@ -96,7 +93,10 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
 
         area = decode_utils.decode_video_areas(example, self.config.length)
         bbox = decode_utils.decode_video_boxes(example, self.config.length)
-        bbox = utils.scale_points(bbox, scale)
+
+        # scale = 1. / utils.tf_float32((h, w))
+        # scale = 1. / utils.tf_float32(tf.shape(example['image'])[:2])
+        # bbox = utils.scale_points(bbox, scale)
 
         new_example = {
             'video/file_names': tf.cast(example['video/file_names'], tf.string),

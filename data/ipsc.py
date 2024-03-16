@@ -18,6 +18,7 @@ import vocab
 from data import dataset as dataset_lib
 from data import decode_utils
 import tensorflow as tf
+from data import data_utils
 
 
 def _xy_to_yx(tensor):
@@ -70,14 +71,36 @@ class IPSCObjectDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         """
 
         img_id = example['image/source_id']
+        height = example['image/height']
+        width = example['image/width']
+        image = decode_utils.decode_image(example)
+
+        # target_size = self.task_config.image_size
+        target_size = self.config.target_size
+
+        if target_size is not None:
+            image = tf.image.resize(
+                image, target_size, method='bilinear',
+                antialias=False, preserve_aspect_ratio=False)
+
+        resized_image_size = tf.shape(image)[:2]
+
         new_example = {
-            'image': decode_utils.decode_image(example),
-            # 'image/id': tf.strings.to_number( tf.int64),
+            'image': image,
+            'orig_image_size': [height, width],
             'image/id': img_id,
+            'image/resized_image_size': resized_image_size,
         }
 
         bbox = decode_utils.decode_boxes(example)
-        scale = 1. / utils.tf_float32(tf.shape(new_example['image'])[:2])
+
+        # hratio = tf.cast(target_size[0], tf.float32) / tf.cast(height, tf.float32)
+        # wratio = tf.cast(target_size[1], tf.float32) / tf.cast(width, tf.float32)
+        # scale = tf.stack([hratio, wratio])
+        # scale = 1. / utils.tf_float32(target_size)
+
+        # border_height, border_width = padded_height - height, padded_width - width
+        scale = 1. / utils.tf_float32([height, width])
         bbox = utils.scale_points(bbox, scale)
 
         new_example.update({

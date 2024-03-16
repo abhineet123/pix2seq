@@ -39,32 +39,32 @@ def build_tasks_and_datasets(
     t_name_to_t_config_map = {}
     t_name_to_ds_config_map = collections.defaultdict(list)
     t_name_to_weights_map = collections.defaultdict(list)
-    for t_config, ds_config in zip(cfg.tasks, cfg.datasets):
-        if t_config.name not in t_name_to_t_config_map:
-            t_name_to_t_config_map[t_config.name] = t_config
+    for task_config, ds_config in zip(cfg.tasks, cfg.datasets):
+        if task_config.name not in t_name_to_t_config_map:
+            t_name_to_t_config_map[task_config.name] = task_config
         else:
             # Accumulate weight for task.
-            t_name_to_t_config_map[t_config.name].weight += t_config.weight
-        t_name_to_weights_map[t_config.name].append(t_config.weight)
-        t_name_to_ds_config_map[t_config.name].append(ds_config)
+            t_name_to_t_config_map[task_config.name].weight += task_config.weight
+        t_name_to_weights_map[task_config.name].append(task_config.weight)
+        t_name_to_ds_config_map[task_config.name].append(ds_config)
         
     ds = None
 
     # For each task, create the Task instance and the dataset instance.
-    for t_name, t_config in t_name_to_t_config_map.items():
-        task_config = copy.deepcopy(cfg)
-        task_config.task = t_config
-        task = task_lib.TaskRegistry.lookup(t_name)(cfg)
+    for task_name, task_config in t_name_to_t_config_map.items():
+        cfg_copy = copy.deepcopy(cfg)
+        cfg_copy.task = task_config
+        task = task_lib.TaskRegistry.lookup(task_name)(cfg)
         tasks.append(task)
 
-        ds_configs = t_name_to_ds_config_map[t_name]
-        ds_weights = t_name_to_weights_map[t_name]
+        ds_configs = t_name_to_ds_config_map[task_name]
+        ds_weights = t_name_to_weights_map[task_name]
         ds_weights = [w / sum(ds_weights) for w in ds_weights]
 
         # Build dataset for this task.
         input_fns = []
         for ds_config in ds_configs:
-            task_ds_config = copy.deepcopy(task_config)
+            task_ds_config = copy.deepcopy(cfg_copy)
             task_ds_config.dataset = ds_config
             ds_fn = dataset_lib.DatasetRegistry.lookup(ds_config.name)
             ds = ds_fn(task_ds_config)
@@ -307,7 +307,7 @@ def load(FLAGS):
 
     if cfg.dataset.name.startswith('ipsc'):
         from configs.dataset_configs import ipsc_post_process
-        ipsc_post_process(cfg.dataset, cfg.training)
+        ipsc_post_process(cfg.dataset, cfg.task, cfg.training)
 
     if not cfg.model_dir:
         """construct model_dir name from params"""

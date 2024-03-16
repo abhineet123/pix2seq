@@ -26,7 +26,13 @@ def get_object_detection_train_transforms(
     instance_feature_names = ['bbox', 'label', 'area', 'is_crowd']
     object_coordinate_keys = ['bbox']
 
-    train_transforms = [D(name='record_original_image_size'), ]
+    train_transforms = [
+        # D(name='scale_objs',
+        #   input='image',
+        #   object_coordinate_keys=object_coordinate_keys,),
+
+        # D(name='record_original_image_size'),
+    ]
     if cfg.scale_jitter:
         # print('annoying scale_jitter is enabled')
         train_transforms.append(

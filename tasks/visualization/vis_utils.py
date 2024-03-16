@@ -107,7 +107,7 @@ def debug_image_transforms(train_transforms, batched_examples, model_dir, vis):
         single_example = {
             k: v[i, ...] for k, v in batched_examples.items()
         }
-        proc_videos = dict(
+        proc_images = dict(
             orig=single_example["image"]
         )
         proc_bboxes = dict(
@@ -116,27 +116,26 @@ def debug_image_transforms(train_transforms, batched_examples, model_dir, vis):
         import copy
         proc_example = copy.copy(single_example)
 
-        save_image_sample(single_example, 'orig', 0, vis_img_dir)
+        if vis:
+            save_image_sample(single_example, 'orig', 0, vis_img_dir)
 
         for t_id, t in enumerate(train_transforms):
             t_name = t.config.name
             proc_example = t.process_example(proc_example)
 
-            proc_videos[t_name] = proc_example["image"]
+            proc_images[t_name] = proc_example["image"]
             proc_bboxes[t_name] = proc_example["bbox"]
 
-            if not vis:
-                continue
+            if vis:
+                save_image_sample(proc_example, t_name, t_id + 1, vis_img_dir)
+                # image = proc_example["image"]
+                # image = tf.image.convert_image_dtype(image, tf.uint8)
 
-            save_image_sample(proc_example, t_name, t_id + 1, vis_img_dir)
+                # video_ids = proc_example["video_id"]
+                # file_names = proc_example["file_names"]
 
-            # image = proc_example["image"]
-            # image = tf.image.convert_image_dtype(image, tf.uint8)
+                # vis_utils.save_video(image, file_names, t_name, self.config.model_dir)
 
-            # video_ids = proc_example["video_id"]
-            # file_names = proc_example["file_names"]
-
-            # vis_utils.save_video(image, file_names, t_name, self.config.model_dir)
         for k, v in proc_examples.items():
             v.append(proc_example[k])
 
@@ -344,12 +343,17 @@ def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
     image = tf.image.convert_image_dtype(image, tf.uint8)
 
     image_np = image.numpy().squeeze()
+
+    image_h, image_w = image_np.shape[:2]
+
+    image_vis = image_np.copy()
+
     for bbox, class_id in zip(bboxes, class_ids):
         class_id = class_id.numpy()
         bbox_np_ = bbox.numpy()
 
         ymin, xmin, ymax, xmax = bbox_np_
-        draw_box(image_np, [xmin, ymin, xmax, ymax], _id=class_id,
+        draw_box(image_vis, [xmin, ymin, xmax, ymax], _id=class_id,
                  color='green', thickness=1, norm=True, xywh=False)
 
     file_name_np = file_name.numpy()
@@ -366,14 +370,14 @@ def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
 
     vis_img_path = os.path.join(vis_img_dir, f'{vis_img_name}{img_ext}')
 
-    image_np = annotate(image_np, vis_img_name)
-    cv2.imwrite(vis_img_path, image_np)
+    image_vis = annotate(image_vis, vis_img_name)
+    cv2.imwrite(vis_img_path, image_vis)
 
-    cv2.imshow('image_np', image_np)
-    k = cv2.waitKey(0)
-
-    if k == 27:
-        exit()
+    # image_show = resize_ar(image_vis, width=900)
+    # cv2.imshow('image_vis', image_show)
+    # k = cv2.waitKey(0)
+    # if k == 27:
+    #     exit()
 
     print(f'vis_img_path: {vis_img_path}')
     print()

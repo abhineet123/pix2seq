@@ -164,9 +164,9 @@ class FilterInvalidObjectsVideo(Transform):
         for k in self.config.inputs:
             out_example[k] = tf.gather(out_example[k], valid_indices)
 
-        out_bbox = out_example[bbox_key]
-        n_out_bboxes = tf.shape(out_bbox)[0]
-        tf.debugging.Assert(n_out_bboxes > 0, [bboxes, out_bbox])
+        # out_bbox = out_example[bbox_key]
+        # n_out_bboxes = tf.shape(out_bbox)[0]
+        # tf.debugging.Assert(n_out_bboxes > 0, [bboxes, out_bbox])
 
         return out_example
 

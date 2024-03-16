@@ -59,6 +59,7 @@ class Dataset(abc.ABC):
 
     def __init__(self, config: ml_collections.ConfigDict):
         """Constructs the dataset."""
+        self.config_all = config
         self.config = config.dataset
         self.task_config = config.task
 
