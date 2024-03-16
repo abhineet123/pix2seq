@@ -98,7 +98,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-0_1,batch-6,train,resnet-640,ipsc-0_1,batch-6,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1
 <a id="val_2_3___ipsc_0_1_resnet_64_0_"></a>
 ### val-2_3       @ ipsc-0_1/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-2_3,batch-6,train,resnet-640,ipsc-0_1,batch-6,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-2_3,batch-18,train,resnet-640,ipsc-0_1,batch-18,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1
 
 <a id="ipsc_16_53___resnet_640_"></a>
 ## ipsc-16_53       @ resnet-640-->p2s
