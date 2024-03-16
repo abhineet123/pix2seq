@@ -29,15 +29,15 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         is_greater = lambda x, y: x > y
         is_smaller = lambda x, y: x < y
         is_better = dict(
-            loss=is_smaller,
+            # loss=is_smaller,
             loss_notpad=is_smaller,
-            correct_pc=is_greater,
+            # correct_pc=is_greater,
             accuracy_notpad=is_greater,
         )
         best_val_metrics = dict(
-            loss=np.inf,
+            # loss=np.inf,
             loss_notpad=np.inf,
-            correct_pc=0,
+            # correct_pc=0,
             accuracy_notpad=0,
         )
 

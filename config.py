@@ -341,7 +341,9 @@ def load(FLAGS):
     if cfg.training:
         if cfg.train.pt:
             print(f'loading pretrained model from: {cfg.pretrained}')
+        print()
         print(f'saving trained model to: {cfg.model_dir}')
+        print()
     else:
         if cfg.eval.pt:
             print(f'evaluating on pretrained model from: {cfg.pretrained}')
