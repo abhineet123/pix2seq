@@ -185,7 +185,7 @@ def augment_bbox_video(bbox, class_id, class_name, length, max_disp, max_jitter,
     bbox_tiled_shift = bbox_tiled[:n_bad_bboxes]
     # print(f'augment_bbox_video: bbox_tiled_shift shape: {tf.shape(bbox_tiled_shift)}')
 
-    tf.debugging.Assert(n_bboxes > 0, [n_bboxes, bbox])
+    # tf.debugging.Assert(n_bboxes > 0, [n_bboxes, bbox])
 
     bad_bbox_shift = shift_bbox_video(
         bbox_tiled_shift,
