@@ -89,16 +89,26 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         frames.set_shape([length, None, None, 3])
         # frames.set_shape([None, None, None, 3])
 
+        target_size = self.config.target_size
+
+        if target_size is not None:
+            frames = tf.image.resize(
+                frames, target_size, method='bilinear',
+                antialias=False, preserve_aspect_ratio=False)
+
         # area = bbox = None
 
         area = decode_utils.decode_video_areas(example, self.config.length)
         bbox = decode_utils.decode_video_boxes(example, self.config.length)
 
-        # scale = 1. / utils.tf_float32((h, w))
-        # scale = 1. / utils.tf_float32(tf.shape(example['image'])[:2])
-        # bbox = utils.scale_points(bbox, scale)
+        scale = 1. / utils.tf_float32((h, w))
+        bbox = utils.scale_points(bbox, scale)
+
+        resized_image_size = tf.shape(frames)[1:3]
 
         new_example = {
+            'orig_image_size': [h, w],
+            'video/resized': resized_image_size,
             'video/file_names': tf.cast(example['video/file_names'], tf.string),
             'video/file_ids': tf.cast(example['video/file_ids'], tf.int64),
             'video/id': tf.cast(example['video/source_id'], tf.int64),

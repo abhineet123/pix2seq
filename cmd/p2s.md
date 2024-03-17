@@ -1,5 +1,8 @@
 <!-- MarkdownTOC -->
 
+- [resnet-640-lfn](#resnet_640_lf_n_)
+    - [detrac-non_empty       @ resnet-640-lfn](#detrac_non_empty___resnet_640_lfn_)
+        - [0_19       @ detrac-non_empty/resnet-640-lfn](#0_19___detrac_non_empty_resnet_640_lf_n_)
 - [resnet-640](#resnet_64_0_)
     - [detrac-non_empty       @ resnet-640](#detrac_non_empty___resnet_640_)
         - [0_19       @ detrac-non_empty/resnet-640](#0_19___detrac_non_empty_resnet_64_0_)
@@ -60,6 +63,13 @@
     - [g2_0_37       @ resnet_c4_1333](#g2_0_37___resnet_c4_1333_)
 
 <!-- /MarkdownTOC -->
+<a id="resnet_640_lf_n_"></a>
+# resnet-640-lfn 
+<a id="detrac_non_empty___resnet_640_lfn_"></a>
+## detrac-non_empty       @ resnet-640-lfn-->p2s
+<a id="0_19___detrac_non_empty_resnet_640_lf_n_"></a>
+### 0_19       @ detrac-non_empty/resnet-640-lfn-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=val,detrac-non_empty-49_68train,resnet-640,pt-1,detrac-non_empty-0_19,batch-3,len-3,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,gz,lfn,jtr
 
 <a id="resnet_64_0_"></a>
 # resnet-640 

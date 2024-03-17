@@ -116,7 +116,7 @@ def get_ipsc_video_data():
 def ipsc_post_process(ds_cfg, task_cfg, training):
     import os
 
-    if ds_cfg.target_size is None:
+    if ds_cfg.target_size == ():
         ds_cfg.target_size = task_cfg.image_size
 
     # elif isinstance(ds_cfg.target_size, int):

@@ -89,7 +89,7 @@ class IPSCObjectDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
             'image': image,
             'orig_image_size': [height, width],
             'image/id': img_id,
-            'image/resized_image_size': resized_image_size,
+            'image/resized': resized_image_size,
         }
 
         bbox = decode_utils.decode_boxes(example)
