@@ -17,6 +17,7 @@ class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=mi
                  dim,
                  mlp_ratio,
                  num_heads,
+                 late_fusion,
                  vid_len,
                  drop_path=0.1,
                  drop_units=0.1,
@@ -30,6 +31,7 @@ class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=mi
                  **kwargs):
         super(VideoTransformerEncoderLayer, self).__init__(**kwargs)
 
+        self.late_fusion = late_fusion
         self.vid_len = vid_len
         self.dim = dim
 
@@ -68,20 +70,25 @@ class VideoTransformerEncoderLayer(tf.keras.layers.Layer):  # pylint: disable=mi
 
     def call(self, x, mask, training):
         # x shape (bsz, vid_len, seq_len, dim_att), mask shape (bsz, seq_len, seq_len).
-        bsz, vid_len, seq_len, dim_att = get_shape(x)
 
-        assert vid_len == self.vid_len, "vid_len mismatch"
+        if not self.late_fusion:
+            bsz, vid_len, seq_len, dim_att = get_shape(x)
+
+            assert vid_len == self.vid_len, "vid_len mismatch"
 
         if self.self_attention:
-            x = utils.flatten_vid(x)
+            if not self.late_fusion:
+                x = utils.flatten_vid(x)
             x_ln = self.mha_ln(x)
             x_residual = self.mha(x_ln, x_ln, x_ln, attention_mask=mask, training=training)
             x = x + self.dropp(x_residual, training)
             if self.use_mlp:
                 x = self.mlp(x, training)
-            x = utils.unflatten_vid(x, self.vid_len)
+            if not self.late_fusion:
+                x = utils.unflatten_vid(x, self.vid_len)
 
         if self.cross_attention:
+            assert not self.late_fusion, "cross_attention is not supported with late_fusion"
             x1 = x[:, 0, ...]
             for _id in range(1, self.vid_len):
                 x2 = x[:, _id, ...]
@@ -126,6 +133,7 @@ class VideoTransformerEncoder(tf.keras.layers.Layer):  # pylint: disable=missing
                 mlp_ratio=mlp_ratio,
                 num_heads=num_heads,
                 vid_len=vid_len,
+                late_fusion=late_fusion,
                 drop_path=drop_path,
                 drop_units=drop_units,
                 drop_att=drop_att,
@@ -201,6 +209,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             self.n_rows,
             self.n_cols,
             dim,
+            n_images=self.vid_len,
             return_only=True,
         )
         self.transformer_encoder = VideoTransformerEncoder(
@@ -242,6 +251,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             tokens = tf.concat([cls_token, tokens], 1)
 
         if self.late_fusion:
+            b, t, n_feat, fc = get_shape(tokens)
             tokens = tf.reshape(tokens, [b, t * n_feat, fc])
         else:
             tokens = utils.unflatten_vid(tokens, self.vid_len)

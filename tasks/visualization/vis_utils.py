@@ -318,6 +318,7 @@ def save_video_sample(proc_example, t_name, t_id, vis_img_dir):
             bbox_np_ = bbox_np[bbox_id:bbox_id + 4]
             if np.any(np.isnan(bbox_np_)):
                 assert np.all(np.isnan(bbox_np_)), "either all or none of the bounding box coordinates can be NAN"
+                continue
 
             ymin, xmin, ymax, xmax = bbox_np_
             # xmin, ymin, xmax, ymax = bbox_np_

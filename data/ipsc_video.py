@@ -104,11 +104,11 @@ class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         scale = 1. / utils.tf_float32((h, w))
         bbox = utils.scale_points(bbox, scale)
 
-        resized_image_size = tf.shape(frames)[1:3]
+        resized_vid_size = tf.shape(frames)[1:3]
 
         new_example = {
-            'orig_image_size': [h, w],
-            'video/resized': resized_image_size,
+            'orig_video_size': [h, w],
+            'video/resized': resized_vid_size,
             'video/file_names': tf.cast(example['video/file_names'], tf.string),
             'video/file_ids': tf.cast(example['video/file_ids'], tf.int64),
             'video/id': tf.cast(example['video/source_id'], tf.int64),

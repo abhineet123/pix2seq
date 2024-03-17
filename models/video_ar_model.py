@@ -23,7 +23,7 @@ import vocab
 from tasks import task_utils
 from tasks.visualization import vis_utils
 
-from architectures.transformers import add_vis_pos_emb
+from architectures.transformers import add_vis_pos_emb, get_shape
 from architectures.transformers import AutoregressiveDecoder
 from architectures.transformers import FIT
 from architectures.transformers import MLP
@@ -49,10 +49,12 @@ class Model(tf.keras.models.Model):
         self.config_all = config
         self.config = config.model
         self.vid_len = config.dataset.length
+        self.late_fusion = self.config.late_fusion
         self.pos_encoding = self.config.pos_encoding
 
         mlp_ratio = self.config.dim_mlp // self.config.dim_att
         if self.config.resnet_variant == 'swin':
+            assert not self.late_fusion, "late_fusion is not supported with VideoSwinTransformer"
             self.encoder = VideoSwinTransformer(
                 swin_variant=self.config.swin_variant,
                 image_height=self.config.image_size[0],
@@ -93,7 +95,7 @@ class Model(tf.keras.models.Model):
                 drop_att=self.config.drop_att,
                 pos_encoding=self.config.pos_encoding,
                 use_cls_token=self.config.use_cls_token,
-                late_fusion=self.config.late_fusion,
+                late_fusion=self.late_fusion,
                 name='rest')
 
         mlp_ratio_dec = self.config.dim_mlp_dec // self.config.dim_att_dec
@@ -105,16 +107,26 @@ class Model(tf.keras.models.Model):
             """
             add visual positional embedding
             """
+            if self.late_fusion:
+                pos_encoding = 'learned_3d'
+            else:
+                pos_encoding=self.config.pos_encoding
+
             self.vis_pos_emb = add_vis_pos_emb(
                 self,
-                pos_encoding=self.config.pos_encoding,
+                pos_encoding=pos_encoding,
                 n_rows=self.encoder.n_rows,
                 n_cols=self.encoder.n_cols,
                 dim=self.config.dim_att_dec,
+                n_images=self.vid_len,
                 name_prefix='proj',
                 return_only=True,
                 # n_images=self.vid_len,
             )
+            if self.late_fusion:
+                t, n_feat, fc = get_shape(self.vis_pos_emb)
+                self.vis_pos_emb = tf.reshape(self.vis_pos_emb, [t * n_feat, fc])
+
             if self.config.dec_proj_mode == 'mlp':
                 self.proj_mlp = MLP(1, self.config.dim_att_dec, mlp_ratio, self.config.drop_path,
                                     self.config.drop_units, name='proj/mlp')

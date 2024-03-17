@@ -87,11 +87,11 @@ class TaskVideoDetection(task_lib.Task):
             _convert_video_to_image_features,
             num_parallel_calls=tf.data.experimental.AUTOTUNE
         )
-        # dataset = dataset.map(
-        #     lambda x: self.preprocess_single_example(
-        #         x, training, validation, batch_duplicates),
-        #     num_parallel_calls=tf.data.experimental.AUTOTUNE
-        # )
+        dataset = dataset.map(
+            lambda x: self.preprocess_single_example(
+                x, training, validation, batch_duplicates),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE
+        )
         return dataset
 
     def preprocess_batched(self, batched_examples, training):
@@ -99,9 +99,9 @@ class TaskVideoDetection(task_lib.Task):
         mconfig = self.config.model
         dconfig = self.config.dataset
 
-        batched_examples = vis_utils.debug_video_transforms(
-            self.train_transforms, batched_examples,
-            vis=1, model_dir=self.config.model_dir)
+        # batched_examples = vis_utils.debug_video_transforms(
+        #     self.train_transforms, batched_examples,
+        #     vis=1, model_dir=self.config.model_dir)
 
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
         ret = build_response_seq_from_video_bboxes(
@@ -185,23 +185,6 @@ class TaskVideoDetection(task_lib.Task):
             video, prompt_seq, encoded=None,
             max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
-
-        if self.config.validation:
-            from models import model_utils
-
-            is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
-            token_weights_notpad = tf.where(
-                is_padding, tf.zeros_like(token_weights), token_weights)
-            losses = model_utils.get_loss(
-                logits, target_seq, self.config.train.loss_type)
-            loss = tf.reduce_sum(losses * token_weights) / (
-                    tf.reduce_sum(token_weights) + 1e-9)
-            loss_notpad = tf.reduce_sum(losses * token_weights_notpad) / (
-                    tf.reduce_sum(token_weights_notpad) + 1e-9)
-
-            y_mask = tf.greater(token_weights_notpad, 0)
-            y_correct_pc_m, accuracy_notpad_m = model_utils.get_val_metrics(target_seq, pred_seq, logits, y_mask)
-            return loss, loss_notpad, y_correct_pc_m, accuracy_notpad_m
 
         # if self.config.debug:
         #     bbox_info_gt_infer, bbox_info_pred_infer = vis_utils.debug_loss(
