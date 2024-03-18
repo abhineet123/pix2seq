@@ -22,6 +22,7 @@
         - [len-6       @ mnist-640-5-12_1000/resnet-640-lfn](#len_6___mnist_640_5_12_1000_resnet_640_lfn_)
         - [len-9       @ mnist-640-5-12_1000/resnet-640-lfn](#len_9___mnist_640_5_12_1000_resnet_640_lfn_)
             - [msl-2048       @ len-9/mnist-640-5-12_1000/resnet-640-lfn](#msl_2048___len_9_mnist_640_5_12_1000_resnet_640_lfn_)
+    - [ipsc-16_53       @ resnet-640-lfn](#ipsc_16_53___resnet_640_lfn_)
 - [resnet-640](#resnet_64_0_)
     - [detrac       @ resnet-640](#detrac___resnet_640_)
         - [0_19       @ detrac/resnet-640](#0_19___detrac_resnet_64_0_)
@@ -139,6 +140,10 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 <a id="msl_2048___len_9_mnist_640_5_12_1000_resnet_640_lfn_"></a>
 #### msl-2048       @ len-9/mnist-640-5-12_1000/resnet-640-lfn-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,mnist-640-5-12_1000-train,len-9,strd-1,batch-2,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn,msl-2048
+
+<a id="ipsc_16_53___resnet_640_lfn_"></a>
+## ipsc-16_53       @ resnet-640-lfn-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-3,strd-1,batch-6,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn
 
 <a id="resnet_64_0_"></a>
 # resnet-640 
