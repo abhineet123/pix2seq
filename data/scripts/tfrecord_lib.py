@@ -103,9 +103,16 @@ def video_info_to_feature_dict(height, width, file_names, file_ids, video_id, im
 
         assert os.path.exists(file_path), f"file_path does not exist: {file_path}"
 
-        import imghdr
-        img_type = imghdr.what(file_path)
+        """
+        imghdr is annoyingly buggy and now also deprecated
+        https://stackoverflow.com/questions/36870661/imghdr-python-cant-detec-type-of-some-images-image-extension
+        """
+        # import imghdr
+        # img_type = imghdr.what(file_path)
 
+        from PIL import Image
+
+        img_type = Image.open(file_path).format.lower()
         # print(f'img_type: {img_type}')
 
         if img_type is None:

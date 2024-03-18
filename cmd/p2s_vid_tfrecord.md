@@ -1,5 +1,7 @@
 <!-- MarkdownTOC -->
 
+- [gram       @ tfrecord](#gram___tfrecord_)
+    - [0_1       @ gram](#0_1___gram_)
 - [detrac       @ tfrecord](#detrac___tfrecord_)
     - [0_19       @ detrac](#0_19___detrac_)
         - [strd-2       @ 0_19/detrac](#strd_2___0_19_detra_c_)
@@ -39,6 +41,13 @@
         - [strd-2       @ 54_126/ipsc](#strd_2___54_126_ips_c_)
 
 <!-- /MarkdownTOC -->
+
+<a id="gram___tfrecord_"></a>
+# gram       @ tfrecord-->p2s_setup
+<a id="0_1___gram_"></a>
+## 0_1       @ gram-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:gz:len-9:strd-1
+
 <a id="detrac___tfrecord_"></a>
 # detrac       @ tfrecord-->p2s_setup
 <a id="0_19___detrac_"></a>

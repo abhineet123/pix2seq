@@ -17,6 +17,8 @@
 - [resnet-640-lfn](#resnet_640_lf_n_)
     - [detrac-non_empty       @ resnet-640-lfn](#detrac_non_empty___resnet_640_lfn_)
         - [0_19       @ detrac-non_empty/resnet-640-lfn](#0_19___detrac_non_empty_resnet_640_lf_n_)
+            - [on-train       @ 0_19/detrac-non_empty/resnet-640-lfn](#on_train___0_19_detrac_non_empty_resnet_640_lfn_)
+                - [strd-2       @ on-train/0_19/detrac-non_empty/resnet-640-lfn](#strd_2___on_train_0_19_detrac_non_empty_resnet_640_lf_n_)
     - [mnist-640-5-12_1000       @ resnet-640-lfn](#mnist_640_5_12_1000___resnet_640_lfn_)
         - [len-4       @ mnist-640-5-12_1000/resnet-640-lfn](#len_4___mnist_640_5_12_1000_resnet_640_lfn_)
         - [len-6       @ mnist-640-5-12_1000/resnet-640-lfn](#len_6___mnist_640_5_12_1000_resnet_640_lfn_)
@@ -125,6 +127,11 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,len-6,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn,jtr
 
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,len-6,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn
+<a id="on_train___0_19_detrac_non_empty_resnet_640_lfn_"></a>
+#### on-train       @ 0_19/detrac-non_empty/resnet-640-lfn-->p2s_vid
+<a id="strd_2___on_train_0_19_detrac_non_empty_resnet_640_lf_n_"></a>
+##### strd-2       @ on-train/0_19/detrac-non_empty/resnet-640-lfn-->p2s_vid
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-2-stride-1-non_empty-seq-0_19-batch_18,detrac-non_empty-0_19,strd-2,batch-12,save-vis-1,dbg-0,dyn-1,dist-0
 
 <a id="mnist_640_5_12_1000___resnet_640_lfn_"></a>
 ## mnist-640-5-12_1000       @ resnet-640-lfn-->p2s_vid
