@@ -180,6 +180,7 @@ python3 data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-2:
 <a id="len_3___16_53_ipsc_"></a>
 ### len-3       @ 16_53/ipsc-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-3:strd-1
+python3 data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-3:strd-3
 
 <a id="0_37___ipsc_"></a>
 ## 0_37       @ ipsc-->p2s_vid_tfrecord
