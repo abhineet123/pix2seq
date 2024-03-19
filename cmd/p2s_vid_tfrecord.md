@@ -38,8 +38,8 @@
         - [len-3       @ 16_53/ipsc](#len_3___16_53_ipsc_)
     - [0_37       @ ipsc](#0_37___ipsc_)
     - [54_126       @ ipsc](#54_126___ipsc_)
-        - [strd-1       @ 54_126/ipsc](#strd_1___54_126_ips_c_)
-        - [strd-2       @ 54_126/ipsc](#strd_2___54_126_ips_c_)
+        - [len-2       @ 54_126/ipsc](#len_2___54_126_ips_c_)
+        - [len-3       @ 54_126/ipsc](#len_3___54_126_ips_c_)
 
 <!-- /MarkdownTOC -->
 
@@ -189,9 +189,11 @@ python3 data/scripts/create_video_tfrecord.py cfg=ipsc:0_37:gz:shards-32:len-2:s
 
 <a id="54_126___ipsc_"></a>
 ## 54_126       @ ipsc-->p2s_vid_tfrecord
-<a id="strd_1___54_126_ips_c_"></a>
-### strd-1       @ 54_126/ipsc-->p2s_vid_tfrecord
+<a id="len_2___54_126_ips_c_"></a>
+### len-2       @ 54_126/ipsc-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-2:strd-1
-<a id="strd_2___54_126_ips_c_"></a>
-### strd-2       @ 54_126/ipsc-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-2:strd-2
+<a id="len_3___54_126_ips_c_"></a>
+### len-3       @ 54_126/ipsc-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-3:strd-1
+python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-3:strd-3
