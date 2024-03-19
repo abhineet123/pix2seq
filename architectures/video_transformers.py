@@ -200,8 +200,11 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             factor = 32.
         self.n_rows = math.ceil(image_height / factor)
         self.n_cols = math.ceil(image_width / factor)
+
+        n_images = 1
         if late_fusion:
             pos_encoding = 'learned_3d'
+            n_images = self.vid_len
 
         self.vis_pos_emb = add_vis_pos_emb(
             self,
@@ -209,7 +212,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             self.n_rows,
             self.n_cols,
             dim,
-            n_images=self.vid_len,
+            n_images=n_images,
             return_only=True,
         )
         self.transformer_encoder = VideoTransformerEncoder(
