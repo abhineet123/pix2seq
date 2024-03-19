@@ -232,9 +232,9 @@ def main(unused_argv):
         checkpoint_steps = min(checkpoint_steps, train_steps)
 
         print()
-        print(f'cfg.train.steps: {cfg.train.steps}')
-        print(f'cfg.train.epochs: {cfg.train.epochs}')
-        print(f'cfg.train.batch_size: {cfg.train.batch_size}')
+        print(f'train.steps: {cfg.train.steps}')
+        print(f'train.epochs: {cfg.train.epochs}')
+        print(f'train.batch_size: {cfg.train.batch_size}')
         print(f'train_steps: {train_steps}')
         print(f'checkpoint_steps: {checkpoint_steps}')
 
@@ -247,13 +247,13 @@ def main(unused_argv):
                 val_dataset, cfg.eval.steps, cfg.eval.batch_size)
 
             print()
-            print(f'cfg.eval.steps: {cfg.eval.steps}')
-            print(f'cfg.eval.batch_size: {cfg.eval.batch_size}')
+            print(f'val.steps: {cfg.eval.steps}')
+            print(f'val.batch_size: {cfg.eval.batch_size}')
             print(f'val_steps: {val_steps}')
             print()
 
         import train
-        train.run(cfg, train_datasets, val_datasets, tasks, train_steps, eval_steps,
+        train.run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps,
                   checkpoint_steps, train_dataset.num_train_examples, strategy, model_lib, tf)
     else:
         eval_steps = utils.get_eval_steps(
