@@ -80,8 +80,12 @@ class Model(tf.keras.models.Model):
             add visual positional embedding
             """
             add_vis_pos_emb(
-                self, config.pos_encoding, self.encoder.n_rows, self.encoder.n_cols,
-                config.dim_att_dec, name_prefix='proj')
+                self, config.pos_encoding,
+                self.encoder.n_rows,
+                self.encoder.n_cols,
+                config.dim_att_dec,
+                name_prefix='proj')
+
             if config.dec_proj_mode == 'mlp':
                 self.proj_mlp = MLP(1, config.dim_att_dec, mlp_ratio, config.drop_path,
                                     config.drop_units, name='proj/mlp')

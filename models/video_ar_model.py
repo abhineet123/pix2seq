@@ -109,8 +109,10 @@ class Model(tf.keras.models.Model):
             """
             if self.late_fusion:
                 pos_encoding = 'learned_3d'
+                n_images = self.vid_len
             else:
-                pos_encoding=self.config.pos_encoding
+                pos_encoding = self.config.pos_encoding
+                n_images = 1
 
             self.vis_pos_emb = add_vis_pos_emb(
                 self,
@@ -118,10 +120,9 @@ class Model(tf.keras.models.Model):
                 n_rows=self.encoder.n_rows,
                 n_cols=self.encoder.n_cols,
                 dim=self.config.dim_att_dec,
-                n_images=self.vid_len,
+                n_images=n_images,
                 name_prefix='proj',
                 return_only=True,
-                # n_images=self.vid_len,
             )
             if self.late_fusion:
                 t, n_feat, fc = get_shape(self.vis_pos_emb)
