@@ -206,12 +206,12 @@ def add_vis_pos_emb(self,
         # sin_cos = get_3d_position_codes(
         #     n_rows, n_cols, n_images, dim, normalization_max=normalization_max)
     elif pos_encoding == 'learned':
-        assert n_images == 1, "n_images must be 1 for 2d positional encoding"
+        assert n_images == 1, "n_images must be 1 for 2d learned encoding"
         vis_pos_emb = self.add_weight(
             shape=(n_rows * n_cols, dim), initializer=initializer,
             name='%s/vis_pos_embedding' % name_prefix)
     elif pos_encoding == 'sin_cos':
-        assert n_images == 1, "n_images must be 1 for 2d positional encoding"
+        assert n_images == 1, "n_images must be 1 for 2d sin_cos encoding"
         if n_rows == 1 or n_cols == 1:
             sin_cos = get_1d_position_codes(
                 n_rows * n_cols, dim, normalization_max=normalization_max)
