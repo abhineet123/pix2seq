@@ -238,24 +238,34 @@ def main(unused_argv):
         print(f'train_steps: {train_steps}')
         print(f'checkpoint_steps: {checkpoint_steps}')
 
-        val_datasets = eval_steps = None
+        val_datasets = val_steps = None
         if cfg.train.val_epochs:
             _, val_datasets, val_dataset = config.build_tasks_and_datasets(
                 cfg, training=False, validation=True, task_lib=task_lib)
 
-            eval_steps = utils.get_eval_steps(
+            val_steps = utils.get_eval_steps(
                 val_dataset, cfg.eval.steps, cfg.eval.batch_size)
 
             print()
             print(f'cfg.eval.steps: {cfg.eval.steps}')
             print(f'cfg.eval.batch_size: {cfg.eval.batch_size}')
-            print(f'eval_steps: {eval_steps}')
+            print(f'val_steps: {val_steps}')
             print()
 
         import train
         train.run(cfg, train_datasets, val_datasets, tasks, train_steps, eval_steps,
                   checkpoint_steps, train_dataset.num_train_examples, strategy, model_lib, tf)
     else:
+        eval_steps = utils.get_eval_steps(
+            train_dataset, cfg.eval.steps, cfg.eval.batch_size)
+
+        print()
+        print(f'num_eval_examples: {train_dataset.num_eval_examples}')
+        print(f'cfg.eval.steps: {cfg.eval.steps}')
+        print(f'cfg.eval.batch_size: {cfg.eval.batch_size}')
+        print(f'eval_steps: {eval_steps}')
+
+        print()
         # For eval, only one task and one dataset is passed in.
         assert len(train_datasets) == 1, 'Only one dataset is accepted in eval.'
         assert len(tasks) == 1, 'Only one task is accepted in eval.'
@@ -277,7 +287,7 @@ def main(unused_argv):
         import eval
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):
-            result = eval.run(cfg, train_datasets[0], tasks[0], train_steps, ckpt, strategy,
+            result = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
                               model_lib, tf)
             logging.info('Eval complete. Exiting...')
             break
