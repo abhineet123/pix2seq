@@ -265,6 +265,10 @@ class Params(paramparse.CFG):
         self.start_seq_id = 0
         self.end_seq_id = -1
 
+        self.start_frame_id = 0
+        self.end_frame_id = -1
+        self.frame_stride = -1
+
         self.vis = 0
 
 
@@ -276,6 +280,12 @@ def main(_):
     assert params.ann_file, "ann_file must be provided"
 
     assert os.path.exists(params.image_dir), f"image_dir does not exist: {params.image_dir}"
+
+    if params.start_frame_id > 0 or params.end_frame_id >= 0 or params.frame_stride > 1:
+        frame_suffix = f'{params.start_frame_id}_{params.end_frame_id}'
+        if params.frame_stride > 1:
+            frame_suffix = f'{frame_suffix}_{params.frame_stride}'
+        params.ann_file = f'{params.ann_file}-{frame_suffix}'
 
     if params.length:
         params.ann_file = f'{params.ann_file}-length-{params.length}'
