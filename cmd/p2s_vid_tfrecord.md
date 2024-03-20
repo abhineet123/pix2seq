@@ -50,7 +50,7 @@
 ## 0_1       @ gram-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:gz:len-9:strd-1
 
-python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:frame-0_2000:gz:len-9:strd-1
+python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:frame-0_2000:gz:len-16:strd-1
 
 <a id="idot___gram_"></a>
 # idot       @ gram-->p2s_vid_tfrecord

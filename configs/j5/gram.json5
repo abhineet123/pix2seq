@@ -2,6 +2,8 @@
   "dataset": {
 	root_dir: "datasets/GRAM/Images",
     %mode%_name: "gram_only",
+	
+    %mode%_name: "gram_only-%%1%%",
 
 	%mode%_suffix: "seq-%0%",
 

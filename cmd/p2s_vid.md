@@ -16,7 +16,8 @@
         - [len-2       @ mnist-640-1-12_1000/swin-s](#len_2___mnist_640_1_12_1000_swin_s_)
 - [resnet-640-lfn](#resnet_640_lf_n_)
     - [gram       @ resnet-640-lfn](#gram___resnet_640_lfn_)
-        - [0_19       @ gram/resnet-640-lfn](#0_19___gram_resnet_640_lf_n_)
+        - [0_1       @ gram/resnet-640-lfn](#0_1___gram_resnet_640_lf_n_)
+            - [len-16-0_2000       @ 0_1/gram/resnet-640-lfn](#len_16_0_2000___0_1_gram_resnet_640_lf_n_)
     - [detrac-non_empty       @ resnet-640-lfn](#detrac_non_empty___resnet_640_lfn_)
         - [0_19       @ detrac-non_empty/resnet-640-lfn](#0_19___detrac_non_empty_resnet_640_lf_n_)
             - [on-train       @ 0_19/detrac-non_empty/resnet-640-lfn](#on_train___0_19_detrac_non_empty_resnet_640_lfn_)
@@ -124,9 +125,13 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 # resnet-640-lfn 
 <a id="gram___resnet_640_lfn_"></a>
 ## gram       @ resnet-640-lfn-->p2s_vid
-<a id="0_19___gram_resnet_640_lf_n_"></a>
-### 0_19       @ gram/resnet-640-lfn-->p2s_vid
+<a id="0_1___gram_resnet_640_lf_n_"></a>
+### 0_1       @ gram/resnet-640-lfn-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1,len-9,batch-2,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn
+
+<a id="len_16_0_2000___0_1_gram_resnet_640_lf_n_"></a>
+#### len-16-0_2000       @ 0_1/gram/resnet-640-lfn-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1-0_2000,len-16,batch-2,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn
 
 <a id="detrac_non_empty___resnet_640_lfn_"></a>
 ## detrac-non_empty       @ resnet-640-lfn-->p2s_vid
