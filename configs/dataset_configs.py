@@ -106,11 +106,11 @@ def get_ipsc_video_data():
         length=2,
 
         train_stride=1,
-        train_sample=1,
+        train_sample=0,
         train_frame_gaps=[],
 
         eval_stride=1,
-        eval_sample=1,
+        eval_sample=0,
         eval_frame_gaps=[],
         **_shared_dataset_config
     )
