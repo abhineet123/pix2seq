@@ -252,6 +252,7 @@ def main(unused_argv):
             print(f'val_steps: {val_steps}')
             print()
 
+        exit()
         import train
         train.run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps,
                   checkpoint_steps, train_dataset.num_train_examples, strategy, model_lib, tf)
