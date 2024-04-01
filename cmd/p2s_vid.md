@@ -289,7 +289,7 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_ro
 
 <a id="ipsc_16_53_jtr_res_1280___resnet_640_"></a>
 ## ipsc-16_53-jtr-res-1280       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=val-1,ipsc-54_126_8,batch-24,train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,jtr,res-1280
+python3 run.py --cfg=configs/config_video_det.py --j5=_val_,ipsc-54_126,batch-24,len-2,strd-2,sample-8,_train_,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,jtr,res-1280
 
 <a id="ipsc_16_53___resnet_640_"></a>
 ## ipsc-16_53       @ resnet-640-->p2s_vid

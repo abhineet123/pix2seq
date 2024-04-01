@@ -255,6 +255,7 @@ class Params(paramparse.CFG):
         self.frame_gaps = []
         self.length = 0
         self.stride = 0
+        self.sample = 0
 
         self.image_dir = ''
         self.n_proc = 0
@@ -292,6 +293,9 @@ def main(_):
 
     if params.stride:
         params.ann_file = f'{params.ann_file}-stride-{params.stride}'
+
+    if params.sample:
+        params.ann_file = f'{params.ann_file}-sample-{params.sample}'
 
     if params.frame_gaps:
         ann_files = [f'{params.ann_file}-frame_gap-{frame_gap}' if frame_gap > 1 else params.ann_file
