@@ -282,8 +282,10 @@ def main(unused_argv):
             else:
                 assert cfg.model_dir, "model dir must be provided for trained model eval"
 
-                checkpoint_dir = cfg.model_dir
+                if cfg.eval_type:
+                    cfg.model_dir = os.path.join(cfg.model_dir, cfg.eval_type)
 
+                checkpoint_dir = cfg.model_dir
         import eval
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):

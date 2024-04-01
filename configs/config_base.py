@@ -60,6 +60,7 @@ base_config = D(
     gpu='',
 
     model_dir='',
+    eval_type='',
     pretrained='',
 
     train=train_config,

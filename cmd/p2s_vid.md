@@ -18,12 +18,15 @@
     - [gram       @ resnet-640-lfn](#gram___resnet_640_lfn_)
         - [0_1       @ gram/resnet-640-lfn](#0_1___gram_resnet_640_lf_n_)
             - [len-9       @ 0_1/gram/resnet-640-lfn](#len_9___0_1_gram_resnet_640_lf_n_)
+            - [on-train       @ 0_1/gram/resnet-640-lfn](#on_train___0_1_gram_resnet_640_lf_n_)
             - [len-14-0_2000       @ 0_1/gram/resnet-640-lfn](#len_14_0_2000___0_1_gram_resnet_640_lf_n_)
+            - [on-3000_5000       @ 0_1/gram/resnet-640-lfn](#on_3000_5000___0_1_gram_resnet_640_lf_n_)
             - [len-16-0_2000       @ 0_1/gram/resnet-640-lfn](#len_16_0_2000___0_1_gram_resnet_640_lf_n_)
     - [detrac-non_empty       @ resnet-640-lfn](#detrac_non_empty___resnet_640_lfn_)
-        - [0_19       @ detrac-non_empty/resnet-640-lfn](#0_19___detrac_non_empty_resnet_640_lf_n_)
-            - [on-train       @ 0_19/detrac-non_empty/resnet-640-lfn](#on_train___0_19_detrac_non_empty_resnet_640_lfn_)
-                - [strd-2       @ on-train/0_19/detrac-non_empty/resnet-640-lfn](#strd_2___on_train_0_19_detrac_non_empty_resnet_640_lf_n_)
+        - [0_19-jtr       @ detrac-non_empty/resnet-640-lfn](#0_19_jtr___detrac_non_empty_resnet_640_lf_n_)
+            - [on-train       @ 0_19-jtr/detrac-non_empty/resnet-640-lfn](#on_train___0_19_jtr_detrac_non_empty_resnet_640_lfn_)
+                - [strd-2       @ on-train/0_19-jtr/detrac-non_empty/resnet-640-lfn](#strd_2___on_train_0_19_jtr_detrac_non_empty_resnet_640_lf_n_)
+        - [0_19-len-9       @ detrac-non_empty/resnet-640-lfn](#0_19_len_9___detrac_non_empty_resnet_640_lf_n_)
     - [ipsc-16_53       @ resnet-640-lfn](#ipsc_16_53___resnet_640_lfn_)
         - [on-16_53       @ ipsc-16_53/resnet-640-lfn](#on_16_53___ipsc_16_53_resnet_640_lf_n_)
         - [on-54_126       @ ipsc-16_53/resnet-640-lfn](#on_54_126___ipsc_16_53_resnet_640_lf_n_)
@@ -133,10 +136,16 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 <a id="len_9___0_1_gram_resnet_640_lf_n_"></a>
 #### len-9       @ 0_1/gram/resnet-640-lfn-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1,len-9,batch-2,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn
+<a id="on_train___0_1_gram_resnet_640_lf_n_"></a>
+#### on-train       @ 0_1/gram/resnet-640-lfn-->p2s_vid
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=vid_det,m-resnet_640_gram_only-length-9-stride-1-seq-0_1-batch_2-lfn,_eval_,gram-0_1,len-9,strd-9,batch-2,save-vis-1,dbg-0,dyn-1,dist-0
 
 <a id="len_14_0_2000___0_1_gram_resnet_640_lf_n_"></a>
 #### len-14-0_2000       @ 0_1/gram/resnet-640-lfn-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1-0_2000,len-14,batch-2,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn
+<a id="on_3000_5000___0_1_gram_resnet_640_lf_n_"></a>
+#### on-3000_5000       @ 0_1/gram/resnet-640-lfn-->p2s_vid
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=vid_det,m-resnet_640_gram_only-0_2000-length-14-stride-1-seq-0_1-batch_2-lfn,_eval_,gram-0_1-3000_5000,len-14,strd-14,batch-1,save-vis-1,dbg-0,dyn-1,dist-0
 
 <a id="len_16_0_2000___0_1_gram_resnet_640_lf_n_"></a>
 #### len-16-0_2000       @ 0_1/gram/resnet-640-lfn-->p2s_vid
@@ -144,16 +153,18 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 
 <a id="detrac_non_empty___resnet_640_lfn_"></a>
 ## detrac-non_empty       @ resnet-640-lfn-->p2s_vid
-<a id="0_19___detrac_non_empty_resnet_640_lf_n_"></a>
-### 0_19       @ detrac-non_empty/resnet-640-lfn-->p2s_vid
+<a id="0_19_jtr___detrac_non_empty_resnet_640_lf_n_"></a>
+### 0_19-jtr       @ detrac-non_empty/resnet-640-lfn-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,len-6,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn,jtr
-
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,len-6,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn
-<a id="on_train___0_19_detrac_non_empty_resnet_640_lfn_"></a>
-#### on-train       @ 0_19/detrac-non_empty/resnet-640-lfn-->p2s_vid
-<a id="strd_2___on_train_0_19_detrac_non_empty_resnet_640_lf_n_"></a>
-##### strd-2       @ on-train/0_19/detrac-non_empty/resnet-640-lfn-->p2s_vid
+<a id="on_train___0_19_jtr_detrac_non_empty_resnet_640_lfn_"></a>
+#### on-train       @ 0_19-jtr/detrac-non_empty/resnet-640-lfn-->p2s_vid
+<a id="strd_2___on_train_0_19_jtr_detrac_non_empty_resnet_640_lf_n_"></a>
+##### strd-2       @ on-train/0_19-jtr/detrac-non_empty/resnet-640-lfn-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-2-stride-1-non_empty-seq-0_19-batch_18,detrac-non_empty-0_19,strd-2,batch-12,save-vis-1,dbg-0,dyn-1,dist-0
+
+<a id="0_19_len_9___detrac_non_empty_resnet_640_lf_n_"></a>
+### 0_19-len-9       @ detrac-non_empty/resnet-640-lfn-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,len-9,batch-2,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn
 
 <a id="ipsc_16_53___resnet_640_lfn_"></a>
 ## ipsc-16_53       @ resnet-640-lfn-->p2s_vid
@@ -283,10 +294,8 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-0_15,len-2,strd-1,batch-36,save-vis-1,dbg-0,dyn-1
 <a id="on_54_126___ipsc_16_53_resnet_64_0_"></a>
 ### on-54_126       @ ipsc-16_53/resnet-640-->p2s_vid
-<a id="strd_1___on_54_126_ipsc_16_53_resnet_64_0_"></a>
 `strd-1` 
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-54_126,len-2,strd-1,batch-36,save-vis-1,dbg-0,dyn-1
-<a id="strd_2___on_54_126_ipsc_16_53_resnet_64_0_"></a>
 `strd-2` 
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-54_126,len-2,strd-2,batch-36,save-vis-1,dbg-0,dyn-1
 

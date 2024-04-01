@@ -2,6 +2,11 @@
 
 - [gram       @ tfrecord](#gram___tfrecord_)
     - [0_1       @ gram](#0_1___gram_)
+        - [len-9       @ 0_1/gram](#len_9___0_1_gram_)
+        - [len-14       @ 0_1/gram](#len_14___0_1_gram_)
+            - [0_2000       @ len-14/0_1/gram](#0_2000___len_14_0_1_gra_m_)
+            - [3000_5000       @ len-14/0_1/gram](#3000_5000___len_14_0_1_gra_m_)
+        - [len-16       @ 0_1/gram](#len_16___0_1_gram_)
 - [idot       @ gram](#idot___gram_)
 - [detrac       @ tfrecord](#detrac___tfrecord_)
     - [0_19       @ detrac](#0_19___detrac_)
@@ -10,6 +15,7 @@
         - [len-4       @ 0_19/detrac](#len_4___0_19_detra_c_)
         - [len-6       @ 0_19/detrac](#len_6___0_19_detra_c_)
         - [len-8       @ 0_19/detrac](#len_8___0_19_detra_c_)
+        - [len-9       @ 0_19/detrac](#len_9___0_19_detra_c_)
     - [0_9       @ detrac](#0_9___detrac_)
         - [strd-2       @ 0_9/detrac](#strd_2___0_9_detrac_)
     - [49_68       @ detrac](#49_68___detrac_)
@@ -49,10 +55,23 @@
 # gram       @ tfrecord-->p2s_setup
 <a id="0_1___gram_"></a>
 ## 0_1       @ gram-->p2s_vid_tfrecord
+<a id="len_9___0_1_gram_"></a>
+### len-9       @ 0_1/gram-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:gz:len-9:strd-1
 
-python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:frame-0_2000:gz:len-14:strd-1
+python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:gz:len-9:strd-9
 
+<a id="len_14___0_1_gram_"></a>
+### len-14       @ 0_1/gram-->p2s_vid_tfrecord
+<a id="0_2000___len_14_0_1_gra_m_"></a>
+#### 0_2000       @ len-14/0_1/gram-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:frame-0_2000:gz:len-14:strd-1
+<a id="3000_5000___len_14_0_1_gra_m_"></a>
+#### 3000_5000       @ len-14/0_1/gram-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:frame-3000_5000:gz:len-14:strd-14
+
+<a id="len_16___0_1_gram_"></a>
+### len-16       @ 0_1/gram-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=gram:0_1:frame-0_2000:gz:len-16:strd-1
 
 <a id="idot___gram_"></a>
@@ -79,6 +98,9 @@ python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-6
 <a id="len_8___0_19_detra_c_"></a>
 ### len-8       @ 0_19/detrac-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-8:strd-1
+<a id="len_9___0_19_detra_c_"></a>
+### len-9       @ 0_19/detrac-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-9:strd-1
 
 <a id="0_9___detrac_"></a>
 ## 0_9       @ detrac-->p2s_vid_tfrecord
