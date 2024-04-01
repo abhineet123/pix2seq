@@ -106,8 +106,11 @@ def get_ipsc_video_data():
         length=2,
 
         train_stride=1,
+        train_sample=1,
         train_frame_gaps=[],
+
         eval_stride=1,
+        eval_sample=1,
         eval_frame_gaps=[],
         **_shared_dataset_config
     )
@@ -164,6 +167,15 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 stride_suffix = f'stride-{stride}'
                 if stride_suffix not in name:
                     name = f'{name}-{stride_suffix}'
+            try:
+                sample = ds_cfg[f'{mode}_sample']
+            except KeyError:
+                sample = ds_cfg[f'{mode}_sample'] = ds_cfg[f'sample']
+
+            if sample:
+                sample_suffix = f'sample-{sample}'
+                if sample_suffix not in name:
+                    name = f'{name}-{sample_suffix}'
 
         suffix = ds_cfg[f'{mode}_suffix']
         """suffix is already in name when the latter is loaded from a trained model config.json"""
