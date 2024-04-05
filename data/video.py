@@ -126,9 +126,10 @@ def process_instance_id_map(instance_id_map, order, max_instances_per_image):
         assert order == 'none', 'Unknown order {}'.format(order)
     return instance_id_map
 
+from data import tf_record
 
 @dataset_lib.DatasetRegistry.register('davis_vps')
-class DavisDataset(dataset_lib.TFRecordDataset):
+class DavisDataset(tf_record.TFRecordDataset):
     """The DAVIS 2017 video object segmentation dataset."""
 
     VIDEO_NAMES = DAVIS_VIDEO_NAMES
@@ -204,9 +205,10 @@ class DavisDataset(dataset_lib.TFRecordDataset):
         new_example['label_map'] = tf.concat([tf.zeros_like(segs), segs], -1)
         return new_example
 
+from data import tf_record
 
 @dataset_lib.DatasetRegistry.register('kittistep_vps')
-class KittiStepDataset(dataset_lib.TFRecordDataset):
+class KittiStepDataset(tf_record.TFRecordDataset):
     """The KITTI-STEP dataset."""
 
     def get_feature_map(self, training):

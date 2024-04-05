@@ -90,11 +90,8 @@ def vis_json_ann(video, object_anns, category_id_to_name_map, image_dir, is_vide
         cv2.waitKey(100)
 
 
-def debug_image_transforms(train_transforms, batched_examples, model_dir, vis):
-    batch_size = batched_examples["image"].shape[0]
-    proc_examples = {
-        k: [] for k, v in batched_examples.items()
-    }
+def debug_image_pipeline(dataset, train_transforms, batched_examples, model_dir, vis, training):
+    batch_size = batched_examples.shape[0]
 
     from datetime import datetime
 
@@ -103,10 +100,19 @@ def debug_image_transforms(train_transforms, batched_examples, model_dir, vis):
 
     os.makedirs(vis_img_dir, exist_ok=True)
 
+    for single_example in batched_examples:
+        single_example = dataset.debug_pipeline(
+            single_example, training)
+
+    proc_examples = {
+        k: [] for k, v in batched_examples.items()
+    }
+
     for i in range(batch_size):
         single_example = {
             k: v[i, ...] for k, v in batched_examples.items()
         }
+
         proc_images = dict(
             orig=single_example["image"]
         )

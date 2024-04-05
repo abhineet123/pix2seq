@@ -47,7 +47,7 @@ def build_tasks_and_datasets(
             t_name_to_t_config_map[task_config.name].weight += task_config.weight
         t_name_to_weights_map[task_config.name].append(task_config.weight)
         t_name_to_ds_config_map[task_config.name].append(ds_config)
-        
+
     ds = None
 
     # For each task, create the Task instance and the dataset instance.
@@ -68,6 +68,8 @@ def build_tasks_and_datasets(
             task_ds_config.dataset = ds_config
             ds_fn = dataset_lib.DatasetRegistry.lookup(ds_config.name)
             ds = ds_fn(task_ds_config)
+            if cfg.debug == 2:
+                task.dataset = ds
             input_fn = ds.pipeline(
                 process_single_example=task.preprocess_single,
                 global_batch_size=(

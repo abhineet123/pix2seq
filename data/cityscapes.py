@@ -16,10 +16,11 @@
 """Cityscapes dataset."""
 from data import dataset as dataset_lib
 import tensorflow as tf
+from data import tf_record
 
 
 @dataset_lib.DatasetRegistry.register('cityscapes_panoptic')
-class CityscapesPanopticDataset(dataset_lib.TFRecordDataset):
+class CityscapesPanopticDataset(tf_record.TFRecordDataset):
   """Cityscapes panoptic dataset."""
 
   def get_feature_map(self, training):

@@ -361,7 +361,7 @@ def build_response_seq_from_video_bboxes(
     different combinations of random, fake and real class labels apparently 
     created in case something other than the real labels is required 
     according to the class_label_corruption Parameter
-    
+
     class_label_corruption=rand_n_fake_cls by default  
     """
     rand_cls = vocab.BASE_VOCAB_SHIFT + tf.random.uniform(
@@ -388,7 +388,7 @@ def build_response_seq_from_video_bboxes(
     i.e. if class_label_corruption=none
     otherwise, some or all the real labels are randomly replaced by noise label to 
     generate corrupted labels that are used as input sequence
-    
+
     The rationale for corrupting the input sequences might be that we want the network to produce 
     the right class labels in the subsequent outputs even if the previous one was incorrect 
     So we do not want to condition the Generation of class output In the next tokens Lee to is strongly on 
@@ -402,12 +402,12 @@ def build_response_seq_from_video_bboxes(
 
     """    
     noise and real bbox coord tokens have weights 1 and 0 respectively
-    
+
     real bbox class tokens have weight 1
     noise bbox class tokens have weight noise_bbox_weight 
-    
+
     noise_bbox_weight = 1.0 when training with fake objects
-    
+
     We don't care about the coordinates of fake boxes but we do care about their class   
     """
     bbox_weight = tf.tile(is_real, [1, 1, int(bboxes.shape[-1])])

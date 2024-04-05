@@ -16,9 +16,9 @@
 import utils
 import vocab
 from data import dataset as dataset_lib
+from data import tf_record
 from data import decode_utils
 import tensorflow as tf
-from data import data_utils
 
 
 def _xy_to_yx(tensor):
@@ -35,9 +35,8 @@ def _xy_to_yx(tensor):
     t = tf.stack([t[:, :, 1], t[:, :, 0]], axis=2)
     return tf.reshape(t, [-1, max_points * 2])
 
-
 @dataset_lib.DatasetRegistry.register('ipsc_object_detection')
-class IPSCObjectDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
+class IPSCObjectDetectionTFRecordDataset(tf_record.TFRecordDataset):
     """IPSC object detection dataset."""
 
     def get_feature_map(self, training):
@@ -75,6 +74,9 @@ class IPSCObjectDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
         width = example['image/width']
         image = decode_utils.decode_image(example)
 
+        orig_image_size = tf.shape(image)[:2]
+        # orig_image_size2 = [height, width]
+
         # target_size = self.task_config.image_size
         target_size = self.config.target_size
 
@@ -85,9 +87,13 @@ class IPSCObjectDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
 
         resized_image_size = tf.shape(image)[:2]
 
+        # tf.print(f'orig_image_size: {orig_image_size}')
+        # tf.print(f'orig_image_size2: {orig_image_size2}')
+        # tf.print(f'resized_image_size: {resized_image_size}')
+
         new_example = {
             'image': image,
-            'orig_image_size': [height, width],
+            'orig_image_size': orig_image_size,
             'image/id': img_id,
             'image/resized': resized_image_size,
         }
@@ -113,7 +119,7 @@ class IPSCObjectDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
 
 
 @dataset_lib.DatasetRegistry.register('ipsc_instance_segmentation')
-class IPSCInstanceSegmentationTFRecordDataset(dataset_lib.TFRecordDataset):
+class IPSCInstanceSegmentationTFRecordDataset(tf_record.TFRecordDataset):
     """Coco instance segmentation dataset."""
 
     def get_feature_map(self, unused_training):

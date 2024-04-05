@@ -8,11 +8,12 @@ import ml_collections
 
 import registry
 import tensorflow as tf
-import tensorflow_datasets as tfds
 
 DatasetRegistry = registry.Registry()
 
 num_parallel_calls = tf.data.experimental.AUTOTUNE
+
+
 # num_parallel_calls = None
 
 
@@ -28,6 +29,7 @@ def mix_datasets(cfg, input_fns, weights):
     Returns:
       a tf.data.Dataset instance.
     """
+
     def input_fn(input_context):
         dses = []
         for ifn in input_fns:
@@ -36,7 +38,6 @@ def mix_datasets(cfg, input_fns, weights):
         return mixed_ds
 
     if cfg.debug:
-        exit()
         return input_fn(input_context=None)
 
     return tf.distribute.get_strategy().distribute_datasets_from_function(input_fn)
@@ -78,7 +79,7 @@ class Dataset(abc.ABC):
         return True
 
     def pipeline(self,
-                 process_single_example: Callable[[tf.data.Dataset, int, bool],
+                 process_single_example: Callable[[tf.data.Dataset, int, bool, bool],
                  tf.data.Dataset],
                  global_batch_size: int,
                  training: bool,
@@ -96,11 +97,10 @@ class Dataset(abc.ABC):
           An input_fn which generates a tf.data.Dataset instance.
         """
         config = self.config
+        config_all = self.config_all
 
         def input_fn(input_context):
             dataset = self.load_dataset(input_context, training)
-            if config.cache_dataset:
-                dataset = dataset.cache()
 
             if input_context:
                 batch_size = input_context.get_per_replica_batch_size(global_batch_size)
@@ -110,46 +110,59 @@ class Dataset(abc.ABC):
             else:
                 batch_size = global_batch_size
 
-            if training:
-                options = tf.data.Options()
-                options.deterministic = False
-                options.experimental_slack = True
-                dataset = dataset.with_options(options)
-                buffer_size = config.get('buffer_size', 0)
-                if buffer_size <= 0:
-                    buffer_size = 10 * batch_size
-                dataset = dataset.shuffle(buffer_size)
-                dataset = dataset.repeat()
+            if config_all.debug != 2:
+                if config.cache_dataset:
+                    dataset = dataset.cache()
 
-            dataset = dataset.map(
-                lambda x: self.parse_example(x, training),
-                num_parallel_calls=num_parallel_calls
-            )
+                if training:
+                    options = tf.data.Options()
+                    options.deterministic = False
+                    options.experimental_slack = True
+                    dataset = dataset.with_options(options)
+                    buffer_size = config.get('buffer_size', 0)
+                    if buffer_size <= 0:
+                        buffer_size = 10 * batch_size
+                    dataset = dataset.shuffle(buffer_size)
+                    dataset = dataset.repeat()
 
-            dataset = dataset.filter(
-                lambda x: self.filter_example(x, training)
-            )
+                dataset = dataset.map(
+                    lambda x: self.parse_example(x, training),
+                    num_parallel_calls=num_parallel_calls
+                )
 
-            dataset = dataset.map(
-                lambda x: self.extract(x, training),
-                num_parallel_calls=num_parallel_calls
-            )
+                dataset = dataset.filter(
+                    lambda x: self.filter_example(x, training)
+                )
+
+                dataset = dataset.map(
+                    lambda x: self.extract(x, training),
+                    num_parallel_calls=num_parallel_calls
+                )
             if process_single_example:
                 dataset = process_single_example(
                     dataset, config.batch_duplicates, training, validation)
 
             # TODO(b/181662974): Revert this and support non-even batch sizes.
             # dataset = dataset.batch(batch_size, drop_remainder=training)
+
             dataset = dataset.padded_batch(batch_size, drop_remainder=training or validation)
-            if config.batch_duplicates > 1 and training:
-                dataset = dataset.map(
-                    self._flatten_dims,
-                    num_parallel_calls=num_parallel_calls
-                )
-            dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+
+            if config_all.debug != 2:
+                if config.batch_duplicates > 1 and training:
+                    dataset = dataset.map(
+                        self._flatten_dims,
+                        num_parallel_calls=num_parallel_calls
+                    )
+                dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
             return dataset
 
         return input_fn
+
+    def debug_pipeline(self, x, training):
+        x = self.parse_example(x, training)
+        x = self.extract(x, training)
+        # x = self._flatten_dims(x)
+        return x
 
     def _flatten_dims(self, example):
         """Flatten first 2 dims when batch is independently duplicated."""
@@ -172,133 +185,3 @@ class Dataset(abc.ABC):
     @abc.abstractmethod
     def num_eval_examples(self):
         """Number of eval examples."""
-
-
-class TFDSDataset(Dataset):
-    """A dataset created from a TFDS dataset.
-
-      Each example is a dictionary, but the fields may be different for each
-      dataset.
-
-      Each task would have a list of required fields (e.g. bounding boxes for
-      object detection). When a dataset is used for a specific task, it should
-      contain all the fields required by that task.
-    """
-
-    def __init__(self, config: ml_collections.ConfigDict):
-        """Constructs the dataset."""
-        super().__init__(config)
-        self.builder = tfds.builder(self.config.tfds_name,
-                                    data_dir=self.config.get('data_dir', None))
-        self.builder.download_and_prepare()
-        self.allowed_tasks = []
-
-    def load_dataset(self, input_context, training):
-        """Load tf.data.Dataset from TFDS."""
-        split = self.config.train_split if training else self.config.eval_split
-        # For TFDS, pass input_context using read_config to make TFDS read
-        # different parts of the dataset on different workers.
-        read_config = tfds.ReadConfig(input_context=input_context)
-        if isinstance(split, list):
-            dataset = self.builder.as_dataset(
-                split=split[0], shuffle_files=training, read_config=read_config)
-            for i in range(1, len(split)):
-                dataset.concatenate(self.builder.as_dataset(
-                    split=split[i], shuffle_files=training, read_config=read_config))
-        else:
-            dataset = self.builder.as_dataset(
-                split=split, shuffle_files=training, read_config=read_config)
-        return dataset
-
-    @property
-    def num_train_examples(self):
-        return self.builder.info.splits[self.config.train_split].num_examples
-
-    @property
-    def num_eval_examples(self):
-        return self.builder.info.splits[
-            self.config.eval_split].num_examples if not self.task_config.get(
-            'unbatch', False) else None
-
-
-class TFRecordDataset(Dataset):
-    """A dataset created from tfrecord files."""
-
-    def __init__(self, config: ml_collections.ConfigDict):
-        """Constructs the dataset."""
-        super().__init__(config)
-        self.dataset_cls = tf.data.TFRecordDataset
-
-    def load_dataset(self, input_context, training):
-        """Load tf.data.Dataset from TFRecord files."""
-        if training or self.config.eval_split == 'train':
-            file_pattern = self.config.train_file_pattern
-        else:
-            file_pattern = self.config.eval_file_pattern
-
-        db_type='training' if training else 'evaluation'
-        print(f'loading {db_type} tfrecord dataset from  {file_pattern}')
-
-        dataset = tf.data.Dataset.list_files(
-            file_pattern,
-            shuffle=training,
-            # shuffle=False,
-        )
-        dataset = dataset.interleave(
-            self.dataset_cls,
-            cycle_length=32,
-            deterministic=not training,
-            num_parallel_calls=num_parallel_calls,
-            # deterministic=True,
-            # num_parallel_calls=0,
-        )
-        return dataset
-
-    @abc.abstractmethod
-    def get_feature_map(self, training):
-        """Returns feature map(s) for parsing the TFExample.
-
-        Returns a single feature map (a dict) to parse a TFEXample.
-        Returns a tuple of (context feature map, sequence feature map) to parse a
-        TFSequenceExample. Context features are non-sequence features, i.e.
-        independent of time/frame. Sequence features have time/frame dimension.
-
-        Args:
-          training: `bool` of training vs eval mode.
-        """
-
-    def parse_example(self, example, training):
-        """Parse the serialized example into a dictionary of tensors.
-
-        Args:
-          example: the serialized tf.train.Example or tf.train.SequenceExample.
-          training: `bool` of training vs eval mode.
-
-        Returns:
-          a dictionary of feature name to tensors.
-        """
-        feature_map = self.get_feature_map(training)
-        if isinstance(feature_map, dict):
-            example = tf.io.parse_single_example(example, feature_map)
-        else:
-            context_features, sequence_features = feature_map
-            example, sequence = tf.io.parse_single_sequence_example(
-                example, context_features, sequence_features)
-            example.update(sequence)
-
-        for k in example:
-            if isinstance(example[k], tf.SparseTensor):
-                if example[k].dtype == tf.string:
-                    example[k] = tf.sparse.to_dense(example[k], default_value='')
-                else:
-                    example[k] = tf.sparse.to_dense(example[k], default_value=0)
-        return example
-
-    @property
-    def num_train_examples(self):
-        return self.config.train_num_examples
-
-    @property
-    def num_eval_examples(self):
-        return self.config.eval_num_examples if not self.task_config.get(
-            'unbatch', False) else None

@@ -42,6 +42,7 @@ class Task(abc.ABC):
     def __init__(self,
                  config: ml_collections.ConfigDict):
         self.config = config
+        self.dataset = None
 
         train_transforms = config.task.get('train_transforms', [])
         eval_transforms = config.task.get('eval_transforms', [])

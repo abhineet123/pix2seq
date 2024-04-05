@@ -26,6 +26,7 @@ import numpy as np
 import utils
 import vocab
 from data import dataset as dataset_lib
+from data import tf_record
 from data import decode_utils
 import tensorflow as tf
 
@@ -46,7 +47,7 @@ def _xy_to_yx(tensor):
 
 
 @dataset_lib.DatasetRegistry.register('coco/2017_object_detection')
-class CocoObjectDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
+class CocoObjectDetectionTFRecordDataset(tf_record.TFRecordDataset):
   """Coco object detection dataset."""
 
   def get_feature_map(self, training):
@@ -95,9 +96,10 @@ class CocoObjectDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
     })
     return new_example
 
+from data import tf_record
 
 @dataset_lib.DatasetRegistry.register('coco/2017_instance_segmentation')
-class CocoInstanceSegmentationTFRecordDataset(dataset_lib.TFRecordDataset):
+class CocoInstanceSegmentationTFRecordDataset(tf_record.TFRecordDataset):
   """Coco instance segmentation dataset."""
 
   def get_feature_map(self, unused_training):
@@ -167,9 +169,11 @@ class CocoInstanceSegmentationTFRecordDataset(dataset_lib.TFRecordDataset):
     })
     return new_example
 
+from data import tf_record
+
 
 @dataset_lib.DatasetRegistry.register('coco/2017_keypoint_detection')
-class CocoKeypointDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
+class CocoKeypointDetectionTFRecordDataset(tf_record.TFRecordDataset):
   """Coco keypoint detection dataset."""
 
   def get_feature_map(self, training):
@@ -263,9 +267,10 @@ class CocoKeypointDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
     })
     return new_example
 
+from data import tf_record
 
 @dataset_lib.DatasetRegistry.register('coco/2017_captioning')
-class CocoCaptioningTFRecordDataset(dataset_lib.TFRecordDataset):
+class CocoCaptioningTFRecordDataset(tf_record.TFRecordDataset):
   """Coco captioning dataset."""
 
   def get_feature_map(self, training):

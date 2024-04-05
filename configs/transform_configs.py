@@ -89,7 +89,7 @@ def get_object_detection_eval_transforms(
         image_size: Tuple[int, int],
         max_instances_per_image: int):
     return [
-        D(name='record_original_image_size'),
+        # D(name='record_original_image_size'),
         D(name='resize_image',
           inputs=['image'],
           antialias=[True],
@@ -216,7 +216,7 @@ def get_instance_segmentation_train_transforms(
                               'scores']
     object_coordinate_keys = ['bbox', 'polygon']
     return [
-        D(name='record_original_image_size'),
+        # D(name='record_original_image_size'),
         D(name='convert_image_dtype_float32',
           inputs=['image']),
         D(name='filter_invalid_objects',
@@ -259,7 +259,7 @@ def get_instance_segmentation_eval_transforms(
                               'scores']
     object_coordinate_keys = ['bbox', 'polygon']
     return [
-        D(name='record_original_image_size'),
+        # D(name='record_original_image_size'),
         D(name='reorder_object_instances',
           inputs=instance_feature_names,
           order='scores'),
@@ -290,7 +290,7 @@ def get_keypoint_detection_train_transforms(
                               'num_keypoints', 'scores']
     object_coordinate_keys = ['bbox', 'keypoints']
     return [
-        D(name='record_original_image_size'),
+        # D(name='record_original_image_size'),
         D(name='filter_invalid_objects',
           inputs=instance_feature_names,
           filter_keys=['is_crowd']),
@@ -333,7 +333,7 @@ def get_keypoint_detection_eval_transforms(
                               'num_keypoints', 'scores']
     object_coordinate_keys = ['bbox', 'keypoints']
     return [
-        D(name='record_original_image_size'),
+        # D(name='record_original_image_size'),
         D(name='reorder_object_instances',
           inputs=instance_feature_names,
           order='random'),
@@ -401,7 +401,7 @@ def get_panoptic_segmentation_train_transforms(
         color_jitter_strength: float):
     """Train transforms for panoptic segmentation."""
     transforms = [
-        D(name='record_original_image_size'),
+        # D(name='record_original_image_size'),
         D(name='scale_jitter',
           inputs=['image', 'label_map'],
           target_size=image_size,
@@ -433,7 +433,7 @@ def get_panoptic_segmentation_train_transforms(
 
 def get_panoptic_segmentation_eval_transforms(image_size: Tuple[int, int]):
     return [
-        D(name='record_original_image_size'),
+        # D(name='record_original_image_size'),
         # This is needed if coco_metrics.gt_annotations_path is missing, e.g.
         # for cityscapes, such that we need to read groundtruth label map from
         # the example.

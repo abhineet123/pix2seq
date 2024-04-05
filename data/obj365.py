@@ -19,10 +19,11 @@ import ml_collections
 from data import dataset as dataset_lib
 from data import decode_utils
 import tensorflow as tf
+from data import tf_record
 
 
 @dataset_lib.DatasetRegistry.register('obj365')
-class Obj365Dataset(dataset_lib.TFRecordDataset):
+class Obj365Dataset(tf_record.TFRecordDataset):
   """Dataset for Obj365 tasks."""
 
   def __init__(self, config: ml_collections.ConfigDict):

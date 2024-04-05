@@ -3,12 +3,13 @@ import os.path
 from data import dataset as dataset_lib
 from data import decode_utils
 import utils
+from data import tf_record
 
 import tensorflow as tf
 
 
 @dataset_lib.DatasetRegistry.register('ipsc_video_detection')
-class IPSCVideoDetectionTFRecordDataset(dataset_lib.TFRecordDataset):
+class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
 
     def parse_example(self, example, training):
         """Parse the serialized example into a dictionary of tensors.
