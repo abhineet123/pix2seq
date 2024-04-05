@@ -77,7 +77,7 @@ def build_tasks_and_datasets(
                 validation=validation,
             )
             input_fns.append(input_fn)
-        mixed_ds = dataset_lib.mix_datasets(input_fns, ds_weights)
+        mixed_ds = dataset_lib.mix_datasets(cfg, input_fns, ds_weights)
         mixed_datasets.append(mixed_ds)
 
     return tasks, mixed_datasets, ds
