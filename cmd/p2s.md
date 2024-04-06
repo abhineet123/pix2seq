@@ -132,7 +132,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-batch_18-jtr-res_1280,_eval_,ipsc-54_126,batch-16,save-vis-1
 <a id="acc___on_g2_54_126_ipsc_16_53_jtr_res_1280_resnet_64_0_"></a>
 #### acc       @ on-g2_54_126/ipsc-16_53-jtr-res-1280/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-batch_18-jtr-res_1280,_eval_,ipsc-54_126,batch-16,save-vis-1,acc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-batch_18-jtr-res_1280,_eval_,ipsc-54_126,batch-16,save-vis-1,acc
 
 <a id="ipsc_0_37_jtr_res_1280___resnet_640_"></a>
 ## ipsc-0_37-jtr-res-1280       @ resnet-640-->p2s
