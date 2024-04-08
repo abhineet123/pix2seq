@@ -33,6 +33,8 @@
             - [sample-8       @ len-2/54_126/ipsc](#sample_8___len_2_54_126_ips_c_)
         - [len-3       @ 54_126/ipsc](#len_3___54_126_ips_c_)
         - [len-6       @ 54_126/ipsc](#len_6___54_126_ips_c_)
+            - [sample-8       @ len-6/54_126/ipsc](#sample_8___len_6_54_126_ips_c_)
+            - [sample-4       @ len-6/54_126/ipsc](#sample_4___len_6_54_126_ips_c_)
 - [mnist       @ tfrecord](#mnist___tfrecord_)
     - [640-1       @ mnist](#640_1___mnis_t_)
         - [len-2       @ 640-1/mnist](#len_2___640_1_mnis_t_)
@@ -138,6 +140,7 @@ python3 data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1:
 <a id="len_2___16_53_ipsc_"></a>
 ### len-2       @ 16_53/ipsc-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-2:strd-1
+python3 data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-2:strd-2
 <a id="len_3___16_53_ipsc_"></a>
 ### len-3       @ 16_53/ipsc-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-3:strd-1
@@ -146,7 +149,6 @@ python3 data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-3:
 ### len-6       @ 16_53/ipsc-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-6:strd-1
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-6:strd-6
-
 
 <a id="0_37___ipsc_"></a>
 ## 0_37       @ ipsc-->p2s_vid_tfrecord
@@ -172,6 +174,12 @@ python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-3
 ### len-6       @ 54_126/ipsc-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-6:strd-1
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-6:strd-6
+<a id="sample_8___len_6_54_126_ips_c_"></a>
+#### sample-8       @ len-6/54_126/ipsc-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-6:strd-6:sample-8
+<a id="sample_4___len_6_54_126_ips_c_"></a>
+#### sample-4       @ len-6/54_126/ipsc-->p2s_vid_tfrecord
+python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-6:strd-6:sample-4
 
 
 <a id="mnist___tfrecord_"></a>

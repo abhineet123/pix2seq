@@ -244,7 +244,7 @@ def main(unused_argv):
             _, val_datasets, val_dataset = config.build_tasks_and_datasets(
                 cfg, training=False, validation=True, task_lib=task_lib)
 
-            val_steps = utils.get_eval_steps(
+            val_steps = utils.get_val_steps(
                 val_dataset, cfg.eval.steps, cfg.eval.batch_size)
 
             print()

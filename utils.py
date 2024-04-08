@@ -605,6 +605,13 @@ def get_train_steps(dataset, train_steps, train_epochs, train_batch_size):
     return train_steps
 
 
+def get_val_steps(dataset, eval_steps, eval_batch_size):
+    """Determine the number of val steps."""
+    num_eval_examples = dataset.num_eval_examples
+    if not eval_steps and num_eval_examples:
+        eval_steps = int(math.floor(num_eval_examples / eval_batch_size))
+    return eval_steps
+
 def get_eval_steps(dataset, eval_steps, eval_batch_size):
     """Determine the number of eval steps."""
     num_eval_examples = dataset.num_eval_examples
