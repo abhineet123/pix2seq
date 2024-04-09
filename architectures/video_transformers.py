@@ -342,6 +342,8 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
         self.output_ln = tf.keras.layers.LayerNormalization(
             epsilon=1e-6, name='ouput_ln')
 
+        self.built = False
+
     def ckpt_name(self):
         dataset = 'K400'  # K400, K600,, SSV2
         pretrained_dataset = 'IN1K'  # 'IN1K', 'IN22K', 'K400'
@@ -365,6 +367,9 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
         return checkpoint_name
 
     def call(self, images, training):
+        if not self.built:
+            model = self.backbone.build_graph()
+            self.built=True
         tokens = self.backbone(images, training=training)
 
         bsz, h, w, num_channels = get_shape(tokens)

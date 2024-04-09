@@ -181,7 +181,6 @@ python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-6
 #### sample-4       @ len-6/54_126/ipsc-->p2s_vid_tfrecord
 python3 data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-6:strd-6:sample-4
 
-
 <a id="mnist___tfrecord_"></a>
 # mnist       @ tfrecord-->p2s_setup
 <a id="640_1___mnis_t_"></a>

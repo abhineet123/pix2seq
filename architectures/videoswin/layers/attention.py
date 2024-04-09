@@ -1,8 +1,6 @@
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
 
-class TFWindowAttention3D(keras.layers.Layer):
+class TFWindowAttention3D(tf.keras.layers.Layer):
     """ Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
     Args:
@@ -37,10 +35,25 @@ class TFWindowAttention3D(keras.layers.Layer):
         self.scale = qk_scale or head_dim ** -0.5
 
         # layers
-        self.qkv = layers.Dense(dim * 3, use_bias=qkv_bias)
-        self.attn_drop = layers.Dropout(attn_drop)
-        self.proj = layers.Dense(dim)
-        self.proj_drop = layers.Dropout(proj_drop)
+        self.qkv = tf.keras.layers.Dense(dim * 3, use_bias=qkv_bias)
+        self.attn_drop = tf.keras.layers.Dropout(attn_drop)
+        self.proj = tf.keras.layers.Dense(dim)
+        self.proj_drop = tf.keras.layers.Dropout(proj_drop)
+
+        self.relative_position_bias_table = self.add_weight(
+            shape=(
+                (2 * self.window_size[0] - 1) *
+                (2 * self.window_size[1] - 1) *
+                (2 * self.window_size[2] - 1),
+                self.num_heads,
+            ),
+            initializer="zeros",
+            trainable=True,
+            name="relative_position_bias_table",
+        )
+        self.relative_position_index = self.get_relative_position_index(
+            self.window_size[0], self.window_size[1], self.window_size[2]
+        )
         
     def get_relative_position_index(self, window_depth, window_height, window_width):
         y_y, z_z, x_x = tf.meshgrid(
@@ -56,23 +69,8 @@ class TFWindowAttention3D(keras.layers.Layer):
         relative_coords = tf.stack([z_z, x_x, y_y], axis=-1)
         return tf.reduce_sum(relative_coords, axis=-1)
 
-    def build(self, input_shape):
-        self.relative_position_bias_table = self.add_weight(
-            shape=(
-                (2 * self.window_size[0] - 1) * 
-                (2 * self.window_size[1] - 1) * 
-                (2 * self.window_size[2] - 1),
-                self.num_heads,
-            ),
-            initializer="zeros",
-            trainable=True,
-            name="relative_position_bias_table",
-        )
-        self.relative_position_index = self.get_relative_position_index(
-            self.window_size[0], self.window_size[1], self.window_size[2]
-        )
-        super().build(input_shape)
-
+    # def build(self, input_shape):
+    #     super().build(input_shape)
 
     def call(self, x, mask=None, return_attns=False, training=None):
         input_shape = tf.shape(x)

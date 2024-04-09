@@ -29,6 +29,7 @@ class TFBasicLayer(keras.layers.Layer):
 
     def __init__(
             self,
+            layer_id,
             length,
             patch_size,
             dim,
@@ -46,6 +47,7 @@ class TFBasicLayer(keras.layers.Layer):
             **kwargs
     ):
         super().__init__(**kwargs)
+        self.layer_id = layer_id
         self.length = length
         self.patch_size = patch_size
 
@@ -56,6 +58,8 @@ class TFBasicLayer(keras.layers.Layer):
         # build blocks
         self.blocks = [
             TFSwinTransformerBlock3D(
+                layer_id=layer_id,
+                depth_id=i,
                 length=length,
                 patch_size=patch_size,
                 dim=dim,
@@ -91,12 +95,23 @@ class TFBasicLayer(keras.layers.Layer):
         # if input_shape[1] is None:
         #     input_shape[1] = self.length
 
+        x_size = list(input_shape[1:-1])
+
+        if x_size[0] is None:
+            if self.length == self.patch_size[0]:
+                n_channels = 1
+            else:
+                raise AssertionError('Channel size resolution is only supported for '
+                                     'matching patch sizes')
+
+            x_size[0] = n_channels
+
         window_size, shift_size = get_window_size(
-            input_shape[1:-1], self.window_size, self.shift_size
+            x_size, self.window_size, self.shift_size
         )
-        Dp = self.compute_dim_padded(input_shape[1], window_size[0])
-        Hp = self.compute_dim_padded(input_shape[2], window_size[1])
-        Wp = self.compute_dim_padded(input_shape[3], window_size[2])
+        Dp = self.compute_dim_padded(x_size[0], window_size[0])
+        Hp = self.compute_dim_padded(x_size[1], window_size[1])
+        Wp = self.compute_dim_padded(x_size[2], window_size[2])
         self.attn_mask = tf_compute_mask(
             Dp, Hp, Wp, window_size, shift_size
         )
@@ -127,9 +142,9 @@ class TFBasicLayer(keras.layers.Layer):
                     training=training
                 )
 
-        x = tf.reshape(
-            x, [B, D, H, W, -1]
-        )
+        # x = tf.reshape(
+        #     x, [B, D, H, W, -1]
+        # )
 
         if self.downsample is not None:
             x = self.downsample(x)

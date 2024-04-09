@@ -120,20 +120,18 @@ def main(unused_argv):
     #     cfg.debug = 1
     #     cfg.dist = 0
 
-    import sys
-
-    gettrace = getattr(sys, 'gettrace', None)
-
-    if not cfg.debug:
-        if gettrace is None:
-            print('No sys.gettrace')
-        elif gettrace():
-            print('running in pycharm debugger')
-            cfg.debug = 1
-            cfg.eager = 1
-            cfg.dyn_ram = 1
-            cfg.eval.profile = 1
-            cfg.dist = 0
+    # if not cfg.debug:
+    #     import sys
+    #     gettrace = getattr(sys, 'gettrace', None)
+    #     if gettrace is None:
+    #         print('No sys.gettrace')
+    #     elif gettrace():
+    #         print('running in pycharm debugger')
+    #         cfg.debug = 1
+    #         cfg.eager = 1
+    #         cfg.dyn_ram = 1
+    #         cfg.eval.profile = 1
+    #         cfg.dist = 0
 
     # if cfg.debug:
     #     cfg.dist = 0

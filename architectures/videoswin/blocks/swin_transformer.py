@@ -30,6 +30,8 @@ class TFSwinTransformerBlock3D(keras.layers.Layer):
 
     def __init__(
             self,
+            layer_id,
+            depth_id,
             length,
             patch_size,
             dim,
@@ -47,6 +49,8 @@ class TFSwinTransformerBlock3D(keras.layers.Layer):
             **kwargs
     ):
         super().__init__(**kwargs)
+        self.a__layer_id = layer_id
+        self.a__depth_id = depth_id
         self.length = length
         self.patch_size = patch_size
         self.dim = dim
@@ -85,6 +89,8 @@ class TFSwinTransformerBlock3D(keras.layers.Layer):
         # input_shape = list(input_shape)
         # if input_shape[1] is None:
         #     input_shape[1] = self.length
+
+        module_id = (self.a__layer_id, self.a__depth_id)
 
         x_size = list(input_shape[1:-1])
 
