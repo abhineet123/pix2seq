@@ -188,7 +188,7 @@ def add_vis_pos_emb(self,
                     initializer=None,
                     return_only=False,
                     normalization_max=6.2831852,
-                    n_images=1,
+                    n_channels=1,
                     ):
     """Add vis_pos_emb variable/tensor to model instance referenced by `self`."""
     if name_prefix is None:
@@ -197,21 +197,20 @@ def add_vis_pos_emb(self,
         initializer = get_variable_initializer()
 
     if pos_encoding == 'learned_3d':
-        assert n_images > 1, "n_images must be > 1 for 3d positional encoding"
+        assert n_channels > 1, "n_channels must be > 1 for 3d positional encoding"
         vis_pos_emb = self.add_weight(
-            shape=(n_images, n_rows * n_cols, dim), initializer=initializer,
+            shape=(n_channels, n_rows * n_cols, dim), initializer=initializer,
             name='%s/vis_pos_embedding' % name_prefix)
     elif pos_encoding == 'sin_cos_3d':
         raise AssertionError('3D sin_cos encoding is not supported yet')
         # sin_cos = get_3d_position_codes(
         #     n_rows, n_cols, n_images, dim, normalization_max=normalization_max)
     elif pos_encoding == 'learned':
-        assert n_images == 1, "n_images must be 1 for 2d learned encoding"
         vis_pos_emb = self.add_weight(
-            shape=(n_rows * n_cols, dim), initializer=initializer,
+            shape=(n_channels * n_rows * n_cols, dim), initializer=initializer,
             name='%s/vis_pos_embedding' % name_prefix)
     elif pos_encoding == 'sin_cos':
-        assert n_images == 1, "n_images must be 1 for 2d sin_cos encoding"
+        assert n_channels == 1, "n_channels must be 1 for 2d sin_cos encoding"
         if n_rows == 1 or n_cols == 1:
             sin_cos = get_1d_position_codes(
                 n_rows * n_cols, dim, normalization_max=normalization_max)
@@ -900,7 +899,8 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
         return logits
 
     def infer(self, prompt, encoded, max_seq_len=None,
-              temperature=1.0, top_k=1, top_p=1.0, sampling_callback=None):
+              temperature=1.0, top_k=1, top_p=1.0,
+              sampling_callback=None, training=False):
         bsz, prompt_len = get_shape(prompt)
         seq_len = self.max_seq_len if max_seq_len is None else max_seq_len
         seq_pos_emb = tf.expand_dims(self.seq_pos_emb, 0)
@@ -921,22 +921,22 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
                 unless it was to be called with ste=0 without is_prompt which doesn't seem to be the case either
                 """
                 assert step == 0, "step must be 0 for is_prompt"
-                x = tf.gather(inp_embedding, tf.transpose(tokens[:prompt_len]))
-                x = x + seq_pos_emb[:, :prompt_len]  # (bsz, prompt_len, d)
+                token_emb = tf.gather(inp_embedding, tf.transpose(tokens[:prompt_len]))
+                token_emb = token_emb + seq_pos_emb[:, :prompt_len]  # (bsz, prompt_len, d)
                 """
                 mask of valid tokens for autoregression
                 get_ar_mask returns 1 - valid_locs so 1 - get_ar_mask is double negative
                 """
-                mask_self = 1. - get_ar_mask(prompt_len, x.dtype)
+                mask_self = 1. - get_ar_mask(prompt_len, token_emb.dtype)
                 caches_in = None
             else:
-                x = tf.gather(inp_embedding, tf.transpose(tokens[step]))
-                x = x + seq_pos_emb[:, step]  # (bsz, d)
-                x = tf.expand_dims(x, 1)  # (bsz, 1, d)
+                token_emb = tf.gather(inp_embedding, tf.transpose(tokens[step]))
+                token_emb = token_emb + seq_pos_emb[:, step]  # (bsz, d)
+                token_emb = tf.expand_dims(token_emb, 1)  # (bsz, 1, d)
                 mask_self = tf.ones([1, 1, 1, 1])
                 caches_in = tf.transpose(caches[:step], [1, 2, 0, 3])
             outputs, caches_out = self.decoder(
-                x, encoded, caches_in, mask_self, None, training=False)
+                token_emb, encoded, caches_in, mask_self, None, training=training)
             outputs = self.output_ln(outputs)
             next_logits = tf.matmul(  # only take the last for sampling next token.
                 outputs, outp_embedding, transpose_b=True)[:, -1]
@@ -997,7 +997,8 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
         step = 0
         """
         called separately to handle the special case of prompt tokens
-        all prompt tokens processed together as a group while non-prompt tokens are processed one at a time
+        all prompt tokens processed together as a group while non-prompt tokens are processed 
+        one at a time
         prompt can be thought of as a multi-token generalization of SOS token
         """
         step, caches_var, tokens_var, logits_var = loop_body(

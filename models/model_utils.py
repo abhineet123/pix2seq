@@ -20,6 +20,7 @@ import re
 import tensorflow as tf
 import tensorflow_addons as tfa
 
+
 class WarmUpAndDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
     """Applies a warmup schedule on a given learning rate decay schedule."""
 
@@ -281,6 +282,7 @@ def get_loss(logits, label_seq, loss_type):
         raise ValueError('Unknown loss type {}'.format(loss_type))
     return loss
 
+
 def get_val_metrics(y_true, y_pred_logits, y_mask):
     y_true_m = tf.boolean_mask(y_true, y_mask)
 
@@ -296,8 +298,10 @@ def get_val_metrics(y_true, y_pred_logits, y_mask):
 
     return y_correct_pc_m
 
+
 def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None, y_pred=None,
-               pred_name='pred', gt_name='gt', run_type='train', is_video=True):
+               pred_name='pred', gt_name='gt', run_type='train', is_video=True,
+               y_infer=None, y_infer_logits=None, infer_name='infer'):
     vocab_size = config.model.vocab_size
 
     if y_pred is None:
@@ -308,16 +312,12 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
         y_pred_total = tf.cast(tf.size(y_pred), tf.int64)
         y_pred_match_pc = (tf.reduce_sum(tf.cast(y_pred_match, tf.int64)) / y_pred_total) * 100
 
+    pred_metrics = get_metrics_info(y_true, y_pred, y_pred_logits, None)
+
+    if y_infer_logits is not None:
+        infer_metrics = get_metrics_info(y_true, y_infer, y_infer_logits, None)
+
     y_true_logits = tf.one_hot(y_true, depth=vocab_size)
-
-    y_total = tf.cast(tf.size(y_true), tf.int64)
-    y_correct = tf.math.equal(y_true, y_pred)
-    y_correct_count = tf.reduce_sum(tf.cast(y_correct, tf.int64))
-    y_correct_pc = (y_correct_count / y_total) * 100
-
-    m = tf.keras.metrics.SparseCategoricalAccuracy()
-    m.update_state(y_true, y_pred_logits)
-    accuracy_notpad = m.result().numpy()
 
     from datetime import datetime
     import os
@@ -326,7 +326,7 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
 
     from tasks.visualization import vis_utils
 
-    vis_out_dir = os.path.join(config.model_dir, f'{run_type}_{time_stamp}')
+    vis_out_dir = os.path.join(config.model_dir, 'debug_loss', f'{run_type}_{time_stamp}')
 
     # print(f'vis_out_dir: {vis_out_dir}')
     os.makedirs(vis_out_dir, exist_ok=True)
@@ -341,11 +341,32 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
     bbox_info_pred = vis_fn(
         config, examples, y_pred_logits, y_pred, f'{pred_name}', class_names, None, vis_out_dir)
 
+    if y_infer_logits is not None:
+        bbox_info_infer = vis_fn(
+            config, examples, y_infer_logits, y_infer, f'{infer_name}', class_names, None, vis_out_dir)
+
     if y_mask is None:
         return bbox_info_gt, bbox_info_pred
 
-    y_true_m = tf.boolean_mask(y_true, y_mask)
-    y_pred_logits_m = tf.boolean_mask(y_pred_logits, y_mask)
+    pred_metrics_m = get_metrics_info(y_true, None, y_pred_logits, y_mask)
+
+    bbox_info_gt_m = vis_fn(config, examples, y_true_logits, y_true, f'{gt_name} masked',
+                            class_names, y_mask, vis_out_dir)
+    bbox_info_pred_m = vis_fn(config, examples, y_pred_logits, y_pred, f'{pred_name} masked',
+                              class_names, y_mask, vis_out_dir)
+
+    if y_infer_logits is not None:
+        bbox_info_infer_m = vis_fn(config, examples, y_infer_logits, y_infer, f'{infer_name} masked',
+                                   class_names, y_mask, vis_out_dir)
+        infer_metrics_m = get_metrics_info(y_true, None, y_infer_logits, y_mask)
+
+    return bbox_info_gt, bbox_info_pred, bbox_info_gt_m, bbox_info_pred_m, pred_metrics_m
+
+
+def get_metrics_info(y_true, y_pred, y_pred_logits, y_mask):
+    if y_mask is not None:
+        y_true = tf.boolean_mask(y_true, y_mask)
+        y_pred_logits = tf.boolean_mask(y_pred_logits, y_mask)
 
     # y_mask_int = tf.cast(y_mask, tf.int64)
     # y_mask_count = tf.reduce_sum(y_mask_int, axis=1)
@@ -353,22 +374,19 @@ def debug_loss(config, class_names, examples, y_true, y_pred_logits, y_mask=None
     # y_true_logits_masked = tf.one_hot(y_true_m, depth=vocab_size)
 
     """Don't care about output tokens corresponding to GT tokens marked as padding"""
-    y_total_m = tf.cast(tf.size(y_true_m), tf.int64)
-    y_pred_m = tf.argmax(y_pred_logits_m, axis=1)
-    y_correct_m = tf.math.equal(y_true_m, y_pred_m)
+    y_total_m = tf.cast(tf.size(y_true), tf.int64)
+    if y_pred is None:
+        y_pred = tf.argmax(y_pred_logits, axis=1)
+    y_correct_m = tf.math.equal(y_true, y_pred)
     y_correct_count_m = tf.reduce_sum(tf.cast(y_correct_m, tf.int64))
     y_correct_pc_m = (y_correct_count_m / y_total_m) * 100
 
     # y_cmb = tf.stack((y_true_m, y_pred_m, y_correct_int), axis=0)
 
     m = tf.keras.metrics.SparseCategoricalAccuracy()
-    m.update_state(y_true_m, y_pred_logits_m)
+    m.update_state(y_true, y_pred_logits)
     accuracy_notpad_m = m.result().numpy()
 
-    bbox_info_gt_m = vis_fn(config, examples, y_true_logits, y_true, f'{gt_name} masked',
-                            class_names, y_mask, vis_out_dir)
-    bbox_info_pred_m = vis_fn(config, examples, y_pred_logits, y_pred, f'{pred_name} masked',
-                              class_names, y_mask, vis_out_dir)
     metrics_info = [y_correct_pc_m, accuracy_notpad_m]
 
-    return bbox_info_gt, bbox_info_pred, bbox_info_gt_m, bbox_info_pred_m, metrics_info
+    return metrics_info

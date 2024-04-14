@@ -134,7 +134,7 @@ class TFSwinTransformer3D(keras.layers.Layer):
 
         # x = self.head(x)
 
-        x = tf.squeeze(x, axis=1)
+        # x = tf.squeeze(x, axis=1)
 
         if return_attns:
             return x, attn_scores_outputs
@@ -152,11 +152,11 @@ class TFSwinTransformer3D(keras.layers.Layer):
         )
 
 
-def VideoSwinT(length, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
+def VideoSwinT(length, patch_dim, pt, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
     model = TFSwinTransformer3D(
         length=length,
         # patch_size=(2, 4, 4),
-        patch_size=(length, 4, 4),
+        patch_size=(patch_dim, 4, 4),
         embed_dim=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
@@ -171,14 +171,16 @@ def VideoSwinT(length, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
         patch_norm=True,
         **kwargs
     )
+
+    if pt:
+        load_pt('TFVideoSwinT_K400_IN1K_P244_W877_32x224', model)
     return model
 
-
-def VideoSwinS(length, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
+def VideoSwinS(length, patch_dim, pt, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
     model = TFSwinTransformer3D(
         length=length,
         # patch_size=(2, 4, 4),
-        patch_size=(length, 4, 4),
+        patch_size=(patch_dim, 4, 4),
         embed_dim=96,
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
@@ -193,14 +195,17 @@ def VideoSwinS(length, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
         patch_norm=True,
         **kwargs
     )
+    if pt:
+        load_pt('TFVideoSwinS_K400_IN1K_P244_W877_32x224', model)
+
     return model
 
 
-def VideoSwinB(length, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
+def VideoSwinB(length, patch_dim, pt, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
     model = TFSwinTransformer3D(
         length=length,
         # patch_size=(2, 4, 4),
-        patch_size=(length, 4, 4),
+        patch_size=(patch_dim, 4, 4),
         embed_dim=128,
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],
@@ -215,4 +220,51 @@ def VideoSwinB(length, window_size=(8, 7, 7), drop_path_rate=0.2, **kwargs):
         patch_norm=True,
         **kwargs
     )
+    if pt:
+        load_pt('TFVideoSwinB_K400_IN1K_P244_W877_32x224', model)
+        # load_pt('TFVideoSwinB_K400_IN22K_P244_W877_32x224', model)
+        # load_pt('TFVideoSwinB_K600_IN22K_P244_W877_32x224', model)
     return model
+
+
+def load_pt(pt_name, model):
+    pt_dir_path = f'pretrained/{pt_name}'
+    pt_dir_path = os.path.abspath(pt_dir_path)
+    assert os.path.exists(pt_dir_path), f"nonexistent pt_dir_path: {pt_dir_path}"
+
+    pt_path = os.path.join(pt_dir_path, 'variables', 'variables')
+    # assert os.path.exists(pt_path), f"nonexistent pt_path: {pt_path}"
+
+    import utils
+
+    checkpoint = tf.train.Checkpoint(model=model)
+    ckpt_vars_dict, name_to_shape = utils.save_ckpt_vars(pt_dir_path, latest_ckpt=pt_path)
+    print('Restoring from latest checkpoint: %s', pt_path)
+
+    # status = checkpoint.restore(pt_path)
+    status = checkpoint.restore(pt_path).expect_partial()
+
+    verify_restored = status.assert_consumed
+    verify_existing = status.assert_existing_objects_matched
+
+    try:
+        verify_restored()
+    except AssertionError as e:
+        print('+++++++++++ restored +++++++++++')
+        print(e)
+        print('+++++++++++ restored +++++++++++')
+
+    try:
+        verify_existing()
+    except AssertionError as e:
+        print('+++++++++++ existing +++++++++++')
+        print(e)
+        print('+++++++++++ existing +++++++++++')
+
+    # _, _, _verify_restored_p, _verify_existing_p, ckpt_vars_p, name_to_shape_p = (
+    #     utils.restore_from_checkpoint(
+    #         pt_path, True, model=model))
+
+    # model_pt = keras.models.load_model(pt_dir_path, compile=False)
+
+    return ckpt_vars_dict, name_to_shape

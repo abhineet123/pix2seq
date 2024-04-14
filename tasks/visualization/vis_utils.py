@@ -1254,6 +1254,9 @@ def visualize_video(config, examples, logits, tokens, label, category_names, mas
     from tasks import task_utils
 
     videos = examples['video']
+    orig_video_size = examples['orig_video_size']
+    unpadded_video_size = examples['unpadded_video_size']
+
     tconfig = config.task
     mconfig = config.model
     vid_len = config.dataset.length
@@ -1285,6 +1288,8 @@ def visualize_video(config, examples, logits, tokens, label, category_names, mas
         file_ids=file_ids,
         video_ids=video_ids,
         category_names=category_names,
+        orig_size=orig_video_size,
+        unpadded_size=unpadded_video_size,
         min_score_thresh=0
     )
     import cv2

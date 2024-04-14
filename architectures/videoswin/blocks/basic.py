@@ -98,12 +98,7 @@ class TFBasicLayer(keras.layers.Layer):
         x_size = list(input_shape[1:-1])
 
         if x_size[0] is None:
-            if self.length == self.patch_size[0]:
-                n_channels = 1
-            else:
-                raise AssertionError('Channel size resolution is only supported for '
-                                     'matching patch sizes')
-
+            n_channels = self.length // self.patch_size[0]
             x_size[0] = n_channels
 
         window_size, shift_size = get_window_size(

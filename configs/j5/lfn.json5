@@ -1,6 +1,7 @@
 {
   "model": {
     "late_fusion": 1,
+    "pos_encoding": "learned",
   },
   "train": {
     "save_suffix": ['lfn',],

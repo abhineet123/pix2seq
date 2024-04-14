@@ -56,7 +56,7 @@ base_config = D(
     eager=1,
     dyn_ram=1,
     debug=1,
-    resnet_replace='',
+    resnet_replace=[],
     gpu='',
 
     model_dir='',
@@ -92,6 +92,10 @@ architecture_config_map = {
     ),
     'resnet': D(
         resnet_variant='standard',
+
+        swin_variant='t',
+        swin_patch_dim=0,
+
         resnet_depth=50,
         resnet_sk_ratio=0.,
         resnet_width_multiplier=1,

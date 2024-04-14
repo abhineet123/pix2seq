@@ -324,7 +324,8 @@ def load(FLAGS):
             if cfg.pretrained:
                 pretrained_name = os.path.basename(cfg.pretrained)
                 if cfg.resnet_replace:
-                    pretrained_name = pretrained_name.replace('resnet', cfg.resnet_replace)
+                    resnet_replace = '_'.join(cfg.resnet_replace)
+                    pretrained_name = pretrained_name.replace('resnet', resnet_replace)
                 model_dir_name = f'{pretrained_name}_{model_dir_name}'
 
             if cfg.train.save_suffix:

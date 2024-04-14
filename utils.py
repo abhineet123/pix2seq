@@ -32,6 +32,7 @@ import numpy as np
 import vocab
 import tensorflow as tf
 
+
 def check_ckpt_vars(cfg, trainer):
     cur_step_ = trainer.optimizer.iterations.numpy()
     ckpt_vars_pt = trainer.ckpt_vars_p
@@ -91,6 +92,7 @@ def check_ckpt_vars(cfg, trainer):
             unmatched_shapes_csv,
             index=False,
         )
+
 
 def json_serializable(val):
     try:
@@ -472,12 +474,14 @@ def preserve_reserved_tokens(points, points_orig) -> object:
     return replace_reserved_tokens(points, points_orig, dict(zip(vocab.FLOATS,
                                                                  vocab.FLOATS)))
 
+
 def boolean_mask(x, mask):
     masked_x = []
-    for x_,mask_ in zip(x, mask):
+    for x_, mask_ in zip(x, mask):
         masked_x_ = tf.boolean_mask(x_, mask_)
         masked_x.append(masked_x_)
     return masked_x
+
 
 def replace_reserved_tokens(seq, ref_seq, replacements):
     for key, replacement in replacements.items():
@@ -486,7 +490,7 @@ def replace_reserved_tokens(seq, ref_seq, replacements):
     return seq
 
 
-def restore_from_checkpoint(model_dir, allow_partial, **kwargs):
+def restore_from_checkpoint(model_dir, allow_partial, ignore_missing=False, **kwargs):
     """Restores the latest ckpt.
 
     Args:
@@ -515,12 +519,17 @@ def restore_from_checkpoint(model_dir, allow_partial, **kwargs):
             status = checkpoint.restore(latest_ckpt)
         verify_restored = status.assert_consumed
         verify_existing = status.assert_existing_objects_matched
+    elif not ignore_missing:
+        raise AssertionError(f'No checkpoint found in {model_dir}')
+
     return (latest_ckpt, checkpoint, verify_restored, verify_existing,
             ckpt_vars_dict, name_to_shape)
 
 
-def save_ckpt_vars(model_dir):
-    latest_ckpt = tf.train.latest_checkpoint(model_dir)
+def save_ckpt_vars(model_dir, latest_ckpt=None):
+    if latest_ckpt is None:
+        latest_ckpt = tf.train.latest_checkpoint(model_dir)
+
     ckpt_vars = tf.train.list_variables(latest_ckpt)
     ckpt_dict = dict(
         name=[ckpt_var[0] for ckpt_var in ckpt_vars],
@@ -540,6 +549,7 @@ def save_ckpt_vars(model_dir):
     name_to_shape = {name: shape for name, shape in
                      zip(ckpt_dict['name'], ckpt_dict['shape'])}
     return ckpt_dict, name_to_shape
+
 
 def check_checkpoint_restored(strict_verifiers, loose_verifiers=()):
     """Verification after model variables built."""
@@ -611,6 +621,7 @@ def get_val_steps(dataset, eval_steps, eval_batch_size):
     if not eval_steps and num_eval_examples:
         eval_steps = int(math.floor(num_eval_examples / eval_batch_size))
     return eval_steps
+
 
 def get_eval_steps(dataset, eval_steps, eval_batch_size):
     """Determine the number of eval steps."""

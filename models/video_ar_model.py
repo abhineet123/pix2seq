@@ -21,7 +21,7 @@ import ml_collections
 import utils
 import vocab
 from tasks import task_utils
-from tasks.visualization import vis_utils
+# from tasks.visualization import vis_utils
 
 from architectures.transformers import add_vis_pos_emb, get_shape
 from architectures.transformers import AutoregressiveDecoder
@@ -51,12 +51,23 @@ class Model(tf.keras.models.Model):
         self.vid_len = config.dataset.length
         self.late_fusion = self.config.late_fusion
         self.pos_encoding = self.config.pos_encoding
+        self.is_swin = False
+
+        if self.late_fusion:
+            self.pos_channels = self.vid_len
+        else:
+            self.pos_channels = 1
 
         mlp_ratio = self.config.dim_mlp // self.config.dim_att
         if self.config.resnet_variant == 'swin':
-            assert not self.late_fusion, "late_fusion is not supported with VideoSwinTransformer"
+            self.is_swin = True
+            assert self.config.swin_patch_dim <= self.vid_len, "swin_patch_dim must be <= vid_len"
+            self.pos_channels = self.vid_len // self.config.swin_patch_dim
+
             self.encoder = VideoSwinTransformer(
                 swin_variant=self.config.swin_variant,
+                swin_pt=self.config.swin_pt,
+                patch_dim=self.config.swin_patch_dim,
                 image_height=self.config.image_size[0],
                 image_width=self.config.image_size[1],
                 vid_len=self.vid_len,
@@ -107,26 +118,19 @@ class Model(tf.keras.models.Model):
             """
             add visual positional embedding
             """
-            if self.late_fusion:
-                pos_encoding = 'learned_3d'
-                n_images = self.vid_len
-            else:
-                pos_encoding = self.config.pos_encoding
-                n_images = 1
-
             self.vis_pos_emb = add_vis_pos_emb(
                 self,
-                pos_encoding=pos_encoding,
+                pos_encoding=self.pos_encoding,
                 n_rows=self.encoder.n_rows,
                 n_cols=self.encoder.n_cols,
                 dim=self.config.dim_att_dec,
-                n_images=n_images,
+                n_channels=self.pos_channels,
                 name_prefix='proj',
                 return_only=True,
             )
-            if self.late_fusion:
-                t, n_feat, fc = get_shape(self.vis_pos_emb)
-                self.vis_pos_emb = tf.reshape(self.vis_pos_emb, [t * n_feat, fc])
+            # if self.late_fusion:
+            #     t, n_feat, fc = get_shape(self.vis_pos_emb)
+            #     self.vis_pos_emb = tf.reshape(self.vis_pos_emb, [t * n_feat, fc])
 
             if self.config.dec_proj_mode == 'mlp':
                 self.proj_mlp = MLP(1, self.config.dim_att_dec, mlp_ratio, self.config.drop_path,
@@ -169,21 +173,21 @@ class Model(tf.keras.models.Model):
         # encoded = utils.unflatten_vid(encoded, self.vid_len)
         return encoded
 
-    def call(self, images, seq, training=True):
+    def call(self, videos, seq, training=True):
         with tf.name_scope(''):  # for other functions to have the same name scope.
-            encoded = self._encode_videos(images, training)
+            encoded = self._encode_videos(videos, training)
 
             """_tile_vis_output is only needed if seq is 3D or above"""
             # encoded, seq = self._tile_vis_output(encoded, seq)
 
             logits = self.decoder(seq, encoded, training)
-            return logits
+            return logits, encoded
 
     def infer(self, videos, prompt_seq, encoded=None, max_seq_len=None,
               temperature=1, top_k=1, top_p=1., num_samples=1,
-              sampling_callback=None):
+              sampling_callback=None, training=False):
         if encoded is None:
-            encoded = self._encode_videos(videos, training=False)
+            encoded = self._encode_videos(videos, training=training)
 
         """only needed if prompt_seq is 3D or above"""
         # encoded, prompt_seq = self._tile_vis_output(encoded, prompt_seq)
@@ -192,9 +196,13 @@ class Model(tf.keras.models.Model):
         # encoded = utils.tile_along_batch(encoded, num_samples)
         # prompt_seq = utils.tile_along_batch(prompt_seq, num_samples)
 
+        """decoder forward pass for debugging"""
+        # logits = self.decoder(prompt_seq, encoded, training)
+        # pred_seq = tf.argmax(logits, axis=2)
+
         pred_seq, logits = self.decoder.infer(
             prompt_seq, encoded, max_seq_len,
-            temperature, top_k, top_p, sampling_callback)
+            temperature, top_k, top_p, sampling_callback, training=training)
 
         return pred_seq, logits, encoded
 
@@ -234,6 +242,8 @@ class VideoARTrainer(model_lib.Trainer):
 
         videos = batched_examples['video']
 
+        model = self.model  # type:Model
+
         target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
         token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)
         token_weights = utils.tf_float32(token_weights)
@@ -241,7 +251,7 @@ class VideoARTrainer(model_lib.Trainer):
         token_weights_notpad = tf.where(
             is_padding, tf.zeros_like(token_weights), token_weights)
 
-        logits = self.model(videos, input_seq)
+        logits, pred_encoded = model(videos, input_seq)
         losses = model_utils.get_loss(
             logits, target_seq, self.config.train.loss_type)
         loss = tf.reduce_sum(losses * token_weights) / (
@@ -267,7 +277,25 @@ class VideoARTrainer(model_lib.Trainer):
             self._metrics['accuracy_notpad'].update_state(y_true, y_pred_logits)
 
             # if self.config.debug:
-            #     vis_utils.debug_loss(self.config, self._category_names,batched_examples, target_seq,
-            #                          logits, y_mask, y_pred=None, run_type='train')
+            #     bsz = tf.shape(videos)[0]
+            #     prompt_seq = task_utils.build_prompt_seq_from_task_id(
+            #         self.config.task.vocab_id,
+            #         prompt_shape=(bsz, 1))
+            #
+            #     infer_seq, infer_logits, infer_encoded = model.infer(
+            #         videos, prompt_seq, encoded=pred_encoded,
+            #         max_seq_len=self.config.task.max_seq_len_test,
+            #         temperature=self.config.task.temperature,
+            #         top_k=self.config.task.top_k,
+            #         top_p=self.config.task.top_p,
+            #         training=True)
+            #
+            #     pred_encoded_np = pred_encoded.numpy()
+            #     infer_encoded_np = infer_encoded.numpy()
+            #
+            #     model_utils.debug_loss(
+            #         self.config, self._category_names, batched_examples, target_seq,
+            #         logits, y_mask, y_pred=None, run_type='train',
+            #         y_infer=infer_seq, y_infer_logits=infer_logits)
 
         return loss

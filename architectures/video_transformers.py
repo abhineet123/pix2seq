@@ -212,7 +212,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             self.n_rows,
             self.n_cols,
             dim,
-            n_images=n_images,
+            n_channels=n_images,
             return_only=True,
         )
         self.transformer_encoder = VideoTransformerEncoder(
@@ -273,8 +273,10 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
 
     def __init__(self,
                  swin_variant,
+                 swin_pt,
                  image_height,
                  image_width,
+                 patch_dim,
                  vid_len,
                  num_layers,
                  dim,
@@ -288,20 +290,29 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
                  **kwargs):
         super(VideoSwinTransformer, self).__init__(**kwargs)
         self.swin_variant = swin_variant
+        self.swin_pt = swin_pt
         self.vid_len = vid_len
         self.use_cls_token = use_cls_token
+        self.patch_dim = patch_dim
+        self.pos_encoding = pos_encoding
+        self.dim = dim
 
         # ckpt_name = os.path.join('pretrained', self.ckpt_name())
         # self.backbone = tf.keras.models.load_model(ckpt_name, compile=False)
 
         from architectures.videoswin import VideoSwinB, VideoSwinS, VideoSwinT
 
+        if self.patch_dim == 0:
+            self.patch_dim = self.vid_len
+
+        self.pos_channels = self.vid_len // self.patch_dim
+
         if swin_variant == 'b':
-            self.backbone = VideoSwinB(length=self.vid_len)
+            self.backbone = VideoSwinB(length=self.vid_len, patch_dim=self.patch_dim, pt=self.swin_pt)
         elif swin_variant == 's':
-            self.backbone = VideoSwinS(length=self.vid_len)
+            self.backbone = VideoSwinS(length=self.vid_len, patch_dim=self.patch_dim, pt=self.swin_pt)
         elif swin_variant == 't':
-            self.backbone = VideoSwinT(length=self.vid_len)
+            self.backbone = VideoSwinT(length=self.vid_len, patch_dim=self.patch_dim, pt=self.swin_pt)
         else:
             raise AssertionError('invalid swin_variant: {swin_variant}')
 
@@ -322,12 +333,14 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
             epsilon=1e-6, name='stem_ln')
         if self.use_cls_token:
             add_cls_token_emb(self, dim)
+
         self.vis_pos_emb = add_vis_pos_emb(
             self,
-            pos_encoding,
+            self.pos_encoding,
             self.n_rows,
             self.n_cols,
-            dim,
+            self.dim,
+            n_channels=self.pos_channels,
             return_only=True,
         )
         self.transformer_encoder = TransformerEncoder(
@@ -367,13 +380,14 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
         return checkpoint_name
 
     def call(self, images, training):
-        if not self.built:
-            model = self.backbone.build_graph()
-            self.built=True
+        # if not self.built:
+        #     model = self.backbone.build_graph()
+        #     self.built=True
+
         tokens = self.backbone(images, training=training)
 
-        bsz, h, w, num_channels = get_shape(tokens)
-        tokens = tf.reshape(tokens, [bsz, h * w, num_channels])
+        bsz, n_img, h, w, num_channels = get_shape(tokens)
+        tokens = tf.reshape(tokens, [bsz, n_img * h * w, num_channels])
 
         # tokens = tf.reshape(tokens, [bsz, h * w, num_channels])
 
