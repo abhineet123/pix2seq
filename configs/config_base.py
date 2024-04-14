@@ -94,6 +94,7 @@ architecture_config_map = {
         resnet_variant='standard',
 
         swin_variant='t',
+        swin_pt=0,
         swin_patch_dim=0,
 
         resnet_depth=50,

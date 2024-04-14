@@ -1,0 +1,6 @@
+{
+  "resnet_replace": ["pt", ],
+  "model": {
+    "swin_pt": 1,
+  },
+}
