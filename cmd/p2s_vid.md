@@ -1,6 +1,7 @@
 <!-- MarkdownTOC -->
 
 - [swin-t](#swin_t_)
+    - [ipsc-16_53-len-2-pt       @ swin-t](#ipsc_16_53_len_2_pt___swin_t_)
     - [ipsc-16_53-len-2       @ swin-t](#ipsc_16_53_len_2___swin_t_)
         - [on-train       @ ipsc-16_53-len-2/swin-t](#on_train___ipsc_16_53_len_2_swin_t_)
         - [on-54_126       @ ipsc-16_53-len-2/swin-t](#on_54_126___ipsc_16_53_len_2_swin_t_)
@@ -69,6 +70,10 @@
 <!-- /MarkdownTOC -->
 <a id="swin_t_"></a>
 # swin-t 
+<a id="ipsc_16_53_len_2_pt___swin_t_"></a>
+## ipsc-16_53-len-2-pt       @ swin-t-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t,spt
+
 <a id="ipsc_16_53_len_2___swin_t_"></a>
 ## ipsc-16_53-len-2       @ swin-t-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
@@ -78,7 +83,6 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=tra
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9,_eval_,vid_det,ipsc-16_53,len-2,strd-1,batch-4,save-vis-1,dbg-0,dyn-1
 `strd-6` 
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9,_eval_,vid_det,ipsc-16_53,len-2,strd-2,batch-4,save-vis-1,dbg-0,dyn-1
-
 <a id="on_54_126___ipsc_16_53_len_2_swin_t_"></a>
 ### on-54_126       @ ipsc-16_53-len-2/swin-t-->p2s_vid
 `strd-1` 

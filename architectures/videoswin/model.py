@@ -239,7 +239,7 @@ def load_pt(pt_name, model):
 
     checkpoint = tf.train.Checkpoint(model=model)
     ckpt_vars_dict, name_to_shape = utils.save_ckpt_vars(pt_dir_path, latest_ckpt=pt_path)
-    print('Restoring from latest checkpoint: %s', pt_path)
+    print(f'Restoring from checkpoint: {pt_path}')
 
     # status = checkpoint.restore(pt_path)
     status = checkpoint.restore(pt_path).expect_partial()

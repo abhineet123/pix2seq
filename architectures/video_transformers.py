@@ -302,8 +302,8 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
 
         from architectures.videoswin import VideoSwinB, VideoSwinS, VideoSwinT
 
-        if self.patch_dim == 0:
-            self.patch_dim = self.vid_len
+        # if self.patch_dim == 0:
+        #     self.patch_dim = self.vid_len
 
         self.pos_channels = self.vid_len // self.patch_dim
 

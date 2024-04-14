@@ -60,6 +60,9 @@ class Model(tf.keras.models.Model):
 
         mlp_ratio = self.config.dim_mlp // self.config.dim_att
         if self.config.resnet_variant == 'swin':
+            if self.config.swin_patch_dim == 0:
+                self.config.swin_patch_dim = self.vid_len
+
             self.is_swin = True
             assert self.config.swin_patch_dim <= self.vid_len, "swin_patch_dim must be <= vid_len"
             self.pos_channels = self.vid_len // self.config.swin_patch_dim
