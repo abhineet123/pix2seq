@@ -131,9 +131,9 @@ class Model(tf.keras.models.Model):
                 name_prefix='proj',
                 return_only=True,
             )
-            # if self.late_fusion:
-            #     t, n_feat, fc = get_shape(self.vis_pos_emb)
-            #     self.vis_pos_emb = tf.reshape(self.vis_pos_emb, [t * n_feat, fc])
+            if self.late_fusion and self.pos_encoding == 'learned_3d':
+                t, n_feat, fc = get_shape(self.vis_pos_emb)
+                self.vis_pos_emb = tf.reshape(self.vis_pos_emb, [t * n_feat, fc])
 
             if self.config.dec_proj_mode == 'mlp':
                 self.proj_mlp = MLP(1, self.config.dim_att_dec, mlp_ratio, self.config.drop_path,
