@@ -85,6 +85,31 @@ def build_tasks_and_datasets(
     return tasks, mixed_datasets, ds
 
 
+"""
+annoyingly buggy ml_collections.ConfigDict does not convert list of dicts 
+into list of ConfigDicts or vice versa
+"""
+
+
+def to_dict(in_config):
+    for key, val in in_config.items():
+        if isinstance(val, list):
+            in_config[key] = to_list(val)
+        elif isinstance(val, ml_collections.ConfigDict):
+            in_config[key] = to_dict(val)
+    in_dict = in_config.to_dict()
+    return in_dict
+
+
+def to_list(in_list):
+    for idx, val in enumerate(in_list):
+        if isinstance(val, list):
+            in_list[idx] = to_list(val)
+        elif isinstance(val, ml_collections.ConfigDict):
+            in_list[idx] = to_dict(val)
+    return in_list
+
+
 def from_dict(in_dict):
     for key, val in in_dict.items():
         if isinstance(val, list):
@@ -111,11 +136,21 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
 
     print(f'loading model cfg from {pt_cfg_filepath}')
     with open(pt_cfg_filepath, 'r') as f:
-        cfg_dict = json.loads(f.read())
+        cfg_from_model = json.loads(f.read())
 
     if not pt:
-        cfg.update(from_dict(cfg_dict))
+        """if the datatype of a param is changed after a model has been trained, 
+        the annoying ConfigDict would not allow its value to be overridden from the 
+        json file saved with the model"""
+        if isinstance(cfg_from_model['resnet_replace'], str):
+            cfg_from_model['resnet_replace'] = [cfg_from_model['resnet_replace'],]
+        # cfg_temp_dict = to_dict(cfg)
+
+        cfg.update(from_dict(cfg_from_model))
         cfg.update(cmd_cfg)
+
+        # cfg = from_dict(cfg_temp_dict)
+
         return
 
     """
@@ -123,17 +158,17 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
     config json files accompanying the pretrained models
     ConfigDict does not allow type override so type changes must be done in ordinary dict
     """
-    image_size = cfg_dict['model']['image_size']
+    image_size = cfg_from_model['model']['image_size']
     if isinstance(image_size, int):
-        cfg_dict['model']['image_size'] = (image_size, image_size)
+        cfg_from_model['model']['image_size'] = (image_size, image_size)
 
-    image_size = cfg_dict['task']['image_size']
+    image_size = cfg_from_model['task']['image_size']
     if isinstance(image_size, int):
-        cfg_dict['task']['image_size'] = (image_size, image_size)
+        cfg_from_model['task']['image_size'] = (image_size, image_size)
 
     """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts or vice versa"""
 
-    model_cfg = from_dict(cfg_dict)
+    model_cfg = from_dict(cfg_from_model)
     model_cfg = ml_collections.ConfigDict(model_cfg)
 
     cfg.model.update(model_cfg.model)
@@ -323,9 +358,12 @@ def load(FLAGS):
             model_dir_name = f'{cfg.dataset.train_name}'
             if cfg.pretrained:
                 pretrained_name = os.path.basename(cfg.pretrained)
-                if cfg.resnet_replace:
-                    resnet_replace = '_'.join(cfg.resnet_replace)
+                resnet_replace =  cfg.resnet_replace
+                if resnet_replace:
+                    if isinstance(resnet_replace, (list, tuple)):
+                        resnet_replace = '_'.join(resnet_replace)
                     pretrained_name = pretrained_name.replace('resnet', resnet_replace)
+
                 model_dir_name = f'{pretrained_name}_{model_dir_name}'
 
             if cfg.train.save_suffix:
@@ -369,25 +407,6 @@ def load(FLAGS):
 
     import utils
     utils.log_cfg(cfg)
-
-    """buggy ml_collections.ConfigDict does not convert list of dicts into list of ConfigDicts or vice versa"""
-
-    def to_dict(in_dict):
-        for key, val in in_dict.items():
-            if isinstance(val, list):
-                in_dict[key] = to_list(val)
-            elif isinstance(val, ml_collections.ConfigDict):
-                in_dict[key] = to_dict(val)
-        in_dict = in_dict.to_dict()
-        return in_dict
-
-    def to_list(in_list):
-        for idx, val in enumerate(in_list):
-            if isinstance(val, list):
-                in_list[idx] = to_list(val)
-            elif isinstance(val, ml_collections.ConfigDict):
-                in_list[idx] = to_dict(val)
-        return in_list
 
     # import paramparse
     # cfg_dict = to_dict(cfg)
