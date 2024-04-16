@@ -106,6 +106,7 @@ def get_object_detection_eval_transforms(
 
 def get_video_detection_train_transforms(
         cfg,
+        target_size,
         image_size: Tuple[int, int],
         length: int,
         max_disp: int,
@@ -121,6 +122,16 @@ def get_video_detection_train_transforms(
     train_transforms = [
         # D(name='record_original_video_size'),
     ]
+    # if target_size is not None:
+    #     train_transforms.append(
+    #         D(name='resize_video',
+    #           inputs=['video'],
+    #           length=length,
+    #           antialias=[True],
+    #           target_size=target_size,
+    #           preserve_aspect_ratio=[False],
+    #           )
+    #     )
     if cfg.scale_jitter:
         # print('annoying scale_jitter is enabled')
         train_transforms.append(
@@ -190,7 +201,7 @@ def get_video_detection_eval_transforms(
     instance_feature_names = ['bbox', 'class_id', 'class_name',
                               'area', 'is_crowd']
     return [
-        D(name='record_original_video_size'),
+        # D(name='record_original_video_size'),
         D(name='resize_video',
           inputs=['video'],
           length=length,

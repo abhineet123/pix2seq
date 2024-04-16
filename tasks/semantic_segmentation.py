@@ -8,7 +8,6 @@ import ml_collections
 import numpy as np
 import utils
 import vocab
-from metrics import metric_registry
 from metrics import metric_utils
 from tasks import task as task_lib
 from tasks import task_utils
@@ -16,12 +15,8 @@ from tasks.visualization import vis_utils
 import tensorflow as tf
 
 
-@task_lib.TaskRegistry.register('object_detection')
-class TaskObjectDetection(task_lib.Task):
-    """
-    Object detection task with coco metric evaluation.
-    """
-
+@task_lib.TaskRegistry.register('semantic_segmentation')
+class TaskSemanticSegmentation(task_lib.Task):
     def __init__(self,
                  config: ml_collections.ConfigDict):
         super().__init__(config)
@@ -30,14 +25,6 @@ class TaskObjectDetection(task_lib.Task):
             self.config.task.max_seq_len = config.task.max_instances_per_image * 5
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
-        # metric_config = config.task.get('metric')
-        # if metric_config and metric_config.get('name'):
-        #     self._coco_metrics = metric_registry.MetricRegistry.lookup(
-        #         metric_config.name)(config)
-        # else:
-        #     self._coco_metrics = None
-        # if self.config.task.get('eval_outputs_json_path', None):
-        #     self.eval_output_annotations = []
 
     def preprocess_single(self, dataset, batch_duplicates, training, validation):
         """Task-specific preprocessing of individual example in the dataset.

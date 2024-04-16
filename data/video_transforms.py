@@ -56,6 +56,12 @@ class ResizeVideo(Transform):
         antialias_list = self.config.get('antialias', [False] * num_inputs)
         preserve_ar = self.config.get('preserve_aspect_ratio', [True] * num_inputs)
 
+        # target_size = self.config.target_size
+        # if target_size is not None:
+        #     frames = tf.image.resize(
+        #         frames, target_size, method='bilinear',
+        #         antialias=False, preserve_aspect_ratio=False)
+
         for k, resize_method, antialias, p_ar in zip(
                 self.config.inputs, resize_methods, antialias_list, preserve_ar):
             example[k] = tf.image.resize(

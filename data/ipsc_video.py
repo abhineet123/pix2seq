@@ -78,8 +78,10 @@ class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
             # return tf.io.decode_image(tf.io.read_file(x), channels=3)
             # exit()
 
+        decode_fn = tf.io.decode_image
+        # decode_fn = tf.io.decode_jpeg
         frames = tf.map_fn(
-            lambda x: tf.io.decode_image(tf.io.read_file(x), channels=3),
+            lambda x: decode_fn(tf.io.read_file(x), channels=3),
             # read_video_frames,
             filenames,
             fn_output_signature=tf.uint8
@@ -90,13 +92,13 @@ class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
         frames.set_shape([length, None, None, 3])
         # frames.set_shape([None, None, None, 3])
 
-        target_size = self.config.target_size
+        frames = tf.image.convert_image_dtype(frames, tf.float32)
 
+        target_size = self.config.target_size
         if target_size is not None:
             frames = tf.image.resize(
                 frames, target_size, method='bilinear',
                 antialias=False, preserve_aspect_ratio=False)
-
         # area = bbox = None
 
         area = decode_utils.decode_video_areas(example, self.config.length)
@@ -113,7 +115,7 @@ class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
             'video/file_names': tf.cast(example['video/file_names'], tf.string),
             'video/file_ids': tf.cast(example['video/file_ids'], tf.int64),
             'video/id': tf.cast(example['video/source_id'], tf.int64),
-            'video/frames': tf.image.convert_image_dtype(frames, tf.float32),
+            'video/frames': frames,
             'video/num_frames': tf.cast(num_frames, tf.int32),
             'video/size':  tf.cast(example['video/size'], tf.int64),
             'shape': utils.tf_float32((h, w)),

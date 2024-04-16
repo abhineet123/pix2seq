@@ -113,6 +113,8 @@ class Trainer(abc.ABC):
         preprocessed_outputs = [
             t.preprocess_batched(e, training=True) for e, t in zip(examples, tasks)]
 
+        return
+
         task_loss_metrics = {}
         loss = 0
         grads = []

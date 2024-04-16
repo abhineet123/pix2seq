@@ -26,6 +26,7 @@ _transforms_config = D(
 )
 
 _shared_dataset_config = D(
+    buffer_size=300,
     batch_duplicates=1,
     cache_dataset=True,
 
@@ -119,7 +120,7 @@ def get_ipsc_video_data():
 def ipsc_post_process(ds_cfg, task_cfg, training):
     import os
 
-    if ds_cfg.target_size == ():
+    if ds_cfg.target_size is not None and not ds_cfg.target_size:
         ds_cfg.target_size = task_cfg.image_size
 
     # elif isinstance(ds_cfg.target_size, int):

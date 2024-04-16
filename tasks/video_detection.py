@@ -3,7 +3,6 @@ import numpy as np
 import utils
 import vocab
 
-
 from tasks import task as task_lib
 from tasks import task_utils
 from tasks.visualization import vis_utils
@@ -75,7 +74,8 @@ class TaskVideoDetection(task_lib.Task):
         dconfig = self.config.dataset
 
         # batched_examples = vis_utils.debug_video_transforms(
-        #     self.train_transforms, batched_examples,
+        #     self.train_transforms if training else self.eval_transforms,
+        #     batched_examples,
         #     vis=1, model_dir=self.config.model_dir)
 
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
@@ -148,16 +148,26 @@ class TaskVideoDetection(task_lib.Task):
         """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
         examples, input_seq, target_seq, token_weights = preprocessed_outputs  # response_seq unused by default
-        video = examples['video']
+        videos = examples['video']
+
+        videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
+
+        import cv2
+        for video_ in videos_:
+            for image_ in video_:
+                cv2.imshow('image_', image_)
+                cv2.waitKey(100)
+                print()
+
         # video = tf.identity(video).gpu()
-        bsz = tf.shape(video)[0]
+        bsz = tf.shape(videos)[0]
 
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id,
             prompt_shape=(bsz, 1))
 
         pred_seq, logits, encoded = model.infer(
-            video, prompt_seq, encoded=None,
+            videos, prompt_seq, encoded=None,
             max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
@@ -242,6 +252,13 @@ class TaskVideoDetection(task_lib.Task):
         bboxes_, bboxes_rescaled_, classes_, scores_ = (
             pred_bboxes.numpy(), pred_bboxes_rescaled.numpy(), pred_classes.numpy(), scores.numpy())
         videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
+
+        import cv2
+        for video_ in videos_:
+            for image_ in video_:
+                print()
+                # cv2.imshow('image_', image_)
+                # cv2.waitKey(0)
 
         vis_utils.add_video_summary_with_bbox(
             videos_, bboxes_, bboxes_rescaled_,

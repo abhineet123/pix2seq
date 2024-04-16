@@ -162,13 +162,13 @@ def debug_video_transforms(transforms, batched_examples, vis, model_dir):
     from datetime import datetime
 
     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
-    vis_img_dir = os.path.join(model_dir, f"debug_transforms_{time_stamp}")
+    vis_img_dir = os.path.join(model_dir, "debug_transforms", f"{time_stamp}")
 
     os.makedirs(vis_img_dir, exist_ok=True)
 
-    for i in range(batch_size):
+    for batch_id in range(batch_size):
         single_example = {
-            k: v[i, ...] for k, v in batched_examples.items()
+            k: v[batch_id, ...] for k, v in batched_examples.items()
         }
         proc_videos = dict(
             orig=single_example["video"]
@@ -176,7 +176,7 @@ def debug_video_transforms(transforms, batched_examples, vis, model_dir):
         proc_bboxes = dict(
             orig=single_example["bbox"]
         )
-        save_video_sample(single_example, 'orig', 0, vis_img_dir)
+        save_video_sample(single_example, batch_id, 'orig', 0, vis_img_dir)
 
         proc_example = copy.copy(single_example)
         for t_id, t in enumerate(transforms):
@@ -189,7 +189,7 @@ def debug_video_transforms(transforms, batched_examples, vis, model_dir):
             if not vis:
                 continue
 
-            save_video_sample(proc_example, t_name, t_id + 1, vis_img_dir)
+            save_video_sample(proc_example, batch_id, t_name, t_id + 1, vis_img_dir)
 
         for k, v in proc_examples.items():
             v.append(proc_example[k])
@@ -292,7 +292,7 @@ def save_image(
     # cv2.waitKey(100)
 
 
-def save_video_sample(proc_example, t_name, t_id, vis_img_dir):
+def save_video_sample(proc_example, batch_id, t_name, t_id, vis_img_dir):
     import cv2
 
     video = proc_example["video"]
@@ -303,7 +303,7 @@ def save_video_sample(proc_example, t_name, t_id, vis_img_dir):
 
     video = tf.image.convert_image_dtype(video, tf.uint8)
 
-    for i, (image, file_name) in enumerate(zip(video, file_names)):
+    for img_id, (image, file_name) in enumerate(zip(video, file_names)):
         image_np = image.numpy()
         file_name_np = file_name.numpy()
         file_name_np = file_name_np.decode('utf-8')
@@ -313,11 +313,11 @@ def save_video_sample(proc_example, t_name, t_id, vis_img_dir):
 
         seq_name = os.path.basename(os.path.dirname(file_name_np))
 
-        vis_img_name = f'{seq_name} {img_name} {t_id:04d} {t_name}'
+        vis_img_name = f'{seq_name} {batch_id:02d}-{img_id:02d} {img_name} {t_id:04d} {t_name}'
 
         vis_img_path = os.path.join(vis_img_dir, f'{vis_img_name}{img_ext}')
 
-        bbox_id = i * 4
+        bbox_id = img_id * 4
         for bbox, class_name in zip(bboxes, class_names):
             class_name = class_name.numpy().decode('utf-8')
             bbox_np = bbox.numpy()

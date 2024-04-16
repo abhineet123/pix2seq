@@ -42,6 +42,7 @@ def update_task_config(cfg):
 
         task_config.train_transforms = transform_configs.get_video_detection_train_transforms(
             cfg.dataset.transforms,
+            cfg.dataset.target_size,
             image_size, length, max_disp, max_instances_per_image)
         task_config.eval_transforms = transform_configs.get_video_detection_eval_transforms(
             cfg.dataset.transforms,
