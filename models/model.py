@@ -110,10 +110,11 @@ class Trainer(abc.ABC):
           strategy: tensorflow strategy such as `TPUStrategy` or `MirroredStrategy`.
         """
         # logging.info('train_step begins...')
+        
         preprocessed_outputs = [
             t.preprocess_batched(e, training=True) for e, t in zip(examples, tasks)]
 
-        return
+        # return
 
         task_loss_metrics = {}
         loss = 0
