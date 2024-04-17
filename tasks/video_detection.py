@@ -250,14 +250,8 @@ class TaskVideoDetection(task_lib.Task):
 
         bboxes_, bboxes_rescaled_, classes_, scores_ = (
             pred_bboxes.numpy(), pred_bboxes_rescaled.numpy(), pred_classes.numpy(), scores.numpy())
-        videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
 
-        import cv2
-        for video_ in videos_:
-            for image_ in video_:
-                print()
-                # cv2.imshow('image_', image_)
-                # cv2.waitKey(0)
+        videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
 
         vis_utils.add_video_summary_with_bbox(
             videos_, bboxes_, bboxes_rescaled_,

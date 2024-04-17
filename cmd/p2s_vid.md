@@ -31,7 +31,7 @@
     - [ipsc-16_53-len-2       @ resnet-640-lfn](#ipsc_16_53_len_2___resnet_640_lfn_)
         - [on-train       @ ipsc-16_53-len-2/resnet-640-lfn](#on_train___ipsc_16_53_len_2_resnet_640_lf_n_)
             - [strd-1       @ on-train/ipsc-16_53-len-2/resnet-640-lfn](#strd_1___on_train_ipsc_16_53_len_2_resnet_640_lfn_)
-            - [strd-3       @ on-train/ipsc-16_53-len-2/resnet-640-lfn](#strd_3___on_train_ipsc_16_53_len_2_resnet_640_lfn_)
+            - [strd-2       @ on-train/ipsc-16_53-len-2/resnet-640-lfn](#strd_2___on_train_ipsc_16_53_len_2_resnet_640_lfn_)
         - [on-54_126       @ ipsc-16_53-len-2/resnet-640-lfn](#on_54_126___ipsc_16_53_len_2_resnet_640_lf_n_)
             - [strd-1       @ on-54_126/ipsc-16_53-len-2/resnet-640-lfn](#strd_1___on_54_126_ipsc_16_53_len_2_resnet_640_lf_n_)
             - [strd-3       @ on-54_126/ipsc-16_53-len-2/resnet-640-lfn](#strd_3___on_54_126_ipsc_16_53_len_2_resnet_640_lf_n_)
@@ -224,8 +224,8 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=tra
 <a id="strd_1___on_train_ipsc_16_53_len_2_resnet_640_lfn_"></a>
 #### strd-1       @ on-train/ipsc-16_53-len-2/resnet-640-lfn-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9-lfn,_eval_,vid_det,ipsc-16_53,len-2,strd-1,batch-6,save-vis-1,dbg-0,dyn-1
-<a id="strd_3___on_train_ipsc_16_53_len_2_resnet_640_lfn_"></a>
-#### strd-3       @ on-train/ipsc-16_53-len-2/resnet-640-lfn-->p2s_vid
+<a id="strd_2___on_train_ipsc_16_53_len_2_resnet_640_lfn_"></a>
+#### strd-2       @ on-train/ipsc-16_53-len-2/resnet-640-lfn-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9-lfn,_eval_,vid_det,ipsc-16_53,len-2,strd-2,batch-6,save-vis-1,dbg-0,dyn-1
 <a id="on_54_126___ipsc_16_53_len_2_resnet_640_lf_n_"></a>
 ### on-54_126       @ ipsc-16_53-len-2/resnet-640-lfn-->p2s_vid
