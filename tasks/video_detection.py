@@ -150,14 +150,13 @@ class TaskVideoDetection(task_lib.Task):
         examples, input_seq, target_seq, token_weights = preprocessed_outputs  # response_seq unused by default
         videos = examples['video']
 
-        videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
-
-        import cv2
-        for video_ in videos_:
-            for image_ in video_:
-                cv2.imshow('image_', image_)
-                cv2.waitKey(100)
-                print()
+        # videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
+        # import cv2
+        # for video_ in videos_:
+        #     for image_ in video_:
+        #         cv2.imshow('image_', image_)
+        #         cv2.waitKey(100)
+        #         print()
 
         # video = tf.identity(video).gpu()
         bsz = tf.shape(videos)[0]
