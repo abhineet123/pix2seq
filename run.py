@@ -288,8 +288,11 @@ def main(unused_argv):
         import eval
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):
-            result = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
+            csv_dir_name = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
                               model_lib, tf)
+            if cfg.eval.pipeline:
+                continue
+
             logging.info('Eval complete. Exiting...')
             break
         else:

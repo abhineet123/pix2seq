@@ -38,27 +38,25 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
     out_dir = os.path.join(cfg.model_dir, f'{ckpt_name}-{json_name}')
 
-    out_csv_dir = out_vis_dir = None
     save_suffix = ''
     if cfg.eval.save_suffix:
         save_suffix = '-'.join(cfg.eval.save_suffix)
 
+    csv_dir_name = f'csv'
+    if save_suffix:
+        csv_dir_name = f'{csv_dir_name:s}-{save_suffix:s}'
+    out_csv_dir = os.path.join(out_dir, csv_dir_name)
     if cfg.eval.save_csv:
-        csv_dir_name = f'csv'
-        if save_suffix:
-            csv_dir_name = f'{csv_dir_name:s}-{save_suffix:s}'
-        out_csv_dir = os.path.join(out_dir, csv_dir_name)
         print(f'\nwriting csv files to: {out_csv_dir}\n')
         os.makedirs(out_csv_dir, exist_ok=True)
 
+    vis_dir_name = f'vis'
+    if save_suffix:
+        vis_dir_name = f'{vis_dir_name:s}-{save_suffix:s}'
+    out_vis_dir = os.path.join(out_dir, vis_dir_name)
     if cfg.eval.save_vis:
-        vis_dir_name = f'vis'
-        if save_suffix:
-            vis_dir_name = f'{vis_dir_name:s}-{save_suffix:s}'
-        out_vis_dir = os.path.join(out_dir, vis_dir_name)
-        os.makedirs(out_vis_dir, exist_ok=True)
-
         print(f'\nwriting vis images to: {out_vis_dir}\n')
+        os.makedirs(out_vis_dir, exist_ok=True)
 
     seq_to_csv_rows = collections.defaultdict(list)
     seq_to_vid_cap = collections.defaultdict(lambda: None)
@@ -185,4 +183,4 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         with tf.io.gfile.GFile(result_json_path, 'w') as f:
             json.dump({k: float(v) for k, v in result.items()}, f)
 
-    return result
+    return csv_dir_name

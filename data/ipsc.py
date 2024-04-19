@@ -118,6 +118,69 @@ class IPSCObjectDetectionTFRecordDataset(tf_record.TFRecordDataset):
         return new_example
 
 
+@dataset_lib.DatasetRegistry.register('ipsc_semantic_segmentation')
+class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
+
+    def parse_example(self, example, training):
+        """Parse the serialized example into a dictionary of tensors.
+
+        Args:
+          example: the serialized tf.train.Example or tf.train.SequenceExample.
+          training: `bool` of training vs eval mode.
+
+        Returns:
+          a dictionary of feature name to tensors.
+        """
+        # print(f'example: {example}')
+
+        # raise AssertionError()
+
+        feature_map = self.get_feature_map(training)
+        if isinstance(feature_map, dict):
+            example = tf.io.parse_single_example(example, feature_map)
+        else:
+            raise AssertionError('unsupported type of feature_map')
+
+        for k in example:
+            if isinstance(example[k], tf.SparseTensor):
+                if example[k].dtype == tf.string:
+                    example[k] = tf.sparse.to_dense(example[k], default_value='')
+                else:
+                    example[k] = tf.sparse.to_dense(example[k], default_value=0)
+        return example
+
+    def get_feature_map(self, training):
+        img_feature_map = decode_utils.get_feature_map_for_image()
+        seg_feature_map = decode_utils.get_feature_map_for_semantic_segmentation()
+        return {**img_feature_map, **seg_feature_map}
+
+    def extract(self, example, training):
+        img_id = example['image/source_id']
+        image = decode_utils.decode_image(example)
+        mask = decode_utils.decode_mask(example)
+
+        orig_image_size = tf.shape(image)[:2]
+        target_size = self.config.target_size
+
+        if target_size is not None:
+            image = tf.image.resize(
+                image, target_size, method='bilinear',
+                antialias=False, preserve_aspect_ratio=False)
+            mask = tf.image.resize(
+                mask, target_size, method='bilinear',
+                antialias=False, preserve_aspect_ratio=False)
+
+        resized_image_size = tf.shape(image)[:2]
+
+        new_example = {
+            'image': image,
+            'mask': mask,
+            'orig_image_size': orig_image_size,
+            'image/id': img_id,
+            'image/resized': resized_image_size,
+        }
+        return new_example
+
 @dataset_lib.DatasetRegistry.register('ipsc_instance_segmentation')
 class IPSCInstanceSegmentationTFRecordDataset(tf_record.TFRecordDataset):
     """Coco instance segmentation dataset."""

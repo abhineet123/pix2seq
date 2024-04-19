@@ -43,10 +43,6 @@ class TaskSemanticSegmentation(task_lib.Task):
           A dataset.
         """
         if self.config.debug != 2:
-            if training:
-                dataset = dataset.filter(  # Filter out images with no annotations.
-                    lambda example: tf.shape(example['label'])[0] > 0)
-
             dataset = dataset.map(
                 lambda x: self.preprocess_single_example(
                     x, training, validation, batch_duplicates),
