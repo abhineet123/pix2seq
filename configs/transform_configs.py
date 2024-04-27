@@ -218,6 +218,68 @@ def get_video_detection_eval_transforms(
     ]
 
 
+
+
+def get_semantic_segmentation_train_transforms(
+        cfg,
+        image_size: Tuple[int, int],
+):
+    train_transforms = [
+    ]
+    if cfg.scale_jitter:
+        train_transforms.append(
+            D(name='scale_jitter',
+              inputs=['image', 'mask'],
+              target_size=image_size,
+              min_scale=cfg.jitter_scale_min,
+              max_scale=cfg.jitter_scale_max)
+        )
+    if cfg.fixed_crop:
+        train_transforms.append(
+            D(name='fixed_size_crop',
+              inputs=['image', 'mask'],
+              target_size=image_size,
+              )
+        )
+    else:
+        train_transforms.append(
+            D(name='resize_image',
+              inputs=['image', 'mask'],
+              antialias=[True],
+              target_size=image_size)
+        )
+
+    train_transforms += [
+        D(name='random_horizontal_flip',
+          inputs=['image', 'mask'],
+          ),
+        D(name='pad_image_to_max_size',
+          inputs=['image', 'mask'],
+          target_size=image_size,
+          ),
+    ]
+
+    return train_transforms
+
+
+def get_semantic_segmentation_eval_transforms(
+        image_size: Tuple[int, int],
+):
+    return [
+        D(name='resize_image',
+          inputs=['image', 'mask'],
+          antialias=[True],
+          target_size=image_size),
+        D(name='pad_image_to_max_size',
+          inputs=['image', 'mask'],
+          target_size=image_size,
+          ),
+    ]
+
+
+
+
+
 def get_instance_segmentation_train_transforms(
         image_size: Tuple[int, int],
         max_instances_per_image: int,

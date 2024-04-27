@@ -117,6 +117,18 @@ def get_ipsc_video_data():
     )
 
 
+def get_sem_seg_data():
+    root_dir = './datasets/ipsc/well3/all_frames_roi'
+
+    return D(
+        name='ipsc_semantic_segmentation',
+        root_dir=root_dir,
+        label_shift=0,
+        compressed=0,
+        **_shared_dataset_config
+    )
+
+
 def ipsc_post_process(ds_cfg, task_cfg, training):
     import os
 
@@ -236,39 +248,5 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
 dataset_configs = {
     'ipsc_object_detection': get_ipsc_data(),
     'ipsc_video_detection': get_ipsc_video_data(),
-    # 'coco/2017_object_detection':
-    #     D(
-    #         name='coco/2017_object_detection',
-    #         train_filename_for_metrics='instances_train2017.json',
-    #         eval_filename_for_metrics='instances_val2017.json',
-    #         category_names_path=os.path.join(
-    #             _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
-    #             'instances_val2017.json'),
-    #         **_shared_coco_dataset_config
-    #     ),
-    # 'coco/2017_instance_segmentation':
-    #     D(
-    #         name='coco/2017_instance_segmentation',
-    #         train_filename_for_metrics='instances_train2017.json',
-    #         eval_filename_for_metrics='instances_val2017.json',
-    #         category_names_path=os.path.join(
-    #             _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
-    #             'instances_val2017.json'),
-    #         **_shared_coco_dataset_config
-    #     ),
-    # 'coco/2017_keypoint_detection':
-    #     D(
-    #         name='coco/2017_keypoint_detection',
-    #         train_filename_for_metrics='person_keypoints_train2017.json',
-    #         eval_filename_for_metrics='person_keypoints_val2017.json',
-    #         category_names_path=os.path.join(
-    #             _shared_coco_dataset_config['coco_annotations_dir_for_metrics'],
-    #             'person_keypoints_val2017.json'),
-    #         **_shared_coco_dataset_config
-    #     ),
-    # 'coco/2017_captioning':
-    #     D(name='coco/2017_captioning',
-    #       train_filename_for_metrics='captions_train2017_eval_compatible.json',
-    #       eval_filename_for_metrics='captions_val2017_eval_compatible.json',
-    #       **_shared_coco_dataset_config),
+    'ipsc_semantic_segmentation': get_sem_seg_data(),
 }

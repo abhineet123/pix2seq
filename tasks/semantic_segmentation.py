@@ -1,9 +1,5 @@
-import json
-import os
-import pickle
 from typing import Any, Dict, List
 
-from absl import logging
 import ml_collections
 import numpy as np
 import utils
@@ -21,28 +17,12 @@ class TaskSemanticSegmentation(task_lib.Task):
                  config: ml_collections.ConfigDict):
         super().__init__(config)
 
-        if config.task.get('max_seq_len', 'auto') == 'auto':
-            self.config.task.max_seq_len = config.task.max_instances_per_image * 5
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
 
     def preprocess_single(self, dataset, batch_duplicates, training, validation):
-        """Task-specific preprocessing of individual example in the dataset.
-
-        Typical operations in this preprocessing step for detection task:
-          - Image augmentation such random resize & cropping, color jittering, flip.
-          - Label augmentation such as sampling noisy & duplicated boxes.
-
-        Args:
-          dataset: A tf.data.Dataset.
-          batch_duplicates: `int`, enlarge a batch by augmenting it multiple times
-            (as specified) and concating the augmented examples.
-          training: bool.
-
-        Returns:
-          A dataset.
-        """
         if self.config.debug != 2:
+            """apply transforms"""
             dataset = dataset.map(
                 lambda x: self.preprocess_single_example(
                     x, training, validation, batch_duplicates),
@@ -60,34 +40,21 @@ class TaskSemanticSegmentation(task_lib.Task):
                 self.train_transforms, batched_examples,
                 vis=1, model_dir=self.config.model_dir, training=training)
 
-        # Create input/target seq.
-        """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
-        ret = build_response_seq_from_bbox(
-            batched_examples['bbox'], batched_examples['label'],
-            config.quantization_bins, config.noise_bbox_weight,
+        response_seq, token_weights = build_response_seq_from_mask(
+            batched_examples['mask'],
+            config.quantization_bins,
             mconfig.coord_vocab_shift,
-            class_label_corruption=config.class_label_corruption)
-
-        """response_seq_cm has random and noise class labels by default"""
-        response_seq, response_seq_cm, token_weights = ret
-
-        """
-        vocab_id=10 for object_detection
-        prompt_seq is apparently just a [bsz, 1] vector containing vocab_id and serves as the start token        
-        """
+        )
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             task_vocab_id=self.task_vocab_id,
             response_seq=response_seq)  # (bsz, 1)
-        input_seq = tf.concat([prompt_seq, response_seq_cm], -1)
+        input_seq = tf.concat([prompt_seq, response_seq], -1)
         target_seq = tf.concat([prompt_seq, response_seq], -1)
 
         # Pad sequence to a unified maximum length.
         """
         max_seq_len=512 for object_detection
         """
-        # assert input_seq.shape[-1] <= config.max_seq_len + 1, \
-        #     f"input_seq length {input_seq.shape[-1]} exceeds max_seq_len {config.max_seq_len + 1}"
-
         input_seq = utils.pad_to_max_len(input_seq, config.max_seq_len + 1,
                                          dim=-1, padding_token=vocab.PADDING_TOKEN)
         target_seq = utils.pad_to_max_len(target_seq, config.max_seq_len + 1,
@@ -105,17 +72,10 @@ class TaskSemanticSegmentation(task_lib.Task):
         """
         token_weights = tf.where(
             target_seq == vocab.PADDING_TOKEN,
-            # stupid way of assigning eos_token_weight to padding tokens,
-            # just eos_token_weight should work here too since tf.where is supposed to broadcast
             tf.zeros_like(token_weights) + config.eos_token_weight,
             token_weights)
 
         return batched_examples, input_seq, target_seq, token_weights
-
-        # if training:
-        #     return batched_examples, input_seq, target_seq, token_weights
-        # else:
-        #     return batched_examples, input_seq, response_seq, target_seq, token_weights
 
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""
@@ -131,31 +91,6 @@ class TaskSemanticSegmentation(task_lib.Task):
             max_seq_len=(config.max_instances_per_image_test * 5 + 1),
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
-        # if self.config.validation:
-        #     from models import model_utils
-        #
-        #     target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
-        #     token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)
-        #     token_weights = utils.tf_float32(token_weights)
-        #
-        #     is_padding = tf.equal(target_seq, vocab.PADDING_TOKEN)  # padding tokens.
-        #     token_weights_notpad = tf.where(
-        #         is_padding, tf.zeros_like(token_weights), token_weights)
-        #     losses = model_utils.get_loss(
-        #         logits, target_seq, self.config.train.loss_type)
-        #     loss = tf.reduce_sum(losses * token_weights) / (
-        #             tf.reduce_sum(token_weights) + 1e-9)
-        #     loss_notpad = tf.reduce_sum(losses * token_weights_notpad) / (
-        #             tf.reduce_sum(token_weights_notpad) + 1e-9)
-        #
-        #     y_mask = tf.greater(token_weights_notpad, 0)
-        #     y_correct_pc_m, accuracy_notpad_m = model_utils.get_val_metrics(
-        #         target_seq, pred_seq, logits, y_mask, self.val_m)
-        #     return loss, loss_notpad, y_correct_pc_m, accuracy_notpad_m
-
-        # if True:  # Sanity check by using gt response_seq as pred_seq.
-        #   pred_seq = preprocessed_outputs[1]
-        #   logits = tf.one_hot(pred_seq, mconfig.vocab_size)
         return examples, pred_seq, logits
 
     def postprocess_tpu(self, batched_examples, pred_seq, logits,
@@ -264,52 +199,6 @@ class TaskSemanticSegmentation(task_lib.Task):
         if ret_results:
             return ret_images
 
-    def evaluate(self, summary_writer, step, eval_tag):
-        """Evaluate results on accumulated outputs (after multiple infer steps).
-
-        Args:
-          summary_writer: the summary writer.
-          step: current step.
-          eval_tag: `string` name scope for eval result summary.
-
-        Returns:
-          result as a `dict`.
-        """
-        metrics = self.compute_scalar_metrics(step)
-
-        if summary_writer is not None:
-            with summary_writer.as_default():
-                with tf.name_scope(eval_tag):
-                    self._log_metrics(metrics, step)
-                summary_writer.flush()
-        result_json_path = os.path.join(
-            self.config.model_dir, eval_tag + 'cocoeval.pkl')
-        if self._coco_metrics:
-            tosave = {'dataset': self._coco_metrics.dataset,
-                      'detections': np.array(self._coco_metrics.detections)}
-            with tf.io.gfile.GFile(result_json_path, 'wb') as f:
-                pickle.dump(tosave, f)
-        self.reset_metrics()
-        if self.config.task.get('eval_outputs_json_path', None):
-            annotations_to_save = {
-                'annotations': self.eval_output_annotations,
-                'categories': list(self._category_names.values())
-            }
-            json_path = self.config.task.eval_outputs_json_path.format(
-                eval_split=self.config.dataset.eval_split,
-                top_p=self.config.task.top_p,
-                max_instances_per_image_test=self.config.task
-                .max_instances_per_image_test,
-                step=int(step))
-            tf.io.gfile.makedirs(os.path.basename(json_path))
-            logging.info('Saving %d result annotations to %s',
-                         len(self.eval_output_annotations),
-                         json_path)
-            with tf.io.gfile.GFile(json_path, 'w') as f:
-                json.dump(annotations_to_save, f)
-            self.eval_output_annotations = []
-        return metrics
-
     def compute_scalar_metrics(self, step):
         """Returns a dict containing scalar metrics to log."""
         if self._coco_metrics:
@@ -323,94 +212,49 @@ class TaskSemanticSegmentation(task_lib.Task):
             self._coco_metrics.reset_states()
 
 
-def build_response_seq_from_bbox(bbox,
-                                 label,
-                                 quantization_bins,
-                                 noise_bbox_weight,
-                                 coord_vocab_shift,
-                                 class_label_corruption='rand_cls'):
-    """"Build target seq from bounding bboxes for object detection.
+# ref.: https://www.kaggle.com/stainsby/fast-tested-rle
+def mask_to_rle(img):
+    pixels = img.flatten()
+    pixels = np.concatenate([[0], pixels, [0]])
+    runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
+    # runs[1::2] -= runs[::2]
+    # starts, lengths = runs[::2], runs[1::2]
+    row, col = np.unravel_index(runs, img.shape)
 
-    Objects are serialized using the format of yxyxc.
+    rle = [item for sublist in zip(row, col) for item in sublist]
+    rle_str = ' '.join(f'{r} {c}' for r, c in zip(row, col))
+    rle_str2 = ' '.join(rle)
+    assert rle_str == rle_str2, "rle_str mismatch"
 
-    Args:
-      bbox: `float` bounding box of shape (bsz, n, 4).
-      label: `int` label of shape (bsz, n).
-      quantization_bins: `int`.
-      noise_bbox_weight: `float` on the token weights for noise bboxes.
-      coord_vocab_shift: `int`, shifting coordinates by a specified integer.
-      class_label_corruption: `string` specifying how labels are corrupted for the
-        input_seq.
+    n_rows, n_cols = img.shape
+    row_norm, col_norm = row.astype(np.float32) / n_rows, col.astype(np.float32) / n_cols
+    rle_norm = [item for sublist in zip(row_norm, col_norm) for item in sublist]
+    return rle_norm
 
-    Returns:
-      discrete sequences with shape (bsz, seqlen).
-    """
-    # Bbox and label quantization.
-    is_padding = tf.expand_dims(tf.equal(label, 0), -1)
-    quantized_bbox = utils.quantize(bbox, quantization_bins)
-    quantized_bbox = quantized_bbox + coord_vocab_shift
 
-    """set 0-labeled bboxes to zero"""
-    quantized_bbox = tf.where(is_padding,
-                              tf.zeros_like(quantized_bbox), quantized_bbox)
-    new_label = tf.expand_dims(label + vocab.BASE_VOCAB_SHIFT, -1)
-    new_label = tf.where(is_padding, tf.zeros_like(new_label), new_label)
-    lb_shape = tf.shape(new_label)
+def rle2mask(mask_rle, label, shape):
+    s = mask_rle.split()
+    starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
+    starts -= 1
+    ends = starts + lengths
+    img = np.zeros(shape[0] * shape[1], dtype=np.uint8)
+    for lo, hi in zip(starts, ends):
+        img[lo:hi] = label
+    return img.reshape(shape)  # Needed to align to RLE direction
 
-    # Bbox and label serialization.
-    response_seq = tf.concat([quantized_bbox, new_label], axis=-1)
 
-    """Merge last few dims to have rank-2 shape [bsz, n_tokens] where
-    n_tokens = n_bboxes*5    
-    """
-    response_seq = utils.flatten_non_batch_dims(response_seq, 2)
+def build_response_seq_from_mask(
+        mask,
+        quantization_bins,
+        coord_vocab_shift):
+    rle_norm = mask_to_rle(mask)
+    quantized_rle = utils.quantize(rle_norm, quantization_bins)
+    quantized_rle = quantized_rle + coord_vocab_shift
 
-    """
-    different Combinations of random, fake and real class labels apparently 
-    created just in case something other than the real labels is required 
-    according to the class_label_corruption Parameter
-    class_label_corruption=rand_n_fake_cls by default
-    """
-    rand_cls = vocab.BASE_VOCAB_SHIFT + tf.random.uniform(
-        lb_shape,
-        0,
-        coord_vocab_shift - vocab.BASE_VOCAB_SHIFT,
-        dtype=new_label.dtype)
-    fake_cls = vocab.FAKE_CLASS_TOKEN + tf.zeros_like(new_label)
-    rand_n_fake_cls = tf.where(
-        tf.random.uniform(lb_shape) > 0.5, rand_cls, fake_cls)
-    real_n_fake_cls = tf.where(
-        tf.random.uniform(lb_shape) > 0.5, new_label, fake_cls)
-    real_n_rand_n_fake_cls = tf.where(
-        tf.random.uniform(lb_shape) > 0.5, new_label, rand_n_fake_cls)
-    label_mapping = {'none': new_label,
-                     'rand_cls': rand_cls,
-                     'real_n_fake_cls': real_n_fake_cls,
-                     'rand_n_fake_cls': rand_n_fake_cls,
-                     'real_n_rand_n_fake_cls': real_n_rand_n_fake_cls}
-    new_label_m = label_mapping[class_label_corruption]
-    new_label_m = tf.where(is_padding, tf.zeros_like(new_label_m), new_label_m)
+    # quantized_rle = utils.flatten_non_batch_dims(quantized_rle, 2)
+    token_weights = tf.ones_like(quantized_rle)
 
-    """response_seq_class_m is apparently same as response_seq if no corruptions are needed,
-    i.e. if class_label_corruption=none"""
-    response_seq_class_m = tf.concat([quantized_bbox, new_label_m], axis=-1)
-    response_seq_class_m = utils.flatten_non_batch_dims(response_seq_class_m, 2)
-
-    # Get token weights.
-    is_real = tf.cast(tf.not_equal(new_label, vocab.FAKE_CLASS_TOKEN), tf.float32)
-
-    """noise and real bbox coord tokens have weights 1 and 0 respectively"""
-    bbox_weight = tf.tile(is_real, [1, 1, 4])
-    """
-    real bbox class tokens have weight 1
-    noise bbox class tokens have weight noise_bbox_weight    
-    """
-    label_weight = is_real + (1. - is_real) * noise_bbox_weight
-
-    token_weights = tf.concat([bbox_weight, label_weight], -1)
-    token_weights = utils.flatten_non_batch_dims(token_weights, 2)
-
-    return response_seq, response_seq_class_m, token_weights
+    return quantized_rle, token_weights
 
 
 def build_annotations(image_ids, category_ids, boxes, scores,

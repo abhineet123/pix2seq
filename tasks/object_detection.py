@@ -367,26 +367,29 @@ def build_response_seq_from_bbox(bbox,
     quantized_bbox = utils.quantize(bbox, quantization_bins)
     quantized_bbox = quantized_bbox + coord_vocab_shift
 
-    """set 0-labeled bboxes to zero"""
+    """set 0-labeled bbox tokens to zero"""
+    """(bsz, n, 4)"""
     quantized_bbox = tf.where(is_padding,
                               tf.zeros_like(quantized_bbox), quantized_bbox)
+    """(bsz, n, 1)"""
     new_label = tf.expand_dims(label + vocab.BASE_VOCAB_SHIFT, -1)
     new_label = tf.where(is_padding, tf.zeros_like(new_label), new_label)
     lb_shape = tf.shape(new_label)
 
     # Bbox and label serialization.
+    """(bsz, n, 5)"""
     response_seq = tf.concat([quantized_bbox, new_label], axis=-1)
 
     """Merge last few dims to have rank-2 shape [bsz, n_tokens] where
     n_tokens = n_bboxes*5    
     """
+    """(bsz, n*5)"""
     response_seq = utils.flatten_non_batch_dims(response_seq, 2)
 
     """
     different Combinations of random, fake and real class labels apparently 
     created just in case something other than the real labels is required 
-    according to the class_label_corruption Parameter
-    class_label_corruption=rand_n_fake_cls by default
+    according to class_label_corruption parameter (rand_n_fake_cls by default)
     """
     rand_cls = vocab.BASE_VOCAB_SHIFT + tf.random.uniform(
         lb_shape,

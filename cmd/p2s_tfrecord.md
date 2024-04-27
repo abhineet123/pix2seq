@@ -59,7 +59,7 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=mnist:640-5:12_1000:test:seq-0_
 # ipsc       @ tfrecord-->p2s_setup
 <a id="0_1___ipsc_"></a>
 ## 0_1       @ ipsc-->p2s_tfrecord
-python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:0_1:gz
+python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:0_1:gz:mask
 <a id="2_3___ipsc_"></a>
 ## 2_3       @ ipsc-->p2s_tfrecord
 python3 data/scripts/create_ipsc_tfrecord.py cfg=ipsc:2_3:gz

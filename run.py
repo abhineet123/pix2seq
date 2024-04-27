@@ -206,6 +206,7 @@ def main(unused_argv):
     # from tasks import keypoint_detection
     from tasks import object_detection
     from tasks import video_detection
+    from tasks import semantic_segmentation
     # pylint: enable=unused-import
     from tasks import task as task_lib
 
@@ -290,8 +291,8 @@ def main(unused_argv):
                 checkpoint_dir, min_interval_secs=1, timeout=5):
             csv_dir_name = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
                               model_lib, tf)
-            if cfg.eval.pipeline:
-                continue
+            # if cfg.eval.pipeline:
+            #     continue
 
             logging.info('Eval complete. Exiting...')
             break

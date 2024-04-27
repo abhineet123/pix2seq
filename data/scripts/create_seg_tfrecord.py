@@ -26,7 +26,6 @@ class Params(paramparse.CFG):
         self.ann_file = ''
         self.ann_suffix = ''
         self.image_dir = ''
-        self.masks_dir = ''
         self.enable_masks = 1
         self.vis = 0
 
@@ -144,9 +143,8 @@ def obj_annotations_to_seg_dict(obj_annotations):
     }
 
 
-def generate_annotations(images,
-                         image_dir,
-                         masks_dir,
+def generate_annotations(images, image_dir,
+                         # panoptic_masks_dir,
                          category_id_to_name_map,
                          img_to_obj_ann,
                          enable_masks,
@@ -173,7 +171,7 @@ def generate_annotations(images,
         yield (
             image,
             image_dir,
-            masks_dir,
+            # panoptic_masks_dir,
             category_id_to_name_map,
             object_ann,
             enable_masks,
@@ -187,7 +185,7 @@ def generate_annotations(images,
 def create_tf_example(
         image,
         image_dir,
-        masks_dir,
+        # panoptic_masks_dir,
         category_id_to_name_map,
         object_ann,
         enable_masks,
@@ -202,10 +200,8 @@ def create_tf_example(
     filename = image['file_name']
     image_id = image['id']
 
-    image_path = os.path.join(image_dir, filename)
-    with tf.io.gfile.GFile(image_path, 'rb') as fid:
+    with tf.io.gfile.GFile(os.path.join(image_dir, filename), 'rb') as fid:
         encoded_jpg = fid.read()
-
     feature_dict = tfrecord_lib.image_info_to_feature_dict(
         image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
 
@@ -217,15 +213,7 @@ def create_tf_example(
         feature_dict.update(obj_feature_dict)
 
         if enable_masks:
-            assert masks_dir, "masks_dir must be provided"
-            # seg_feature_dict = obj_annotations_to_seg_dict(object_ann)
-            image_dir_, image_name_ = os.path.dirname(image_path), os.path.splitext(os.path.basename(image_path))[0]
-            masks_path = os.path.join(image_dir_, masks_dir, f'{image_name_}.png')
-            with tf.io.gfile.GFile(masks_path, 'rb') as fid:
-                encoded_png = fid.read()
-            seg_feature_dict = {
-                'image/mask': tfrecord_lib.convert_to_feature(encoded_png),
-            }
+            seg_feature_dict = obj_annotations_to_seg_dict(object_ann)
             feature_dict.update(seg_feature_dict)
 
     example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
@@ -237,11 +225,6 @@ def main():
 
     assert params.ann_file, "ann_file must be provided"
     assert params.image_dir, "image_dir must be provided"
-
-    if params.enable_masks:
-        print('masks are enabled')
-        if not params.masks_dir:
-            params.masks_dir = 'masks'
 
     if params.ann_suffix:
         params.ann_file = f'{params.ann_file}-{params.ann_suffix}'
@@ -260,7 +243,8 @@ def main():
 
     params.ann_file = os.path.join(params.image_dir, f'{params.ann_file}.{params.ann_ext}')
 
-    image_info, category_id_to_name_map, img_to_obj_ann = load_instance_annotations(params.ann_file)
+    image_info, category_id_to_name_map, img_to_obj_ann = (
+        load_instance_annotations(params.ann_file))
 
     if not params.output_dir:
         params.output_dir = os.path.join(params.image_dir, 'tfrecord')
@@ -277,7 +261,7 @@ def main():
     annotations_iter = generate_annotations(
         images=image_info,
         image_dir=params.image_dir,
-        masks_dir=params.masks_dir,
+        # panoptic_masks_dir=params.pan_masks_dir,
         category_id_to_name_map=category_id_to_name_map,
         img_to_obj_ann=img_to_obj_ann,
         enable_masks=params.enable_masks,
