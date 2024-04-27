@@ -8,7 +8,6 @@ import ml_collections
 import numpy as np
 import utils
 import vocab
-from metrics import metric_registry
 from metrics import metric_utils
 from tasks import task as task_lib
 from tasks import task_utils
