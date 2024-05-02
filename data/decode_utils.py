@@ -121,10 +121,13 @@ def decode_image(example):
 
 def decode_mask(example):
     """Decodes the image and set its static shape."""
-    image = tf.io.decode_image(example['image/mask'], channels=1)
-    image.set_shape([None, None])
-    image = tf.image.convert_image_dtype(image, tf.float32)
-    return image
+    mask = tf.io.decode_image(example['image/mask'], channels=1)
+    mask = tf.image.convert_image_dtype(mask, tf.float32)
+
+    """tf.image operations only seem to support 3D or greater images"""
+    # mask = tf.expand_dims(mask, axis=-1)
+    mask.set_shape([None, None, 1])
+    return mask
 
 
 def decode_boxes(example):

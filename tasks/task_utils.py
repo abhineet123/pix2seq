@@ -17,10 +17,134 @@
 
 import json
 from typing import Optional, Any, Dict
-from absl import logging
+
+import cv2
+
 import utils
 import vocab
 import tensorflow as tf
+
+import numpy as np
+
+
+def split_runs(run_ids, starts, lengths, max_length):
+    """divide over-long runs into segments"""
+    new_starts_ = []
+    new_lengths_ = []
+    # starts_, lengths_ = list(starts), list(lengths)
+    for _id in run_ids:
+        start, length = starts[_id], lengths[_id]
+
+        new_starts_.append(start)
+        new_lengths_.append(max_length)
+
+        residual_length = length - max_length
+        start_ = start
+        length_ = max_length
+        while True:
+            start_ += length_
+            new_starts_.append(start_)
+
+            length_ = min(residual_length, max_length)
+            new_lengths_.append(length_)
+
+            residual_length -= length_
+            if residual_length <= 0:
+                break
+
+        # if _id < len(lengths) - 1:
+        #     cmb = np.stack((starts, lengths), axis=1)
+        #     cmb_new = np.stack((new_starts_, new_lengths_), axis=1)
+        #     print()
+
+    valid_starts = [v for i, v in enumerate(starts) if i not in run_ids]
+    valid_lengths = [v for i, v in enumerate(lengths) if i not in run_ids]
+
+    valid_starts += new_starts_
+    valid_lengths += new_lengths_
+
+    starts, lengths = np.asarray(valid_starts), np.asarray(valid_lengths)
+
+    sort_idx = np.argsort(starts)
+    starts = starts[sort_idx]
+    lengths = lengths[sort_idx]
+
+    return starts, lengths
+
+
+def mask_to_rle(mask, max_length, start_2d):
+    """
+    https://www.kaggle.com/stainsby/fast-tested-rle
+    https://ccshenyltw.medium.com/run-length-encode-and-decode-a33383142e6b
+
+    :param mask:
+    :param max_length:
+    :param start_2d:
+    :return:
+    """
+    assert len(mask.shape) == 2, "only greyscale masks are supported"
+
+    pixels = mask.flatten()
+    pixels = np.concatenate([[0], pixels, [0]])
+    """the +1 in the original code was to convert indices from 0-based to 1-based"""
+    runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
+
+    if len(runs) == 0:
+        return [], []
+
+    if len(runs) % 2 != 0:
+        # from datetime import datetime
+        # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
+        # cv2.imwrite(f'annoying_mask_rle_len_{len(runs)}_{time_stamp}.png', mask)
+        # return None
+        raise AssertionError("runs must have even length")
+
+    runs[1::2] -= runs[::2]
+    starts, lengths = runs[::2], runs[1::2]
+
+    if max_length > 0:
+        overlong_runs = np.nonzero(lengths > max_length)[0]
+        if len(overlong_runs) > 0:
+            starts, lengths = split_runs(overlong_runs, starts, lengths, max_length)
+
+    lengths_norm = lengths.astype(np.float32) / max_length
+
+    if start_2d:
+        """2D start tokens"""
+        # runs[1:] -= 1
+        row, col = np.unravel_index(starts, mask.shape)
+        rle = [item for sublist in zip(row, col, lengths) for item in sublist]
+
+        n_rows, n_cols = mask.shape
+        row_norm, col_norm = row.astype(np.float32) / n_rows, col.astype(np.float32) / n_cols
+        rle_norm = [item for sublist in zip(row_norm, col_norm, lengths_norm) for item in sublist]
+    else:
+        n_pix = mask.size
+        starts_norm = starts.astype(np.float32) / n_pix
+
+        rle = [int(item) for sublist in zip(starts, lengths) for item in sublist]
+        rle_norm = [float(item) for sublist in zip(starts_norm, lengths_norm) for item in sublist]
+
+    return rle, rle_norm
+
+
+def rle_to_mask(mask_rle, shape, start_2d, label=1):
+    s = mask_rle
+    if start_2d:
+        start_rows, start_cols, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::3], s[1:][::3], s[2:][::3])]
+        starts = np.ravel_multi_index((start_rows, start_cols), shape)
+    else:
+        starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
+
+    """ends are exclusive while starts are inclusive"""
+    ends = starts + lengths
+    mask_flat = np.zeros(shape[0] * shape[1], dtype=np.uint8)
+    for lo, hi in zip(starts, ends):
+        mask_flat[lo:hi] = label
+
+    mask = mask_flat.reshape(shape)
+
+    return mask
 
 
 def get_category_names(

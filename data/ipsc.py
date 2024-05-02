@@ -35,6 +35,7 @@ def _xy_to_yx(tensor):
     t = tf.stack([t[:, :, 1], t[:, :, 0]], axis=2)
     return tf.reshape(t, [-1, max_points * 2])
 
+
 @dataset_lib.DatasetRegistry.register('ipsc_object_detection')
 class IPSCObjectDetectionTFRecordDataset(tf_record.TFRecordDataset):
     """IPSC object detection dataset."""
@@ -169,6 +170,7 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
             mask = tf.image.resize(
                 mask, target_size, method='bilinear',
                 antialias=False, preserve_aspect_ratio=False)
+            # mask = tf.squeeze(mask, axis=-1)
 
         resized_image_size = tf.shape(image)[:2]
 
@@ -180,6 +182,7 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
             'image/resized': resized_image_size,
         }
         return new_example
+
 
 @dataset_lib.DatasetRegistry.register('ipsc_instance_segmentation')
 class IPSCInstanceSegmentationTFRecordDataset(tf_record.TFRecordDataset):

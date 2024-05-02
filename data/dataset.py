@@ -144,7 +144,6 @@ class Dataset(abc.ABC):
 
             # TODO(b/181662974): Revert this and support non-even batch sizes.
             # dataset = dataset.batch(batch_size, drop_remainder=training)
-
             dataset = dataset.padded_batch(batch_size, drop_remainder=training or validation)
 
             if config_all.debug != 2:

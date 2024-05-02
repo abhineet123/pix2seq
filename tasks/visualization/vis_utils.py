@@ -100,10 +100,22 @@ def debug_image_pipeline(dataset, train_transforms, batched_examples, model_dir,
 
     os.makedirs(vis_img_dir, exist_ok=True)
 
+    batched_examples_ = None
     for single_example in batched_examples:
         single_example = dataset.debug_pipeline(
             single_example, training)
+        if batched_examples_ is None:
+            batched_examples_ = {
+                k: tf.expand_dims(v, 0)
+                for k, v in single_example.items()
+            }
+        else:
+            batched_examples_ = {
+                k: tf.concat((v, tf.expand_dims(single_example[k], 0)), 0)
+                for k, v in batched_examples_.items()
+            }
 
+    batched_examples = batched_examples_
     proc_examples = {
         k: [] for k, v in batched_examples.items()
     }
@@ -113,12 +125,21 @@ def debug_image_pipeline(dataset, train_transforms, batched_examples, model_dir,
             k: v[i, ...] for k, v in batched_examples.items()
         }
 
-        proc_images = dict(
-            orig=single_example["image"]
-        )
-        proc_bboxes = dict(
-            orig=single_example["bbox"]
-        )
+        # proc_images = dict(
+        #     orig=single_example["image"]
+        # )
+        # proc_bboxes = proc_masks = None
+        # if 'bbox' in single_example:
+        #     proc_bboxes = dict(
+        #         orig=single_example["bbox"]
+        #     )
+        # elif 'mask' in single_example:
+        #     proc_masks = dict(
+        #         orig=single_example["mask"]
+        #     )
+        # else:
+        #     raise AssertionError('single_example has neither bbox nor mask')
+
         import copy
         proc_example = copy.copy(single_example)
 
@@ -129,8 +150,11 @@ def debug_image_pipeline(dataset, train_transforms, batched_examples, model_dir,
             t_name = t.config.name
             proc_example = t.process_example(proc_example)
 
-            proc_images[t_name] = proc_example["image"]
-            proc_bboxes[t_name] = proc_example["bbox"]
+            # proc_images[t_name] = proc_example["image"]
+            # if proc_bboxes is not None:
+            #     proc_bboxes[t_name] = proc_example["bbox"]
+            # elif proc_masks is not None:
+            #     proc_masks[t_name] = proc_example["mask"]
 
             if vis:
                 save_image_sample(proc_example, t_name, t_id + 1, vis_img_dir)
@@ -344,8 +368,6 @@ def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
 
     image = [proc_example["image"], ]
     file_name = proc_example["image/id"]
-    class_ids = proc_example["label"]
-    bboxes = proc_example["bbox"]
 
     image = tf.image.convert_image_dtype(image, tf.uint8)
 
@@ -354,14 +376,6 @@ def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
     image_h, image_w = image_np.shape[:2]
 
     image_vis = image_np.copy()
-
-    for bbox, class_id in zip(bboxes, class_ids):
-        class_id = class_id.numpy()
-        bbox_np_ = bbox.numpy()
-
-        ymin, xmin, ymax, xmax = bbox_np_
-        draw_box(image_vis, [xmin, ymin, xmax, ymax], _id=class_id,
-                 color='green', thickness=1, norm=True, xywh=False)
 
     file_name_np = file_name.numpy()
     file_name_np = file_name_np.decode('utf-8')
@@ -372,11 +386,35 @@ def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
         img_ext = '.jpg'
 
     seq_name = os.path.basename(os.path.dirname(file_name_np))
-
     vis_img_name = f'{seq_name} {img_name} {t_id:04d} {t_name}'
 
-    vis_img_path = os.path.join(vis_img_dir, f'{vis_img_name}{img_ext}')
+    if 'bbox' in proc_example:
+        class_ids = proc_example["label"]
+        bboxes = proc_example["bbox"]
+        for bbox, class_id in zip(bboxes, class_ids):
+            class_id = class_id.numpy()
+            bbox_np_ = bbox.numpy()
 
+            ymin, xmin, ymax, xmax = bbox_np_
+            draw_box(image_vis, [xmin, ymin, xmax, ymax], _id=class_id,
+                     color='green', thickness=1, norm=True, xywh=False)
+
+    elif 'mask' in proc_example:
+        mask = proc_example["mask"]
+        mask = tf.image.convert_image_dtype(mask, tf.uint8)
+        mask = mask.numpy().squeeze()
+        mask[mask > 0] = 255
+        vis_mask_dir = os.path.join(vis_img_dir, f'masks')
+        os.makedirs(vis_mask_dir, exist_ok=True)
+        vis_mask_path = os.path.join(vis_mask_dir, f'{vis_img_name}.png')
+        print(f'vis_mask_path: {vis_mask_path}')
+
+        cv2.imwrite(vis_mask_path, mask)
+    else:
+        raise AssertionError('proc_example has neither bbox nor mask')
+
+
+    vis_img_path = os.path.join(vis_img_dir, f'{vis_img_name}{img_ext}')
     image_vis = annotate(image_vis, vis_img_name)
     cv2.imwrite(vis_img_path, image_vis)
 

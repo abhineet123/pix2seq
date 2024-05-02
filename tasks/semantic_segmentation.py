@@ -37,8 +37,11 @@ class TaskSemanticSegmentation(task_lib.Task):
         if self.config.debug == 2:
             batched_examples = vis_utils.debug_image_pipeline(
                 self.dataset,
-                self.train_transforms, batched_examples,
-                vis=1, model_dir=self.config.model_dir, training=training)
+                self.train_transforms,
+                batched_examples,
+                vis=1,
+                model_dir=self.config.model_dir,
+                training=training)
 
         response_seq, token_weights = build_response_seq_from_mask(
             batched_examples['mask'],
@@ -200,58 +203,27 @@ class TaskSemanticSegmentation(task_lib.Task):
             return ret_images
 
     def compute_scalar_metrics(self, step):
-        """Returns a dict containing scalar metrics to log."""
-        if self._coco_metrics:
-            return self._coco_metrics.result(step)
-        else:
-            return {}
+        raise AssertionError('not implemented')
 
     def reset_metrics(self):
-        """Reset states of metrics accumulators."""
-        if self._coco_metrics:
-            self._coco_metrics.reset_states()
-
-
-# ref.: https://www.kaggle.com/stainsby/fast-tested-rle
-def mask_to_rle(img):
-    pixels = img.flatten()
-    pixels = np.concatenate([[0], pixels, [0]])
-    runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
-    # runs[1::2] -= runs[::2]
-    # starts, lengths = runs[::2], runs[1::2]
-    row, col = np.unravel_index(runs, img.shape)
-
-    rle = [item for sublist in zip(row, col) for item in sublist]
-    rle_str = ' '.join(f'{r} {c}' for r, c in zip(row, col))
-    rle_str2 = ' '.join(rle)
-    assert rle_str == rle_str2, "rle_str mismatch"
-
-    n_rows, n_cols = img.shape
-    row_norm, col_norm = row.astype(np.float32) / n_rows, col.astype(np.float32) / n_cols
-    rle_norm = [item for sublist in zip(row_norm, col_norm) for item in sublist]
-    return rle_norm
-
-
-def rle2mask(mask_rle, label, shape):
-    s = mask_rle.split()
-    starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
-    starts -= 1
-    ends = starts + lengths
-    img = np.zeros(shape[0] * shape[1], dtype=np.uint8)
-    for lo, hi in zip(starts, ends):
-        img[lo:hi] = label
-    return img.reshape(shape)  # Needed to align to RLE direction
+        raise AssertionError('not implemented')
 
 
 def build_response_seq_from_mask(
-        mask,
+        masks,
         quantization_bins,
         coord_vocab_shift):
-    rle_norm = mask_to_rle(mask)
-    quantized_rle = utils.quantize(rle_norm, quantization_bins)
-    quantized_rle = quantized_rle + coord_vocab_shift
+    masks = tf.image.convert_image_dtype(masks, tf.uint8)
+    masks = masks.numpy().squeeze()
+    masks[masks > 0] = 255
+    for mask in masks:
+        rle_norm = task_utils.mask_to_rle(mask)
 
-    # quantized_rle = utils.flatten_non_batch_dims(quantized_rle, 2)
+        quantized_rle = utils.quantize(rle_norm, quantization_bins)
+        quantized_rle = quantized_rle + coord_vocab_shift
+
+        # quantized_rle = utils.flatten_non_batch_dims(quantized_rle, 2)
+
     token_weights = tf.ones_like(quantized_rle)
 
     return quantized_rle, token_weights

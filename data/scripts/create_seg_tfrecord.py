@@ -2,6 +2,7 @@ import collections
 import json
 import os
 import sys
+import cv2
 
 dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
 
@@ -15,6 +16,7 @@ import paramparse
 import vocab
 from data.scripts import tfrecord_lib
 from tasks.visualization import vis_utils
+from tasks import task_utils
 
 from eval_utils import add_suffix
 
@@ -23,10 +25,8 @@ class Params(paramparse.CFG):
 
     def __init__(self):
         paramparse.CFG.__init__(self, cfg_prefix='p2s_tfrecord')
-        self.ann_file = ''
-        self.ann_suffix = ''
-        self.image_dir = ''
-        self.enable_masks = 1
+        self.db_path = ''
+        self.db_suffix = ''
         self.vis = 0
 
         self.n_proc = 0
@@ -42,8 +42,24 @@ class Params(paramparse.CFG):
         self.end_frame_id = -1
         self.frame_stride = 1
 
+        self.n_rot = 3
+        self.max_rot = 0
+        self.min_rot = 10
 
-def load_instance_annotations(annotation_path):
+        self.resize = 0
+        self.start_id = 0
+        self.end_id = -1
+
+        self.patch_height = 0
+        self.patch_width = 0
+
+        self.max_stride = 0
+        self.min_stride = 0
+
+        self.enable_flip = 0
+
+
+def load_seg_annotations(annotation_path):
     print(f'Reading coco annotations from {annotation_path}')
     if annotation_path.endswith('.json'):
         import json
@@ -61,160 +77,97 @@ def load_instance_annotations(annotation_path):
 
     assert 0 not in category_id_to_name_map.keys(), "class IDs must to be > 0"
 
-    img_to_ann = collections.defaultdict(list)
-    for ann in annotations['annotations']:
-        image_id = ann['image_id']
-        img_to_ann[image_id].append(ann)
-
-    return image_info, category_id_to_name_map, img_to_ann
+    return image_info, category_id_to_name_map
 
 
-def coco_annotations_to_lists(obj_annotations, id_to_name_map):
-    data = dict((k, list()) for k in [
-        'xmin', 'xmax', 'ymin', 'ymax', 'is_crowd', 'category_id',
-        'category_names', 'area'])
-
-    for ann in obj_annotations:
-        (x, y, width, height) = tuple(ann['bbox'])
-        xmin, xmax, ymin, ymax = float(x), float(x + width), float(y), float(y + height)
-
-        assert xmax > xmin and ymax > ymin, f"invalid bbox: {[xmin, xmax, ymin, ymax]}"
-
-        data['xmin'].append(xmin)
-        data['xmax'].append(xmax)
-        data['ymin'].append(ymin)
-        data['ymax'].append(ymax)
-        data['is_crowd'].append(ann['iscrowd'])
-        category_id = int(ann['category_id'])
-        data['category_id'].append(category_id)
-        data['category_names'].append(id_to_name_map[category_id].encode('utf8'))
-        data['area'].append(ann['area'])
-
-    return data
-
-
-def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map):
-    data = coco_annotations_to_lists(obj_annotations, id_to_name_map)
-
-    feature_dict = {
-        'image/object/bbox/xmin':
-            tfrecord_lib.convert_to_feature(data['xmin']),
-        'image/object/bbox/xmax':
-            tfrecord_lib.convert_to_feature(data['xmax']),
-        'image/object/bbox/ymin':
-            tfrecord_lib.convert_to_feature(data['ymin']),
-        'image/object/bbox/ymax':
-            tfrecord_lib.convert_to_feature(data['ymax']),
-        'image/object/class/text':
-            tfrecord_lib.convert_to_feature(data['category_names']),
-        'image/object/class/label':
-            tfrecord_lib.convert_to_feature(data['category_id']),
-        'image/object/is_crowd':
-            tfrecord_lib.convert_to_feature(data['is_crowd']),
-        'image/object/area':
-            tfrecord_lib.convert_to_feature(data['area'], value_type='float_list'),
-    }
-    return feature_dict
-
-
-def flatten_segmentation(seg):
-    flat_seg = []
-    for i, s in enumerate(seg):
-        if i > 0:
-            flat_seg.extend([vocab.SEPARATOR_FLOAT, vocab.SEPARATOR_FLOAT])
-        flat_seg.extend(s)
-    return flat_seg
-
-
-def obj_annotations_to_seg_dict(obj_annotations):
-    segs = []
-    seg_lens = []
-    for ann in obj_annotations:
-        if ann['iscrowd']:
-            seg_lens.append(0)
-        else:
-            seg = flatten_segmentation(ann['segmentation'])
-            segs.extend(seg)
-            seg_lens.append(len(seg))
-    seg_sep = [0] + list(np.cumsum(seg_lens))
-    return {
-        'image/object/segmentation_v': tfrecord_lib.convert_to_feature(segs),
-        'image/object/segmentation_sep': tfrecord_lib.convert_to_feature(seg_sep),
-    }
-
-
-def generate_annotations(images, image_dir,
-                         # panoptic_masks_dir,
+def generate_annotations(image_infos,
                          category_id_to_name_map,
-                         img_to_obj_ann,
-                         enable_masks,
-                         vis,
-                         # img_to_cap_ann,
-                         # img_to_key_ann,
-                         # img_to_pan_ann,
-                         # is_category_thing,
                          ):
-    """Generator for COCO annotations."""
-    for image in images:
-        object_ann = img_to_obj_ann.get(image['id'], {})
-
-        # caption_ann = img_to_cap_ann.get(image['id'], {})
-        #
-        # keypoint_ann = img_to_key_ann.get(image['id'], {})
-        #
-        # panoptic_ann = img_to_pan_ann.get(image['id'], {})
-
-        if vis:
-            vis_utils.vis_json_ann(image, object_ann, category_id_to_name_map,
-                                   image_dir, is_video=False)
-
+    for image_info in image_infos:
         yield (
-            image,
-            image_dir,
-            # panoptic_masks_dir,
+            image_info,
             category_id_to_name_map,
-            object_ann,
-            enable_masks,
-            # caption_ann,
-            # keypoint_ann,
-            # panoptic_ann,
-            # is_category_thing,
         )
 
 
-def create_tf_example(
-        image,
-        image_dir,
-        # panoptic_masks_dir,
-        category_id_to_name_map,
-        object_ann,
-        enable_masks,
-        # caption_ann,
-        # keypoint_ann, panoptic_ann,
-        # is_category_thing
-):
-    """Converts image and annotations to a tf.Example proto."""
-    # Add image features.
-    image_height = image['height']
-    image_width = image['width']
-    filename = image['file_name']
-    image_id = image['id']
+def read_frame(vid_reader, frame_id, vid_path):
+    vid_reader.set(cv2.CAP_PROP_POS_FRAMES, frame_id - 1)
+    assert vid_reader.get(cv2.CAP_PROP_POS_FRAMES) == frame_id - 1, "Failed to set frame index in video"
+    ret, image = vid_reader.read()
+    if not ret:
+        raise AssertionError(f'Frame {frame_id} could not be read from {vid_path}')
+    return image
 
-    with tf.io.gfile.GFile(os.path.join(image_dir, filename), 'rb') as fid:
-        encoded_jpg = fid.read()
+
+def load_video(vid_path, seq):
+    vid_reader = cv2.VideoCapture()
+    if not vid_reader.open(vid_path):
+        raise AssertionError(f'Video file could not be opened: {vid_path}')
+
+    num_frames = int(vid_reader.get(cv2.CAP_PROP_FRAME_COUNT))
+    vid_height = int(vid_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    vid_width = int(vid_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
+    print(f'\n{seq}: loaded {vid_width}x{vid_height} video with {num_frames} frames from {vid_path}')
+
+    return vid_reader
+
+
+def create_tf_example(
+        image_info,
+        db_path,
+        category_id_to_name_map,
+        vid_readers
+):
+    image_height = image_info['height']
+    image_width = image_info['width']
+    filename = image_info['file_name']
+    image_id = image_info['id']
+    seq = image_info['seq']
+    frame_id = image_info['frame_id']
+    mask_filename = image_info['mask_file_name']
+    image_path = os.path.join(db_path, filename)
+    mask_image_path = os.path.join(db_path, mask_filename)
+
+    vid_path = os.path.join(db_path, f'{seq}.mp4')
+    mask_dir = os.path.dirname(mask_filename)
+    mask_vid_path = os.path.join(db_path, seq, f'{mask_dir}.mp4')
+
+    if vid_readers is not None:
+        try:
+            vid_reader, mask_vid_reader = vid_readers[seq]
+        except KeyError:
+            vid_reader = load_video(vid_path, seq)
+            mask_vid_reader = load_video(mask_vid_path, seq)
+            vid_readers[seq] = vid_reader, mask_vid_reader
+
+        image = read_frame(vid_reader, frame_id, vid_path)
+        mask = read_frame(mask_vid_reader, frame_id, mask_vid_path)
+
+        encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
+        # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
+    else:
+        with tf.io.gfile.GFile(image_path, 'rb') as fid:
+            encoded_jpg = fid.read()
+
+        mask = cv2.imread(mask_image_path)
+
     feature_dict = tfrecord_lib.image_info_to_feature_dict(
         image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
 
-    # Add annotation features.
-    if object_ann:
-        obj_feature_dict = obj_annotations_to_feature_dict(
-            object_ann,
-            category_id_to_name_map)
-        feature_dict.update(obj_feature_dict)
+    if len(mask.shape) == 3:
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+    mask[mask > 0] = 1
 
-        if enable_masks:
-            seg_feature_dict = obj_annotations_to_seg_dict(object_ann)
-            feature_dict.update(seg_feature_dict)
+    mask_h, mask_w = mask.shape
+
+    rle, rle_norm = task_utils.mask_to_rle(
+        mask, max_length=mask_w, start_2d=False)
+
+    seg_feature_dict = {
+        'image/rle': tfrecord_lib.convert_to_feature(rle_norm,
+                                                     value_type='float_list'),
+    }
+    feature_dict.update(seg_feature_dict)
 
     example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
     return example, 0
@@ -223,55 +176,44 @@ def create_tf_example(
 def main():
     params: Params = paramparse.process(Params)
 
-    assert params.ann_file, "ann_file must be provided"
-    assert params.image_dir, "image_dir must be provided"
+    assert params.db_path, "db_path must be provided"
 
-    if params.ann_suffix:
-        params.ann_file = f'{params.ann_file}-{params.ann_suffix}'
+    if not params.db_suffix:
+        db_suffixes = []
+        if params.resize:
+            db_suffixes.append(f'resize_{params.resize}')
 
-    if params.start_seq_id > 0 or params.end_seq_id >= 0:
-        assert params.end_seq_id >= params.start_seq_id, "end_seq_id must to be >= start_seq_id"
-        seq_sufix = f'seq-{params.start_seq_id}_{params.end_seq_id}'
-        params.ann_file = add_suffix(params.ann_file, seq_sufix, sep='-')
+        db_suffixes += [f'{params.start_id:d}_{params.end_id:d}',
+                        f'{params.patch_height:d}_{params.patch_width:d}',
+                        f'{params.min_stride:d}_{params.max_stride:d}',
+                        ]
+        if params.n_rot > 0:
+            db_suffixes.append(f'rot_{params.min_rot:d}_{params.max_rot:d}_{params.n_rot:d}')
 
-    if params.start_frame_id > 0 or params.end_frame_id >= 0 or params.frame_stride > 1:
-        frame_suffix = f'{params.start_frame_id}_{params.end_frame_id}'
-        if params.frame_stride > 1:
-            frame_suffix = f'{frame_suffix}_{params.frame_stride}'
+        if params.enable_flip:
+            db_suffixes.append('flip')
 
-        params.ann_file = add_suffix(params.ann_file, frame_suffix, sep='-')
+        params.db_suffix = '_'.join(db_suffixes)
 
-    params.ann_file = os.path.join(params.image_dir, f'{params.ann_file}.{params.ann_ext}')
+    if params.db_suffix:
+        params.db_path = f'{params.db_path}_{params.db_suffix}'
 
-    image_info, category_id_to_name_map, img_to_obj_ann = (
-        load_instance_annotations(params.ann_file))
+    json_suffix = params.db_suffix
+    output_json_fname = f'{json_suffix}.{params.ann_ext}'
+    json_path = os.path.join(params.db_path, output_json_fname)
+
+    image_info, category_id_to_name_map, = load_seg_annotations(json_path)
 
     if not params.output_dir:
-        params.output_dir = os.path.join(params.image_dir, 'tfrecord')
-
-    # img_to_key_ann = load_keypoint_annotations(params.key_ann_file)
-    # img_to_cap_ann = load_caption_annotations(params.cap_ann_file)
-    # img_to_pan_ann, is_category_thing = load_panoptic_annotations(
-    #     params.pan_ann_file)
+        params.output_dir = os.path.join(params.db_path, 'tfrecord')
 
     os.makedirs(params.output_dir, exist_ok=True)
 
-    out_name = os.path.basename(params.ann_file).split(os.extsep)[0]
-
     annotations_iter = generate_annotations(
-        images=image_info,
-        image_dir=params.image_dir,
-        # panoptic_masks_dir=params.pan_masks_dir,
+        image_infos=image_info,
         category_id_to_name_map=category_id_to_name_map,
-        img_to_obj_ann=img_to_obj_ann,
-        enable_masks=params.enable_masks,
-        vis=params.vis,
-        # img_to_cap_ann=img_to_cap_ann,
-        # img_to_key_ann=img_to_key_ann,
-        # img_to_pan_ann=img_to_pan_ann,
-        # is_category_thing=is_category_thing
     )
-    output_path = os.path.join(params.output_dir, out_name)
+    output_path = os.path.join(params.output_dir, json_suffix)
     os.makedirs(output_path, exist_ok=True)
 
     tfrecord_pattern = os.path.join(output_path, 'shard')
@@ -285,7 +227,6 @@ def main():
         iter_len=len(image_info),
     )
 
-    print(f'out_name: {out_name}')
     print(f'output_path: {output_path}')
 
 
