@@ -111,14 +111,20 @@ def mask_to_rle(mask, max_length, start_2d):
 
     if start_2d:
         """2D start tokens"""
-        # runs[1:] -= 1
-        row, col = np.unravel_index(starts, mask.shape)
-        rle = [item for sublist in zip(row, col, lengths) for item in sublist]
+        starts_rows, starts_cols = np.unravel_index(starts, mask.shape)
+        """0 is used for padding so cannot have 0 in starts_rows and starts_cols"""
+        starts_rows += 1
+        starts_cols += 1
+
+        rle = [item for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
 
         n_rows, n_cols = mask.shape
-        row_norm, col_norm = row.astype(np.float32) / n_rows, col.astype(np.float32) / n_cols
+        row_norm, col_norm = starts_rows.astype(np.float32) / n_rows, starts_cols.astype(np.float32) / n_cols
         rle_norm = [item for sublist in zip(row_norm, col_norm, lengths_norm) for item in sublist]
     else:
+        """0 is used for padding so cannot have 0 in starts"""
+        starts += 1
+
         n_pix = mask.size
         starts_norm = starts.astype(np.float32) / n_pix
 
@@ -132,9 +138,13 @@ def rle_to_mask(mask_rle, shape, start_2d, label=1):
     s = mask_rle
     if start_2d:
         start_rows, start_cols, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::3], s[1:][::3], s[2:][::3])]
+        start_rows -= 1
+        start_cols -= 1
         starts = np.ravel_multi_index((start_rows, start_cols), shape)
     else:
         starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
+
+        starts -= 1
 
     """ends are exclusive while starts are inclusive"""
     ends = starts + lengths

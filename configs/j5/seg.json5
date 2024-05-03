@@ -1,0 +1,6 @@
+{
+  "dataset": {
+	"%mode%_name": "%mode%",
+    "%mode%_cfg": "%*%",
+  }
+}

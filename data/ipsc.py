@@ -122,6 +122,18 @@ class IPSCObjectDetectionTFRecordDataset(tf_record.TFRecordDataset):
 @dataset_lib.DatasetRegistry.register('ipsc_semantic_segmentation')
 class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
 
+    def filter_example(self, example, training):
+        # probabilistically filter out examples with no foreground
+        if training:
+            if tf.shape(example['image/rle'])[0] > 0:
+                return True
+            rand_num = tf.random.uniform(shape=[1])
+            if rand_num[0] < self.config.empty_seg_prob:
+                return True
+            return False
+        else:
+            return True
+
     def parse_example(self, example, training):
         """Parse the serialized example into a dictionary of tensors.
 
@@ -158,28 +170,15 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
     def extract(self, example, training):
         img_id = example['image/source_id']
         image = decode_utils.decode_image(example)
-        mask = decode_utils.decode_mask(example)
+        rle = example['image/rle']
 
         orig_image_size = tf.shape(image)[:2]
-        target_size = self.config.target_size
-
-        if target_size is not None:
-            image = tf.image.resize(
-                image, target_size, method='bilinear',
-                antialias=False, preserve_aspect_ratio=False)
-            mask = tf.image.resize(
-                mask, target_size, method='bilinear',
-                antialias=False, preserve_aspect_ratio=False)
-            # mask = tf.squeeze(mask, axis=-1)
-
-        resized_image_size = tf.shape(image)[:2]
 
         new_example = {
             'image': image,
-            'mask': mask,
+            'rle': rle,
             'orig_image_size': orig_image_size,
             'image/id': img_id,
-            'image/resized': resized_image_size,
         }
         return new_example
 

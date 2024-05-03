@@ -8,83 +8,6 @@ TRAIN = 'train'
 EVAL = 'eval'
 MAX_JSON_VARS = 10
 NAMED_JSON_VARS = ['mode']
-
-
-def build_tasks_and_datasets(
-        cfg: ml_collections.ConfigDict,
-        training: bool,
-        validation: bool,
-        task_lib):
-    from data import dataset as dataset_lib
-
-    """Build tasks and datasets.
-
-    Args:
-      cfg: Config.
-      training: bool.
-
-    Returns:
-      tasks: a list of task objects.
-      mixed_datasets: a list of tf.data.Dataset corresponding to tasks.
-      last_dataset: the last dataset_lib.Dataset instance.
-    """
-    mixed_datasets = []
-    tasks = []
-
-    # There are N tasks and N datasets. The same task may appear multiple times
-    # but corresponds to different datasets, e.g. [task1, task1, task2] and
-    # [ds1, ds2, ds3]. In this case, we create one td.data.Dataset for task1,
-    # sampling from ds1 and ds2 according to weights.
-    # First we keep track of datasets and weights for each task:
-    t_name_to_t_config_map = {}
-    t_name_to_ds_config_map = collections.defaultdict(list)
-    t_name_to_weights_map = collections.defaultdict(list)
-    for task_config, ds_config in zip(cfg.tasks, cfg.datasets):
-        if task_config.name not in t_name_to_t_config_map:
-            t_name_to_t_config_map[task_config.name] = task_config
-        else:
-            # Accumulate weight for task.
-            t_name_to_t_config_map[task_config.name].weight += task_config.weight
-        t_name_to_weights_map[task_config.name].append(task_config.weight)
-        t_name_to_ds_config_map[task_config.name].append(ds_config)
-
-    ds = None
-
-    # For each task, create the Task instance and the dataset instance.
-    for task_name, task_config in t_name_to_t_config_map.items():
-        cfg_copy = copy.deepcopy(cfg)
-        cfg_copy.task = task_config
-        task = task_lib.TaskRegistry.lookup(task_name)(cfg)
-        tasks.append(task)
-
-        ds_configs = t_name_to_ds_config_map[task_name]
-        ds_weights = t_name_to_weights_map[task_name]
-        ds_weights = [w / sum(ds_weights) for w in ds_weights]
-
-        # Build dataset for this task.
-        input_fns = []
-        for ds_config in ds_configs:
-            task_ds_config = copy.deepcopy(cfg_copy)
-            task_ds_config.dataset = ds_config
-            ds_fn = dataset_lib.DatasetRegistry.lookup(ds_config.name)
-            ds = ds_fn(task_ds_config)
-            if cfg.debug == 2:
-                task.dataset = ds
-            input_fn = ds.pipeline(
-                process_single_example=task.preprocess_single,
-                global_batch_size=(
-                    cfg.train.batch_size if training else cfg.eval.batch_size
-                ),
-                training=training,
-                validation=validation,
-            )
-            input_fns.append(input_fn)
-        mixed_ds = dataset_lib.mix_datasets(cfg, input_fns, ds_weights)
-        mixed_datasets.append(mixed_ds)
-
-    return tasks, mixed_datasets, ds
-
-
 """
 annoyingly buggy ml_collections.ConfigDict does not convert list of dicts 
 into list of ConfigDicts or vice versa
@@ -143,7 +66,7 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
         the annoying ConfigDict would not allow its value to be overridden from the 
         json file saved with the model"""
         if isinstance(cfg_from_model['resnet_replace'], str):
-            cfg_from_model['resnet_replace'] = [cfg_from_model['resnet_replace'],]
+            cfg_from_model['resnet_replace'] = [cfg_from_model['resnet_replace'], ]
         # cfg_temp_dict = to_dict(cfg)
 
         cfg.update(from_dict(cfg_from_model))
@@ -325,6 +248,18 @@ def load(FLAGS):
 
     cfg.update(cmd_cfg)
 
+    for mode in ['train', 'eval']:
+        mode_cfg = cfg.dataset[f'{mode}_cfg']
+        if mode_cfg:
+            mode_params = to_dict(cfg.dataset[f'{mode}'])
+            import paramparse
+            paramparse.process_dict(mode_params, cmd=False, cfg=f'p2s:{mode_cfg}', cfg_root='cfg', cfg_ext='cfg')
+
+            mode_params = from_dict(mode_params)
+            mode_params = ml_collections.ConfigDict(mode_params)
+
+            cfg.dataset[f'{mode}'].update(mode_params)
+
     is_video = 'video' in cfg.task.name
 
     model_root_dir = 'log'
@@ -358,7 +293,7 @@ def load(FLAGS):
             model_dir_name = f'{cfg.dataset.train_name}'
             if cfg.pretrained:
                 pretrained_name = os.path.basename(cfg.pretrained)
-                resnet_replace =  cfg.resnet_replace
+                resnet_replace = cfg.resnet_replace
                 if resnet_replace:
                     if isinstance(resnet_replace, (list, tuple)):
                         resnet_replace = '_'.join(resnet_replace)
@@ -419,3 +354,78 @@ def load(FLAGS):
     # exit()
 
     return cfg
+
+
+def build_tasks_and_datasets(
+        cfg: ml_collections.ConfigDict,
+        training: bool,
+        validation: bool,
+        task_lib):
+    from data import dataset as dataset_lib
+
+    """Build tasks and datasets.
+
+    Args:
+      cfg: Config.
+      training: bool.
+
+    Returns:
+      tasks: a list of task objects.
+      mixed_datasets: a list of tf.data.Dataset corresponding to tasks.
+      last_dataset: the last dataset_lib.Dataset instance.
+    """
+    mixed_datasets = []
+    tasks = []
+
+    # There are N tasks and N datasets. The same task may appear multiple times
+    # but corresponds to different datasets, e.g. [task1, task1, task2] and
+    # [ds1, ds2, ds3]. In this case, we create one td.data.Dataset for task1,
+    # sampling from ds1 and ds2 according to weights.
+    # First we keep track of datasets and weights for each task:
+    t_name_to_t_config_map = {}
+    t_name_to_ds_config_map = collections.defaultdict(list)
+    t_name_to_weights_map = collections.defaultdict(list)
+    for task_config, ds_config in zip(cfg.tasks, cfg.datasets):
+        if task_config.name not in t_name_to_t_config_map:
+            t_name_to_t_config_map[task_config.name] = task_config
+        else:
+            # Accumulate weight for task.
+            t_name_to_t_config_map[task_config.name].weight += task_config.weight
+        t_name_to_weights_map[task_config.name].append(task_config.weight)
+        t_name_to_ds_config_map[task_config.name].append(ds_config)
+
+    ds = None
+
+    # For each task, create the Task instance and the dataset instance.
+    for task_name, task_config in t_name_to_t_config_map.items():
+        cfg_copy = copy.deepcopy(cfg)
+        cfg_copy.task = task_config
+        task = task_lib.TaskRegistry.lookup(task_name)(cfg)
+        tasks.append(task)
+
+        ds_configs = t_name_to_ds_config_map[task_name]
+        ds_weights = t_name_to_weights_map[task_name]
+        ds_weights = [w / sum(ds_weights) for w in ds_weights]
+
+        # Build dataset for this task.
+        input_fns = []
+        for ds_config in ds_configs:
+            task_ds_config = copy.deepcopy(cfg_copy)
+            task_ds_config.dataset = ds_config
+            ds_fn = dataset_lib.DatasetRegistry.lookup(ds_config.name)
+            ds = ds_fn(task_ds_config)
+            if cfg.debug == 2:
+                task.dataset = ds
+            input_fn = ds.pipeline(
+                process_single_example=task.preprocess_single,
+                global_batch_size=(
+                    cfg.train.batch_size if training else cfg.eval.batch_size
+                ),
+                training=training,
+                validation=validation,
+            )
+            input_fns.append(input_fn)
+        mixed_ds = dataset_lib.mix_datasets(cfg, input_fns, ds_weights)
+        mixed_datasets.append(mixed_ds)
+
+    return tasks, mixed_datasets, ds

@@ -40,9 +40,10 @@ def get_feature_map_for_object_detection():
         'image/object/score': tf.io.VarLenFeature(tf.float32),
     }
 
+
 def get_feature_map_for_semantic_segmentation():
     return {
-        'image/mask': tf.io.FixedLenFeature((), tf.string),
+        'image/rle': tf.io.VarLenFeature(tf.float32),
     }
 
 
@@ -118,6 +119,7 @@ def decode_image(example):
     image.set_shape([None, None, 3])
     image = tf.image.convert_image_dtype(image, tf.float32)
     return image
+
 
 def decode_mask(example):
     """Decodes the image and set its static shape."""

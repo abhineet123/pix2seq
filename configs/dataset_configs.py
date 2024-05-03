@@ -14,73 +14,45 @@
 # limitations under the License.
 # ==============================================================================
 """Dataset configs."""
-import os
 from configs.config_base import D
 
-_transforms_config = D(
-    scale_jitter=1,
-    fixed_crop=1,
-    jitter_scale_min=0.3,
-    jitter_scale_max=2.0,
-    object_order='random',
-)
 
-_shared_dataset_config = D(
-    buffer_size=300,
-    batch_duplicates=1,
-    cache_dataset=True,
+def get_shared_data():
+    _transforms_config = D(
+        scale_jitter=1,
+        fixed_crop=1,
+        jitter_scale_min=0.3,
+        jitter_scale_max=2.0,
+        object_order='random',
+    )
 
-    target_size=None,
+    _shared_dataset_config = D(
+        buffer_size=300,
+        batch_duplicates=1,
+        cache_dataset=True,
 
-    train_name='',
-    train_suffix='',
-    train_split='train',
-    train_filename_for_metrics='',
-    train_start_seq_id=0,
-    train_end_seq_id=-1,
-    train_start_frame_id=0,
-    train_end_frame_id=-1,
-    train_num_examples=-1,
+        target_size=None,
 
-    eval_name='',
-    eval_filename_for_metrics='',
-    eval_suffix='',
-    eval_split='validation',
-    eval_start_seq_id=0,
-    eval_end_seq_id=-1,
-    eval_start_frame_id=0,
-    eval_end_frame_id=-1,
-    eval_num_examples=-1,
+        train_split='train',
+        eval_split='validation',
 
-    transforms=_transforms_config
-)
+        train_cfg='',
+        eval_cfg='',
 
-# IPSC_NAME_TO_NUM = dict(
-#     ext_reorg_roi_g2_0_53=1674,
-#     ext_reorg_roi_g2_16_53=1178,
-#     ext_reorg_roi_g2_54_126=2263,
-#     ext_reorg_roi_g2_0_1=62,
-#     ext_reorg_roi_g2_0_15=496,
-#     ext_reorg_roi_g2_0_37=1178,
-#     ext_reorg_roi_g2_38_53=496,
-# )
+        transforms=_transforms_config
+    )
 
-# Generate tfrecords for the dataset using data/scripts/create_coco_tfrecord.py
-# and add paths here.
-COCO_TRAIN_TFRECORD_PATTERN = 'gs://pix2seq/multi_task/data/coco/tfrecord/train*'
-COCO_VAL_TFRECORD_PATTERN = 'gs://pix2seq/multi_task/data/coco/tfrecord/val*'
-# Download from gs://pix2seq/multi_task/data/coco/json
-COCO_ANNOTATIONS_DIR = '/tmp/coco_annotations'
+    for mode in ['train', 'eval']:
+        _shared_dataset_config[f'{mode}_name'] = 1
+        _shared_dataset_config[f'{mode}_filename_for_metrics'] = ''
+        _shared_dataset_config[f'{mode}_suffix'] = ''
+        _shared_dataset_config[f'{mode}_start_seq_id'] = 0
+        _shared_dataset_config[f'{mode}_end_seq_id'] = -1
+        _shared_dataset_config[f'{mode}_start_frame_id'] = 0
+        _shared_dataset_config[f'{mode}_end_frame_id'] = -1
+        _shared_dataset_config[f'{mode}_num_examples'] = -1
 
-_shared_coco_dataset_config = D(
-    # Directory of annotations used by the metrics.
-    # Also need to set train_filename_for_metrics and eval_filename_for_metrics.
-    # If unset, groundtruth annotations should be specified via
-    # record_groundtruth.
-    coco_annotations_dir_for_metrics=COCO_ANNOTATIONS_DIR,
-    label_shift=0,
-    **_shared_dataset_config
-)
+    return _shared_dataset_config
 
 
 def get_ipsc_data():
@@ -91,42 +63,87 @@ def get_ipsc_data():
         root_dir=root_dir,
         label_shift=0,
         compressed=0,
-        **_shared_dataset_config
+        **get_shared_data()
     )
 
 
 def get_ipsc_video_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
 
-    return D(
+    data = D(
         name='ipsc_video_detection',
         root_dir=root_dir,
         label_shift=0,
         compressed=1,
         max_disp=0.01,
         length=2,
-
-        train_stride=1,
-        train_sample=0,
-        train_frame_gaps=[],
-
-        eval_stride=1,
-        eval_sample=0,
-        eval_frame_gaps=[],
-        **_shared_dataset_config
+        **get_shared_data()
     )
+
+    for mode in ['train', 'eval']:
+        data[f'{mode}_stride'] = 1
+        data[f'{mode}_sample'] = 0
+        data[f'{mode}_frame_gaps'] = []
+
+    return data
 
 
 def get_sem_seg_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
 
-    return D(
+    data = D(
         name='ipsc_semantic_segmentation',
         root_dir=root_dir,
         label_shift=0,
         compressed=0,
-        **_shared_dataset_config
+        empty_seg_prob=0.1,
+
+        buffer_size=300,
+        batch_duplicates=1,
+        cache_dataset=True,
+
+        target_size=None,
+
+        train_name='',
+        eval_name='',
+
+        train_cfg='',
+        eval_cfg='',
+
+        transforms=D(),
     )
+
+    for mode in ['train', 'eval']:
+        mode_data = D()
+        mode_data[f'split'] = mode
+        mode_data[f'suffix'] = ''
+        mode_data[f'resize'] = 0
+        mode_data[f'start_id'] = 0
+        mode_data[f'end_id'] = 0
+        mode_data[f'patch_height'] = 0
+        mode_data[f'patch_width'] = 0
+        mode_data[f'min_stride'] = 0
+        mode_data[f'max_stride'] = 0
+        mode_data[f'n_rot'] = 0
+        mode_data[f'min_rot'] = 0
+        mode_data[f'max_rot'] = 0
+        mode_data[f'enable_flip'] = 0
+
+        data[f'{mode}'] = mode_data
+
+        # data[f'{mode}-resize'] = 0
+        # data[f'{mode}-start_id'] = 0
+        # data[f'{mode}-end_id'] = 0
+        # data[f'{mode}-patch_height'] = 0
+        # data[f'{mode}-patch_width'] = 0
+        # data[f'{mode}-min_stride'] = 0
+        # data[f'{mode}-max_stride'] = 0
+        # data[f'{mode}-n_rot'] = 0
+        # data[f'{mode}-min_rot'] = 0
+        # data[f'{mode}-max_rot'] = 0
+        # data[f'{mode}-enable_flip'] = 0
+
+    return data
 
 
 def ipsc_post_process(ds_cfg, task_cfg, training):
@@ -138,6 +155,7 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
     # elif isinstance(ds_cfg.target_size, int):
     #     ds_cfg.target_size = (ds_cfg.target_size, ds_cfg.target_size)
 
+    is_seg = 'segmentation' in ds_cfg.name
     is_video = 'video' in ds_cfg.name
 
     root_dir = ds_cfg.root_dir
@@ -166,52 +184,100 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
             print(f'skipping {mode} postprocessing with no name specified')
             continue
 
-        if is_video:
-            if ds_cfg.length:
-                length_suffix = f'length-{ds_cfg.length}'
-                if length_suffix not in name:
-                    name = f'{name}-{length_suffix}'
-            try:
-                stride = ds_cfg[f'{mode}_stride']
-            except KeyError:
-                stride = ds_cfg[f'{mode}_stride'] = ds_cfg[f'stride']
+        if is_seg:
+            mode_cfg = ds_cfg[f'{mode}']
+            suffix = mode_cfg.suffix
 
-            if stride:
-                stride_suffix = f'stride-{stride}'
-                if stride_suffix not in name:
-                    name = f'{name}-{stride_suffix}'
-            try:
-                sample = ds_cfg[f'{mode}_sample']
-            except KeyError:
-                sample = ds_cfg[f'{mode}_sample'] = ds_cfg[f'sample']
+            if not suffix:
+                resize = mode_cfg[f'resize']
+                start_id = mode_cfg[f'start_id']
+                end_id = mode_cfg[f'end_id']
+                patch_height = mode_cfg[f'patch_height']
+                patch_width = mode_cfg[f'patch_width']
+                min_stride = mode_cfg[f'min_stride']
+                max_stride = mode_cfg[f'max_stride']
+                n_rot = mode_cfg[f'n_rot']
+                min_rot = mode_cfg[f'min_rot']
+                max_rot = mode_cfg[f'max_rot']
+                enable_flip = mode_cfg[f'enable_flip']
 
-            if sample:
-                sample_suffix = f'sample-{sample}'
-                if sample_suffix not in name:
-                    name = f'{name}-{sample_suffix}'
+                assert end_id >= start_id, f"invalid end_id: {end_id}"
 
-        suffix = ds_cfg[f'{mode}_suffix']
-        """suffix is already in name when the latter is loaded from a trained model config.json"""
-        if suffix and not name.endswith(suffix):
-            name = f'{name}-{suffix}'
+                if patch_width <= 0:
+                    patch_width = patch_height
 
-        start_seq_id = ds_cfg[f'{mode}_start_seq_id']
-        end_seq_id = ds_cfg[f'{mode}_end_seq_id']
-        if start_seq_id > 0 or end_seq_id >= 0:
-            assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
-            seq_sufix = f'seq-{start_seq_id}_{end_seq_id}'
-            name = f'{name}-{seq_sufix}'
+                if min_stride <= 0:
+                    min_stride = patch_height
 
-        start_frame_id = ds_cfg[f'{mode}_start_frame_id']
-        end_frame_id = ds_cfg[f'{mode}_end_frame_id']
-        if start_frame_id > 0 or end_frame_id >= 0:
-            frame_suffix = f'{start_frame_id}_{end_frame_id}'
-            name = f'{name}-{frame_suffix}'
+                if max_stride <= min_stride:
+                    max_stride = min_stride
+
+                db_suffixes = []
+                if resize:
+                    db_suffixes.append(f'resize_{resize}')
+
+                db_suffixes += [f'{start_id:d}_{end_id:d}',
+                                f'{patch_height:d}_{patch_width:d}',
+                                f'{min_stride:d}_{max_stride:d}',
+                                ]
+                if n_rot > 0:
+                    db_suffixes.append(f'rot_{min_rot:d}_{max_rot:d}_{n_rot:d}')
+
+                if enable_flip:
+                    db_suffixes.append('flip')
+
+                suffix = '-'.join(db_suffixes)
+                db_root_dir = f'{db_root_dir}-{suffix}'
+                name = f'{suffix}'
+        else:
+            if is_video:
+                if ds_cfg.length:
+                    length_suffix = f'length-{ds_cfg.length}'
+                    if length_suffix not in name:
+                        name = f'{name}-{length_suffix}'
+                try:
+                    stride = ds_cfg[f'{mode}_stride']
+                except KeyError:
+                    stride = ds_cfg[f'{mode}_stride'] = ds_cfg[f'stride']
+
+                if stride:
+                    stride_suffix = f'stride-{stride}'
+                    if stride_suffix not in name:
+                        name = f'{name}-{stride_suffix}'
+                try:
+                    sample = ds_cfg[f'{mode}_sample']
+                except KeyError:
+                    sample = ds_cfg[f'{mode}_sample'] = ds_cfg[f'sample']
+
+                if sample:
+                    sample_suffix = f'sample-{sample}'
+                    if sample_suffix not in name:
+                        name = f'{name}-{sample_suffix}'
+
+            suffix = ds_cfg[f'{mode}_suffix']
+            """suffix is already in name when the latter is loaded from a trained model config.json"""
+            if suffix and not name.endswith(suffix):
+                name = f'{name}-{suffix}'
+
+            start_seq_id = ds_cfg[f'{mode}_start_seq_id']
+            end_seq_id = ds_cfg[f'{mode}_end_seq_id']
+            if start_seq_id > 0 or end_seq_id >= 0:
+                assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
+                seq_sufix = f'seq-{start_seq_id}_{end_seq_id}'
+                name = f'{name}-{seq_sufix}'
+
+            start_frame_id = ds_cfg[f'{mode}_start_frame_id']
+            end_frame_id = ds_cfg[f'{mode}_end_frame_id']
+            if start_frame_id > 0 or end_frame_id >= 0:
+                frame_suffix = f'{start_frame_id}_{end_frame_id}'
+                name = f'{name}-{frame_suffix}'
 
         json_name = f'{name}.json'
         if ds_cfg.compressed:
             json_name += '.gz'
+
         json_path = os.path.join(db_root_dir, json_name)
+
         if ds_cfg.compressed:
             import compress_json
             json_dict = compress_json.load(json_path)
@@ -221,7 +287,6 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 json_dict = json.load(fid)
 
         num_examples = len(json_dict[db_type])
-
         ds_cfg[f'{mode}_name'] = name
         # cfg[f'{mode}_json_name'] = json_name
         # cfg[f'{mode}_json_path'] = json_path

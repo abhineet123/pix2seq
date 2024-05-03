@@ -34,6 +34,7 @@ def update_task_config(cfg):
         it should match image_size
         """
     image_size = cfg.model.image_size
+    max_seq_len = cfg.model.max_seq_len
     cfg.task.image_size = image_size
 
     """"update parameters that depend on image size but inexplicably missing from pretrained config files"""
@@ -43,12 +44,10 @@ def update_task_config(cfg):
         task.image_size = image_size
 
         task.eval_transforms = transform_configs.get_semantic_segmentation_eval_transforms(
-            image_size)
+            image_size, max_seq_len)
 
         task.train_transforms = transform_configs.get_semantic_segmentation_train_transforms(
-            cfg.dataset.transforms,
-            image_size,
-        )
+            image_size, max_seq_len)
 
 
 def get_config(config_str=None):
@@ -71,7 +70,8 @@ def get_config(config_str=None):
             name='semantic_segmentation',
             vocab_id=vocab.TASK_SEM_SEG,
             image_size=image_size,
-            quantization_bins=1000,
+            starts_bins=6400,
+            lengths_bins=80,
             eos_token_weight=0.1,
             top_k=0,
             top_p=0.4,
@@ -98,9 +98,8 @@ def get_config(config_str=None):
             name='encoder_ar_decoder',
             image_size=image_size,
             max_seq_len=512,
-            vocab_size=3000,  # Note: should be large enough for 100 + num_classes + quantization_bins + (optional) text
+            vocab_size=8000,  # Note: should be large enough for 100 + num_classes + quantization_bins + (optional) text
             coord_vocab_shift=1000,  # Note: make sure num_class <= coord_vocab_shift - 100
-            text_vocab_shift=3000,  # Note: make sure coord_vocab_shift + quantization_bins <= text_vocab_shift
             use_cls_token=False,
             shared_decoder_embedding=True,
             decoder_output_bias=True,

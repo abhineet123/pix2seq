@@ -225,19 +225,19 @@ def create_tf_example(
             image_dir_, image_name_ = (os.path.dirname(image_path),
                                        os.path.splitext(os.path.basename(image_path))[0])
             masks_path = os.path.join(image_dir_, masks_dir, f'{image_name_}.png')
-            mask = cv2.imread(masks_path)
-            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
 
-            rle_lens = []
-            for size_ in (640, 320, 160, 80, 40):
-                mask_ = cv2.resize(mask, (size_, size_))
-                rle, rle_norm = task_utils.mask_to_rle(mask_)
-                rle_len = len(rle_norm)
-                rle_lens.append(str(rle_len))
-
-            rle_lens_str = '\t'.join(rle_lens)
-            with open('rle_len.txt', 'a') as fid:
-                fid.write(f'{filename}\t{rle_lens_str}\n')
+            # mask = cv2.imread(masks_path)
+            # mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+            # rle_lens = []
+            # for size_ in (640, 320, 160, 80, 40):
+            #     mask_ = cv2.resize(mask, (size_, size_))
+            #     rle, rle_norm = task_utils.mask_to_rle(mask_)
+            #     rle_len = len(rle_norm)
+            #     rle_lens.append(str(rle_len))
+            #
+            # rle_lens_str = '\t'.join(rle_lens)
+            # with open('rle_len.txt', 'a') as fid:
+            #     fid.write(f'{filename}\t{rle_lens_str}\n')
 
             # rle_str = rle_str.encode('utf-8')
             with tf.io.gfile.GFile(masks_path, 'rb') as fid:

@@ -43,9 +43,10 @@ class TaskSemanticSegmentation(task_lib.Task):
                 model_dir=self.config.model_dir,
                 training=training)
 
-        response_seq, token_weights = build_response_seq_from_mask(
-            batched_examples['mask'],
-            config.quantization_bins,
+        response_seq, token_weights = build_response_seq_from_rle(
+            batched_examples['rle'],
+            config.starts_bins,
+            config.lengths_bins,
             mconfig.coord_vocab_shift,
         )
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
@@ -54,14 +55,12 @@ class TaskSemanticSegmentation(task_lib.Task):
         input_seq = tf.concat([prompt_seq, response_seq], -1)
         target_seq = tf.concat([prompt_seq, response_seq], -1)
 
-        # Pad sequence to a unified maximum length.
-        """
-        max_seq_len=512 for object_detection
-        """
-        input_seq = utils.pad_to_max_len(input_seq, config.max_seq_len + 1,
-                                         dim=-1, padding_token=vocab.PADDING_TOKEN)
-        target_seq = utils.pad_to_max_len(target_seq, config.max_seq_len + 1,
-                                          dim=-1, padding_token=vocab.PADDING_TOKEN)
+        """rle seq is already padded"""
+        # input_seq = utils.pad_to_max_len(input_seq, config.max_seq_len + 1,
+        #                                  dim=-1, padding_token=vocab.PADDING_TOKEN)
+        # target_seq = utils.pad_to_max_len(target_seq, config.max_seq_len + 1,
+        #                                   dim=-1, padding_token=vocab.PADDING_TOKEN)
+
         """
         right shift the target_seq and left-shift the input_seq
         """
@@ -69,9 +68,9 @@ class TaskSemanticSegmentation(task_lib.Task):
         token_weights = utils.pad_to_max_len(token_weights, config.max_seq_len,
                                              dim=-1, padding_token=vocab.PADDING_TOKEN)
 
-        # Assign lower weights for ending/padding tokens.
         """
-        eos_token_weight = 0.1 for object_detection
+        Assign lower weights for ending/padding tokens.
+        eos_token_weight = 0.1
         """
         token_weights = tf.where(
             target_seq == vocab.PADDING_TOKEN,
@@ -209,20 +208,46 @@ class TaskSemanticSegmentation(task_lib.Task):
         raise AssertionError('not implemented')
 
 
-def build_response_seq_from_mask(
-        masks,
-        quantization_bins,
+def build_response_seq_from_rle(
+        rle_norm,
+        starts_bins,
+        lengths_bins,
         coord_vocab_shift):
-    masks = tf.image.convert_image_dtype(masks, tf.uint8)
-    masks = masks.numpy().squeeze()
-    masks[masks > 0] = 255
-    for mask in masks:
-        rle_norm = task_utils.mask_to_rle(mask)
+    batch_size, seq_len = rle_norm.shape
+    n_elem = batch_size * seq_len
+    is_padding = tf.equal(rle_norm, 0)
 
-        quantized_rle = utils.quantize(rle_norm, quantization_bins)
-        quantized_rle = quantized_rle + coord_vocab_shift
+    rle_norm_flat = tf.reshape(rle_norm, [-1])
+    starts = rle_norm_flat[::2]
+    lengths = rle_norm_flat[1::2]
+    quantized_starts = utils.quantize(starts, starts_bins)
+    quantized_lengths = utils.quantize(lengths, lengths_bins)
 
-        # quantized_rle = utils.flatten_non_batch_dims(quantized_rle, 2)
+    quantized_starts = quantized_starts + coord_vocab_shift
+    quantized_lengths = quantized_lengths + vocab.BASE_VOCAB_SHIFT
+
+    even_indices = [[k, ] for k in range(0, n_elem, 2)]
+    odd_indices = [[k, ] for k in range(1, n_elem, 2)]
+
+    even_indices_tf = tf.constant(even_indices)
+    odd_indices_tf = tf.constant(odd_indices)
+
+    # even_indices_tf = tf.reshape(even_indices_tf, [1, -1])
+    # odd_indices_tf = tf.reshape(odd_indices_tf, [1, -1])
+
+    quantized_rle_flat = tf.zeros_like(rle_norm_flat, dtype=tf.int64)
+    quantized_rle_flat = tf.tensor_scatter_nd_update(quantized_rle_flat, even_indices_tf, quantized_starts)
+    quantized_rle_flat = tf.tensor_scatter_nd_update(quantized_rle_flat, odd_indices_tf, quantized_lengths)
+
+    # is_even = np.zeros((n_elem,), dtype=bool)
+    # is_even[even_indices] = True
+    # is_even_tf = tf.constant(is_even)
+    # quantized_rle_flat = tf.where(is_even_tf, quantized_starts, quantized_starts)
+
+    quantized_rle = tf.reshape(quantized_rle_flat, rle_norm.shape)
+
+    quantized_rle = tf.where(is_padding,
+                             tf.zeros_like(quantized_rle), quantized_rle)
 
     token_weights = tf.ones_like(quantized_rle)
 

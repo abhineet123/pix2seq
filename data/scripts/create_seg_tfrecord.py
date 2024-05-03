@@ -24,7 +24,7 @@ from eval_utils import add_suffix
 class Params(paramparse.CFG):
 
     def __init__(self):
-        paramparse.CFG.__init__(self, cfg_prefix='p2s_tfrecord')
+        paramparse.CFG.__init__(self, cfg_prefix='p2s_seg_tfrecord')
         self.db_path = ''
         self.db_suffix = ''
         self.vis = 0
@@ -33,14 +33,6 @@ class Params(paramparse.CFG):
         self.ann_ext = 'json'
         self.num_shards = 32
         self.output_dir = ''
-        self.xml_output_file = ''
-
-        self.start_seq_id = 0
-        self.end_seq_id = -1
-
-        self.start_frame_id = 0
-        self.end_frame_id = -1
-        self.frame_stride = 1
 
         self.n_rot = 3
         self.max_rot = 0
@@ -60,7 +52,7 @@ class Params(paramparse.CFG):
 
 
 def load_seg_annotations(annotation_path):
-    print(f'Reading coco annotations from {annotation_path}')
+    print(f'Reading annotations from {annotation_path}')
     if annotation_path.endswith('.json'):
         import json
         with open(annotation_path, 'r') as f:
@@ -80,19 +72,24 @@ def load_seg_annotations(annotation_path):
     return image_info, category_id_to_name_map
 
 
-def generate_annotations(image_infos,
-                         category_id_to_name_map,
-                         ):
+def generate_annotations(
+        image_infos,
+        db_path,
+        vid_infos,
+):
     for image_info in image_infos:
+        seq = image_info['seq']
+
         yield (
             image_info,
-            category_id_to_name_map,
+            db_path,
+            vid_infos[seq]
         )
 
 
 def read_frame(vid_reader, frame_id, vid_path):
-    vid_reader.set(cv2.CAP_PROP_POS_FRAMES, frame_id - 1)
-    assert vid_reader.get(cv2.CAP_PROP_POS_FRAMES) == frame_id - 1, "Failed to set frame index in video"
+    vid_reader.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
+    assert vid_reader.get(cv2.CAP_PROP_POS_FRAMES) == frame_id, "Failed to set frame index in video"
     ret, image = vid_reader.read()
     if not ret:
         raise AssertionError(f'Frame {frame_id} could not be read from {vid_path}')
@@ -109,39 +106,28 @@ def load_video(vid_path, seq):
     vid_width = int(vid_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
     print(f'\n{seq}: loaded {vid_width}x{vid_height} video with {num_frames} frames from {vid_path}')
 
-    return vid_reader
+    return vid_reader, vid_width, vid_height, num_frames
 
 
 def create_tf_example(
         image_info,
         db_path,
-        category_id_to_name_map,
-        vid_readers
+        vid_info
 ):
     image_height = image_info['height']
     image_width = image_info['width']
     filename = image_info['file_name']
-    image_id = image_info['id']
-    seq = image_info['seq']
-    frame_id = image_info['frame_id']
+    image_id = image_info['img_id']
+    frame_id = int(image_info['frame_id'])
     mask_filename = image_info['mask_file_name']
     image_path = os.path.join(db_path, filename)
     mask_image_path = os.path.join(db_path, mask_filename)
 
-    vid_path = os.path.join(db_path, f'{seq}.mp4')
-    mask_dir = os.path.dirname(mask_filename)
-    mask_vid_path = os.path.join(db_path, seq, f'{mask_dir}.mp4')
+    if vid_info is not None:
+        vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
 
-    if vid_readers is not None:
-        try:
-            vid_reader, mask_vid_reader = vid_readers[seq]
-        except KeyError:
-            vid_reader = load_video(vid_path, seq)
-            mask_vid_reader = load_video(mask_vid_path, seq)
-            vid_readers[seq] = vid_reader, mask_vid_reader
-
-        image = read_frame(vid_reader, frame_id, vid_path)
-        mask = read_frame(mask_vid_reader, frame_id, mask_vid_path)
+        image = read_frame(vid_reader, frame_id - 1, vid_path)
+        mask = read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
 
         encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
         # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
@@ -178,6 +164,17 @@ def main():
 
     assert params.db_path, "db_path must be provided"
 
+    assert params.end_id >= params.start_id, f"invalid end_id: {params.end_id}"
+
+    if params.patch_width <= 0:
+        params.patch_width = params.patch_height
+
+    if params.min_stride <= 0:
+        params.min_stride = params.patch_height
+
+    if params.max_stride <= params.min_stride:
+        params.max_stride = params.min_stride
+
     if not params.db_suffix:
         db_suffixes = []
         if params.resize:
@@ -193,25 +190,56 @@ def main():
         if params.enable_flip:
             db_suffixes.append('flip')
 
-        params.db_suffix = '_'.join(db_suffixes)
+        params.db_suffix = '-'.join(db_suffixes)
 
-    if params.db_suffix:
-        params.db_path = f'{params.db_path}_{params.db_suffix}'
+    params.db_path = f'{params.db_path}-{params.db_suffix}'
 
     json_suffix = params.db_suffix
     output_json_fname = f'{json_suffix}.{params.ann_ext}'
     json_path = os.path.join(params.db_path, output_json_fname)
 
-    image_info, category_id_to_name_map, = load_seg_annotations(json_path)
+    image_infos, category_id_to_name_map, = load_seg_annotations(json_path)
 
     if not params.output_dir:
         params.output_dir = os.path.join(params.db_path, 'tfrecord')
 
     os.makedirs(params.output_dir, exist_ok=True)
 
+    vid_infos = {}
+
+    # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
+
+    for image_info in image_infos:
+        seq = image_info['seq']
+        mask_filename = image_info['mask_file_name']
+        vid_path = os.path.join(params.db_path, f'{seq}.mp4')
+        mask_dir = os.path.dirname(mask_filename)
+        mask_vid_path = os.path.join(params.db_path, f'{mask_dir}.mp4')
+
+        try:
+            vid_info = vid_infos[seq]
+        except KeyError:
+            vid_reader, vid_width, vid_height, num_frames = load_video(vid_path, seq)
+            mask_reader, mask_width, mask_height, mask_num_frames = load_video(mask_vid_path, seq)
+
+            assert num_frames == mask_num_frames, "num_frames mismatch"
+            assert vid_width == mask_width, "vid_width mismatch"
+            assert vid_height == mask_height, "vid_height mismatch"
+
+            vid_infos[seq] = vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height
+        else:
+            vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
+
+        frame_id = int(image_info['frame_id'])
+        img_id = image_info['img_id']
+
+        assert frame_id <= num_frames, (f"frame_id {frame_id} for image {img_id} exceeds num_frames {num_frames} for "
+                                        f"seq {seq}")
+
     annotations_iter = generate_annotations(
-        image_infos=image_info,
-        category_id_to_name_map=category_id_to_name_map,
+        image_infos=image_infos,
+        db_path=params.db_path,
+        vid_infos=vid_infos,
     )
     output_path = os.path.join(params.output_dir, json_suffix)
     os.makedirs(output_path, exist_ok=True)
@@ -224,7 +252,7 @@ def main():
         process_func=create_tf_example,
         num_shards=params.num_shards,
         multiple_processes=params.n_proc,
-        iter_len=len(image_info),
+        iter_len=len(image_infos),
     )
 
     print(f'output_path: {output_path}')
