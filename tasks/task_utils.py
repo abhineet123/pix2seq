@@ -179,10 +179,9 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset):
     return rle, rle_norm
 
 
-def rle_to_mask(mask_rle, shape, starts_offset, lengths_offset, starts_2d, label=1):
-    s = mask_rle
+def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, label=1):
     if starts_2d:
-        start_rows, start_cols, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::3], s[1:][::3], s[2:][::3])]
+        start_rows, start_cols, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::3], rle[1:][::3], rle[2:][::3])]
         start_rows -= 1
         start_cols -= 1
 
@@ -191,7 +190,7 @@ def rle_to_mask(mask_rle, shape, starts_offset, lengths_offset, starts_2d, label
 
         starts = np.ravel_multi_index((start_rows, start_cols), shape)
     else:
-        starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
+        starts, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::2], rle[1:][::2])]
 
         starts -= 1
         starts -= starts_offset

@@ -413,7 +413,6 @@ def save_image_sample(proc_example, t_name, t_id, vis_img_dir):
     else:
         raise AssertionError('proc_example has neither bbox nor mask')
 
-
     vis_img_path = os.path.join(vis_img_dir, f'{vis_img_name}{img_ext}')
     image_vis = annotate(image_vis, vis_img_name)
     cv2.imwrite(vis_img_path, image_vis)
@@ -1070,6 +1069,82 @@ def draw_mask_on_image_array(image, mask, color='red', alpha=0.4):
     pil_mask = Image.fromarray(np.uint8(255.0 * alpha * mask)).convert('L')
     pil_image = Image.composite(pil_solid_color, pil_image, pil_mask)
     np.copyto(image, np.array(pil_image.convert('RGB')))
+
+
+def visualize_mask(
+        image_id,
+        image,
+        mask,
+        category_index,
+        img_ext='.jpg',
+        vid_cap=None,
+        out_dir=None,
+        csv_data=None,
+        orig_size=None,
+        video_id=None,
+):
+    seq_id = 'generic'
+    if isinstance(image_id, bytes):
+        image_id_ = image_id.decode('utf-8')
+    else:
+        image_id = image_id.astype(str)
+        image_id_ = str(image_id.item())
+
+    if '/' in image_id_:
+        seq_id, image_id_ = image_id_.split('/')
+
+    if not image_id_.endswith(img_ext):
+        image_id_ += img_ext
+
+    import cv2
+    import eval_utils
+    if video_id is not None:
+        image_name_, image_ext_ = os.path.splitext(image_id_)
+        vis_name = f'{image_name_}_{video_id}{image_ext_}'
+    else:
+        vis_name = image_id_
+
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    vis_img = np.copy(image)
+    
+    vis_img = eval_utils.annotate(vis_img, vis_name)
+
+    out_mask_dir = os.path.join(out_dir, 'mask')
+    out_vis_dir = os.path.join(out_dir, 'vis')
+
+    if vid_cap is not None:
+        vid_cap_seq = vid_cap[seq_id]
+        if vid_cap_seq is None:
+            for seq_id_, vid_cap_ in vid_cap.items():
+                if vid_cap_ is not None:
+                    vid_cap_.release()
+                    vid_cap[seq_id_] = None
+
+            # codec, ext = 'hfyu', 'avi'
+            codec, ext = 'mp4v', 'mp4'
+            # codec, ext = 'mjpg', 'avi'
+            fps = 5
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            seq_mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
+            video_h, video_w = image.shape[:2]
+            vid_cap_seq = cv2.VideoWriter(seq_mask_path, fourcc, fps, (video_w, video_h))
+            if vid_cap_seq is None:
+                raise IOError(f'Output video file could not be opened: {seq_mask_path}')
+            print(f'Saving {video_w}x{video_h} {fps} fps {codec} video for {seq_id} to {seq_mask_path}')
+            vid_cap[seq_id] = vid_cap_seq
+
+        vid_cap_seq.write(image)
+    else:
+        seq_mask_dir = os.path.join(out_mask_dir, seq_id)
+        os.makedirs(seq_mask_dir, exist_ok=True)
+        mask_path = os.path.join(seq_mask_dir, vis_name)
+        cv2.imwrite(mask_path, mask)
+
+        seq_vis_dir = os.path.join(out_vis_dir, seq_id)
+        os.makedirs(seq_vis_dir, exist_ok=True)
+        vis_path = os.path.join(seq_vis_dir, vis_name)
+        cv2.imwrite(mask_path, vis_img)
 
 
 def visualize_boxes_and_labels_on_image_array(

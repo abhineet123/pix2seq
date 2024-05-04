@@ -46,8 +46,6 @@ class TaskSemanticSegmentation(task_lib.Task):
 
     def preprocess_batched(self, batched_examples, training):
         config = self.config.task
-        mconfig = self.config.model
-
         if self.config.debug == 2:
             batched_examples = vis_utils.debug_image_pipeline(
                 self.dataset,
@@ -114,116 +112,65 @@ class TaskSemanticSegmentation(task_lib.Task):
             self.task_vocab_id, prompt_shape=(bsz, 1))
         pred_seq, logits, _ = model.infer(
             image, prompt_seq, encoded=None,
-            max_seq_len=(config.max_instances_per_image_test * 5 + 1),
+            max_seq_len=config.max_seq_len,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
         return examples, pred_seq, logits
 
-    def postprocess_tpu(self, batched_examples, pred_seq, logits,
-                        training=False):  # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
-        """Organizing results after fitting the batched examples in graph.
-
-        Such as updating metrics, putting together results for computing metrics in
-          CPU/numpy mode.
-
-        Note: current implementation only support eval mode where gt are given in
-          metrics as they are not constructed here from input_seq/target_seq.
-
-        Args:
-          batched_examples: a tuple of features (`dict`) and labels (`dict`),
-            containing images and labels.
-          pred_seq: `int` sequence of shape (bsz, seqlen').
-          logits: `float` sequence of shape (bsz, seqlen', vocab_size).
-          training: `bool` indicating training or inference mode.
-
-        Returns:
-          results for passing to `postprocess_cpu` which runs in CPU mode.
-        """
-        config = self.config.task
-        mconfig = self.config.model
+    def postprocess_tpu(self, batched_examples, pred_rle, logits, training=False):
         example = batched_examples
         images, image_ids = example['image'], example['image/id']
         orig_image_size = example['orig_image_size']
-        unpadded_image_size = example['unpadded_image_size']
 
-        # Decode sequence output.
-        pred_classes, pred_bboxes, scores = task_utils.decode_object_seq_to_bbox(
-            logits, pred_seq, config.quantization_bins, mconfig.coord_vocab_shift)
+        gt_rle = example['rle']
 
-        # Compute coordinate scaling from [0., 1.] to actual pixels in orig image.
-        image_size = images.shape[1:3].as_list()
-        if training:
-            # scale points to whole image size during train.
-            scale = utils.tf_float32(image_size)
-        else:
-            # scale points to original image size during eval.
-            scale = (
-                    utils.tf_float32(image_size)[tf.newaxis, :] /
-                    utils.tf_float32(unpadded_image_size))
-            scale = scale * utils.tf_float32(orig_image_size)
-            scale = tf.expand_dims(scale, 1)
-        pred_bboxes_rescaled = utils.scale_points(pred_bboxes, scale)
-
-        gt_classes, gt_bboxes = example['label'], example['bbox']
-        gt_bboxes_rescaled = utils.scale_points(gt_bboxes, scale)
-        area, is_crowd = example['area'], example['is_crowd']
-
-        return (images, image_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
-                scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
-                orig_image_size, unpadded_image_size,
-                # is_crowd
-                )
+        return images, image_ids, pred_rle, gt_rle, orig_image_size
 
     def postprocess_cpu(self,
                         outputs,
                         train_step,
-                        # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
-                        out_vis_dir=None,
+                        out_vis_dir,
                         vid_cap=None,
                         csv_data=None,
                         eval_step=None,
                         training=False,
                         summary_tag='eval',
                         ret_results=False,
-                        min_score_thresh=0.1,
                         ):
+
         # Copy outputs to cpu.
         new_outputs = []
         for i in range(len(outputs)):
-            # logging.info('Copying output at index %d to cpu for cpu post-process', i)
             new_outputs.append(tf.identity(outputs[i]))
-        (images, image_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
-         scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
-         orig_image_size, unpadded_image_size,
-         # is_crowd
-         ) = new_outputs
 
-        unpadded_image_size = unpadded_image_size.numpy()
-        orig_image_size = orig_image_size.numpy()
+        images, image_ids, rles, gt_rle, orig_sizes = new_outputs
 
-        # Image summary.
+        orig_sizes = orig_sizes.numpy()
+        rles = rles.numpy()
+
         image_ids_ = image_ids.numpy().flatten().astype(str)
-        image_ids__ = list(image_ids_)
-        ret_images = []
-        bboxes_, bboxes_rescaled_, classes_, scores_ = (
-            pred_bboxes.numpy(), pred_bboxes_rescaled.numpy(), pred_classes.numpy(), scores.numpy())
-        images_ = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
-        ret_images += vis_utils.add_image_summary_with_bbox(
-            images_, bboxes_, bboxes_rescaled_, classes_, scores_,
-            self._category_names,
-            image_ids__,
-            # train_step, tag,
-            # max_images_shown=(-1 if ret_results else 3)
-            out_vis_dir=out_vis_dir,
-            vid_cap=vid_cap,
-            csv_data=csv_data,
-            min_score_thresh=min_score_thresh,
-            unpadded_size=unpadded_image_size,
-            orig_size=orig_image_size,
-        )
+        image_ids = list(image_ids_)
+        images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
 
-        if ret_results:
-            return ret_images
+        for image_id_, image_, rle_, orig_size_ in zip(
+                image_ids, images, rles, orig_sizes):
+            mask = task_utils.rle_to_mask(
+                rle_,
+                shape=orig_sizes,
+                starts_offset=self.config.model.coord_vocab_shift,
+                lengths_offset=vocab.BASE_VOCAB_SHIFT,
+                starts_2d=False)
+
+            vis_utils.visualize_mask(
+                image_id_,
+                image_,
+                mask,
+                self._category_names,
+                out_dir=out_vis_dir,
+                vid_cap=vid_cap,
+                csv_data=csv_data,
+                orig_size=orig_sizes,
+            )
 
     def compute_scalar_metrics(self, step):
         raise AssertionError('not implemented')
@@ -277,24 +224,3 @@ def build_response_seq_from_rle(
     token_weights = tf.ones_like(quantized_rle)
 
     return quantized_rle, token_weights
-
-
-def build_annotations(image_ids, category_ids, boxes, scores,
-                      counter) -> List[Dict[str, Any]]:
-    """Builds annotations."""
-    annotations = []
-    for image_id, category_id_list, box_list, score_list in zip(
-            image_ids, category_ids, boxes, scores):
-        for category_id, box, score in zip(category_id_list, box_list, score_list):
-            category_id = int(category_id)
-            if category_id:
-                annotations.append({
-                    'id': counter,
-                    'image_id': int(image_id),
-                    'category_id': category_id,
-                    'bbox': metric_utils.yxyx_to_xywh(box.tolist()),
-                    'iscrowd': False,
-                    'score': float(score)
-                })
-                counter += 1
-    return annotations

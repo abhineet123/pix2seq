@@ -119,7 +119,7 @@ class Task(abc.ABC):
         """
 
     @abc.abstractmethod
-    def postprocess_tpu(self):
+    def postprocess_tpu(self, **kwargs):
         """Task-specific post processing on accelerators (TPUs).
 
         This is intended for inference / evaluation time only.
@@ -128,7 +128,7 @@ class Task(abc.ABC):
         """
 
     @abc.abstractmethod
-    def postprocess_cpu(self):
+    def postprocess_cpu(self, **kwargs):
         """Task-specific post processing on CPUs.
 
         This is intended for inference / evaluation time only.

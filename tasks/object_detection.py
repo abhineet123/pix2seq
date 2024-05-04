@@ -281,62 +281,13 @@ class TaskObjectDetection(task_lib.Task):
             return ret_images
 
     def evaluate(self, summary_writer, step, eval_tag):
-        """Evaluate results on accumulated outputs (after multiple infer steps).
-
-        Args:
-          summary_writer: the summary writer.
-          step: current step.
-          eval_tag: `string` name scope for eval result summary.
-
-        Returns:
-          result as a `dict`.
-        """
-        metrics = self.compute_scalar_metrics(step)
-
-        if summary_writer is not None:
-            with summary_writer.as_default():
-                with tf.name_scope(eval_tag):
-                    self._log_metrics(metrics, step)
-                summary_writer.flush()
-        result_json_path = os.path.join(
-            self.config.model_dir, eval_tag + 'cocoeval.pkl')
-        if self._coco_metrics:
-            tosave = {'dataset': self._coco_metrics.dataset,
-                      'detections': np.array(self._coco_metrics.detections)}
-            with tf.io.gfile.GFile(result_json_path, 'wb') as f:
-                pickle.dump(tosave, f)
-        self.reset_metrics()
-        if self.config.task.get('eval_outputs_json_path', None):
-            annotations_to_save = {
-                'annotations': self.eval_output_annotations,
-                'categories': list(self._category_names.values())
-            }
-            json_path = self.config.task.eval_outputs_json_path.format(
-                eval_split=self.config.dataset.eval_split,
-                top_p=self.config.task.top_p,
-                max_instances_per_image_test=self.config.task
-                .max_instances_per_image_test,
-                step=int(step))
-            tf.io.gfile.makedirs(os.path.basename(json_path))
-            logging.info('Saving %d result annotations to %s',
-                         len(self.eval_output_annotations),
-                         json_path)
-            with tf.io.gfile.GFile(json_path, 'w') as f:
-                json.dump(annotations_to_save, f)
-            self.eval_output_annotations = []
-        return metrics
+        raise AssertionError('not implemented')
 
     def compute_scalar_metrics(self, step):
-        """Returns a dict containing scalar metrics to log."""
-        if self._coco_metrics:
-            return self._coco_metrics.result(step)
-        else:
-            return {}
+        raise AssertionError('not implemented')
 
     def reset_metrics(self):
-        """Reset states of metrics accumulators."""
-        if self._coco_metrics:
-            self._coco_metrics.reset_states()
+        raise AssertionError('not implemented')
 
 
 def build_response_seq_from_bbox(bbox,
