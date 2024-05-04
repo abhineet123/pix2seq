@@ -169,8 +169,12 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
 
     def extract(self, example, training):
         img_id = example['image/source_id']
+        frame_id = example['image/frame_id']
         image = decode_utils.decode_image(example)
         rle = example['image/rle']
+        vid_path = example['image/vid_path']
+        mask_vid_path = example['image/mask_vid_path']
+        mask_file_name = example['image/mask_file_name']
 
         orig_image_size = tf.shape(image)[:2]
 
@@ -179,6 +183,10 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
             'rle': rle,
             'orig_image_size': orig_image_size,
             'image/id': img_id,
+            'frame_id': frame_id,
+            'vid_path': vid_path,
+            'mask_vid_path': mask_vid_path,
+            'mask_file_name': mask_file_name,
         }
         return new_example
 

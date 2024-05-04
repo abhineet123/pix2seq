@@ -43,7 +43,11 @@ def get_feature_map_for_object_detection():
 
 def get_feature_map_for_semantic_segmentation():
     return {
-        'image/rle': tf.io.VarLenFeature(tf.float32),
+        'image/rle': tf.io.VarLenFeature(tf.int64),
+        'image/mask_file_name': tf.io.FixedLenFeature((), tf.string, ''),
+        'image/vid_path': tf.io.FixedLenFeature((), tf.string, ''),
+        'image/mask_vid_path': tf.io.FixedLenFeature((), tf.string, ''),
+        'image/frame_id': tf.io.FixedLenFeature((), tf.int64, -1),
     }
 
 

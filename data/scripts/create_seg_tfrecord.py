@@ -50,6 +50,11 @@ class Params(paramparse.CFG):
 
         self.enable_flip = 0
 
+        self.max_length = 0
+        self.starts_2d = 0
+        self.starts_offset = 1000
+        self.lengths_offset = 100
+
 
 def load_seg_annotations(annotation_path):
     print(f'Reading annotations from {annotation_path}')
@@ -73,61 +78,49 @@ def load_seg_annotations(annotation_path):
 
 
 def generate_annotations(
+        params,
         image_infos,
-        db_path,
         vid_infos,
 ):
     for image_info in image_infos:
         seq = image_info['seq']
 
         yield (
+            params,
             image_info,
-            db_path,
             vid_infos[seq]
         )
 
 
-def read_frame(vid_reader, frame_id, vid_path):
-    vid_reader.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
-    assert vid_reader.get(cv2.CAP_PROP_POS_FRAMES) == frame_id, "Failed to set frame index in video"
-    ret, image = vid_reader.read()
-    if not ret:
-        raise AssertionError(f'Frame {frame_id} could not be read from {vid_path}')
-    return image
-
-
-def load_video(vid_path, seq):
-    vid_reader = cv2.VideoCapture()
-    if not vid_reader.open(vid_path):
-        raise AssertionError(f'Video file could not be opened: {vid_path}')
-
-    num_frames = int(vid_reader.get(cv2.CAP_PROP_FRAME_COUNT))
-    vid_height = int(vid_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    vid_width = int(vid_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
-    print(f'\n{seq}: loaded {vid_width}x{vid_height} video with {num_frames} frames from {vid_path}')
-
-    return vid_reader, vid_width, vid_height, num_frames
-
-
 def create_tf_example(
+        params,
         image_info,
-        db_path,
-        vid_info
-):
+        vid_info):
+    """
+    :param Params params:
+    """
+
     image_height = image_info['height']
     image_width = image_info['width']
     filename = image_info['file_name']
     image_id = image_info['img_id']
     frame_id = int(image_info['frame_id'])
     mask_filename = image_info['mask_file_name']
-    image_path = os.path.join(db_path, filename)
-    mask_image_path = os.path.join(db_path, mask_filename)
+    image_path = os.path.join(params.db_path, filename)
+    mask_image_path = os.path.join(params.db_path, mask_filename)
+
+    feature_dict = {}
 
     if vid_info is not None:
         vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
+        vid_feature_dict = {
+            'image/vid_path': tfrecord_lib.convert_to_feature(vid_path.encode('utf8')),
+            'image/mask_vid_path': tfrecord_lib.convert_to_feature(mask_vid_path.encode('utf8')),
+        }
+        feature_dict.update(vid_feature_dict)
 
-        image = read_frame(vid_reader, frame_id - 1, vid_path)
-        mask = read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
+        image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
+        mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
 
         encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
         # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
@@ -137,21 +130,29 @@ def create_tf_example(
 
         mask = cv2.imread(mask_image_path)
 
-    feature_dict = tfrecord_lib.image_info_to_feature_dict(
+    image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
         image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
+
+    feature_dict.update(image_feature_dict)
 
     if len(mask.shape) == 3:
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
     mask[mask > 0] = 1
 
-    mask_h, mask_w = mask.shape
+    # mask_h, mask_w = mask.shape
 
     rle, rle_norm = task_utils.mask_to_rle(
-        mask, max_length=mask_w, start_2d=False)
+        mask,
+        max_length=params.max_length,
+        starts_2d=params.starts_2d,
+        starts_offset=params.starts_offset,
+        lengths_offset=params.lengths_offset,
+    )
 
     seg_feature_dict = {
-        'image/rle': tfrecord_lib.convert_to_feature(rle_norm,
-                                                     value_type='float_list'),
+        'image/rle': tfrecord_lib.convert_to_feature(rle, value_type='int64_list'),
+        'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
+        'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
     }
     feature_dict.update(seg_feature_dict)
 
@@ -205,6 +206,9 @@ def main():
 
     os.makedirs(params.output_dir, exist_ok=True)
 
+    if params.max_length <= 0:
+        params.max_length = params.patch_width
+
     vid_infos = {}
 
     # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
@@ -219,8 +223,8 @@ def main():
         try:
             vid_info = vid_infos[seq]
         except KeyError:
-            vid_reader, vid_width, vid_height, num_frames = load_video(vid_path, seq)
-            mask_reader, mask_width, mask_height, mask_num_frames = load_video(mask_vid_path, seq)
+            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(vid_path, seq)
+            mask_reader, mask_width, mask_height, mask_num_frames = task_utils.load_video(mask_vid_path, seq)
 
             assert num_frames == mask_num_frames, "num_frames mismatch"
             assert vid_width == mask_width, "vid_width mismatch"
@@ -237,8 +241,8 @@ def main():
                                         f"seq {seq}")
 
     annotations_iter = generate_annotations(
+        params=params,
         image_infos=image_infos,
-        db_path=params.db_path,
         vid_infos=vid_infos,
     )
     output_path = os.path.join(params.output_dir, json_suffix)

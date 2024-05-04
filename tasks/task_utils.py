@@ -72,14 +72,48 @@ def split_runs(run_ids, starts, lengths, max_length):
     return starts, lengths
 
 
-def mask_to_rle(mask, max_length, start_2d):
+def read_frame(vid_reader, frame_id, vid_path):
+    vid_reader.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
+    assert vid_reader.get(cv2.CAP_PROP_POS_FRAMES) == frame_id, "Failed to set frame index in video"
+    ret, image = vid_reader.read()
+    if not ret:
+        raise AssertionError(f'Frame {frame_id} could not be read from {vid_path}')
+    return image
+
+
+def load_video(vid_path, seq=''):
+    vid_reader = cv2.VideoCapture()
+    if not vid_reader.open(vid_path):
+        raise AssertionError(f'Video file could not be opened: {vid_path}')
+
+    num_frames = int(vid_reader.get(cv2.CAP_PROP_FRAME_COUNT))
+    vid_height = int(vid_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    vid_width = int(vid_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
+    if seq:
+        print(f'\n{seq}: loaded {vid_width}x{vid_height} video with {num_frames} frames from {vid_path}')
+
+    return vid_reader, vid_width, vid_height, num_frames
+
+
+def check_rle(mask, rle, starts_offset, lengths_offset):
+    mask = np.copy(mask)
+    if len(mask.shape) == 3:
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+    mask[mask > 0] = 1
+    mask_rec = rle_to_mask(rle, mask.shape, starts_offset, lengths_offset, starts_2d=False, label=1)
+
+    mask_mismatch = np.nonzero(mask != mask_rec)
+    assert mask_mismatch[0].size == 0, "mask_rec mismatch"
+
+
+def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset):
     """
     https://www.kaggle.com/stainsby/fast-tested-rle
     https://ccshenyltw.medium.com/run-length-encode-and-decode-a33383142e6b
 
     :param mask:
     :param max_length:
-    :param start_2d:
+    :param starts_2d:
     :return:
     """
     assert len(mask.shape) == 2, "only greyscale masks are supported"
@@ -109,42 +143,57 @@ def mask_to_rle(mask, max_length, start_2d):
 
     lengths_norm = lengths.astype(np.float32) / max_length
 
-    if start_2d:
+    """additional offset to convert lengths into vocabulary tokens"""
+    lengths += lengths_offset
+
+    if starts_2d:
         """2D start tokens"""
         starts_rows, starts_cols = np.unravel_index(starts, mask.shape)
         """0 is used for padding so cannot have 0 in starts_rows and starts_cols"""
         starts_rows += 1
         starts_cols += 1
 
-        rle = [item for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
-
         n_rows, n_cols = mask.shape
         row_norm, col_norm = starts_rows.astype(np.float32) / n_rows, starts_cols.astype(np.float32) / n_cols
         rle_norm = [item for sublist in zip(row_norm, col_norm, lengths_norm) for item in sublist]
+
+        """0 is used for padding so cannot have 0 in starts_rows and starts_cols"""
+        starts_rows += starts_offset
+        starts_cols += starts_offset
+        rle = [item for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
     else:
         """0 is used for padding so cannot have 0 in starts"""
         starts += 1
 
         n_pix = mask.size
         starts_norm = starts.astype(np.float32) / n_pix
-
-        rle = [int(item) for sublist in zip(starts, lengths) for item in sublist]
         rle_norm = [float(item) for sublist in zip(starts_norm, lengths_norm) for item in sublist]
+
+        """additional offset to convert coords into vocabulary tokens"""
+        starts += starts_offset
+        rle = [int(item) for sublist in zip(starts, lengths) for item in sublist]
 
     return rle, rle_norm
 
 
-def rle_to_mask(mask_rle, shape, start_2d, label=1):
+def rle_to_mask(mask_rle, shape, starts_offset, lengths_offset, starts_2d, label=1):
     s = mask_rle
-    if start_2d:
+    if starts_2d:
         start_rows, start_cols, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::3], s[1:][::3], s[2:][::3])]
         start_rows -= 1
         start_cols -= 1
+
+        start_rows -= starts_offset
+        start_cols -= starts_offset
+
         starts = np.ravel_multi_index((start_rows, start_cols), shape)
     else:
         starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
 
         starts -= 1
+        starts -= starts_offset
+
+    lengths -= lengths_offset
 
     """ends are exclusive while starts are inclusive"""
     ends = starts + lengths

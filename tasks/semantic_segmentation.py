@@ -43,12 +43,23 @@ class TaskSemanticSegmentation(task_lib.Task):
                 model_dir=self.config.model_dir,
                 training=training)
 
-        response_seq, token_weights = build_response_seq_from_rle(
-            batched_examples['rle'],
-            config.starts_bins,
-            config.lengths_bins,
-            mconfig.coord_vocab_shift,
-        )
+        response_seq = batched_examples['rle']
+        token_weights = tf.ones_like(response_seq, dtype=tf.float32)
+
+        mask_vid_path = batched_examples['mask_vid_path']
+        frame_id = batched_examples['frame_id']
+
+        vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(mask_vid_path)
+        mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
+        task_utils.check_rle(mask, response_seq, mconfig.coord_vocab_shift, vocab.BASE_VOCAB_SHIFT)
+
+        # response_seq, token_weights = build_response_seq_from_rle(
+        #     batched_examples['rle'],
+        #     config.starts_bins,
+        #     config.lengths_bins,
+        #     mconfig.coord_vocab_shift,
+        # )
+
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             task_vocab_id=self.task_vocab_id,
             response_seq=response_seq)  # (bsz, 1)
@@ -65,8 +76,12 @@ class TaskSemanticSegmentation(task_lib.Task):
         right shift the target_seq and left-shift the input_seq
         """
         input_seq, target_seq = input_seq[..., :-1], target_seq[..., 1:]
-        token_weights = utils.pad_to_max_len(token_weights, config.max_seq_len,
-                                             dim=-1, padding_token=vocab.PADDING_TOKEN)
+
+        """
+        token_weights should already be config.max_seq_len since it is created from response_seq
+        """
+        # token_weights = utils.pad_to_max_len(token_weights, config.max_seq_len,
+        #                                      dim=-1, padding_token=vocab.PADDING_TOKEN)
 
         """
         Assign lower weights for ending/padding tokens.
@@ -212,7 +227,8 @@ def build_response_seq_from_rle(
         rle_norm,
         starts_bins,
         lengths_bins,
-        coord_vocab_shift):
+        coord_vocab_shift
+):
     batch_size, seq_len = rle_norm.shape
     n_elem = batch_size * seq_len
     is_padding = tf.equal(rle_norm, 0)
