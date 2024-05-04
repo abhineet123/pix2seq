@@ -34,6 +34,10 @@ class Params(paramparse.CFG):
         self.num_shards = 32
         self.output_dir = ''
 
+        self.seq_id = -1
+        self.seq_start_id = 0
+        self.seq_end_id = -1
+
         self.n_rot = 3
         self.max_rot = 0
         self.min_rot = 10
@@ -196,6 +200,15 @@ def main():
     params.db_path = f'{params.db_path}-{params.db_suffix}'
 
     json_suffix = params.db_suffix
+
+    if params.seq_id >= 0:
+        params.start_seq_id = params.end_seq_id = params.seq_id
+
+    if params.start_seq_id > 0 or params.end_seq_id >= 0:
+        assert params.end_seq_id >= params.start_seq_id, "end_seq_id must to be >= start_seq_id"
+        seq_sufix = f'seq_{params.start_seq_id}_{params.end_seq_id}'
+        json_suffix = f'{json_suffix}-{seq_sufix}'
+
     output_json_fname = f'{json_suffix}.{params.ann_ext}'
     json_path = os.path.join(params.db_path, output_json_fname)
 
