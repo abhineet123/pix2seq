@@ -1107,18 +1107,24 @@ def visualize_mask(
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
     vis_img = np.copy(image)
-    
-    vis_img = eval_utils.annotate(vis_img, vis_name)
+
+    blended_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(mask), 0.5))
+    blended_img = eval_utils.annotate(blended_img, vis_name)
 
     out_mask_dir = os.path.join(out_dir, 'mask')
     out_vis_dir = os.path.join(out_dir, 'vis')
 
     if vid_cap is not None:
-        vid_cap_seq = vid_cap[seq_id]
-        if vid_cap_seq is None:
-            for seq_id_, vid_cap_ in vid_cap.items():
-                if vid_cap_ is not None:
-                    vid_cap_.release()
+        if vid_cap[seq_id] is not None:
+            mask_writer, vis_writer = vid_cap[seq_id]
+        else:
+            """close video writers for all other sequences assuming that images are 
+            arranged sequence by sequence"""
+            for seq_id_, writers in vid_cap.items():
+                if writers is not None:
+                    mask_writer_, vis_writer_ = writers
+                    mask_writer_.release()
+                    vis_writer_.release()
                     vid_cap[seq_id_] = None
 
             # codec, ext = 'hfyu', 'avi'
@@ -1127,14 +1133,24 @@ def visualize_mask(
             fps = 5
             fourcc = cv2.VideoWriter_fourcc(*codec)
             seq_mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
-            video_h, video_w = image.shape[:2]
-            vid_cap_seq = cv2.VideoWriter(seq_mask_path, fourcc, fps, (video_w, video_h))
-            if vid_cap_seq is None:
-                raise IOError(f'Output video file could not be opened: {seq_mask_path}')
-            print(f'Saving {video_w}x{video_h} {fps} fps {codec} video for {seq_id} to {seq_mask_path}')
-            vid_cap[seq_id] = vid_cap_seq
+            seq_vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
 
-        vid_cap_seq.write(image)
+            video_h, video_w = image.shape[:2]
+
+            mask_writer = cv2.VideoWriter(seq_mask_path, fourcc, fps, (video_w, video_h))
+            if mask_writer is None:
+                raise IOError(f'mask video file could not be opened: {seq_mask_path}')
+            print(f'Saving {video_w}x{video_h} {fps} fps {codec} mask video for {seq_id} to {seq_mask_path}')
+
+            vis_writer = cv2.VideoWriter(seq_vis_path, fourcc, fps, (video_w, video_h))
+            if vis_writer is None:
+                raise IOError(f'vis video file could not be opened: {seq_vis_path}')
+            print(f'Saving {video_w}x{video_h} {fps} fps {codec} vis video for {seq_id} to {seq_vis_path}')
+
+            vid_cap[seq_id] = mask_writer, vis_writer
+
+        mask_writer.write(mask)
+        vis_writer.write(blended_img)
     else:
         seq_mask_dir = os.path.join(out_mask_dir, seq_id)
         os.makedirs(seq_mask_dir, exist_ok=True)
@@ -1144,7 +1160,7 @@ def visualize_mask(
         seq_vis_dir = os.path.join(out_vis_dir, seq_id)
         os.makedirs(seq_vis_dir, exist_ok=True)
         vis_path = os.path.join(seq_vis_dir, vis_name)
-        cv2.imwrite(mask_path, vis_img)
+        cv2.imwrite(vis_path, blended_img)
 
 
 def visualize_boxes_and_labels_on_image_array(
