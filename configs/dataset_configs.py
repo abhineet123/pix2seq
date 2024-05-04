@@ -128,6 +128,9 @@ def get_sem_seg_data():
         mode_data[f'min_rot'] = 0
         mode_data[f'max_rot'] = 0
         mode_data[f'enable_flip'] = 0
+        mode_data[f'seq_id'] = -1
+        mode_data[f'seq_start_id'] = 0
+        mode_data[f'seq_end_id'] = -1
 
         data[f'{mode}'] = mode_data
 
@@ -200,6 +203,9 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 min_rot = mode_cfg[f'min_rot']
                 max_rot = mode_cfg[f'max_rot']
                 enable_flip = mode_cfg[f'enable_flip']
+                seq_id = mode_cfg[f'seq_id']
+                seq_start_id = mode_cfg[f'seq_start_id']
+                seq_end_id = mode_cfg[f'seq_end_id']
 
                 assert end_id >= start_id, f"invalid end_id: {end_id}"
 
@@ -229,6 +235,14 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 suffix = '-'.join(db_suffixes)
                 db_root_dir = f'{db_root_dir}-{suffix}'
                 name = f'{suffix}'
+
+                if seq_id >= 0:
+                    seq_start_id = seq_end_id = seq_id
+
+                if seq_start_id > 0 or seq_end_id >= 0:
+                    assert seq_end_id >= seq_start_id, "end_seq_id must to be >= start_seq_id"
+                    seq_suffix = f'seq_{seq_start_id}_{seq_end_id}'
+                    name = f'{name}-{seq_suffix}'
         else:
             if is_video:
                 if ds_cfg.length:
@@ -263,8 +277,8 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
             end_seq_id = ds_cfg[f'{mode}_end_seq_id']
             if start_seq_id > 0 or end_seq_id >= 0:
                 assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
-                seq_sufix = f'seq-{start_seq_id}_{end_seq_id}'
-                name = f'{name}-{seq_sufix}'
+                seq_suffix = f'seq-{start_seq_id}_{end_seq_id}'
+                name = f'{name}-{seq_suffix}'
 
             start_frame_id = ds_cfg[f'{mode}_start_frame_id']
             end_frame_id = ds_cfg[f'{mode}_end_frame_id']

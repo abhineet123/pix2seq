@@ -202,12 +202,12 @@ def main():
     json_suffix = params.db_suffix
 
     if params.seq_id >= 0:
-        params.start_seq_id = params.end_seq_id = params.seq_id
+        params.seq_start_id = params.seq_end_id = params.seq_id
 
-    if params.start_seq_id > 0 or params.end_seq_id >= 0:
-        assert params.end_seq_id >= params.start_seq_id, "end_seq_id must to be >= start_seq_id"
-        seq_sufix = f'seq_{params.start_seq_id}_{params.end_seq_id}'
-        json_suffix = f'{json_suffix}-{seq_sufix}'
+    if params.seq_start_id > 0 or params.seq_end_id >= 0:
+        assert params.seq_end_id >= params.seq_start_id, "end_seq_id must to be >= start_seq_id"
+        seq_suffix = f'seq_{params.seq_start_id}_{params.seq_end_id}'
+        json_suffix = f'{json_suffix}-{seq_suffix}'
 
     output_json_fname = f'{json_suffix}.{params.ann_ext}'
     json_path = os.path.join(params.db_path, output_json_fname)
