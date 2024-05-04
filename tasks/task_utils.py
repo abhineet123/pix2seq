@@ -100,10 +100,13 @@ def check_rle(mask, rle, starts_offset, lengths_offset):
     if len(mask.shape) == 3:
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
     mask[mask > 0] = 1
+
     mask_rec = rle_to_mask(rle, mask.shape, starts_offset, lengths_offset, starts_2d=False, label=1)
 
     mask_mismatch = np.nonzero(mask != mask_rec)
     assert mask_mismatch[0].size == 0, "mask_rec mismatch"
+
+    print('masks match !')
 
 
 def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset):

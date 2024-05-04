@@ -30,6 +30,20 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         return dataset
 
+    def check_rle(self, batched_examples):
+        mask_vid_paths = batched_examples['mask_vid_path'].numpy()
+        frame_ids = batched_examples['frame_id'].numpy()
+        rles = batched_examples['rle'].numpy()
+        batch_size = frame_ids.shape[0]
+        for batch_id in range(batch_size):
+            mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
+            rle = rles[batch_id]
+            frame_id = frame_ids[batch_id]
+            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(mask_vid_path)
+            mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
+            rle_stripped = rle[rle != vocab.PADDING_TOKEN]
+            task_utils.check_rle(mask, rle_stripped, self.config.model.coord_vocab_shift, vocab.BASE_VOCAB_SHIFT)
+
     def preprocess_batched(self, batched_examples, training):
         config = self.config.task
         mconfig = self.config.model
@@ -46,12 +60,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         response_seq = batched_examples['rle']
         token_weights = tf.ones_like(response_seq, dtype=tf.float32)
 
-        mask_vid_path = batched_examples['mask_vid_path']
-        frame_id = batched_examples['frame_id']
-
-        vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(mask_vid_path)
-        mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
-        task_utils.check_rle(mask, response_seq, mconfig.coord_vocab_shift, vocab.BASE_VOCAB_SHIFT)
+        # self.check_rle(batched_examples)
 
         # response_seq, token_weights = build_response_seq_from_rle(
         #     batched_examples['rle'],
