@@ -59,7 +59,7 @@
 # resnet-640 
 <a id="ipsc_16_53___resnet_640_"></a>
 ## ipsc-16_53       @ resnet-640-->p2s_seg
-python3 run.py --cfg=configs/config_sem_seg.py  --j5=train,resnet-640,seg-16_53:size-80:smin-0:smax-0:rmin-15:rmax-345:rnum-0:flip-0:resize-640,batch-18,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1
+python3 run.py --cfg=configs/config_sem_seg.py  --j5=train,resnet-640,seg-16_53:size-80:smin-0:smax-0:rmin-15:rmax-345:rnum-0:flip-0:resize-640,batch-36,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
 
 <a id="on_16_53___ipsc_16_53_resnet_64_0_"></a>
 ### on-16_53       @ ipsc-16_53/resnet-640-->p2s_seg
