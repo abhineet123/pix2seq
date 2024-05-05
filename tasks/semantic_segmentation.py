@@ -158,7 +158,7 @@ class TaskSemanticSegmentation(task_lib.Task):
             rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
             mask = task_utils.rle_to_mask(
                 rle_,
-                shape=orig_sizes,
+                shape=tuple(orig_size_),
                 starts_offset=self.config.model.coord_vocab_shift,
                 lengths_offset=vocab.BASE_VOCAB_SHIFT,
                 starts_2d=False)

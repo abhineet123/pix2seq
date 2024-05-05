@@ -181,11 +181,11 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset):
 
 def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, label=1):
     if rle.size == 0:
-        mask = np.zeros(shape, dtype=np.uint8)
+        mask = np.zeros(tuple(shape), dtype=np.uint8)
         return mask
 
     assert rle.size % 2 == 0, "rle must have even length"
-    
+
     if starts_2d:
         start_rows, start_cols, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::3], rle[1:][::3], rle[2:][::3])]
         start_rows -= 1
