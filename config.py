@@ -249,10 +249,13 @@ def load(FLAGS):
     cfg.update(cmd_cfg)
 
     is_video = 'video' in cfg.task.name
+    is_seg = 'segmentation' in cfg.task.name
 
     model_root_dir = 'log'
     if is_video:
         model_root_dir = os.path.join(model_root_dir, 'video')
+    if is_seg:
+        model_root_dir = os.path.join(model_root_dir, 'seg')
 
     if cfg.model_dir:
         assert not cfg.eval.pt, "pre-trained evaluation must be disabled if custom model directory is specified"
