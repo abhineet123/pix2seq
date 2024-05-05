@@ -107,6 +107,9 @@ def get_sem_seg_data():
         train_name='',
         eval_name='',
 
+        train_split='train',
+        eval_split='validation',
+
         train_cfg='',
         eval_cfg='',
 
@@ -115,7 +118,6 @@ def get_sem_seg_data():
 
     for mode in ['train', 'eval']:
         mode_data = D()
-        mode_data[f'split'] = mode
         mode_data[f'suffix'] = ''
         mode_data[f'resize'] = 0
         mode_data[f'start_id'] = 0

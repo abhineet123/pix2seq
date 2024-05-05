@@ -248,18 +248,6 @@ def load(FLAGS):
 
     cfg.update(cmd_cfg)
 
-    for mode in ['train', 'eval']:
-        mode_cfg = cfg.dataset[f'{mode}_cfg']
-        if mode_cfg:
-            mode_params = to_dict(cfg.dataset[f'{mode}'])
-            import paramparse
-            paramparse.process_dict(mode_params, cmd=False, cfg=f'p2s:{mode_cfg}', cfg_root='cfg', cfg_ext='cfg')
-
-            mode_params = from_dict(mode_params)
-            mode_params = ml_collections.ConfigDict(mode_params)
-
-            cfg.dataset[f'{mode}'].update(mode_params)
-
     is_video = 'video' in cfg.task.name
 
     model_root_dir = 'log'
@@ -276,6 +264,18 @@ def load(FLAGS):
             load_from_model(cfg, cfg.pretrained, cmd_cfg, pt=True)
 
     cmd_cfg.training = cfg.training = cfg.mode == TRAIN
+
+    for mode in ['train', 'eval']:
+        mode_cfg = cfg.dataset[f'{mode}_cfg']
+        if mode_cfg:
+            mode_params = to_dict(cfg.dataset[f'{mode}'])
+            import paramparse
+            paramparse.process_dict(mode_params, cmd=False, cfg=f'p2s:{mode_cfg}', cfg_root='cfg', cfg_ext='cfg')
+
+            mode_params = from_dict(mode_params)
+            mode_params = ml_collections.ConfigDict(mode_params)
+
+            cfg.dataset[f'{mode}'].update(mode_params)
 
     if cfg.dataset.name.startswith('ipsc'):
         from configs.dataset_configs import ipsc_post_process

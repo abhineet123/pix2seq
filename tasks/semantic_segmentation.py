@@ -104,15 +104,15 @@ class TaskSemanticSegmentation(task_lib.Task):
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
-        examples, input_seq, target_seq, token_weights = preprocessed_outputs  # response_seq unused by
-        # default
+        mconfig = self.config.model
+        examples, input_seq, target_seq, token_weights = preprocessed_outputs
         image = examples["image"]
         bsz = tf.shape(image)[0]
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id, prompt_shape=(bsz, 1))
         pred_seq, logits, _ = model.infer(
             image, prompt_seq, encoded=None,
-            max_seq_len=config.max_seq_len,
+            max_seq_len=mconfig.max_seq_len + 1,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
         return examples, pred_seq, logits
@@ -136,6 +136,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                         training=False,
                         summary_tag='eval',
                         ret_results=False,
+                        **kwargs
                         ):
 
         # Copy outputs to cpu.
@@ -154,6 +155,7 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         for image_id_, image_, rle_, orig_size_ in zip(
                 image_ids, images, rles, orig_sizes):
+            rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
             mask = task_utils.rle_to_mask(
                 rle_,
                 shape=orig_sizes,
