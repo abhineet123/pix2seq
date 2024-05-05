@@ -4,6 +4,7 @@
 	lengths_bins: 80,
   },
   "model": {
+	defer_vocab: 1,
 	vocab_size: 8000,
 	max_seq_len: 512,
   },

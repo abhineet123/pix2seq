@@ -6,6 +6,7 @@
 - [virtualenv](#virtualen_v_)
     - [windows       @ virtualenv](#windows___virtualenv_)
 - [install](#install_)
+    - [skvideo       @ install](#skvideo___instal_l_)
     - [eval_utils       @ install](#eval_utils___instal_l_)
     - [win       @ install](#win___instal_l_)
     - [tensorflow       @ install](#tensorflow___instal_l_)
@@ -41,7 +42,7 @@ New-NetFirewallRule -DisplayName "WSL" -Direction Inbound  -LocalAddress 172.23.
 __deadsnakes no longer supports ubuntu 18.04 which has reached end-of-life__
 https://github.com/deadsnakes/issues/issues/251
 sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt install python3\.10
+sudo apt install python3.10
 
 <a id="upgrade___x99___18_0_4_"></a>
 ## upgrade       @ x99_/_18.04-->p2s_setup
@@ -74,6 +75,11 @@ pix2seq\Scripts\activate
 # install
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+
+<a id="skvideo___instal_l_"></a>
+## skvideo       @ install-->p2s_setup
+python -m pip install scikit-video numpy==1.23.5
+
 <a id="eval_utils___instal_l_"></a>
 ## eval_utils       @ install-->p2s_setup
 python -m pip install scikit-learn tabulate
