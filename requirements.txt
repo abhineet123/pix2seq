@@ -15,4 +15,5 @@ paramparse
 opencv-python
 compress_json
 scikit-learn
+scikit-video
 tabulate
