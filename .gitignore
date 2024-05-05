@@ -10,6 +10,7 @@ log
 labelImg.egg-info*
 
 sync.ffs_db
+*.pkl
 *.deb
 *.pyc
 *.model

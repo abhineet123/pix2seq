@@ -142,9 +142,10 @@ class TaskSemanticSegmentation(task_lib.Task):
         for i in range(len(outputs)):
             new_outputs.append(tf.identity(outputs[i]))
 
-        images, image_ids, rles, logits, gt_rle, orig_sizes = new_outputs
+        images, image_ids, rles, logits, gt_rles, orig_sizes = new_outputs
 
         orig_sizes = orig_sizes.numpy()
+        gt_rles = gt_rles.numpy()
         rles = rles.numpy()
         logits = logits.numpy()
 
@@ -152,8 +153,8 @@ class TaskSemanticSegmentation(task_lib.Task):
         image_ids = list(image_ids_)
         images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
 
-        for image_id_, image_, rle_, logits_, orig_size_ in zip(
-                image_ids, images, rles, logits, orig_sizes):
+        for image_id_, image_, rle_, logits_, orig_size_, gt_rle_ in zip(
+                image_ids, images, rles, logits, orig_sizes, gt_rles):
             orig_size_ = tuple(orig_size_)
             rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
             mask = task_utils.rle_to_mask(
@@ -163,10 +164,18 @@ class TaskSemanticSegmentation(task_lib.Task):
                 lengths_offset=vocab.BASE_VOCAB_SHIFT,
                 starts_2d=False)
 
+            gt_mask = task_utils.rle_to_mask(
+                gt_rle_,
+                shape=orig_size_,
+                starts_offset=self.config.model.coord_vocab_shift,
+                lengths_offset=vocab.BASE_VOCAB_SHIFT,
+                starts_2d=False)
+
             vis_utils.visualize_mask(
                 image_id_,
                 image_,
                 mask,
+                gt_mask,
                 self._category_names,
                 out_mask_dir=out_mask_dir,
                 out_vis_dir=out_vis_dir,

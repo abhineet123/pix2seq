@@ -121,11 +121,20 @@ class Model(tf.keras.models.Model):
                                     self.config.drop_units, name='proj/mlp')
 
         self.decoder = AutoregressiveDecoder(
-            self.config.vocab_size, self.config.max_seq_len, self.config.num_decoder_layers,
-            self.config.dim_att_dec, mlp_ratio_dec, self.config.num_heads_dec,
-            self.config.drop_path, self.config.drop_units, self.config.drop_att,
-            self.config.pos_encoding_dec, self.config.shared_decoder_embedding,
-            self.config.decoder_output_bias, name='ar_decoder')
+            defer_vocab=config.defer_vocab,
+            vocab_size=self.config.vocab_size,
+            max_seq_len=self.config.max_seq_len,
+            num_layers=self.config.num_decoder_layers,
+            dim=self.config.dim_att_dec,
+            mlp_ratio=mlp_ratio_dec,
+            num_heads=self.config.num_heads_dec,
+            drop_path=self.config.drop_path,
+            drop_units=self.config.drop_units,
+            drop_att=self.config.drop_att,
+            pos_encoding=self.config.pos_encoding_dec,
+            shared_embedding=self.config.shared_decoder_embedding,
+            output_bias=self.config.decoder_output_bias,
+            name='ar_decoder')
 
     def _encode_videos(self, videos, training):
         config = self.config

@@ -13,7 +13,7 @@ import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
 
 import cv2
-import skvideo
+import skvideo.io
 
 import utils
 import vocab
@@ -1134,6 +1134,7 @@ def visualize_mask(
         image_id,
         image,
         mask,
+        gt_mask,
         category_index,
         out_mask_dir,
         out_vis_dir,
@@ -1164,17 +1165,23 @@ def visualize_mask(
     else:
         vis_name = image_id_
 
-    mask *= 255
-
     image = cv2.resize(image, orig_size)
-
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
-    vis_img = np.copy(image)
+    vis_mask = cv2.cvtColor(mask * 255, cv2.COLOR_GRAY2BGR)
+    vis_gt_mask = cv2.cvtColor(gt_mask * 255, cv2.COLOR_GRAY2BGR)
 
-    blended_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(mask), 0.5))
-    blended_img = eval_utils.annotate(blended_img, vis_name)
+    pred_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_mask), 0.5))
+    gt_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_gt_mask), 0.5))
+    vis_img = np.concatenate((gt_img, pred_img), axis=1)
+    vis_mask_all = np.concatenate((vis_gt_mask, vis_mask), axis=1)
+    vis_img = np.concatenate((vis_img, vis_mask_all), axis=0)
+    vis_img = cv2.resize(vis_img, (800, 800))
+
+    vis_img = eval_utils.annotate(vis_img, vis_name)
+
+    cv2.imshow('vis_img', vis_img)
+    cv2.waitKey(100)
 
     if vid_writers is not None:
         if vid_writers[seq_id] is not None:
@@ -1199,7 +1206,7 @@ def visualize_mask(
 
             vid_writers[seq_id] = mask_writer, vis_writer
 
-        write_frames_to_videos([mask_writer, vis_writer], (mask, blended_img))
+        write_frames_to_videos([mask_writer, vis_writer], (mask, vis_img))
     else:
         seq_mask_dir = os.path.join(out_mask_dir, seq_id)
         os.makedirs(seq_mask_dir, exist_ok=True)

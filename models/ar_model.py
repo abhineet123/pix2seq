@@ -74,18 +74,19 @@ class Model(tf.keras.models.Model):
                                     config.drop_units, name='proj/mlp')
 
         self.decoder = AutoregressiveDecoder(
-            config.vocab_size,
-            config.max_seq_len,
-            config.num_decoder_layers,
-            config.dim_att_dec,
-            mlp_ratio_dec,
-            config.num_heads_dec,
-            config.drop_path,
-            config.drop_units,
-            config.drop_att,
-            config.pos_encoding_dec,
-            config.shared_decoder_embedding,
-            config.decoder_output_bias,
+            defer_vocab=config.defer_vocab,
+            vocab_size=config.vocab_size,
+            max_seq_len=config.max_seq_len,
+            num_layers=config.num_decoder_layers,
+            dim=config.dim_att_dec,
+            mlp_ratio=mlp_ratio_dec,
+            num_heads=config.num_heads_dec,
+            drop_path=config.drop_path,
+            drop_units=config.drop_units,
+            drop_att=config.drop_att,
+            pos_encoding=config.pos_encoding_dec,
+            shared_embedding=config.shared_decoder_embedding,
+            output_bias=config.decoder_output_bias,
             name='ar_decoder')
 
     def _tile_vis_output(self, vis_output, seq):
@@ -301,11 +302,20 @@ class ModelT(Model):
 
         mlp_ratio_dec = config.dim_mlp_dec // config.dim_att_dec
         self.decoder = AutoregressiveDecoder(
-            config.vocab_size, config.max_seq_len, config.num_decoder_layers,
-            config.dim_att_dec, mlp_ratio_dec, config.num_heads_dec,
-            config.drop_path, config.drop_units, config.drop_att,
-            config.pos_encoding_dec, config.shared_decoder_embedding,
-            config.decoder_output_bias, name='ar_decoder')
+            defer_vocab=config.defer_vocab,
+            vocab_size=config.vocab_size,
+            max_seq_len=config.max_seq_len,
+            num_layers=config.num_decoder_layers,
+            dim=config.dim_att_dec,
+            mlp_ratio=mlp_ratio_dec,
+            num_heads=config.num_heads_dec,
+            drop_path=config.drop_path,
+            drop_units=config.drop_units,
+            drop_att=config.drop_att,
+            pos_encoding=config.pos_encoding_dec,
+            shared_embedding=config.shared_decoder_embedding,
+            output_bias=config.decoder_output_bias,
+            name='ar_decoder')
 
     def _encode_images(self, images, training):
         """Encode images into latents for decoder to condition on."""

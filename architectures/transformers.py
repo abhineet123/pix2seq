@@ -238,31 +238,46 @@ def add_cls_token_emb(self, dim, name_prefix=None, initializer=None):
 
 
 def add_vocab_token_emb(self, vocab_size, dim, shared_embedding, output_bias,
-                        name_prefix=None, initializer=None):
+                        name_prefix=None, initializer=None, suffix=''):
     """Add token_embedding variable to model instance referenced by `self`."""
     if name_prefix is None:
         name_prefix = self.name
     if initializer is None:
         initializer = get_variable_initializer()
+    outp_bias = 'outp_bias'
+    token_embedding = 'token_embedding'
+    inp_token_embedding = 'inp_token_embedding'
+    outp_token_embedding = 'outp_token_embedding'
+    if suffix:
+        outp_bias = f'{outp_bias}_{suffix}'
+        token_embedding = f'{token_embedding}_{suffix}'
+        inp_token_embedding = f'{inp_token_embedding}_{suffix}'
+        outp_token_embedding = f'{outp_token_embedding}_{suffix}'
+
     if shared_embedding:
-        self.token_embedding = self.add_weight(
+        # delattr(self, 'token_embedding')
+        setattr(self, token_embedding, self.add_weight(
             shape=[vocab_size, dim],
             initializer=initializer,
-            name='%s/token_embedding' % name_prefix)
+            name=f'{name_prefix}/{token_embedding}'),
+                )
     else:
-        self.inp_token_embedding = self.add_weight(
+        setattr(self, inp_token_embedding, self.add_weight(
             shape=[vocab_size, dim],
             initializer=initializer,
-            name='%s/inp_token_embedding' % name_prefix)
-        self.outp_token_embedding = self.add_weight(
+            name=f'{name_prefix}/{inp_token_embedding}'),
+                )
+        setattr(self, outp_token_embedding, self.add_weight(
             shape=[vocab_size, dim],
             initializer=initializer,
-            name='%s/outp_token_embedding' % name_prefix)
+            name=f'{name_prefix}/{outp_token_embedding}'),
+                )
     if output_bias:
-        self.outp_bias = self.add_weight(
+        setattr(self, outp_bias, self.add_weight(
             shape=[vocab_size],
             initializer=initializer,
-            name='%s/outp_bias' % name_prefix)
+            name=f'{name_prefix}/{outp_bias}'),
+                )
 
 
 def kronecker_product(mat1, mat2):
@@ -846,6 +861,7 @@ class ResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-docst
 class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
 
     def __init__(self,
+                 defer_vocab,
                  vocab_size,
                  max_seq_len,
                  num_layers,
@@ -861,6 +877,7 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
                  cross_attention=True,
                  **kwargs):
         super(AutoregressiveDecoder, self).__init__(**kwargs)
+        self.defer_vocab = defer_vocab
         self.vocab_size = vocab_size
         self.max_seq_len = max_seq_len
         self.num_layers = num_layers
@@ -868,7 +885,28 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
         self.shared_embedding = shared_embedding
         self.output_bias = output_bias
         add_seq_pos_emb(self, pos_encoding, max_seq_len, dim)
-        add_vocab_token_emb(self, vocab_size, dim, shared_embedding, output_bias)
+
+        if self.defer_vocab:
+            add_vocab_token_emb(
+                self,
+                self.vocab_size,
+                self.dim,
+                self.shared_embedding,
+                self.output_bias,
+                suffix='deferred',
+            )
+            # if self.shared_embedding:
+            #     self.token_embedding = self.token_embedding_deferred
+            # else:
+            #     self.inp_token_embedding = self.inp_token_embedding_deferred
+            #     self.outp_token_embedding = self.outp_token_embedding_deferred
+            # if self.output_bias:
+            #     self.outp_bias = self.outp_bias_deferred
+        else:
+            add_vocab_token_emb(
+                self, self.vocab_size, self.dim, self.shared_embedding,
+                self.output_bias)
+
         self.decoder = TransformerDecoder(
             num_layers, dim, mlp_ratio, num_heads,
             drop_path, drop_units, drop_att,
@@ -876,14 +914,29 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
         self.output_ln = tf.keras.layers.LayerNormalization(
             epsilon=1e-6, name='ouput_ln')
 
+    def get_token_emb(self):
+        if self.defer_vocab:
+            if self.shared_embedding:
+                inp_embedding = outp_embedding = self.token_embedding_deferred
+            else:
+                inp_embedding = self.inp_token_embedding_deferred
+                outp_embedding = self.outp_token_embedding_deferred
+            outp_bias = self.outp_bias_deferred
+        else:
+            if self.shared_embedding:
+                inp_embedding = outp_embedding = self.token_embedding
+            else:
+                inp_embedding = self.inp_token_embedding
+                outp_embedding = self.outp_token_embedding
+            outp_bias = self.outp_bias
+
+        return inp_embedding, outp_embedding, outp_bias
+
     def call(self, tokens, encoded, training):
         _, seqlen = get_shape(tokens)
         seq_pos_emb = tf.expand_dims(self.seq_pos_emb[:seqlen], 0)
-        if self.shared_embedding:
-            inp_embedding = outp_embedding = self.token_embedding
-        else:
-            inp_embedding = self.inp_token_embedding
-            outp_embedding = self.outp_token_embedding
+
+        inp_embedding, outp_embedding, outp_bias = self.get_token_emb()
 
         token_emb = tf.gather(inp_embedding, tokens) + seq_pos_emb
         mask_self = 1. - get_ar_mask(seqlen, token_emb.dtype)
@@ -895,7 +948,7 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
         outputs = self.output_ln(outputs)
         logits = tf.matmul(outputs, outp_embedding, transpose_b=True)
         if self.output_bias:
-            logits = tf.nn.bias_add(logits, self.outp_bias)
+            logits = tf.nn.bias_add(logits, outp_bias)
         return logits
 
     def infer(self, prompt, encoded, max_seq_len=None,
@@ -904,11 +957,9 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
         bsz, prompt_len = get_shape(prompt)
         seq_len = self.max_seq_len if max_seq_len is None else max_seq_len
         seq_pos_emb = tf.expand_dims(self.seq_pos_emb, 0)
-        if self.shared_embedding:
-            inp_embedding = outp_embedding = self.token_embedding
-        else:
-            inp_embedding = self.inp_token_embedding
-            outp_embedding = self.outp_token_embedding
+
+        inp_embedding, outp_embedding, outp_bias = self.get_token_emb()
+
 
         # Each step reads caches[:step] and tokens[step:next_step] and updates
         # tokens[next_step], logits[next_step] and caches[step:next_step].
@@ -941,7 +992,7 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
             next_logits = tf.matmul(  # only take the last for sampling next token.
                 outputs, outp_embedding, transpose_b=True)[:, -1]
             if self.output_bias:
-                next_logits = tf.nn.bias_add(next_logits, self.outp_bias)
+                next_logits = tf.nn.bias_add(next_logits, outp_bias)
 
             # Scale and truncate logits and sample next token.
             if sampling_callback:

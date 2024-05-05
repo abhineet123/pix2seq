@@ -3,6 +3,7 @@ import os
 import collections
 import time
 import json
+import pickle
 
 import utils
 
@@ -99,29 +100,39 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         img_id = 0
 
         # print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
-
         while True:
             if eval_steps and cur_step >= eval_steps:
                 break
 
-            if cfg.eager:
-                enable_profiling = cfg.eval.profile
-                _times = collections.OrderedDict()
-                _rel_times = collections.OrderedDict()
-                with profile('iterator', _times, _rel_times, enable_profiling, show=True):
-                    examples = next(iterator)
-                with profile('preprocess_batched', _times, _rel_times, enable_profiling, show=True):
-                    preprocessed_outputs = task.preprocess_batched(examples, training=False)
-                with profile('infer', _times, _rel_times, enable_profiling, show=True):
-                    infer_outputs = task.infer(model, preprocessed_outputs)
-                with profile('postprocess_tpu', _times, _rel_times, enable_profiling, show=True):
-                    per_step_outputs = task.postprocess_tpu(*infer_outputs)
+            per_step_outputs = None
 
-                if enable_profiling:
-                    print(f'times: {_times}')
-                    print(f'rel_times: {_rel_times}')
-            else:
-                per_step_outputs = run_single_step(iterator)
+            # if cur_step == 0 and os.path.isfile('per_step_outputs.pkl'):
+            #     print('loading per_step_outputs')
+            #     with open('per_step_outputs.pkl', 'rb') as fid:
+            #         per_step_outputs = pickle.load(fid)
+
+            if per_step_outputs is None:
+                if cfg.eager:
+                    enable_profiling = cfg.eval.profile
+                    _times = collections.OrderedDict()
+                    _rel_times = collections.OrderedDict()
+                    with profile('iterator', _times, _rel_times, enable_profiling, show=True):
+                        examples = next(iterator)
+                    with profile('preprocess_batched', _times, _rel_times, enable_profiling, show=True):
+                        preprocessed_outputs = task.preprocess_batched(examples, training=False)
+                    with profile('infer', _times, _rel_times, enable_profiling, show=True):
+                        infer_outputs = task.infer(model, preprocessed_outputs)
+                    with profile('postprocess_tpu', _times, _rel_times, enable_profiling, show=True):
+                        per_step_outputs = task.postprocess_tpu(*infer_outputs)
+
+                    if enable_profiling:
+                        print(f'times: {_times}')
+                        print(f'rel_times: {_rel_times}')
+                else:
+                    per_step_outputs = run_single_step(iterator)
+
+            # with open('per_step_outputs.pkl', 'wb') as fid:
+            #     pickle.dump(per_step_outputs, fid)
 
             if cur_step == 0:
                 utils.check_checkpoint_restored(

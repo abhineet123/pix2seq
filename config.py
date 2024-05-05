@@ -262,6 +262,11 @@ def load(FLAGS):
     else:
         if cfg.pretrained:
             load_from_model(cfg, cfg.pretrained, cmd_cfg, pt=True)
+            # import tensorflow as tf
+            # checkpoint = tf.train.Checkpoint()
+            # latest_ckpt = tf.train.latest_checkpoint(cfg.pretrained)
+            # checkpoint.restore(latest_ckpt)
+
 
     cmd_cfg.training = cfg.training = cfg.mode == TRAIN
 
@@ -338,7 +343,7 @@ def load(FLAGS):
         from configs.config_video_det import update_task_config
         update_task_config(cfg)
     elif cfg.task.name == 'semantic_segmentation':
-        from configs.config_sem_seg import update_task_config
+        from configs.config_seg import update_task_config
         update_task_config(cfg)
     else:
         raise AssertionError(f'unsupported task: {cfg.task.name}')
