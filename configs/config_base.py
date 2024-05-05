@@ -37,6 +37,7 @@ train_config = D(
     val_epochs=0,
 )
 eval_config = D(
+    save_mask=1,
     save_vis=0,
     save_csv=1,
     profile=0,

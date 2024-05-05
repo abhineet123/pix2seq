@@ -241,6 +241,7 @@ class TaskObjectDetection(task_lib.Task):
                         summary_tag='eval',
                         ret_results=False,
                         min_score_thresh=0.1,
+                        **kwargs
                         ):
         # Copy outputs to cpu.
         new_outputs = []

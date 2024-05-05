@@ -124,12 +124,13 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         gt_rle = example['rle']
 
-        return images, image_ids, pred_rle, gt_rle, orig_image_size
+        return images, image_ids, pred_rle, logits, gt_rle, orig_image_size
 
     def postprocess_cpu(self,
                         outputs,
                         train_step,
                         out_vis_dir,
+                        out_mask_dir,
                         vid_cap=None,
                         csv_data=None,
                         eval_step=None,
@@ -144,21 +145,23 @@ class TaskSemanticSegmentation(task_lib.Task):
         for i in range(len(outputs)):
             new_outputs.append(tf.identity(outputs[i]))
 
-        images, image_ids, rles, gt_rle, orig_sizes = new_outputs
+        images, image_ids, rles, logits, gt_rle, orig_sizes = new_outputs
 
         orig_sizes = orig_sizes.numpy()
         rles = rles.numpy()
+        logits = logits.numpy()
 
         image_ids_ = image_ids.numpy().flatten().astype(str)
         image_ids = list(image_ids_)
         images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
 
-        for image_id_, image_, rle_, orig_size_ in zip(
-                image_ids, images, rles, orig_sizes):
+        for image_id_, image_, rle_, logits_, orig_size_ in zip(
+                image_ids, images, rles, logits, orig_sizes):
+            orig_size_ = tuple(orig_size_)
             rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
             mask = task_utils.rle_to_mask(
                 rle_,
-                shape=tuple(orig_size_),
+                shape=orig_size_,
                 starts_offset=self.config.model.coord_vocab_shift,
                 lengths_offset=vocab.BASE_VOCAB_SHIFT,
                 starts_2d=False)
@@ -168,10 +171,11 @@ class TaskSemanticSegmentation(task_lib.Task):
                 image_,
                 mask,
                 self._category_names,
-                out_dir=out_vis_dir,
-                vid_cap=vid_cap,
+                out_mask_dir=out_mask_dir,
+                out_vis_dir=out_vis_dir,
+                vid_writers=vid_cap,
                 csv_data=csv_data,
-                orig_size=orig_sizes,
+                orig_size=orig_size_,
             )
 
     def compute_scalar_metrics(self, step):

@@ -6,6 +6,8 @@ import json
 
 import utils
 
+from tasks.visualization import vis_utils
+
 from eval_utils import profile
 
 
@@ -16,6 +18,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     # summary_writer = tf.summary.create_file_writer(FLAGS.model_dir)
 
     is_video = 'video' in cfg.task.name
+    is_seg = 'segmentation' in cfg.task.name
 
     with strategy.scope():
         # Restore model checkpoint.
@@ -43,23 +46,36 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         save_suffix = '-'.join(cfg.eval.save_suffix)
 
     csv_dir_name = f'csv'
+    vis_dir_name = f'vis'
+    mask_dir_name = 'masks'
+
     if save_suffix:
         csv_dir_name = f'{csv_dir_name:s}-{save_suffix:s}'
-    out_csv_dir = os.path.join(out_dir, csv_dir_name)
-    if cfg.eval.save_csv:
-        print(f'\nwriting csv files to: {out_csv_dir}\n')
-        os.makedirs(out_csv_dir, exist_ok=True)
-
-    vis_dir_name = f'vis'
-    if save_suffix:
         vis_dir_name = f'{vis_dir_name:s}-{save_suffix:s}'
+        mask_dir_name = f'{mask_dir_name:s}-{save_suffix:s}'
+
+    out_mask_dir = os.path.join(out_dir, mask_dir_name)
     out_vis_dir = os.path.join(out_dir, vis_dir_name)
+    out_csv_dir = os.path.join(out_dir, csv_dir_name)
+
+    if is_seg:
+        seq_to_csv_rows = None
+
+        if cfg.eval.save_mask:
+            print(f'\nwriting masks to: {out_mask_dir}\n')
+            os.makedirs(out_mask_dir, exist_ok=True)
+    else:
+        if cfg.eval.save_csv:
+            print(f'\nwriting csv files to: {out_csv_dir}\n')
+            os.makedirs(out_csv_dir, exist_ok=True)
+
+        seq_to_csv_rows = collections.defaultdict(list)
+
     if cfg.eval.save_vis:
         print(f'\nwriting vis images to: {out_vis_dir}\n')
         os.makedirs(out_vis_dir, exist_ok=True)
 
-    seq_to_csv_rows = collections.defaultdict(list)
-    seq_to_vid_cap = collections.defaultdict(lambda: None)
+    seq_to_vid_writers = collections.defaultdict(lambda: None)
 
     def single_step(examples):
         preprocessed_outputs = task.preprocess_batched(examples, training=False)
@@ -87,8 +103,6 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         while True:
             if eval_steps and cur_step >= eval_steps:
                 break
-            # try:
-            # with summary_writer.as_default():
 
             if cfg.eager:
                 enable_profiling = cfg.eval.profile
@@ -118,8 +132,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             task.postprocess_cpu(
                 outputs=per_step_outputs,
                 train_step=global_step.numpy(),
+                out_mask_dir=out_mask_dir,
                 out_vis_dir=out_vis_dir,
-                vid_cap=seq_to_vid_cap,
+                vid_cap=seq_to_vid_writers,
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,
                 summary_tag=eval_tag,
@@ -141,7 +156,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             #     break
         logging.info('Finished eval in %.2f mins', (time.time() - start_time) / 60.)
 
-    if cfg.eval.save_csv:
+    if not is_seg and cfg.eval.save_csv:
         import pandas as pd
         csv_columns = [
             "ImageID", "LabelName",
@@ -149,38 +164,16 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         ]
         if is_video:
             csv_columns.insert(1, 'VideoID')
-        # if params.enable_mask:
-        #     csv_columns += ['mask_w', 'mask_h', 'mask_counts']
-        for seq_name, vid_cap_seq in seq_to_vid_cap.items():
-            if vid_cap_seq is not None:
-                vid_cap_seq.release()
+        for seq_name, vid_writers in seq_to_vid_writers.items():
+            vis_utils.close_video_writers(vid_writers)
 
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():
             if not csv_rows:
                 print(f'{csv_seq_name}: no csv data found')
-                # continue
             out_csv_name = f"{csv_seq_name}.csv"
             out_csv_path = os.path.join(out_csv_dir, out_csv_name)
             # print(f'{csv_seq_name} :: saving csv to {out_csv_path}')
             df = pd.DataFrame(csv_rows, columns=csv_columns)
             df.to_csv(out_csv_path, index=False)
-        result = {
-            'global_step': cur_step
-        }
-    else:
-        # Write summaries and record results as JSON.
-        cur_step = global_step.numpy()
-        result = task.evaluate(summary_writer, cur_step, eval_tag)
-
-        result.update({'global_step': cur_step})
-        # logging.info(result)
-
-        result_json_path = os.path.join(cfg.model_dir, eval_tag + '_result.json')
-        with tf.io.gfile.GFile(result_json_path, 'w') as f:
-            json.dump({k: float(v) for k, v in result.items()}, f)
-        result_json_path = os.path.join(
-            cfg.model_dir, eval_tag + 'result_%d.json' % result['global_step'])
-        with tf.io.gfile.GFile(result_json_path, 'w') as f:
-            json.dump({k: float(v) for k, v in result.items()}, f)
 
     return csv_dir_name

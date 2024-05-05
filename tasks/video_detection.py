@@ -232,6 +232,7 @@ class TaskVideoDetection(task_lib.Task):
             training=False,
             min_score_thresh=0.1,
             ret_results=False,
+            **kwargs
     ):
         """move to cpu"""
         new_outputs = []

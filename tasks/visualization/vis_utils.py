@@ -12,11 +12,14 @@ import PIL.ImageColor as ImageColor
 import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
 
+import cv2
+import skvideo
+
 import utils
 import vocab
 from tasks.visualization import shape_utils
 from tasks.visualization import standard_fields as fields
-import cv2
+
 import six
 from six.moves import range
 from six.moves import zip
@@ -259,7 +262,7 @@ def _get_multiplier_for_color_randomness():
 
 
 def save_image(
-        image, vid_cap, out_vis_dir, seq_id, image_id_,
+        image, vid_writers, out_vis_dir, seq_id, image_id_,
         video_id_=None, unpadded_size=None, orig_size=None,
 ):
     import cv2
@@ -285,27 +288,21 @@ def save_image(
 
     image = eval_utils.annotate(image, vis_name)
 
-    if vid_cap is not None:
-        vid_cap_seq = vid_cap[seq_id]
-        if vid_cap_seq is None:
-            for seq_id_, vid_cap_ in vid_cap.items():
-                if vid_cap_ is not None:
-                    vid_cap_.release()
-                    vid_cap[seq_id_] = None
+    if vid_writers is not None:
+        vid_writer = vid_writers[seq_id]
+        if vid_writer is None:
+            for seq_id_, vid_writer_ in vid_writers.items():
+                close_video_writers(vid_writer_)
+                vid_writers[seq_id_] = None
 
-            # codec, ext = 'hfyu', 'avi'
-            codec, ext = 'mp4v', 'mp4'
-            # codec, ext = 'mjpg', 'avi'
-            fps = 5
-            fourcc = cv2.VideoWriter_fourcc(*codec)
+            ext = 'mp4'
             seq_vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
-            video_h, video_w = image.shape[:2]
-            vid_cap_seq = cv2.VideoWriter(seq_vis_path, fourcc, fps, (video_w, video_h))
-            if vid_cap_seq is None:
-                raise IOError(f'Output video file could not be opened: {seq_vis_path}')
-            print(f'Saving {video_w}x{video_h} {fps} fps {codec} video for {seq_id} to {seq_vis_path}')
-            vid_cap[seq_id] = vid_cap_seq
-        vid_cap_seq.write(image)
+            vid_writer = get_video_writer(seq_vis_path)
+
+            print(f'S{seq_id} :: vis video: {seq_vis_path}')
+            vid_writers[seq_id] = vid_writer
+
+        write_frames_to_videos(vid_writer, image)
     else:
         seq_vis_dir = os.path.join(out_vis_dir, seq_id)
         os.makedirs(seq_vis_dir, exist_ok=True)
@@ -1071,14 +1068,77 @@ def draw_mask_on_image_array(image, mask, color='red', alpha=0.4):
     np.copyto(image, np.array(pil_image.convert('RGB')))
 
 
+def write_frames_to_videos(vid_writers, frames):
+    if not isinstance(vid_writers, (list, tuple)):
+        vid_writers = [vid_writers, ]
+        frames = [frames, ]
+
+    assert len(vid_writers) == len(frames), "vid_writers and frames must have matching lengths"
+
+    for vid_writer, frame in zip(vid_writers, frames):
+        if isinstance(vid_writer, cv2.VideoWriter):
+            vid_writer.write(frame)
+        elif isinstance(vid_writer, skvideo.io.FFmpegWriter):
+            vid_writer.writeFrame(frame)
+        else:
+            raise AssertionError(f'invalid vid_writer type: {type(vid_writer)}')
+
+
+def close_video_writers(vid_writers):
+    if not isinstance(vid_writers, (list, tuple)):
+        vid_writers = [vid_writers, ]
+
+    for vid_writer in vid_writers:
+        if vid_writer is None:
+            continue
+        if isinstance(vid_writer, cv2.VideoWriter):
+            vid_writer.release()
+        elif isinstance(vid_writer, skvideo.io.FFmpegWriter):
+            vid_writer.close()
+        else:
+            raise AssertionError(f'invalid vid_writer type: {type(vid_writer)}')
+
+
+def get_video_writer(vid_path, codec='mp4v', crf=0, fps=5, cv=False, shape=None):
+    if cv:
+        assert shape is not None, "shape must be provided for OpenCV video writer"
+
+        # codec, ext = 'hfyu', 'avi'
+        # codec, ext = 'mp4v', 'mp4'
+        # codec, ext = 'mjpg', 'avi'
+
+        fourcc = cv2.VideoWriter_fourcc(*codec)
+        video_h, video_w = shape[:2]
+        vid_writer = cv2.VideoWriter(vid_path, fourcc, fps, (video_w, video_h))
+        if vid_writer is None:
+            raise IOError(f'Output video file could not be opened: {vid_path}')
+    else:
+        inputdict = {
+            '-r': str(fps),
+        }
+
+        outputdict = {
+            '-r': str(fps),
+            '-vcodec': 'libx264',
+            '-crf': str(crf),
+            '-preset': 'medium'
+        }
+
+        vid_writer = skvideo.io.FFmpegWriter(
+            vid_path, inputdict=inputdict, outputdict=outputdict)
+
+    return vid_writer
+
+
 def visualize_mask(
         image_id,
         image,
         mask,
         category_index,
+        out_mask_dir,
+        out_vis_dir,
         img_ext='.jpg',
-        vid_cap=None,
-        out_dir=None,
+        vid_writers=None,
         csv_data=None,
         orig_size=None,
         video_id=None,
@@ -1104,53 +1164,42 @@ def visualize_mask(
     else:
         vis_name = image_id_
 
+    mask *= 255
+
+    image = cv2.resize(image, orig_size)
+
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
     vis_img = np.copy(image)
 
     blended_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(mask), 0.5))
     blended_img = eval_utils.annotate(blended_img, vis_name)
 
-    out_mask_dir = os.path.join(out_dir, 'mask')
-    out_vis_dir = os.path.join(out_dir, 'vis')
-
-    if vid_cap is not None:
-        if vid_cap[seq_id] is not None:
-            mask_writer, vis_writer = vid_cap[seq_id]
+    if vid_writers is not None:
+        if vid_writers[seq_id] is not None:
+            mask_writer, vis_writer = vid_writers[seq_id]
         else:
             """close video writers for all other sequences assuming that images are 
             arranged sequence by sequence"""
-            for seq_id_, writers in vid_cap.items():
-                if writers is not None:
-                    mask_writer_, vis_writer_ = writers
-                    mask_writer_.release()
-                    vis_writer_.release()
-                    vid_cap[seq_id_] = None
+            for seq_id_, writers in vid_writers.items():
+                close_video_writers(writers)
+                vid_writers[seq_id_] = None
 
-            # codec, ext = 'hfyu', 'avi'
-            codec, ext = 'mp4v', 'mp4'
-            # codec, ext = 'mjpg', 'avi'
-            fps = 5
-            fourcc = cv2.VideoWriter_fourcc(*codec)
+            ext = 'mp4'
+
             seq_mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
             seq_vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
 
-            video_h, video_w = image.shape[:2]
+            mask_writer = get_video_writer(seq_mask_path)
+            vis_writer = get_video_writer(seq_vis_path, crf=20)
 
-            mask_writer = cv2.VideoWriter(seq_mask_path, fourcc, fps, (video_w, video_h))
-            if mask_writer is None:
-                raise IOError(f'mask video file could not be opened: {seq_mask_path}')
-            print(f'Saving {video_w}x{video_h} {fps} fps {codec} mask video for {seq_id} to {seq_mask_path}')
+            print(f'{seq_id} :: mask video: {seq_mask_path}')
+            print(f'{seq_id} :: vis video: {seq_vis_path}')
 
-            vis_writer = cv2.VideoWriter(seq_vis_path, fourcc, fps, (video_w, video_h))
-            if vis_writer is None:
-                raise IOError(f'vis video file could not be opened: {seq_vis_path}')
-            print(f'Saving {video_w}x{video_h} {fps} fps {codec} vis video for {seq_id} to {seq_vis_path}')
+            vid_writers[seq_id] = mask_writer, vis_writer
 
-            vid_cap[seq_id] = mask_writer, vis_writer
-
-        mask_writer.write(mask)
-        vis_writer.write(blended_img)
+        write_frames_to_videos([mask_writer, vis_writer], (mask, blended_img))
     else:
         seq_mask_dir = os.path.join(out_mask_dir, seq_id)
         os.makedirs(seq_mask_dir, exist_ok=True)
@@ -1161,6 +1210,7 @@ def visualize_mask(
         os.makedirs(seq_vis_dir, exist_ok=True)
         vis_path = os.path.join(seq_vis_dir, vis_name)
         cv2.imwrite(vis_path, blended_img)
+
 
 def visualize_boxes_and_labels_on_image_array(
         image_id,
