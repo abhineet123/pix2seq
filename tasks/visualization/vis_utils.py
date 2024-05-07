@@ -1143,6 +1143,7 @@ def visualize_mask(
         csv_data=None,
         orig_size=None,
         video_id=None,
+        show=False,
 ):
     seq_id = 'generic'
     if isinstance(image_id, bytes):
@@ -1180,8 +1181,9 @@ def visualize_mask(
 
     vis_img = eval_utils.annotate(vis_img, vis_name)
 
-    cv2.imshow('vis_img', vis_img)
-    cv2.waitKey(100)
+    if show:
+        cv2.imshow('vis_img', vis_img)
+        cv2.waitKey(100)
 
     if vid_writers is not None:
         if vid_writers[seq_id] is not None:

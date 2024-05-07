@@ -132,6 +132,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                         csv_data=None,
                         eval_step=None,
                         training=False,
+                        show=False,
                         summary_tag='eval',
                         ret_results=False,
                         **kwargs
@@ -182,6 +183,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 vid_writers=vid_cap,
                 csv_data=csv_data,
                 orig_size=orig_size_,
+                show=show,
             )
 
     def compute_scalar_metrics(self, step):
