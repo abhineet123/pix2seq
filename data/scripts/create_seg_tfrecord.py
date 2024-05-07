@@ -108,10 +108,14 @@ def create_tf_example(
     image_width = image_info['width']
     filename = image_info['file_name']
     image_id = image_info['img_id']
+    seq = image_info['seq']
     frame_id = int(image_info['frame_id'])
     mask_filename = image_info['mask_file_name']
     image_path = os.path.join(params.db_path, filename)
     mask_image_path = os.path.join(params.db_path, mask_filename)
+
+    if not image_id.startswith('seq'):
+        image_id = f'{seq}/{image_id}'
 
     feature_dict = {}
 

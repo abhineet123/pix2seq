@@ -129,7 +129,6 @@ class TaskSemanticSegmentation(task_lib.Task):
                         out_vis_dir,
                         out_mask_dir,
                         vid_cap=None,
-                        csv_data=None,
                         eval_step=None,
                         training=False,
                         show=False,
@@ -181,7 +180,6 @@ class TaskSemanticSegmentation(task_lib.Task):
                 out_mask_dir=out_mask_dir,
                 out_vis_dir=out_vis_dir,
                 vid_writers=vid_cap,
-                csv_data=csv_data,
                 orig_size=orig_size_,
                 show=show,
             )

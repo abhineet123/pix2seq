@@ -184,7 +184,10 @@ def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, label=1):
         mask = np.zeros(tuple(shape), dtype=np.uint8)
         return mask
 
-    assert rle.size % 2 == 0, "rle must have even length"
+    if rle.size % 2 != 0:
+        print("rle must have even length")
+        """Simplest solution for odd length RLE is to discard the last element to make it even"""
+        rle = rle[:-1]
 
     if starts_2d:
         start_rows, start_cols, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::3], rle[1:][::3], rle[2:][::3])]

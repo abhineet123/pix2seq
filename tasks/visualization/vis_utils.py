@@ -1140,7 +1140,6 @@ def visualize_mask(
         out_vis_dir,
         img_ext='.jpg',
         vid_writers=None,
-        csv_data=None,
         orig_size=None,
         video_id=None,
         show=False,

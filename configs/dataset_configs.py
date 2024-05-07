@@ -303,6 +303,7 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 json_dict = json.load(fid)
 
         num_examples = len(json_dict[db_type])
+        ds_cfg[f'{mode}_db_root_dir'] = db_root_dir
         ds_cfg[f'{mode}_name'] = name
         # cfg[f'{mode}_json_name'] = json_name
         # cfg[f'{mode}_json_path'] = json_path
@@ -322,7 +323,7 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
 
         ds_cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name, 'shard*')
 
-    ds_cfg.category_names_path = os.path.join(db_root_dir, ds_cfg.train_filename_for_metrics)
+    ds_cfg.category_names_path = os.path.join(ds_cfg.train_db_root_dir, ds_cfg.train_filename_for_metrics)
     ds_cfg.coco_annotations_dir_for_metrics = db_root_dir
 
 

@@ -10,6 +10,7 @@
         - [size-160       @ 16_53-resize-320/](#size_160___16_53_resize_320__)
 - [54_126-resize-320       @ ipsc](#54_126_resize_320___ipsc_)
         - [size-80       @ 54_126-resize-320/](#size_80___54_126_resize_320_)
+        - [size-160       @ 54_126-resize-320/](#size_160___54_126_resize_320_)
 
 <!-- /MarkdownTOC -->
 
@@ -43,3 +44,6 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:size-160:smin-0:sm
 <a id="size_80___54_126_resize_320_"></a>
 ### size-80       @ 54_126-resize-320/-->p2s_seg_tfrecord
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:size-80:smin-0:smax-0:rmin-15:rmax-345:rnum-0:flip-0:resize-320:gz
+<a id="size_160___54_126_resize_320_"></a>
+### size-160       @ 54_126-resize-320/-->p2s_seg_tfrecord
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:gz:size-160:smin-0:smax-0:rmin-15:rmax-345:rnum-0:flip-0:resize-320
