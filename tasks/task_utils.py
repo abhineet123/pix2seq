@@ -109,7 +109,7 @@ def check_rle(mask, rle, starts_offset, lengths_offset):
     print('masks match !')
 
 
-def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset):
+def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subsample):
     """
     https://www.kaggle.com/stainsby/fast-tested-rle
     https://ccshenyltw.medium.com/run-length-encode-and-decode-a33383142e6b
@@ -144,34 +144,65 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset):
         if len(overlong_runs) > 0:
             starts, lengths = split_runs(overlong_runs, starts, lengths, max_length)
 
-    lengths_norm = lengths.astype(np.float32) / max_length
+    assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
+    assert np.all(lengths > 0), "run length cannot be 0"
+    """
+    lengths goes from 1 to max_length so 1 must be subtracted before normalizing so lengths_norm starts from 0
+    and un-normalizing works correctly    
+    """
+    lengths_norm = (lengths.astype(np.float32) - 1) / (max_length - 1)
+
+    if subsample > 1:
+        max_length_sub = int(max_length / subsample)
+        lengths = ((lengths_norm * (max_length_sub - 1)) + 1).astype(np.int64)
 
     """additional offset to convert lengths into vocabulary tokens"""
     lengths += lengths_offset
 
+    n_rows, n_cols = mask.shape
+
     if starts_2d:
         """2D start tokens"""
-        starts_rows, starts_cols = np.unravel_index(starts, mask.shape)
+        starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
+
+        assert np.all(starts_rows <= n_rows - 1), f"starts_rows cannot be > {n_rows - 1}"
+        assert np.all(starts_cols <= n_cols - 1), f"starts_rows cannot be > {n_cols - 1}"
+
+        starts_rows_norm, starts_cols_norm = (starts_rows.astype(np.float32) / (n_rows - 1),
+                                              starts_cols.astype(np.float32) / (n_cols - 1))
+        rle_norm = [item for sublist in zip(starts_rows_norm, starts_cols_norm, lengths_norm)
+                    for item in sublist]
+
+        if subsample > 1:
+            n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
+            starts_rows = (starts_rows_norm * (n_rows_sub - 1)).astype(np.int64)
+            starts_cols = (starts_cols_norm * (n_cols_sub - 1)).astype(np.int64)
+
         """0 is used for padding so cannot have 0 in starts_rows and starts_cols"""
         starts_rows += 1
         starts_cols += 1
 
-        n_rows, n_cols = mask.shape
-        row_norm, col_norm = starts_rows.astype(np.float32) / n_rows, starts_cols.astype(np.float32) / n_cols
-        rle_norm = [item for sublist in zip(row_norm, col_norm, lengths_norm) for item in sublist]
-
-        """0 is used for padding so cannot have 0 in starts_rows and starts_cols"""
+        """additional offset to convert starts_rows and starts_cols into vocabulary tokens"""
         starts_rows += starts_offset
         starts_cols += starts_offset
         rle = [item for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
     else:
-        """0 is used for padding so cannot have 0 in starts"""
-        starts += 1
+        n_rows, n_cols = mask.shape
 
-        n_pix = mask.size
-        starts_norm = starts.astype(np.float32) / n_pix
+        n_pix = n_rows * n_cols
+
+        assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
+
+        starts_norm = starts.astype(np.float32) / (n_pix - 1)
         rle_norm = [float(item) for sublist in zip(starts_norm, lengths_norm) for item in sublist]
 
+        if subsample > 1:
+            n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
+            n_pix_sub = n_rows_sub * n_cols_sub
+            starts = starts_norm * (n_pix_sub - 1)
+
+        """0 is used for padding in vocabulary so there cannot be any 0s in starts"""
+        starts += 1
         """additional offset to convert coords into vocabulary tokens"""
         starts += starts_offset
         rle = [int(item) for sublist in zip(starts, lengths) for item in sublist]
@@ -179,7 +210,9 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset):
     return rle, rle_norm
 
 
-def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, label=1):
+def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, subsample, label=1):
+    n_rows, n_cols = shape
+
     if rle.size == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
         return mask
@@ -190,7 +223,8 @@ def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, label=1):
         rle = rle[:-1]
 
     if starts_2d:
-        start_rows, start_cols, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::3], rle[1:][::3], rle[2:][::3])]
+        start_rows, start_cols, lengths = [
+            np.asarray(x, dtype=int) for x in (rle[0:][::3], rle[1:][::3], rle[2:][::3])]
         start_rows -= 1
         start_cols -= 1
 
@@ -206,6 +240,12 @@ def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, label=1):
 
     lengths -= lengths_offset
 
+    if subsample > 1:
+        n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
+        shape_sub = (n_rows_sub, n_cols_sub)
+
+        starts
+
     """ends are exclusive while starts are inclusive"""
     ends = starts + lengths
     mask_flat = np.zeros(shape[0] * shape[1], dtype=np.uint8)
@@ -213,6 +253,9 @@ def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, label=1):
         mask_flat[lo:hi] = label
 
     mask = mask_flat.reshape(shape)
+
+    if subsample > 1:
+        mask = cv2.resize(mask, (n_rows, n_cols))
 
     return mask
 

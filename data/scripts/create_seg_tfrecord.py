@@ -58,6 +58,7 @@ class Params(paramparse.CFG):
         self.starts_2d = 0
         self.starts_offset = 1000
         self.lengths_offset = 100
+        self.subsample = 0
 
 
 def load_seg_annotations(annotation_path):
@@ -155,6 +156,17 @@ def create_tf_example(
         starts_2d=params.starts_2d,
         starts_offset=params.starts_offset,
         lengths_offset=params.lengths_offset,
+        subsample=params.subsample,
+    )
+
+    if params.subsample > 1:
+        mask_sub = task_utils.rle_to_mask(
+        rle,
+        mask.shape,
+        starts_2d=params.starts_2d,
+        starts_offset=params.starts_offset,
+        lengths_offset=params.lengths_offset,
+        subsample=params.subsample,
     )
 
     seg_feature_dict = {
@@ -216,6 +228,10 @@ def main():
     output_json_fname = f'{json_suffix}.{params.ann_ext}'
     json_path = os.path.join(params.db_path, output_json_fname)
 
+    out_name = json_suffix
+    if params.subsample > 1:
+        out_name = f'{out_name}-sub_{params.subsample}'
+
     image_infos, category_id_to_name_map, = load_seg_annotations(json_path)
 
     if not params.output_dir:
@@ -262,7 +278,7 @@ def main():
         image_infos=image_infos,
         vid_infos=vid_infos,
     )
-    output_path = os.path.join(params.output_dir, json_suffix)
+    output_path = os.path.join(params.output_dir, out_name)
     os.makedirs(output_path, exist_ok=True)
 
     tfrecord_pattern = os.path.join(output_path, 'shard')
