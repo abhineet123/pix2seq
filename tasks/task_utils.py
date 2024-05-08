@@ -150,7 +150,7 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
     lengths goes from 1 to max_length so 1 must be subtracted before normalizing so lengths_norm starts from 0
     and un-normalizing works correctly    
     """
-    lengths_norm = (lengths.astype(np.float32) - 1) / (max_length - 1)
+    lengths_norm = (lengths.astype(np.float64) - 1) / (max_length - 1)
 
     if subsample > 1:
         max_length_sub = int(max_length / subsample)
@@ -161,15 +161,16 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
 
     n_rows, n_cols = mask.shape
 
+    starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
+
+    assert np.all(starts_rows <= n_rows - 1), f"starts_rows cannot be > {n_rows - 1}"
+    assert np.all(starts_cols <= n_cols - 1), f"starts_rows cannot be > {n_cols - 1}"
+
+    starts_rows_norm, starts_cols_norm = (starts_rows.astype(np.float64) / (n_rows - 1),
+                                          starts_cols.astype(np.float64) / (n_cols - 1))
+
     if starts_2d:
         """2D start tokens"""
-        starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
-
-        assert np.all(starts_rows <= n_rows - 1), f"starts_rows cannot be > {n_rows - 1}"
-        assert np.all(starts_cols <= n_cols - 1), f"starts_rows cannot be > {n_cols - 1}"
-
-        starts_rows_norm, starts_cols_norm = (starts_rows.astype(np.float32) / (n_rows - 1),
-                                              starts_cols.astype(np.float32) / (n_cols - 1))
         rle_norm = [item for sublist in zip(starts_rows_norm, starts_cols_norm, lengths_norm)
                     for item in sublist]
 
@@ -193,13 +194,26 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
 
         assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
 
-        starts_norm = starts.astype(np.float32) / (n_pix - 1)
+        starts_norm = starts.astype(np.float64) / (n_pix - 1)
         rle_norm = [float(item) for sublist in zip(starts_norm, lengths_norm) for item in sublist]
 
         if subsample > 1:
             n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
-            n_pix_sub = n_rows_sub * n_cols_sub
-            starts = starts_norm * (n_pix_sub - 1)
+            starts_rows = (starts_rows_norm * (n_rows_sub - 1)).astype(np.int64)
+            starts_cols = (starts_cols_norm * (n_cols_sub - 1)).astype(np.int64)
+            n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
+
+            starts = np.ravel_multi_index((starts_rows, starts_cols), (n_rows_sub, n_cols_sub))
+            # n_pix_sub = n_rows_sub * n_cols_sub
+            # starts = starts_norm * (n_pix_sub - 1)
+
+            rle_pairs = list(zip(starts, lengths))
+            rle_pairs_unique = remove_duplicates(rle_pairs)
+
+            starts, lengths = zip(*rle_pairs_unique)
+            starts = np.asarray(starts)
+            lengths = np.asarray(lengths)
+
 
         """0 is used for padding in vocabulary so there cannot be any 0s in starts"""
         starts += 1
@@ -209,18 +223,27 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
 
     return rle, rle_norm
 
+def remove_duplicates(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
 
-def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, subsample, label=1):
+def rle_to_mask(rle, shape, max_length, starts_offset, lengths_offset,
+                starts_2d, subsample, allow_odd_rle=0, label=1):
     n_rows, n_cols = shape
 
-    if rle.size == 0:
+    if len(rle) == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
         return mask
 
-    if rle.size % 2 != 0:
-        print("rle must have even length")
-        """Simplest solution for odd length RLE is to discard the last element to make it even"""
-        rle = rle[:-1]
+    if len(rle) % 2 != 0:
+        msg = "rle must have even length"
+        if allow_odd_rle:
+            print(msg)
+            """Simplest solution for odd length RLE is to discard the last element to make it even"""
+            rle = rle[:-1]
+        else:
+            raise AssertionError(msg)
 
     if starts_2d:
         start_rows, start_cols, lengths = [
@@ -242,9 +265,23 @@ def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, subsample,
 
     if subsample > 1:
         n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
-        shape_sub = (n_rows_sub, n_cols_sub)
 
-        starts
+        starts_rows_sub, starts_cols_sub = np.unravel_index(starts, (n_rows_sub, n_cols_sub))
+
+        max_length_sub = int(max_length / subsample)
+        # n_pix_sub = n_rows_sub * n_cols_sub
+
+        starts_rows = starts_rows_sub / (n_rows_sub - 1) * (n_rows - 1)
+        starts_cols = starts_cols_sub / (n_cols_sub - 1) * (n_cols - 1)
+
+        starts_rows = starts_rows.astype(np.int64)
+        starts_cols = starts_cols.astype(np.int64)
+
+        starts = np.ravel_multi_index((starts_rows, starts_cols), shape)
+
+        lengths = (lengths - 1).astype(np.float64) / (max_length_sub - 1) * (max_length - 1) + 1
+
+        lengths = lengths.astype(np.int64)
 
     """ends are exclusive while starts are inclusive"""
     ends = starts + lengths
@@ -253,9 +290,6 @@ def rle_to_mask(rle, shape, starts_offset, lengths_offset, starts_2d, subsample,
         mask_flat[lo:hi] = label
 
     mask = mask_flat.reshape(shape)
-
-    if subsample > 1:
-        mask = cv2.resize(mask, (n_rows, n_cols))
 
     return mask
 

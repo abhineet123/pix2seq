@@ -5,9 +5,11 @@ import sys
 import cv2
 
 dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
+seg_path = os.path.join(os.path.expanduser("~"), "617")
 
 sys.path.append(os.getcwd())
 sys.path.append(dproc_path)
+sys.path.append(seg_path)
 
 import numpy as np
 import tensorflow as tf
@@ -38,9 +40,9 @@ class Params(paramparse.CFG):
         self.seq_start_id = 0
         self.seq_end_id = -1
 
-        self.n_rot = 3
+        self.n_rot = 0
         self.max_rot = 0
-        self.min_rot = 10
+        self.min_rot = 0
 
         self.resize = 0
         self.start_id = 0
@@ -60,6 +62,45 @@ class Params(paramparse.CFG):
         self.lengths_offset = 100
         self.subsample = 0
 
+        self.show = 0
+
+
+def append_metrics(metrics, out):
+    for metric, val in metrics.items():
+        try:
+            out[metric].append(val)
+        except KeyError:
+            out[metric] = [val, ]
+
+    vis_txt = ' '.join(f'{metric}: {val:.2f}' if isinstance(val, float)
+                       else f'{metric}: {val}'
+                       for metric, val in metrics.items())
+    return vis_txt
+
+
+def resize_mask(mask, shape):
+    mask_vis = mask * 255
+    mask_vis = cv2.resize(mask_vis, shape)
+    mask = np.copy(mask_vis)
+    mask[mask > 0] = 1
+
+    return mask, mask_vis
+
+
+def eval_mask(pred_mask, gt_mask, rle):
+    import densenet.evaluation.eval_segm as eval_segm
+    class_ids = [0, 1]
+    pix_acc = eval_segm.pixel_accuracy(pred_mask, gt_mask, class_ids)
+    _acc, mean_acc = eval_segm.mean_accuracy(pred_mask, gt_mask, class_ids, return_acc=1)
+    _IU, mean_IU = eval_segm.mean_IU(pred_mask, gt_mask, class_ids, return_iu=1)
+    fw_IU = eval_segm.frequency_weighted_IU(pred_mask, gt_mask, class_ids)
+    return dict(
+        rle_len=len(rle),
+        pix_acc=pix_acc,
+        mean_acc=mean_acc,
+        mean_IU=mean_IU,
+        fw_IU=fw_IU,
+    )
 
 def load_seg_annotations(annotation_path):
     print(f'Reading annotations from {annotation_path}')
@@ -84,6 +125,7 @@ def load_seg_annotations(annotation_path):
 
 def generate_annotations(
         params,
+        metrics,
         image_infos,
         vid_infos,
 ):
@@ -92,6 +134,7 @@ def generate_annotations(
 
         yield (
             params,
+            metrics,
             image_info,
             vid_infos[seq]
         )
@@ -99,6 +142,7 @@ def generate_annotations(
 
 def create_tf_example(
         params,
+        metrics,
         image_info,
         vid_info):
     """
@@ -150,7 +194,7 @@ def create_tf_example(
 
     # mask_h, mask_w = mask.shape
 
-    rle, rle_norm = task_utils.mask_to_rle(
+    rle, _ = task_utils.mask_to_rle(
         mask,
         max_length=params.max_length,
         starts_2d=params.starts_2d,
@@ -158,16 +202,86 @@ def create_tf_example(
         lengths_offset=params.lengths_offset,
         subsample=params.subsample,
     )
+    if params.subsample > 1 and rle:
+        n_rows, n_cols = mask.shape
+        n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
+        max_length_sub = int(params.max_length / params.subsample)
 
-    if params.subsample > 1:
-        mask_sub = task_utils.rle_to_mask(
-        rle,
-        mask.shape,
-        starts_2d=params.starts_2d,
-        starts_offset=params.starts_offset,
-        lengths_offset=params.lengths_offset,
-        subsample=params.subsample,
-    )
+        mask_sub = cv2.resize(mask * 255, (n_rows_sub, n_cols_sub))
+        mask_sub[mask_sub > 0] = 1
+
+        rle_sub, _ = task_utils.mask_to_rle(
+            mask_sub,
+            max_length=max_length_sub,
+            starts_2d=params.starts_2d,
+            starts_offset=params.starts_offset,
+            lengths_offset=params.lengths_offset,
+            subsample=0,
+        )
+        mask_sub_rec = task_utils.rle_to_mask(
+            rle_sub,
+            (n_rows_sub, n_cols_sub),
+            max_length=max_length_sub,
+            starts_2d=params.starts_2d,
+            starts_offset=params.starts_offset,
+            lengths_offset=params.lengths_offset,
+            subsample=0,
+        )
+        mask_sub_rec, mask_sub_rec_vis = resize_mask(mask_sub_rec, (n_rows, n_cols))
+
+        # mask_rec = task_utils.rle_to_mask(
+        #     rle,
+        #     (n_rows, n_cols),
+        #     max_length=params.max_length,
+        #     starts_2d=params.starts_2d,
+        #     starts_offset=params.starts_offset,
+        #     lengths_offset=params.lengths_offset,
+        #     subsample=params.subsample,
+        # )
+
+        mask_rec2 = task_utils.rle_to_mask(
+            rle,
+            (n_rows_sub, n_cols_sub),
+            max_length=max_length_sub,
+            starts_2d=params.starts_2d,
+            starts_offset=params.starts_offset,
+            lengths_offset=params.lengths_offset,
+            subsample=0,
+        )
+        mask_rec2, mask_rec2_vis = resize_mask(mask_rec2, (n_rows, n_cols))
+
+
+        mask_vis = mask * 255
+
+        masks_all = [mask_vis, ]
+        vis_txt = []
+        import eval_utils
+
+        # mask_rec_vis = mask_rec * 255
+        # pix_acc, mean_acc, mean_IU, fw_IU = eval_mask(mask_rec, mask)
+        # vis_txt = f'pix_acc: {pix_acc:.2f} mean_acc: {mean_acc:.2f} mean_IU: {mean_IU:.2f} fw_IU: {fw_IU:.2f} '
+        # mask_rec_vis = eval_utils.annotate(mask_rec_vis, vis_txt)
+        # masks_all.append(mask_rec_vis)
+
+        metrics_ = eval_mask(mask_rec2, mask, rle)
+        vis_txt.append(append_metrics(metrics_, metrics['method_1']))
+        masks_all.append(mask_rec2_vis)
+
+        metrics_ = eval_mask(mask_sub_rec, mask, rle_sub)
+        vis_txt.append(append_metrics(metrics_, metrics['method_2']))
+        masks_all.append(mask_sub_rec_vis)
+
+        if params.show:
+            masks_all = np.concatenate(masks_all, axis=1)
+            vis_txt = ' '.join(vis_txt)
+            masks_all = eval_utils.annotate(masks_all, vis_txt)
+            # cv2.imshow('mask_vis', mask_vis)
+            # cv2.imshow('mask_rec_vis', mask_rec_vis)
+            # cv2.imshow('mask_rec2_vis', mask_rec2_vis)
+            cv2.imshow('masks_all', masks_all)
+            k = cv2.waitKey(0)
+            if k == 27:
+                exit()
 
     seg_feature_dict = {
         'image/rle': tfrecord_lib.convert_to_feature(rle, value_type='int64_list'),
@@ -178,6 +292,7 @@ def create_tf_example(
 
     example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
     return example, 0
+
 
 
 def main():
@@ -273,8 +388,14 @@ def main():
         assert frame_id <= num_frames, (f"frame_id {frame_id} for image {img_id} exceeds num_frames {num_frames} for "
                                         f"seq {seq}")
 
+    metrics = dict(
+        method_1 = {},
+        method_2 = {},
+
+    )
     annotations_iter = generate_annotations(
         params=params,
+        metrics=metrics,
         image_infos=image_infos,
         vid_infos=vid_infos,
     )
@@ -291,8 +412,13 @@ def main():
         multiple_processes=params.n_proc,
         iter_len=len(image_infos),
     )
-
     print(f'output_path: {output_path}')
+
+    for method, metrics_ in metrics.items():
+        for metrics_, val in metrics_.items():
+            metrics_path = os.path.join(output_path, f'{method}_{metrics_}')
+            with open(metrics_path, 'w') as f:
+                f.write('\n'.join(map(str, val)))
 
 
 if __name__ == '__main__':
