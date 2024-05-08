@@ -133,6 +133,7 @@ def get_sem_seg_data():
         mode_data[f'seq_id'] = -1
         mode_data[f'seq_start_id'] = 0
         mode_data[f'seq_end_id'] = -1
+        mode_data[f'subsample'] = 0
 
         data[f'{mode}'] = mode_data
 

@@ -26,7 +26,7 @@
 ## res-2560       @ 16_53-->p2s_seg_tfrecord
 <a id="sz_640_sub_8___res_2560_16_53_"></a>
 ### sz-640-sub-8       @ res-2560/16_53-->p2s_seg_tfrecord
-python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-640:sub-8:res-2560:gz
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-640:sub-8:res-2560:gz:proc-1
 `seq-0`
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-640:sub-8:res-2560:gz:seq-0
 <a id="sz_640_sub_2___res_2560_16_53_"></a>
@@ -56,7 +56,7 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:sz-80:res-320
 
 <a id="sz_80_aug___res_320_16_5_3_"></a>
 ### sz-80-aug       @ res-320/16_53-->p2s_seg_tfrecord
-python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:sz-80:res-320:strd-40_80:rot-15_345_3:flip-1
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:sz-80:res-320:strd-40_80:rot-15_345_4:flip-1
 
 <a id="sz_160___res_320_16_5_3_"></a>
 ### sz-160       @ res-320/16_53-->p2s_seg_tfrecord
