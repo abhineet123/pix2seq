@@ -206,6 +206,9 @@ def create_tf_example(
     # vis_txt = []
 
     if params.subsample <= 1 or params.subsample_method == 1:
+        """
+        create RLE of full-res mask and sample the starts and lengths thus generated
+        """
         rle, _ = task_utils.mask_to_rle(
             mask,
             max_length=params.max_length,
@@ -239,6 +242,9 @@ def create_tf_example(
         # vis_txt.append(append_metrics(metrics_, metrics['method_1']))
         # masks_all.append(mask_rec2_vis)
     else:
+        """        
+        decrease mask resolution by resizing and create RLE of the low-res mask
+        """
         n_rows, n_cols = mask.shape
         n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
         max_length_sub = int(params.max_length / params.subsample)
@@ -414,8 +420,8 @@ def main():
     print(f'output_path: {output_path}')
 
     for method, metrics_ in metrics.items():
-        for metrics_, val in metrics_.items():
-            metrics_path = os.path.join(output_path, f'{method}_{metrics_}')
+        for metric_, val in metrics_.items():
+            metrics_path = os.path.join(output_path, f'{method}_{metric_}')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
 
