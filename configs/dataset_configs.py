@@ -304,7 +304,7 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
         if is_seg:
             if subsample > 1:
                 name = f'{name}-sub_{subsample}'
-                
+
         if is_video:
             try:
                 frame_gaps = ds_cfg[f'{mode}_frame_gaps']
