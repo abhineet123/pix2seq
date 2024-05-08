@@ -78,10 +78,10 @@ def append_metrics(metrics, out):
         except KeyError:
             out[metric] = [val, ]
 
-    vis_txt = ' '.join(f'{metric}: {val:.2f}' if isinstance(val, float)
-                       else f'{metric}: {val}'
-                       for metric, val in metrics.items())
-    return vis_txt
+    # vis_txt = ' '.join(f'{metric}: {val:.2f}' if isinstance(val, float)
+    #                    else f'{metric}: {val}'
+    #                    for metric, val in metrics.items())
+    # return vis_txt
 
 
 def resize_mask(mask, shape):
@@ -182,6 +182,12 @@ def create_tf_example(
         image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
 
+        # from PIL import Image
+        # from io import BytesIO
+        # buffer = BytesIO()
+        # Image.fromarray(image).save(buffer, format="JPEG")
+        # encoded_jpg = buffer.getvalue()
+
         encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
         # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
     else:
@@ -261,6 +267,10 @@ def create_tf_example(
             subsample=0,
         )
         rle = rle_sub
+
+        metrics_ = dict(rle_len=len(rle))
+        append_metrics(metrics_, metrics['method_2'])
+
         # mask_sub_rec = task_utils.rle_to_mask(
         #     rle_sub,
         #     (n_rows_sub, n_cols_sub),
