@@ -136,19 +136,6 @@ def get_sem_seg_data():
         mode_data[f'subsample'] = 0
 
         data[f'{mode}'] = mode_data
-
-        # data[f'{mode}-resize'] = 0
-        # data[f'{mode}-start_id'] = 0
-        # data[f'{mode}-end_id'] = 0
-        # data[f'{mode}-patch_height'] = 0
-        # data[f'{mode}-patch_width'] = 0
-        # data[f'{mode}-min_stride'] = 0
-        # data[f'{mode}-max_stride'] = 0
-        # data[f'{mode}-n_rot'] = 0
-        # data[f'{mode}-min_rot'] = 0
-        # data[f'{mode}-max_rot'] = 0
-        # data[f'{mode}-enable_flip'] = 0
-
     return data
 
 
@@ -190,26 +177,29 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
             print(f'skipping {mode} postprocessing with no name specified')
             continue
 
+        subsample = 0
+
         if is_seg:
             mode_cfg = ds_cfg[f'{mode}']
             suffix = mode_cfg.suffix
 
-            if not suffix:
-                resize = mode_cfg[f'resize']
-                start_id = mode_cfg[f'start_id']
-                end_id = mode_cfg[f'end_id']
-                patch_height = mode_cfg[f'patch_height']
-                patch_width = mode_cfg[f'patch_width']
-                min_stride = mode_cfg[f'min_stride']
-                max_stride = mode_cfg[f'max_stride']
-                n_rot = mode_cfg[f'n_rot']
-                min_rot = mode_cfg[f'min_rot']
-                max_rot = mode_cfg[f'max_rot']
-                enable_flip = mode_cfg[f'enable_flip']
-                seq_id = mode_cfg[f'seq_id']
-                seq_start_id = mode_cfg[f'seq_start_id']
-                seq_end_id = mode_cfg[f'seq_end_id']
+            resize = mode_cfg[f'resize']
+            start_id = mode_cfg[f'start_id']
+            end_id = mode_cfg[f'end_id']
+            patch_height = mode_cfg[f'patch_height']
+            patch_width = mode_cfg[f'patch_width']
+            min_stride = mode_cfg[f'min_stride']
+            max_stride = mode_cfg[f'max_stride']
+            n_rot = mode_cfg[f'n_rot']
+            min_rot = mode_cfg[f'min_rot']
+            max_rot = mode_cfg[f'max_rot']
+            enable_flip = mode_cfg[f'enable_flip']
+            seq_id = mode_cfg[f'seq_id']
+            seq_start_id = mode_cfg[f'seq_start_id']
+            seq_end_id = mode_cfg[f'seq_end_id']
+            subsample = mode_cfg[f'subsample']
 
+            if not suffix:
                 assert end_id >= start_id, f"invalid end_id: {end_id}"
 
                 if patch_width <= 0:
@@ -311,6 +301,10 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
         ds_cfg[f'{mode}_num_examples'] = num_examples
         ds_cfg[f'{mode}_filename_for_metrics'] = json_name
 
+        if is_seg:
+            if subsample > 1:
+                name = f'{name}-sub_{subsample}'
+                
         if is_video:
             try:
                 frame_gaps = ds_cfg[f'{mode}_frame_gaps']
