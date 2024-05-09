@@ -1,7 +1,9 @@
 <!-- MarkdownTOC -->
 
 - [resnet-640-16_53](#resnet_640_16_5_3_)
-    - [res-2560-sz-640-sub-8       @ resnet-640-16_53](#res_2560_sz_640_sub_8___resnet_640_16_53_)
+    - [res-2560       @ resnet-640-16_53](#res_2560___resnet_640_16_53_)
+        - [sz-640-sub-8       @ res-2560/resnet-640-16_53](#sz_640_sub_8___res_2560_resnet_640_16_5_3_)
+    - [sz-640-aug-sub-8       @ resnet-640-16_53](#sz_640_aug_sub_8___resnet_640_16_53_)
     - [res-640-sz-80       @ resnet-640-16_53](#res_640_sz_80___resnet_640_16_53_)
         - [on-train       @ res-640-sz-80/resnet-640-16_53](#on_train___res_640_sz_80_resnet_640_16_53_)
         - [on-54_126       @ res-640-sz-80/resnet-640-16_53](#on_54_126___res_640_sz_80_resnet_640_16_53_)
@@ -18,9 +20,15 @@
 <!-- /MarkdownTOC -->
 <a id="resnet_640_16_5_3_"></a>
 # resnet-640-16_53
-<a id="res_2560_sz_640_sub_8___resnet_640_16_53_"></a>
-## res-2560-sz-640-sub-8       @ resnet-640-16_53-->p2s_seg
+<a id="res_2560___resnet_640_16_53_"></a>
+## res-2560       @ resnet-640-16_53-->p2s_seg
+<a id="sz_640_sub_8___res_2560_resnet_640_16_5_3_"></a>
+### sz-640-sub-8       @ res-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:sz-640:res-2560:sub-8,batch-24,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
+
+<a id="sz_640_aug_sub_8___resnet_640_16_53_"></a>
+## sz-640-aug-sub-8       @ resnet-640-16_53-->p2s_seg
+python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:sz-640:res-2560:rot-15_345_4:sub-8,batch-24,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
 
 <a id="res_640_sz_80___resnet_640_16_53_"></a>
 ## res-640-sz-80       @ resnet-640-16_53-->p2s_seg

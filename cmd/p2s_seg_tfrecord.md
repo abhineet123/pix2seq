@@ -36,7 +36,7 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-640:sub-2:res-2560
 
 <a id="sz_640_aug_sub_8___res_2560_16_53_"></a>
 ### sz-640-aug-sub-8       @ res-2560/16_53-->p2s_seg_tfrecord
-python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-640:sub-8:res-2560:gz:proc-1
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-640:rot-15_345_4:sub-8:res-2560:gz:proc-1
 `seq-0`
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-640:rot-15_345_4:sub-8:res-2560:gz:seq-0
 
