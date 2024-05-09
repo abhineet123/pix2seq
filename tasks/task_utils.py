@@ -214,7 +214,6 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
             starts = np.asarray(starts)
             lengths = np.asarray(lengths)
 
-
         """0 is used for padding in vocabulary so there cannot be any 0s in starts"""
         starts += 1
         """additional offset to convert coords into vocabulary tokens"""
@@ -223,10 +222,21 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
 
     return rle, rle_norm
 
+
 def remove_duplicates(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
+
+
+def resize_mask(mask, shape):
+    mask_vis = mask * 255
+    mask_vis = cv2.resize(mask_vis, shape)
+    mask = np.copy(mask_vis)
+    mask[mask > 0] = 1
+
+    return mask, mask_vis
+
 
 def rle_to_mask(rle, shape, max_length, starts_offset, lengths_offset,
                 starts_2d, subsample, allow_odd_rle=0, label=1):

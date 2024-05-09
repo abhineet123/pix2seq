@@ -156,20 +156,41 @@ class TaskSemanticSegmentation(task_lib.Task):
         for image_id_, image_, rle_, logits_, orig_size_, gt_rle_ in zip(
                 image_ids, images, rles, logits, orig_sizes, gt_rles):
             orig_size_ = tuple(orig_size_)
+            n_rows, n_cols = orig_size_
+
+            max_length = self.config.dataset.train.max_length
+            subsample = self.config.dataset.train.subsample
+
+            if subsample > 1:
+                max_length = int(max_length / subsample)
+                n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
+
             rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
             mask = task_utils.rle_to_mask(
                 rle_,
-                shape=orig_size_,
+                shape=(n_rows, n_cols),
                 starts_offset=self.config.model.coord_vocab_shift,
                 lengths_offset=vocab.BASE_VOCAB_SHIFT,
-                starts_2d=False)
+                starts_2d=False,
+                max_length=max_length,
+                subsample=0,
+                allow_odd_rle=1,
+            )
 
             gt_mask = task_utils.rle_to_mask(
                 gt_rle_,
-                shape=orig_size_,
+                shape=(n_rows, n_cols),
                 starts_offset=self.config.model.coord_vocab_shift,
                 lengths_offset=vocab.BASE_VOCAB_SHIFT,
-                starts_2d=False)
+                starts_2d=False,
+                max_length=max_length,
+                subsample=0,
+                allow_odd_rle=0,
+            )
+
+            if subsample > 1:
+                mask, _ = task_utils.resize_mask(mask, orig_size_)
+                gt_mask, _ = task_utils.resize_mask(gt_mask, orig_size_)
 
             vis_utils.visualize_mask(
                 image_id_,

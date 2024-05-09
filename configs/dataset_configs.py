@@ -134,6 +134,7 @@ def get_sem_seg_data():
         mode_data[f'seq_start_id'] = 0
         mode_data[f'seq_end_id'] = -1
         mode_data[f'subsample'] = 0
+        mode_data[f'max_length'] = 0
 
         data[f'{mode}'] = mode_data
     return data
@@ -203,13 +204,16 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 assert end_id >= start_id, f"invalid end_id: {end_id}"
 
                 if patch_width <= 0:
-                    patch_width = patch_height
+                    mode_cfg[f'patch_width'] = patch_width = patch_height
 
                 if min_stride <= 0:
-                    min_stride = patch_height
+                    mode_cfg[f'min_stride'] = min_stride = patch_height
 
                 if max_stride <= min_stride:
-                    max_stride = min_stride
+                    mode_cfg[f'max_stride'] = max_stride = min_stride
+
+                if mode_cfg[f'max_length'] <= 0:
+                    mode_cfg[f'max_length'] = patch_width
 
                 db_suffixes = []
                 if resize:

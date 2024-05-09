@@ -270,10 +270,16 @@ def load(FLAGS):
             # latest_ckpt = tf.train.latest_checkpoint(cfg.pretrained)
             # checkpoint.restore(latest_ckpt)
 
-
     cmd_cfg.training = cfg.training = cfg.mode == TRAIN
 
-    for mode in ['train', 'eval']:
+    """
+    don't need to read cfg files for training params During evaluation 
+    because all of the correct parameters are already loaded from the model Json file
+    Also, any changes in the CFG file since the model was trained might lead to incompatibility 
+    errors unless the model Json file is modified manually which can be very annoying
+    """
+    modes = ['train', 'eval'] if cfg.training else ['eval', ]
+    for mode in modes:
         mode_cfg = cfg.dataset[f'{mode}_cfg']
         if mode_cfg:
             mode_params = to_dict(cfg.dataset[f'{mode}'])
