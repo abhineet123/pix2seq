@@ -304,8 +304,6 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
             if subsample > 1:
                 name = f'{name}-sub_{subsample}'
 
-        ds_cfg[f'{mode}_name'] = name
-
         if is_video:
             try:
                 frame_gaps = ds_cfg[f'{mode}_frame_gaps']
@@ -317,6 +315,7 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 if frame_gaps_suffix not in name:
                     name = f'{name}-{frame_gaps_suffix}'
 
+        ds_cfg[f'{mode}_name'] = name
         ds_cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name, 'shard*')
 
     if training:
