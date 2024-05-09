@@ -295,7 +295,6 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
 
         num_examples = len(json_dict[db_type])
         ds_cfg[f'{mode}_db_root_dir'] = db_root_dir
-        ds_cfg[f'{mode}_name'] = name
         # cfg[f'{mode}_json_name'] = json_name
         # cfg[f'{mode}_json_path'] = json_path
         ds_cfg[f'{mode}_num_examples'] = num_examples
@@ -304,6 +303,8 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
         if is_seg:
             if subsample > 1:
                 name = f'{name}-sub_{subsample}'
+
+        ds_cfg[f'{mode}_name'] = name
 
         if is_video:
             try:

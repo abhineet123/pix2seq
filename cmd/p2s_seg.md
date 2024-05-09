@@ -28,7 +28,7 @@ python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:sz-6
 
 <a id="sz_640_aug_sub_8___resnet_640_16_53_"></a>
 ## sz-640-aug-sub-8       @ resnet-640-16_53-->p2s_seg
-python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:sz-640:res-2560:rot-15_345_4:sub-8,batch-24,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
+python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:sz-640:res-2560:rot-15_345_4:sub-8,batch-36,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
 
 <a id="res_640_sz_80___resnet_640_16_53_"></a>
 ## res-640-sz-80       @ resnet-640-16_53-->p2s_seg
@@ -65,7 +65,7 @@ python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_320-16_53-8
 
 <a id="sz_80_aug___res_320_resnet_640_16_53_"></a>
 ### sz-80-aug       @ res-320/resnet-640-16_53-->p2s_seg
-python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:sz-80:res-smin-0:smax-0:rmin-15:rmax-345:rnum-0:flip-0:320,batch-24,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
+python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:sz-80:res-320:strd-40_80:rot-15_345_4:flip-1,batch-36,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
 
 <a id="sz_160___res_320_resnet_640_16_53_"></a>
 ### sz-160       @ res-320/resnet-640-16_53-->p2s_seg
