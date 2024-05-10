@@ -95,18 +95,53 @@ def load_video(vid_path, seq=''):
     return vid_reader, vid_width, vid_height, num_frames
 
 
-def check_rle(mask, rle, starts_offset, lengths_offset):
-    mask = np.copy(mask)
+def check_rle(image, mask, rle, starts_offset, lengths_offset,
+              max_length, subsample, allow_odd_rle, show):
     if len(mask.shape) == 3:
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+    else:
+        mask = np.copy(mask)
+
     mask[mask > 0] = 1
+    n_rows, n_cols = mask.shape
 
-    mask_rec = rle_to_mask(rle, mask.shape, starts_offset, lengths_offset, starts_2d=False, label=1)
+    if subsample > 1:
+        max_length = int(max_length / subsample)
+        n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
-    mask_mismatch = np.nonzero(mask != mask_rec)
-    assert mask_mismatch[0].size == 0, "mask_rec mismatch"
+    mask_rec = rle_to_mask(
+        rle,
+        shape=(n_rows, n_cols),
+        starts_offset=starts_offset,
+        lengths_offset=lengths_offset,
+        starts_2d=False, label=1,
+        max_length=max_length,
+        subsample=1,
+        allow_odd_rle=allow_odd_rle,
+    )
 
-    print('masks match !')
+    if subsample > 1:
+        mask_rec, _ = resize_mask(mask_rec, mask.shape)
+    else:
+        mask_mismatch = np.nonzero(mask != mask_rec)
+        assert mask_mismatch[0].size == 0, "mask_rec mismatch"
+        print('masks match !')
+
+    if show:
+        # import eval_utils
+        mask_vis = cv2.cvtColor(mask * 255, cv2.COLOR_GRAY2BGR)
+        mask_rec_vis = cv2.cvtColor(mask_rec * 255, cv2.COLOR_GRAY2BGR)
+
+        masks_all = np.concatenate([image, mask_vis, mask_rec_vis], axis=1)
+        # vis_txt = ' '.join(vis_txt)
+        # masks_all = eval_utils.annotate(masks_all, vis_txt)
+        # cv2.imshow('mask_vis', mask_vis)
+        # cv2.imshow('mask_rec_vis', mask_rec_vis)
+        # cv2.imshow('mask_rec2_vis', mask_rec2_vis)
+        cv2.imshow('masks_all', masks_all)
+        k = cv2.waitKey(0)
+        if k == 27:
+            exit()
 
 
 def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subsample):
@@ -236,6 +271,34 @@ def resize_mask(mask, shape):
     mask[mask > 0] = 1
 
     return mask, mask_vis
+
+
+def mask_vis_to_id(labels_img, n_classes):
+    if n_classes == 3:
+        labels_img[labels_img < 64] = 0
+        labels_img[np.logical_and(labels_img >= 64, labels_img < 192)] = 1
+        labels_img[labels_img >= 192] = 2
+    elif n_classes == 2:
+        labels_img[labels_img < 128] = 0
+        labels_img[labels_img >= 128] = 1
+    else:
+        raise AssertionError('unsupported number of classes: {}'.format(n_classes))
+
+
+def mask_id_to_vis(labels_img, n_classes, to_rgb=0):
+    if n_classes == 3:
+        # labels_img[labels_img == 0] = 0
+        labels_img[labels_img == 1] = 128
+        labels_img[labels_img == 2] = 255
+    elif n_classes == 2:
+        # labels_img[labels_img == 0] = 0
+        labels_img[labels_img == 1] = 255
+    else:
+        raise AssertionError('unsupported number of classes: {}'.format(n_classes))
+    if to_rgb and len(labels_img.shape) == 2:
+        labels_img = np.stack((labels_img,) * 3, axis=2)
+
+    return labels_img
 
 
 def rle_to_mask(rle, shape, max_length, starts_offset, lengths_offset,

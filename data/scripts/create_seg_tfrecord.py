@@ -65,7 +65,7 @@ class Params(paramparse.CFG):
         self.starts_2d = 0
         self.starts_offset = 1000
         self.lengths_offset = 100
-        self.subsample = 0
+        self.subsample = 1
         self.subsample_method = 2
 
         self.show = 0
@@ -89,6 +89,7 @@ def resize_mask(mask, shape):
     mask_vis = cv2.resize(mask_vis, shape)
     mask = np.copy(mask_vis)
     mask[mask > 0] = 1
+    mask_vis = cv2.cvtColor(mask_vis, cv2.COLOR_GRAY2BGR)
 
     return mask, mask_vis
 
@@ -196,6 +197,10 @@ def create_tf_example(
 
         mask = cv2.imread(mask_image_path)
 
+    if params.show:
+        vis_imgs = [image, np.copy(mask), ]
+        vis_txt = []
+
     image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
         image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
 
@@ -203,13 +208,15 @@ def create_tf_example(
 
     if len(mask.shape) == 3:
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+
+    task_utils.mask_vis_to_id(mask, n_classes=2)
+
     mask[mask > 0] = 1
 
-    # mask_h, mask_w = mask.shape
+    n_rows, n_cols = mask.shape
 
-    # mask_vis = mask * 255
-    # masks_all = [mask_vis, ]
-    # vis_txt = []
+    n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
+    max_length_sub = int(params.max_length / params.subsample)
 
     if params.subsample <= 1 or params.subsample_method == 1:
         """
@@ -234,27 +241,24 @@ def create_tf_example(
         #     subsample=params.subsample,
         # )
         """reconstruct low-res mask and resize to scale it up"""
-        # mask_rec2 = task_utils.rle_to_mask(
-        #     rle,
-        #     (n_rows_sub, n_cols_sub),
-        #     max_length=max_length_sub,
-        #     starts_2d=params.starts_2d,
-        #     starts_offset=params.starts_offset,
-        #     lengths_offset=params.lengths_offset,
-        #     subsample=0,
-        # )
-        # mask_rec2, mask_rec2_vis = resize_mask(mask_rec2, (n_rows, n_cols))
-        # metrics_ = eval_mask(mask_rec2, mask, rle)
-        # vis_txt.append(append_metrics(metrics_, metrics['method_1']))
-        # masks_all.append(mask_rec2_vis)
+        mask_rec2 = task_utils.rle_to_mask(
+            rle,
+            (n_rows_sub, n_cols_sub),
+            max_length=max_length_sub,
+            starts_2d=params.starts_2d,
+            starts_offset=params.starts_offset,
+            lengths_offset=params.lengths_offset,
+            subsample=1,
+        )
+        if params.show:
+            mask_rec2, mask_rec2_vis = resize_mask(mask_rec2, (n_rows, n_cols))
+            metrics_ = eval_mask(mask_rec2, mask, rle)
+            vis_txt.append(append_metrics(metrics_, metrics['method_1']))
+            vis_imgs.append(mask_rec2_vis)
     else:
         """        
         decrease mask resolution by resizing and create RLE of the low-res mask
         """
-        n_rows, n_cols = mask.shape
-        n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
-        max_length_sub = int(params.max_length / params.subsample)
-
         mask_sub = cv2.resize(mask * 255, (n_rows_sub, n_cols_sub))
         mask_sub[mask_sub > 0] = 1
 
@@ -271,33 +275,34 @@ def create_tf_example(
         metrics_ = dict(rle_len=len(rle))
         append_metrics(metrics_, metrics['method_2'])
 
-        # mask_sub_rec = task_utils.rle_to_mask(
-        #     rle_sub,
-        #     (n_rows_sub, n_cols_sub),
-        #     max_length=max_length_sub,
-        #     starts_2d=params.starts_2d,
-        #     starts_offset=params.starts_offset,
-        #     lengths_offset=params.lengths_offset,
-        #     subsample=0,
-        # )
-        # mask_sub_rec, mask_sub_rec_vis = resize_mask(mask_sub_rec, (n_rows, n_cols))
+        mask_sub_rec = task_utils.rle_to_mask(
+            rle_sub,
+            (n_rows_sub, n_cols_sub),
+            max_length=max_length_sub,
+            starts_2d=params.starts_2d,
+            starts_offset=params.starts_offset,
+            lengths_offset=params.lengths_offset,
+            subsample=0,
+        )
+        mask_sub_rec, mask_sub_rec_vis = resize_mask(mask_sub_rec, (n_rows, n_cols))
         # metrics_ = eval_mask(mask_sub_rec, mask, rle_sub)
         # vis_txt.append(append_metrics(metrics_, metrics['method_2']))
-        # masks_all.append(mask_sub_rec_vis)
+        if params.show:
+            vis_imgs.append(mask_sub_rec_vis)
 
-        # if params.show:
-        #     import eval_utils
-        #
-        #     masks_all = np.concatenate(masks_all, axis=1)
-        #     vis_txt = ' '.join(vis_txt)
-        #     masks_all = eval_utils.annotate(masks_all, vis_txt)
-            # cv2.imshow('mask_vis', mask_vis)
-            # cv2.imshow('mask_rec_vis', mask_rec_vis)
-            # cv2.imshow('mask_rec2_vis', mask_rec2_vis)
-            # cv2.imshow('masks_all', masks_all)
-            # k = cv2.waitKey(0)
-            # if k == 27:
-            #     exit()
+    if params.show:
+        import eval_utils
+
+        vis_imgs = np.concatenate(vis_imgs, axis=1)
+        # vis_txt = ' '.join(vis_txt)
+        vis_imgs = eval_utils.annotate(vis_imgs, f'{image_id}')
+        # cv2.imshow('mask_vis', mask_vis)
+        # cv2.imshow('mask_rec_vis', mask_rec_vis)
+        # cv2.imshow('mask_rec2_vis', mask_rec2_vis)
+        cv2.imshow('vis_imgs', vis_imgs)
+        k = cv2.waitKey(0)
+        if k == 27:
+            exit()
 
     seg_feature_dict = {
         'image/rle': tfrecord_lib.convert_to_feature(rle, value_type='int64_list'),

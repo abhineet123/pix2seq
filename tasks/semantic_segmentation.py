@@ -27,19 +27,36 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         return dataset
 
-    def check_rle(self, batched_examples):
+    def check_rle(self, batched_examples, show):
         mask_vid_paths = batched_examples['mask_vid_path'].numpy()
+        images = batched_examples['image'].numpy()
+        img_ids = batched_examples['image/id'].numpy()
         frame_ids = batched_examples['frame_id'].numpy()
         rles = batched_examples['rle'].numpy()
         batch_size = frame_ids.shape[0]
+        max_length = self.config.dataset.train.max_length
+        subsample = self.config.dataset.train.subsample
+
         for batch_id in range(batch_size):
             mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
             rle = rles[batch_id]
+            img_id = img_ids[batch_id]
+            image = images[batch_id]
             frame_id = frame_ids[batch_id]
             vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(mask_vid_path)
             mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
             rle_stripped = rle[rle != vocab.PADDING_TOKEN]
-            task_utils.check_rle(mask, rle_stripped, self.config.model.coord_vocab_shift, vocab.BASE_VOCAB_SHIFT)
+            if rle_stripped.size == 0:
+                print(f'\n{img_id}: mask is empty\n')
+
+            task_utils.check_rle(image, mask, rle_stripped,
+                                 starts_offset=self.config.model.coord_vocab_shift,
+                                 lengths_offset=vocab.BASE_VOCAB_SHIFT,
+                                 max_length=max_length,
+                                 subsample=subsample,
+                                 allow_odd_rle=0,
+                                 show=show,
+                                 )
 
     def preprocess_batched(self, batched_examples, training):
         config = self.config.task
@@ -55,7 +72,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         response_seq = batched_examples['rle']
         token_weights = tf.ones_like(response_seq, dtype=tf.float32)
 
-        # self.check_rle(batched_examples)
+        # self.check_rle(batched_examples, show=1)
 
         # response_seq, token_weights = build_response_seq_from_rle(
         #     batched_examples['rle'],
