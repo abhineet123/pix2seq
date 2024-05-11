@@ -1,37 +1,51 @@
-# coding=utf-8
-# Copyright 2022 The Pix2Seq Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-r"""Convert COCO dataset to tfrecords."""
-
 import collections
 import os
 import sys
 
 import cv2
+import numpy as np
+
+dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
 
 sys.path.append(os.getcwd())
-sys.path.append("/home/abhineet/ipsc/ipsc_data_processing")
+sys.path.append(dproc_path)
 
-from absl import app
-# from absl import flags
-from absl import logging
 # import numpy as np
+
+from PIL import Image, ImageDraw, ImageFont
 
 import paramparse
 from data.scripts import tfrecord_lib
-from tasks.visualization import vis_utils
+
+from eval_utils import col_bgr
+
+
+class Params(paramparse.CFG):
+    def __init__(self):
+        paramparse.CFG.__init__(self, cfg_prefix='p2s_vid_tfrecord')
+        self.ann_file = ''
+        self.ann_suffix = ''
+        self.ann_ext = 'json'
+
+        self.frame_gaps = []
+        self.length = 0
+        self.stride = 0
+        self.sample = 0
+
+        self.image_dir = ''
+        self.n_proc = 0
+        self.save_fg_json = 0
+        self.num_shards = 32
+        self.output_dir = ''
+
+        self.start_seq_id = 0
+        self.end_seq_id = -1
+
+        self.start_frame_id = 0
+        self.end_frame_id = -1
+        self.frame_stride = -1
+
+        self.vis = 0
 
 
 def save_ytvis_annotations(json_dict, json_path):
@@ -74,7 +88,6 @@ def load_ytvis_annotations(annotation_path, vid_id_offset):
 
     assert 0 not in category_id_to_name_map.keys(), "class IDs must to be > 0"
 
-
     vid_to_ann = collections.defaultdict(list)
     for ann in annotations['annotations']:
         ann['video_id'] += vid_id_offset
@@ -84,7 +97,159 @@ def load_ytvis_annotations(annotation_path, vid_id_offset):
     return video_info, category_id_to_name_map, vid_to_ann, annotations
 
 
-def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_len: int):
+def write_text(img_np, text, x, y, col):
+    image = Image.fromarray(img_np)
+    width, height = image.size
+    font_size = 24
+    draw = ImageDraw.Draw(image)
+
+    # font = ImageFont.load_default(font_size)
+    font = ImageFont.truetype("arial.ttf", font_size)
+    # font = ImageFont.truetype("sans-serif.ttf", font_size)
+
+    textheight = font_size
+
+    textwidth_ = 0
+
+    x_, y_ = x, y
+    for c in text:
+
+        textwidth = draw.textlength(c, font=font)
+
+        # _, _, textwidth, textheight = draw.textbbox((0, 0), text=text, font=font)
+
+        draw.text((x_, y_), c, font=font, fill=col)
+
+        textwidth_ += textwidth
+
+        x_ += textwidth
+        if x_ >= width:
+            y_ += textheight
+
+        img_np = np.array(image)
+        cv2.imshow('text_img', img_np)
+        cv2.waitKey(10)
+        # out_x, out_y = x + textwidth, y + textheight
+
+    return img_np, textwidth_, textheight
+
+
+def show_vid_objs(file_paths, obj_annotations):
+    from mayavi import mlab
+    from tvtk.api import tvtk
+
+    file_names = [os.path.splitext(os.path.basename(file_path))[0] for file_path in file_paths]
+
+    z_gap = 500
+
+    cols = ('green', 'red', 'blue', 'yellow', 'forest_green', 'cyan', 'magenta', 'purple', 'orange')
+
+    vid_len = len(file_paths)
+    z = (vid_len - 1) * z_gap
+
+    frames = [cv2.imread(file_path) for file_path in file_paths]
+    h, w = frames[0].shape[:2]
+
+    fig = mlab.figure(
+        size=(900, 1000),
+        bgcolor=(1, 1, 1)
+    )
+
+    # containing_box = (
+    #     (0, 0, 0), (0, h, 0), (w, h, 0), (w, 0, 0), (0, 0, 0),
+    #     (0, 0, z), (0, h, z), (w, h, z), (w, 0, z), (0, 0, z),
+    #     (0, h, z), (0, h, 0), (w, h, 0), (w, h, z), (w, 0, z), (w, 0, 0),
+    # )
+    #
+    # box_x = [k[0] for k in containing_box]
+    # box_y = [k[1] for k in containing_box]
+    # box_z = [k[2] for k in containing_box]
+
+    # mlab.plot3d(box_x, box_y, box_z, color=(1, 1, 1), line_width=2.0, tube_radius=1.5)
+    text_y = 5
+    text_img = np.full(((900, 1000, 3)), 255, dtype=np.uint8)
+
+    for frame_id, frame in enumerate(frames):
+        file_name = file_names[frame_id]
+        cu_z = frame_id * z_gap
+
+        frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame_gs = np.transpose(frame_gs)
+        mlab_im = mlab.imshow(frame_gs, extent=[0, w, 0, h, cu_z, cu_z], opacity=1.0)
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        colors = tvtk.UnsignedCharArray()
+        frame_ = frame
+        # frame_ = frame_.transpose((1, 0, 2))
+        colors.from_array(frame_.reshape(-1, 3))
+        # mlab_im = mlab.imshow(np.ones(frame.shape[:2]),  extent=[0, w, 0, h, cu_z, cu_z])
+        mlab_im.actor.input.point_data.scalars = colors
+
+    # mlab.draw()
+    # mlab.show()
+
+    cv2.imshow('text_img', text_img)
+    k = cv2.waitKey(0)
+
+    for ann_id, ann in enumerate(obj_annotations):
+        bboxes = ann['bboxes']
+        col_id = ann_id % len(cols)
+        col = col_bgr[cols[col_id]]
+
+        prev_bbox = None
+
+        col_rgb = col[::-1]
+        col_rgb_norm = tuple([k / 255.0 for k in col_rgb])
+
+        text_x = 5
+
+        for bbox_id, bbox in enumerate(bboxes):
+            if bbox is None:
+                continue
+
+            (x, y, width, height) = tuple(bbox)
+            xmin, ymin, xmax, ymax = int(x), int(y), int(x + width), int(y + height)
+
+            assert ymax > ymin and xmax > xmin, f"invalid bbox: {bbox}"
+
+            cu_z = bbox_id * z_gap
+
+            xs = [xmin, xmin, xmax, xmax, xmin]
+            ys = [ymin, ymax, ymax, ymin, ymin]
+            zs = [cu_z, ] * len(xs)
+
+            mlab.plot3d(xs, ys, zs, color=col_rgb_norm, line_width=3.0, tube_radius=3.0)
+
+            if prev_bbox is not None:
+                xmin_, ymin_, xmax_, ymax_, pre_z = prev_bbox
+                xs_ = [xmin, xmin_, xmin_, xmin, xmax, xmax_, xmax_, xmax]
+                ys_ = [ymin, ymin_, ymax_, ymax, ymax, ymax_, ymin_, ymin]
+                zs_ = [cu_z, pre_z, pre_z, cu_z, cu_z, pre_z, pre_z, cu_z]
+                mlab.plot3d(xs_, ys_, zs_, color=col_rgb_norm, line_width=3.0, tube_radius=3.0)
+
+            bbox_txt = f'{int(xmin)} {int(ymin)} {int(xmax)} {int(ymax)}'
+            text_img, text_width, text_height = write_text(text_img, bbox_txt, text_x, text_y, col)
+            text_x += text_width
+
+            # bbox_txts.append(bbox_txt)
+            prev_bbox = [xmin, ymin, xmax, ymax, cu_z]
+
+            k = cv2.waitKey(100)
+            if k == 27:
+                sys.exit()
+
+        # bbox_txt = ' '.join(bbox_txts)
+        text_y += text_height
+
+        k = cv2.waitKey(0)
+        if k == 27:
+            sys.exit()
+
+    k = cv2.waitKey(0)
+    if k == 27:
+        sys.exit()
+
+def ytvis_annotations_to_lists(file_paths: list, obj_annotations: dict, id_to_name_map: dict, vid_len: int):
     """
     Converts YTVIS annotations to feature lists.
     """
@@ -98,6 +263,8 @@ def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_
             f'xmin-{_id}', f'xmax-{_id}', f'ymin-{_id}', f'ymax-{_id}', f'area-{_id}'
         ])
         data.update(frame_data)
+
+    show_vid_objs(file_paths, obj_annotations)
 
     for ann_id, ann in enumerate(obj_annotations):
         bboxes = ann['bboxes']
@@ -116,6 +283,7 @@ def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_
         valid_box_exists = False
 
         for bbox_id, bbox in enumerate(bboxes):
+            file_path = file_paths[bbox_id]
             area = areas[bbox_id]
 
             if bbox is None:
@@ -148,7 +316,7 @@ def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_
     return data
 
 
-def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map, vid_len):
+def obj_annotations_to_feature_dict(file_paths, obj_annotations, id_to_name_map, vid_len):
     """Convert COCO annotations to an encoded feature dict.
 
     Args:
@@ -159,7 +327,7 @@ def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map, vid_len):
       a dict of tf features.
     """
 
-    data = ytvis_annotations_to_lists(obj_annotations, id_to_name_map, vid_len)
+    data = ytvis_annotations_to_lists(file_paths, obj_annotations, id_to_name_map, vid_len)
     feature_dict = {
         'video/object/class/text':
             tfrecord_lib.convert_to_feature(data['category_names']),
@@ -201,6 +369,7 @@ def generate_video_annotations(
         object_anns = vid_to_obj_ann.get(video['id'], {})
 
         if vis:
+            from tasks.visualization import vis_utils
             vis_utils.vis_json_ann(video, object_anns, category_id_to_name_map, image_dir)
 
         yield (
@@ -229,12 +398,16 @@ def create_video_tf_example(
 
     vid_len = len(file_names)
 
+    file_paths = [os.path.join(image_dir, filename) for filename in file_names]
+    # file_paths = [os.path.realpath(file_path) for file_path in file_paths]
+
     feature_dict = tfrecord_lib.video_info_to_feature_dict(
-        video_height, video_width, file_names, file_ids, video_id, image_dir)
+        video_height, video_width, file_ids, video_id, file_paths)
 
     if object_ann:
         # Bbox, area, etc.
         obj_feature_dict = obj_annotations_to_feature_dict(
+            file_paths,
             object_ann,
             category_id_to_name_map,
             vid_len)
@@ -245,35 +418,7 @@ def create_video_tf_example(
     return example, 0
 
 
-class Params(paramparse.CFG):
-    def __init__(self):
-        paramparse.CFG.__init__(self, cfg_prefix='p2s_vid_tfrecord')
-        self.ann_file = ''
-        self.ann_suffix = ''
-        self.ann_ext = 'json'
-
-        self.frame_gaps = []
-        self.length = 0
-        self.stride = 0
-        self.sample = 0
-
-        self.image_dir = ''
-        self.n_proc = 0
-        self.save_fg_json = 0
-        self.num_shards = 32
-        self.output_dir = ''
-
-        self.start_seq_id = 0
-        self.end_seq_id = -1
-
-        self.start_frame_id = 0
-        self.end_frame_id = -1
-        self.frame_stride = -1
-
-        self.vis = 0
-
-
-def main(_):
+def main():
     params = Params()
     paramparse.process(params)
 
@@ -420,10 +565,5 @@ def main(_):
     print(f'output_path: {output_path}')
 
 
-# Note: internal version of the code overrides this function.
-def run_main():
-    app.run(main)
-
-
 if __name__ == '__main__':
-    run_main()
+    main()
