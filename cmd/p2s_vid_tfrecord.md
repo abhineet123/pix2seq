@@ -87,9 +87,13 @@ python data/scripts/create_video_tfrecord.py cfg=idot:gz:len-9:strd-1
 <a id="0_0___detrac_"></a>
 ## 0_0       @ detrac-->p2s_vid_tfrecord
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_0:gz:len-2:strd-1
+
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_0:gz:len-2:strd-10:fg-10
+
 <a id="0_19___detrac_"></a>
 ## 0_19       @ detrac-->p2s_vid_tfrecord
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-2:strd-1
+
 <a id="strd_2___0_19_detra_c_"></a>
 ### strd-2       @ 0_19/detrac-->p2s_vid_tfrecord
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-2:strd-2
@@ -136,8 +140,8 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1 a
 <a id="5_9___ipsc_"></a>
 ## 5_9       @ ipsc-->p2s_vid_tfrecord
 python data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1 ann_file=ext_reorg_roi_g2_5_9
-**fg-4**
-python data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1:fg-4 ann_file=ext_reorg_roi_g2_5_9
+**fgs-4**
+python data/scripts/create_video_tfrecord.py cfg=ipsc:gz:shards-2:len-2:strd-1:fgs-4 ann_file=ext_reorg_roi_g2_5_9
 
 <a id="16_53___ipsc_"></a>
 ## 16_53       @ ipsc-->p2s_vid_tfrecord
@@ -157,8 +161,8 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:gz:shards-32:len-6:s
 <a id="0_37___ipsc_"></a>
 ## 0_37       @ ipsc-->p2s_vid_tfrecord
 python data/scripts/create_video_tfrecord.py cfg=ipsc:0_37:gz:shards-32:len-2:strd-1
-**fg-4**
-python data/scripts/create_video_tfrecord.py cfg=ipsc:0_37:gz:shards-32:len-2:strd-1:fg-4 
+**fgs-4**
+python data/scripts/create_video_tfrecord.py cfg=ipsc:0_37:gz:shards-32:len-2:strd-1:fgs-4 
 
 <a id="54_126___ipsc_"></a>
 ## 54_126       @ ipsc-->p2s_vid_tfrecord

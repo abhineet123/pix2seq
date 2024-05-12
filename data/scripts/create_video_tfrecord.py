@@ -97,10 +97,9 @@ def load_ytvis_annotations(annotation_path, vid_id_offset):
     return video_info, category_id_to_name_map, vid_to_ann, annotations
 
 
-def write_text(img_np, text, x, y, col):
+def write_text(img_np, text, x, y, col, font_size=24):
     image = Image.fromarray(img_np)
     width, height = image.size
-    font_size = 24
     draw = ImageDraw.Draw(image)
 
     # font = ImageFont.load_default(font_size)
@@ -134,27 +133,69 @@ def write_text(img_np, text, x, y, col):
     return img_np, textwidth_, textheight
 
 
-def show_vid_objs(file_paths, obj_annotations):
-    from mayavi import mlab
+def show_img_rgb(frame, cu_z, mlab):
     from tvtk.api import tvtk
+
+    h, w = frame.shape[:2]
+
+    frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    frame_gs = np.transpose(frame_gs)
+    mlab_im = mlab.imshow(frame_gs, extent=[0, w, 0, h, cu_z, cu_z], opacity=0.75)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    colors = tvtk.UnsignedCharArray()
+    frame_ = frame
+    # frame_ = frame_.transpose((1, 0, 2))
+    colors.from_array(frame_.reshape(-1, 3))
+    # mlab_im = mlab.imshow(np.ones(frame.shape[:2]),  extent=[0, w, 0, h, cu_z, cu_z])
+    mlab_im.actor.input.point_data.scalars = colors
+
+
+def to_rgb(col, norm=1):
+    if isinstance(col, str):
+        col = col_bgr[col]
+
+    col_rgb = col[::-1]
+    if norm:
+        col_rgb = [k / 255. for k in col_rgb]
+    return tuple(col_rgb)
+
+
+def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
+    from mayavi import mlab
+
+    file_ids = video['file_ids']
+    file_names = video['file_names']
+    file_paths = [os.path.join(image_dir, filename) for filename in file_names]
 
     file_names = [os.path.splitext(os.path.basename(file_path))[0] for file_path in file_paths]
 
     z_gap = 500
 
-    cols = ('green', 'red', 'blue', 'yellow', 'forest_green', 'cyan', 'magenta', 'purple', 'orange')
+    cols = ('green', 'red', 'deep_sky_blue', 'yellow', 'forest_green', 'cyan', 'magenta', 'purple', 'orange')
 
-    vid_len = len(file_paths)
-    z = (vid_len - 1) * z_gap
+    bkg_col = 'black'
+    # bkg_col = 'white'
+    frg_col = 'white' if bkg_col == 'black' else 'black'
+
+    bkg_col = col_bgr[bkg_col]
+    frg_col = col_bgr[frg_col]
+
+    bkg_col_rgb = to_rgb(bkg_col)
+    frg_col_rgb = to_rgb(frg_col)
 
     frames = [cv2.imread(file_path) for file_path in file_paths]
     h, w = frames[0].shape[:2]
 
-    fig = mlab.figure(
-        size=(900, 1000),
-        bgcolor=(1, 1, 1)
-    )
+    if fig is None:
+        fig = mlab.figure(
+            size=(900, 1000),
+            bgcolor=bkg_col_rgb
+        )
+    else:
+        mlab.clf(figure=fig)
 
+    # vid_len = len(file_paths)
+    # z = (vid_len - 1) * z_gap
     # containing_box = (
     #     (0, 0, 0), (0, h, 0), (w, h, 0), (w, 0, 0), (0, 0, 0),
     #     (0, 0, z), (0, h, z), (w, h, z), (w, 0, z), (0, 0, z),
@@ -167,23 +208,27 @@ def show_vid_objs(file_paths, obj_annotations):
 
     # mlab.plot3d(box_x, box_y, box_z, color=(1, 1, 1), line_width=2.0, tube_radius=1.5)
     text_y = 5
-    text_img = np.full(((900, 1000, 3)), 255, dtype=np.uint8)
+    text_img = np.full(((900, 1000, 3)), bkg_col, dtype=np.uint8)
 
     for frame_id, frame in enumerate(frames):
+        cu_z = (frame_id + 1) * z_gap
+
+        file_id = int(file_ids[frame_id])
         file_name = file_names[frame_id]
-        cu_z = frame_id * z_gap
+        # mlab.text(w/2, 0, file_name, z=cu_z, figure=fig, color=frg_col_rgb, line_width=1.0)
+        file_txt = f'image {file_id+1}'
 
-        frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        frame_gs = np.transpose(frame_gs)
-        mlab_im = mlab.imshow(frame_gs, extent=[0, w, 0, h, cu_z, cu_z], opacity=0.75)
+        frame, text_width, text_height = write_text(frame, file_txt, 5, 5, frg_col, font_size=32)
 
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        colors = tvtk.UnsignedCharArray()
-        frame_ = frame
-        # frame_ = frame_.transpose((1, 0, 2))
-        colors.from_array(frame_.reshape(-1, 3))
-        # mlab_im = mlab.imshow(np.ones(frame.shape[:2]),  extent=[0, w, 0, h, cu_z, cu_z])
-        mlab_im.actor.input.point_data.scalars = colors
+        show_img_rgb(frame, cu_z, mlab)
+
+    # mlab.axes(figure=fig, color=frg_col_rgb,
+    #           x_axis_visibility=True,
+    #           y_axis_visibility=True,
+    #           z_axis_visibility=True,
+    #           extent=[0, w, 0, h, 0, cu_z],
+    #           # ranges=[0, w, 0, h, cu_z, cu_z]
+    #           )
 
     # mlab.draw()
     # mlab.show()
@@ -198,8 +243,7 @@ def show_vid_objs(file_paths, obj_annotations):
 
         prev_bbox = None
 
-        col_rgb = col[::-1]
-        col_rgb_norm = tuple([k / 255.0 for k in col_rgb])
+        col_rgb = to_rgb(col)
 
         text_x = 5
 
@@ -212,20 +256,20 @@ def show_vid_objs(file_paths, obj_annotations):
 
             assert ymax > ymin and xmax > xmin, f"invalid bbox: {bbox}"
 
-            cu_z = bbox_id * z_gap
+            cu_z = (bbox_id + 1) * z_gap
 
             xs = [xmin, xmin, xmax, xmax, xmin]
             ys = [ymin, ymax, ymax, ymin, ymin]
             zs = [cu_z, ] * len(xs)
 
-            mlab.plot3d(xs, ys, zs, color=col_rgb_norm, line_width=3.0, tube_radius=3.0)
+            mlab.plot3d(xs, ys, zs, color=col_rgb, line_width=3.0, tube_radius=3.0)
 
             if prev_bbox is not None:
                 xmin_, ymin_, xmax_, ymax_, pre_z = prev_bbox
                 xs_ = [xmin, xmin_, xmin_, xmin, xmax, xmax_, xmax_, xmax]
                 ys_ = [ymin, ymin_, ymax_, ymax, ymax, ymax_, ymin_, ymin]
                 zs_ = [cu_z, pre_z, pre_z, cu_z, cu_z, pre_z, pre_z, cu_z]
-                mlab.plot3d(xs_, ys_, zs_, color=col_rgb_norm, line_width=1.0, tube_radius=1.0)
+                mlab.plot3d(xs_, ys_, zs_, color=col_rgb, line_width=1.0, tube_radius=1.0)
 
             bbox_txt = f' {int(xmin)} {int(ymin)} {int(xmax)} {int(ymax)}'
             text_img, text_width, text_height = write_text(text_img, bbox_txt, text_x, text_y, col)
@@ -238,6 +282,11 @@ def show_vid_objs(file_paths, obj_annotations):
             if k == 27:
                 sys.exit()
 
+        class_id = int(ann['category_id'])
+        class_name = id_to_name_map[class_id]
+
+        text_img, text_width, text_height = write_text(text_img, f' {class_name}', text_x, text_y, col)
+
         # bbox_txt = ' '.join(bbox_txts)
         text_y += text_height
 
@@ -249,7 +298,10 @@ def show_vid_objs(file_paths, obj_annotations):
     if k == 27:
         sys.exit()
 
-def ytvis_annotations_to_lists(file_paths: list, obj_annotations: dict, id_to_name_map: dict, vid_len: int):
+    return fig
+
+
+def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_len: int):
     """
     Converts YTVIS annotations to feature lists.
     """
@@ -263,8 +315,6 @@ def ytvis_annotations_to_lists(file_paths: list, obj_annotations: dict, id_to_na
             f'xmin-{_id}', f'xmax-{_id}', f'ymin-{_id}', f'ymax-{_id}', f'area-{_id}'
         ])
         data.update(frame_data)
-
-    show_vid_objs(file_paths, obj_annotations)
 
     for ann_id, ann in enumerate(obj_annotations):
         bboxes = ann['bboxes']
@@ -283,7 +333,6 @@ def ytvis_annotations_to_lists(file_paths: list, obj_annotations: dict, id_to_na
         valid_box_exists = False
 
         for bbox_id, bbox in enumerate(bboxes):
-            file_path = file_paths[bbox_id]
             area = areas[bbox_id]
 
             if bbox is None:
@@ -316,7 +365,7 @@ def ytvis_annotations_to_lists(file_paths: list, obj_annotations: dict, id_to_na
     return data
 
 
-def obj_annotations_to_feature_dict(file_paths, obj_annotations, id_to_name_map, vid_len):
+def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map, vid_len):
     """Convert COCO annotations to an encoded feature dict.
 
     Args:
@@ -327,7 +376,7 @@ def obj_annotations_to_feature_dict(file_paths, obj_annotations, id_to_name_map,
       a dict of tf features.
     """
 
-    data = ytvis_annotations_to_lists(file_paths, obj_annotations, id_to_name_map, vid_len)
+    data = ytvis_annotations_to_lists(obj_annotations, id_to_name_map, vid_len)
     feature_dict = {
         'video/object/class/text':
             tfrecord_lib.convert_to_feature(data['category_names']),
@@ -365,8 +414,11 @@ def generate_video_annotations(
         vis,
 
 ):
+    fig = None
     for video in videos:
         object_anns = vid_to_obj_ann.get(video['id'], {})
+
+        fig = show_vid_objs(video, image_dir, object_anns, category_id_to_name_map, fig)
 
         if vis:
             from tasks.visualization import vis_utils
@@ -398,6 +450,7 @@ def create_video_tf_example(
 
     vid_len = len(file_names)
 
+
     file_paths = [os.path.join(image_dir, filename) for filename in file_names]
     # file_paths = [os.path.realpath(file_path) for file_path in file_paths]
 
@@ -407,7 +460,6 @@ def create_video_tf_example(
     if object_ann:
         # Bbox, area, etc.
         obj_feature_dict = obj_annotations_to_feature_dict(
-            file_paths,
             object_ann,
             category_id_to_name_map,
             vid_len)
