@@ -175,7 +175,7 @@ def show_vid_objs(file_paths, obj_annotations):
 
         frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         frame_gs = np.transpose(frame_gs)
-        mlab_im = mlab.imshow(frame_gs, extent=[0, w, 0, h, cu_z, cu_z], opacity=1.0)
+        mlab_im = mlab.imshow(frame_gs, extent=[0, w, 0, h, cu_z, cu_z], opacity=0.75)
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         colors = tvtk.UnsignedCharArray()
@@ -225,9 +225,9 @@ def show_vid_objs(file_paths, obj_annotations):
                 xs_ = [xmin, xmin_, xmin_, xmin, xmax, xmax_, xmax_, xmax]
                 ys_ = [ymin, ymin_, ymax_, ymax, ymax, ymax_, ymin_, ymin]
                 zs_ = [cu_z, pre_z, pre_z, cu_z, cu_z, pre_z, pre_z, cu_z]
-                mlab.plot3d(xs_, ys_, zs_, color=col_rgb_norm, line_width=3.0, tube_radius=3.0)
+                mlab.plot3d(xs_, ys_, zs_, color=col_rgb_norm, line_width=1.0, tube_radius=1.0)
 
-            bbox_txt = f'{int(xmin)} {int(ymin)} {int(xmax)} {int(ymax)}'
+            bbox_txt = f' {int(xmin)} {int(ymin)} {int(xmax)} {int(ymax)}'
             text_img, text_width, text_height = write_text(text_img, bbox_txt, text_x, text_y, col)
             text_x += text_width
 
