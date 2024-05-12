@@ -108,29 +108,32 @@ def write_text(img_np, text, x, y, col, font_size=24):
 
     textheight = font_size
 
-    textwidth_ = 0
+    words = text.split(', ')
 
     x_, y_ = x, y
-    for c in text:
+    for word_id, word in enumerate(words):
 
-        textwidth = draw.textlength(c, font=font)
+        if word_id < len(words) - 1:
+            word = f'{word}, '
+
+        textwidth = draw.textlength(word, font=font)
+        
+        if x_ + textwidth >= width:
+            x_ = 5
+            y_ += textheight
 
         # _, _, textwidth, textheight = draw.textbbox((0, 0), text=text, font=font)
 
-        draw.text((x_, y_), c, font=font, fill=col)
-
-        textwidth_ += textwidth
+        draw.text((x_, y_), word, font=font, fill=col)
 
         x_ += textwidth
-        if x_ >= width:
-            y_ += textheight
 
         img_np = np.array(image)
         cv2.imshow('text_img', img_np)
         cv2.waitKey(10)
         # out_x, out_y = x + textwidth, y + textheight
 
-    return img_np, textwidth_, textheight
+    return img_np, x_, y_
 
 
 def show_img_rgb(frame, cu_z, mlab):
@@ -160,6 +163,24 @@ def to_rgb(col, norm=1):
     return tuple(col_rgb)
 
 
+def get_camera_view(mlab):
+    azimuth, elevation, distance, focalpoint = mlab.view()
+    roll = mlab.roll()
+
+    return dict(
+        azimuth=azimuth,
+        elevation=elevation,
+        distance=distance,
+        focalpoint=focalpoint,
+        roll=roll,
+    )
+
+
+def set_camera_view(mlab, params_dict):
+    mlab.view(**params_dict)
+    # roll = mlab.roll()
+
+
 def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     from mayavi import mlab
 
@@ -186,13 +207,19 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     frames = [cv2.imread(file_path) for file_path in file_paths]
     h, w = frames[0].shape[:2]
 
+    view_params = None
+
     if fig is None:
         fig = mlab.figure(
-            size=(900, 1000),
+            size=(1320, 1000),
             bgcolor=bkg_col_rgb
         )
+        first_fig = True
     else:
         mlab.clf(figure=fig)
+        first_fig = False
+
+        view_params = get_camera_view(mlab)
 
     # vid_len = len(file_paths)
     # z = (vid_len - 1) * z_gap
@@ -207,8 +234,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     # box_z = [k[2] for k in containing_box]
 
     # mlab.plot3d(box_x, box_y, box_z, color=(1, 1, 1), line_width=2.0, tube_radius=1.5)
-    text_y = 5
-    text_img = np.full(((900, 1000, 3)), bkg_col, dtype=np.uint8)
+    text_img = np.full(((1000, 600, 3)), bkg_col, dtype=np.uint8)
 
     for frame_id, frame in enumerate(frames):
         cu_z = (frame_id + 1) * z_gap
@@ -216,9 +242,9 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
         file_id = int(file_ids[frame_id])
         file_name = file_names[frame_id]
         # mlab.text(w/2, 0, file_name, z=cu_z, figure=fig, color=frg_col_rgb, line_width=1.0)
-        file_txt = f'image {file_id+1}'
+        file_txt = f'image {file_id + 1}'
 
-        frame, text_width, text_height = write_text(frame, file_txt, 5, 5, frg_col, font_size=32)
+        frame, _, _ = write_text(frame, file_txt, 5, 5, frg_col, font_size=48)
 
         show_img_rgb(frame, cu_z, mlab)
 
@@ -233,8 +259,16 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     # mlab.draw()
     # mlab.show()
 
-    cv2.imshow('text_img', text_img)
-    k = cv2.waitKey(0)
+    if first_fig:
+        cv2.imshow('text_img', text_img)
+        k = cv2.waitKey(0)
+        if k == 27:
+            exit()
+        view_params = get_camera_view(mlab)
+    else:
+        set_camera_view(mlab, view_params)
+
+    text_x = text_y = 5
 
     for ann_id, ann in enumerate(obj_annotations):
         bboxes = ann['bboxes']
@@ -245,38 +279,40 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
 
         col_rgb = to_rgb(col)
 
-        text_x = 5
-
         for bbox_id, bbox in enumerate(bboxes):
-            if bbox is None:
-                continue
+            if bbox is not None:
 
-            (x, y, width, height) = tuple(bbox)
-            xmin, ymin, xmax, ymax = int(x), int(y), int(x + width), int(y + height)
+                (x, y, width, height) = tuple(bbox)
+                xmin, ymin, xmax, ymax = int(x), int(y), int(x + width), int(y + height)
 
-            assert ymax > ymin and xmax > xmin, f"invalid bbox: {bbox}"
+                assert ymax > ymin and xmax > xmin, f"invalid bbox: {bbox}"
 
-            cu_z = (bbox_id + 1) * z_gap
+                cu_z = (bbox_id + 1) * z_gap
 
-            xs = [xmin, xmin, xmax, xmax, xmin]
-            ys = [ymin, ymax, ymax, ymin, ymin]
-            zs = [cu_z, ] * len(xs)
+                xs = [xmin, xmin, xmax, xmax, xmin]
+                ys = [ymin, ymax, ymax, ymin, ymin]
+                zs = [cu_z, ] * len(xs)
 
-            mlab.plot3d(xs, ys, zs, color=col_rgb, line_width=3.0, tube_radius=3.0)
+                mlab.plot3d(xs, ys, zs, color=col_rgb, line_width=3.0, tube_radius=3.0)
+                set_camera_view(mlab, view_params)
 
-            if prev_bbox is not None:
-                xmin_, ymin_, xmax_, ymax_, pre_z = prev_bbox
-                xs_ = [xmin, xmin_, xmin_, xmin, xmax, xmax_, xmax_, xmax]
-                ys_ = [ymin, ymin_, ymax_, ymax, ymax, ymax_, ymin_, ymin]
-                zs_ = [cu_z, pre_z, pre_z, cu_z, cu_z, pre_z, pre_z, cu_z]
-                mlab.plot3d(xs_, ys_, zs_, color=col_rgb, line_width=1.0, tube_radius=1.0)
+                if prev_bbox is not None:
+                    xmin_, ymin_, xmax_, ymax_, pre_z = prev_bbox
+                    xs_ = [xmin, xmin_, xmin_, xmin, xmax, xmax_, xmax_, xmax]
+                    ys_ = [ymin, ymin_, ymax_, ymax, ymax, ymax_, ymin_, ymin]
+                    zs_ = [cu_z, pre_z, pre_z, cu_z, cu_z, pre_z, pre_z, cu_z]
+                    mlab.plot3d(xs_, ys_, zs_, color=col_rgb, line_width=2.0, tube_radius=2.0)
+                    set_camera_view(mlab, view_params)
 
-            bbox_txt = f' {int(xmin)} {int(ymin)} {int(xmax)} {int(ymax)}'
-            text_img, text_width, text_height = write_text(text_img, bbox_txt, text_x, text_y, col)
-            text_x += text_width
+                # bbox_txts.append(bbox_txt)
+                prev_bbox = [xmin, ymin, xmax, ymax, cu_z]
 
-            # bbox_txts.append(bbox_txt)
-            prev_bbox = [xmin, ymin, xmax, ymax, cu_z]
+                bbox_txt = f'{int(xmin)}, {int(ymin)}, {int(xmax)}, {int(ymax)}, '
+            else:
+                prev_bbox = None
+                bbox_txt = f'NA, NA, NA, NA, '
+
+            text_img, text_x, text_y = write_text(text_img, bbox_txt, text_x, text_y, col)
 
             k = cv2.waitKey(100)
             if k == 27:
@@ -285,14 +321,13 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
         class_id = int(ann['category_id'])
         class_name = id_to_name_map[class_id]
 
-        text_img, text_width, text_height = write_text(text_img, f' {class_name}', text_x, text_y, col)
+        text_img, text_x, text_y = write_text(text_img, f'{class_name}, ', text_x, text_y, col)
 
-        # bbox_txt = ' '.join(bbox_txts)
-        text_y += text_height
-
-        k = cv2.waitKey(0)
+        k = cv2.waitKey(500)
         if k == 27:
             sys.exit()
+
+    text_img, text_x, text_y = write_text(text_img, 'EOS', text_x, text_y, frg_col)
 
     k = cv2.waitKey(0)
     if k == 27:
@@ -424,12 +459,12 @@ def generate_video_annotations(
             from tasks.visualization import vis_utils
             vis_utils.vis_json_ann(video, object_anns, category_id_to_name_map, image_dir)
 
-        yield (
-            video,
-            category_id_to_name_map,
-            object_anns,
-            image_dir,
-        )
+        # yield (
+        #     video,
+        #     category_id_to_name_map,
+        #     object_anns,
+        #     image_dir,
+        # )
 
 
 def create_video_tf_example(
@@ -449,7 +484,6 @@ def create_video_tf_example(
     video_id = video['id']
 
     vid_len = len(file_names)
-
 
     file_paths = [os.path.join(image_dir, filename) for filename in file_names]
     # file_paths = [os.path.realpath(file_path) for file_path in file_paths]

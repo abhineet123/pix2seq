@@ -90,6 +90,10 @@ python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_0:gz:len-2:s
 
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_0:gz:len-2:strd-10:fg-10
 
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_0:gz:len-3:strd-10:fg-10
+
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_0:gz:len-6:strd-10:fg-10
+
 <a id="0_19___detrac_"></a>
 ## 0_19       @ detrac-->p2s_vid_tfrecord
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:gz:len-2:strd-1
