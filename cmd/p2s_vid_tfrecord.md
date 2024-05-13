@@ -82,6 +82,12 @@ python data/scripts/create_video_tfrecord.py cfg=gram:0_1:frame-0_2000:gz:len-16
 # idot       @ gram-->p2s_vid_tfrecord
 python data/scripts/create_video_tfrecord.py cfg=idot:gz:len-9:strd-1
 
+python data/scripts/create_video_tfrecord.py cfg=idot:8_8:gz:len-2:strd-10:fg-10
+
+python data/scripts/create_video_tfrecord.py cfg=idot:8_8:gz:len-3:strd-20:fg-10
+
+python data/scripts/create_video_tfrecord.py cfg=idot:8_8:gz:len-6:strd-50:fg-10
+
 <a id="detra_c_"></a>
 # detrac
 <a id="0_0___detrac_"></a>
