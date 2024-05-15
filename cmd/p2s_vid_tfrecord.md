@@ -8,6 +8,7 @@
             - [3000_5000       @ len-14/0_1/gram](#3000_5000___len_14_0_1_gra_m_)
         - [len-16       @ 0_1/gram](#len_16___0_1_gram_)
 - [idot       @ gram](#idot___gram_)
+    - [8_8       @ idot](#8_8___idot_)
 - [detrac](#detra_c_)
     - [0_0       @ detrac](#0_0___detrac_)
     - [0_19       @ detrac](#0_19___detrac_)
@@ -81,7 +82,8 @@ python data/scripts/create_video_tfrecord.py cfg=gram:0_1:frame-0_2000:gz:len-16
 <a id="idot___gram_"></a>
 # idot       @ gram-->p2s_vid_tfrecord
 python data/scripts/create_video_tfrecord.py cfg=idot:gz:len-9:strd-1
-
+<a id="8_8___idot_"></a>
+## 8_8       @ idot-->p2s_vid_tfrecord
 python data/scripts/create_video_tfrecord.py cfg=idot:8_8:gz:len-2:strd-10:fg-10
 
 python data/scripts/create_video_tfrecord.py cfg=idot:8_8:gz:len-3:strd-20:fg-10

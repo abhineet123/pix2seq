@@ -55,6 +55,58 @@ STANDARD_COLORS = [
     'WhiteSmoke', 'Yellow', 'YellowGreen'
 ]
 
+from PIL import Image, ImageDraw, ImageFont
+
+def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=1, bb=0):
+    image = Image.fromarray(img_np)
+    width, height = image.size
+    draw = ImageDraw.Draw(image)
+
+    # font = ImageFont.load_default(font_size)
+    font = ImageFont.truetype("arial.ttf", font_size)
+    # font = ImageFont.truetype("sans-serif.ttf", font_size)
+
+    textheight = font_size
+
+    words = text.split(', ')
+
+
+    if fill:
+        left, top, right, bottom = draw.textbbox((x, y,), text, font=font)
+        ImageDraw.floodfill(image, ((left, top), (right, bottom)), (0, 0, 0), border=None, thresh=0)
+
+    x_, y_ = x, y
+    for word_id, word in enumerate(words):
+
+        if word_id < len(words) - 1:
+            word = f'{word}, '
+
+        textwidth = draw.textlength(word, font=font)
+
+        if x_ + textwidth >= width:
+            x_ = 5
+            y_ += textheight
+
+        # _, _, textwidth, textheight = draw.textbbox((0, 0), text=text, font=font)
+
+        draw.text((x_, y_), word, font=font, fill=col)
+
+        x_ += textwidth
+
+        img_np = np.array(image)
+
+        if show:
+            cv2.imshow('Output Sequence', img_np)
+            cv2.waitKey(wait)
+        # out_x, out_y = x + textwidth, y + textheight
+
+    if bb:
+        text_bb = draw.textbbox((x, y,), text, font=font)
+        return img_np, x_, y_, text_bb
+
+    return img_np, x_, y_
+
+
 
 def vis_json_ann(video, object_anns, category_id_to_name_map, image_dir, is_video=True):
     from eval_utils import draw_box, annotate

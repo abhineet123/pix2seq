@@ -26,6 +26,9 @@ import tensorflow as tf
 
 import numpy as np
 
+from tasks.visualization import vis_utils
+from eval_utils import col_bgr
+
 
 def split_runs(run_ids, starts, lengths, max_length):
     """divide over-long runs into segments"""
@@ -156,8 +159,10 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
     """
     assert len(mask.shape) == 2, "only greyscale masks are supported"
 
-    pixels = mask.flatten()
-    pixels = np.concatenate([[0], pixels, [0]])
+    n_rows, n_cols = mask.shape
+
+    mask_flat = mask.flatten()
+    pixels = np.concatenate([[0], mask_flat, [0]])
     """the +1 in the original code was to convert indices from 0-based to 1-based"""
     runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
 
@@ -173,6 +178,71 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
 
     runs[1::2] -= runs[::2]
     starts, lengths = runs[::2], runs[1::2]
+
+
+    mask_vis = mask * 255
+    mask_vis_ = cv2.resize(mask_vis, (640, 640))
+    cv2.imshow('mask_vis_', mask_vis_)
+
+    mask_vis_rgb = np.stack((mask_vis,) * 3, axis=2)
+    text_x = text_y = 5
+
+    cols = (
+        'green', 'red', 'deep_sky_blue',
+        'yellow', 'forest_green', 'cyan',
+        'magenta', 'purple', 'orange',
+        'maroon', 'peach_puff', 'dark_orange',
+        'slate_gray', 'pale_turquoise', 'green_yellow',
+    )
+
+    # col = (0, 255, 0)
+    frg_col = (255, 255, 255)
+
+    vis_size = 960
+    resize_y, resize_x = float(vis_size) / n_rows, float(vis_size) / n_cols
+
+    text_img = np.full(((vis_size, 600, 3)), (0, 0, 0), dtype=np.uint8)
+
+
+    for run_id, (start, length) in enumerate(zip(starts, lengths)):
+        mask_flat_bool = np.zeros_like(mask_flat, dtype=bool)
+        mask_flat_bool[start:start+length] = True
+        mask_bool = np.reshape(mask_flat_bool, (n_rows, n_cols))
+        # r, c = np.unravel_index([start, start + length], (n_rows, n_cols))
+        # mask_vis_rgb[r[0]:r[1], c[0]:c[1], :] = col
+
+        col_id = run_id % len(cols)
+        col = col_bgr[cols[col_id]]
+
+        run_center = int(start + length / 2)
+        r, c = np.unravel_index([run_center, ], (n_rows, n_cols))
+        r, c = int(r[0]), int(c[0])
+        mask_vis_rgb[mask_bool] = col
+
+        run_txt = f'{int(start)}, {int(length)}'
+
+        text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt + ', ', text_x, text_y, col,
+                                                                 wait=100, bb=1, show=0)
+
+        mask_vis_rgb_ = cv2.resize(mask_vis_rgb, (vis_size, vis_size))
+
+        mask_vis_rgb_ = np.concatenate((mask_vis_rgb_, text_img), axis=1)
+        
+        # mask_vis_rgb_, text_bb = vis_utils.write_text(mask_vis_rgb_, run_txt, 5, 5, col, font_size=24, show=0, bb=1)
+
+        left, top, right, bottom = text_bb
+        text_bb_x, text_bb_y = (left + right) / 2 + vis_size, bottom + 10
+
+        c, r = int(c*resize_x), int(r*resize_x)
+
+        mask_vis_rgb_ = cv2.arrowedLine(mask_vis_rgb_, (c, r), (int(text_bb_x), int(text_bb_y)), col, 1, tipLength=0.01)
+        cv2.imshow('mask_vis_rgb_', mask_vis_rgb_)
+        cv2.waitKey(100)
+
+
+        # mask_vis_rgb[r[0]:r[1], c[0]:c[1]] = (0, 255, 0)
+    vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col)
+    cv2.waitKey(0)
 
     if max_length > 0:
         overlong_runs = np.nonzero(lengths > max_length)[0]
@@ -193,8 +263,6 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
 
     """additional offset to convert lengths into vocabulary tokens"""
     lengths += lengths_offset
-
-    n_rows, n_cols = mask.shape
 
     starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
 

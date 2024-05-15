@@ -12,10 +12,10 @@ sys.path.append(dproc_path)
 
 # import numpy as np
 
-from PIL import Image, ImageDraw, ImageFont
 
 import paramparse
 from data.scripts import tfrecord_lib
+from tasks.visualization import vis_utils
 
 from eval_utils import col_bgr
 
@@ -97,45 +97,6 @@ def load_ytvis_annotations(annotation_path, vid_id_offset):
     return video_info, category_id_to_name_map, vid_to_ann, annotations
 
 
-def write_text(img_np, text, x, y, col, font_size=24):
-    image = Image.fromarray(img_np)
-    width, height = image.size
-    draw = ImageDraw.Draw(image)
-
-    # font = ImageFont.load_default(font_size)
-    font = ImageFont.truetype("arial.ttf", font_size)
-    # font = ImageFont.truetype("sans-serif.ttf", font_size)
-
-    textheight = font_size
-
-    words = text.split(', ')
-
-    x_, y_ = x, y
-    for word_id, word in enumerate(words):
-
-        if word_id < len(words) - 1:
-            word = f'{word}, '
-
-        textwidth = draw.textlength(word, font=font)
-        
-        if x_ + textwidth >= width:
-            x_ = 5
-            y_ += textheight
-
-        # _, _, textwidth, textheight = draw.textbbox((0, 0), text=text, font=font)
-
-        draw.text((x_, y_), word, font=font, fill=col)
-
-        x_ += textwidth
-
-        img_np = np.array(image)
-        cv2.imshow('text_img', img_np)
-        cv2.waitKey(10)
-        # out_x, out_y = x + textwidth, y + textheight
-
-    return img_np, x_, y_
-
-
 def show_img_rgb(frame, cu_z, mlab):
     from tvtk.api import tvtk
 
@@ -192,7 +153,13 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
 
     z_gap = 500
 
-    cols = ('green', 'red', 'deep_sky_blue', 'yellow', 'forest_green', 'cyan', 'magenta', 'purple', 'orange')
+    cols = (
+        'green', 'red', 'deep_sky_blue',
+        'yellow', 'forest_green', 'cyan',
+        'magenta', 'purple', 'orange',
+        'maroon', 'peach_puff', 'dark_orange',
+        'slate_gray', 'pale_turquoise', 'green_yellow',
+    )
 
     bkg_col = 'black'
     # bkg_col = 'white'
@@ -211,6 +178,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
 
     if fig is None:
         fig = mlab.figure(
+            'Video Clip',
             size=(1320, 1000),
             bgcolor=bkg_col_rgb
         )
@@ -244,7 +212,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
         # mlab.text(w/2, 0, file_name, z=cu_z, figure=fig, color=frg_col_rgb, line_width=1.0)
         file_txt = f'image {file_id + 1}'
 
-        frame, _, _ = write_text(frame, file_txt, 5, 5, frg_col, font_size=48)
+        frame, _, _ = vis_utils.write_text(frame, file_txt, 5, 5, frg_col, font_size=48)
 
         show_img_rgb(frame, cu_z, mlab)
 
@@ -260,7 +228,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     # mlab.show()
 
     if first_fig:
-        cv2.imshow('text_img', text_img)
+        cv2.imshow('Output Sequence', text_img)
         k = cv2.waitKey(0)
         if k == 27:
             exit()
@@ -312,7 +280,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
                 prev_bbox = None
                 bbox_txt = f'NA, NA, NA, NA, '
 
-            text_img, text_x, text_y = write_text(text_img, bbox_txt, text_x, text_y, col)
+            text_img, text_x, text_y = vis_utils.write_text(text_img, bbox_txt, text_x, text_y, col)
 
             k = cv2.waitKey(100)
             if k == 27:
@@ -321,13 +289,13 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
         class_id = int(ann['category_id'])
         class_name = id_to_name_map[class_id]
 
-        text_img, text_x, text_y = write_text(text_img, f'{class_name}, ', text_x, text_y, col)
+        text_img, text_x, text_y = vis_utils.write_text(text_img, f'{class_name}, ', text_x, text_y, col)
 
         k = cv2.waitKey(500)
         if k == 27:
             sys.exit()
 
-    text_img, text_x, text_y = write_text(text_img, 'EOS', text_x, text_y, frg_col)
+    text_img, text_x, text_y = vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col)
 
     k = cv2.waitKey(0)
     if k == 27:
