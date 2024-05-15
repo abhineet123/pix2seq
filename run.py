@@ -19,7 +19,8 @@ import json
 import os
 import sys
 
-sys.path.append("/home/abhineet/ipsc/ipsc_data_processing")
+dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
+sys.path.append(dproc_path)
 
 # env = dict(os.environ)
 # print(env)
@@ -285,7 +286,7 @@ def main(unused_argv):
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):
             csv_dir_name = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
-                              model_lib, tf)
+                                    model_lib, tf)
             # if cfg.eval.pipeline:
             #     continue
 

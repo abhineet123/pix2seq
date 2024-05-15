@@ -1,3 +1,4 @@
+import sys
 import abc
 import copy
 import collections
@@ -24,6 +25,9 @@ import six
 from six.moves import range
 from six.moves import zip
 import tensorflow.compat.v1 as tf
+
+dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
+sys.path.append(dproc_path)
 
 from eval_utils import draw_box, annotate, resize_ar_video, resize_ar
 
@@ -57,6 +61,7 @@ STANDARD_COLORS = [
 
 from PIL import Image, ImageDraw, ImageFont
 
+
 def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=1, bb=0):
     image = Image.fromarray(img_np)
     width, height = image.size
@@ -69,7 +74,6 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=1, b
     textheight = font_size
 
     words = text.split(', ')
-
 
     if fill:
         left, top, right, bottom = draw.textbbox((x, y,), text, font=font)
@@ -105,7 +109,6 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=1, b
         return img_np, x_, y_, text_bb
 
     return img_np, x_, y_
-
 
 
 def vis_json_ann(video, object_anns, category_id_to_name_map, image_dir, is_video=True):

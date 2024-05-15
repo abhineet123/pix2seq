@@ -11,6 +11,7 @@
             - [seq-0       @ sz-80/res-640/16_53](#seq_0___sz_80_res_640_16_5_3_)
             - [seq-1       @ sz-80/res-640/16_53](#seq_1___sz_80_res_640_16_5_3_)
         - [sz-160       @ res-640/16_53](#sz_160___res_640_16_5_3_)
+        - [sz-640-sub-8       @ res-640/16_53](#sz_640_sub_8___res_640_16_5_3_)
     - [res-320       @ 16_53](#res_320___16_5_3_)
         - [sz-80       @ res-320/16_53](#sz_80___res_320_16_5_3_)
         - [sz-80-aug       @ res-320/16_53](#sz_80_aug___res_320_16_5_3_)
@@ -62,6 +63,10 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-80:res-640:gz:seq-
 <a id="sz_160___res_640_16_5_3_"></a>
 ### sz-160       @ res-640/16_53-->p2s_seg_tfrecord
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:sz-160:res-640
+
+<a id="sz_640_sub_8___res_640_16_5_3_"></a>
+### sz-640-sub-8       @ res-640/16_53-->p2s_seg_tfrecord
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:sz-640:res-640:sub-8
 
 <a id="res_320___16_5_3_"></a>
 ## res-320       @ 16_53-->p2s_seg_tfrecord
