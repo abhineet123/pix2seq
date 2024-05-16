@@ -134,7 +134,7 @@ def load_seg_annotations(annotation_path):
 
 def generate_annotations(
         params,
-        class_to_col,
+        class_id_to_col,
         metrics,
         image_infos,
         vid_infos,
@@ -144,7 +144,7 @@ def generate_annotations(
 
         yield (
             params,
-            class_to_col,
+            class_id_to_col,
             metrics,
             image_info,
             vid_infos[seq]
@@ -153,14 +153,14 @@ def generate_annotations(
 
 def create_tf_example(
         params,
-        class_to_col,
+        class_id_to_col,
         metrics,
         image_info,
         vid_info):
     """
     :param Params params:
     """
-    n_classes = len(class_to_col)
+    n_classes = len(class_id_to_col)
 
     image_height = image_info['height']
     image_width = image_info['width']
@@ -229,7 +229,7 @@ def create_tf_example(
         rle, _ = task_utils.mask_to_rle(
             image=image,
             mask=mask,
-            class_to_col=class_to_col,
+            class_id_to_col=class_id_to_col,
             max_length=params.max_length,
             starts_2d=params.starts_2d,
             starts_offset=params.starts_offset,
@@ -273,7 +273,7 @@ def create_tf_example(
         rle_sub, _ = task_utils.mask_to_rle(
             image=image,
             mask=mask,
-            class_to_col=class_to_col,
+            class_id_to_col=class_id_to_col,
             max_length=max_length_sub,
             starts_2d=params.starts_2d,
             starts_offset=params.starts_offset,
@@ -334,13 +334,15 @@ def main():
 
     class_info = [k.strip() for k in open(params.class_names_path, 'r').readlines() if k.strip()]
     class_names, class_cols = zip(*[[m.strip() for m in k.split('\t')] for k in class_info])
+    # class_names, class_cols = list(class_names), list(class_cols),
     if 'background' not in class_names:
         assert 'black' not in class_cols, "black should only be used for background"
-        class_names.append('background')
-        class_cols.append('black')
+        class_names = class_names + ('background',)
+        class_cols = class_cols + ('black',)
 
-    class_to_id = {x: i for (i, x) in enumerate(class_names)}
-    class_to_col = {x: c for (x, c) in zip(class_names, class_cols)}
+    class_id_to_col = {i: x for (i, x) in enumerate(class_cols)}
+    class_id_to_name = {i: x for (i, x) in enumerate(class_names)}
+    # class_to_col = {x: c for (x, c) in zip(class_names, class_cols)}
 
     if params.patch_width <= 0:
         params.patch_width = params.patch_height
@@ -435,7 +437,7 @@ def main():
     )
     annotations_iter = generate_annotations(
         params=params,
-        class_to_col=class_to_col,
+        class_id_to_col=class_id_to_col,
         metrics=metrics,
         image_infos=image_infos,
         vid_infos=vid_infos,

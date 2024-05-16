@@ -147,14 +147,14 @@ def check_rle(image, mask, rle, starts_offset, lengths_offset,
             exit()
 
 
-def vis_rle(starts, lengths, class_ids, class_to_col, image, mask, mask_flat):
+def vis_rle(starts, lengths, class_ids, class_id_to_col, image, mask, mask_flat):
     n_rows, n_cols = mask.shape
 
-    mask_vis_rgb = mask_id_to_vis_rgb(mask, class_to_col)
+    mask_vis_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
     mask_vis_ = cv2.resize(mask_vis_rgb, (640, 640))
     cv2.imshow('mask_vis_', mask_vis_)
 
-    vis_image = blend_mask(mask, image, class_to_col)
+    vis_image = blend_mask(mask, image, class_id_to_col)
 
     text_x = text_y = 5
     cols = (
@@ -166,9 +166,9 @@ def vis_rle(starts, lengths, class_ids, class_to_col, image, mask, mask_flat):
     )
     # col = (0, 255, 0)
     frg_col = (255, 255, 255)
-    vis_size = 960
+    vis_size = 480
     resize_y, resize_x = float(vis_size) / n_rows, float(vis_size) / n_cols
-    text_img = np.full(((vis_size, 600, 3)), (0, 0, 0), dtype=np.uint8)
+    text_img = np.full(((vis_size*2, 600, 3)), (0, 0, 0), dtype=np.uint8)
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
         mask_flat_bool = np.zeros_like(mask_flat, dtype=bool)
         mask_flat_bool[start:start + length] = True
@@ -190,7 +190,9 @@ def vis_rle(starts, lengths, class_ids, class_to_col, image, mask, mask_flat):
                                                                  wait=100, bb=1, show=0)
 
         mask_vis_rgb_ = cv2.resize(mask_vis_rgb, (vis_size, vis_size))
+        vis_image_ = cv2.resize(vis_image, (vis_size, vis_size))
 
+        mask_vis_rgb_ = np.concatenate((vis_image_, mask_vis_rgb_), axis=0)
         mask_vis_rgb_ = np.concatenate((mask_vis_rgb_, text_img), axis=1)
 
         # mask_vis_rgb_, text_bb = vis_utils.write_text(mask_vis_rgb_, run_txt, 5, 5, col, font_size=24, show=0, bb=1)
@@ -198,7 +200,7 @@ def vis_rle(starts, lengths, class_ids, class_to_col, image, mask, mask_flat):
         left, top, right, bottom = text_bb
         text_bb_x, text_bb_y = (left + right) / 2 + vis_size, bottom + 10
 
-        c, r = int(c * resize_x), int(r * resize_x)
+        c, r = int(c * resize_x), int(r * resize_x) + vis_size
 
         mask_vis_rgb_ = cv2.arrowedLine(mask_vis_rgb_, (c, r), (int(text_bb_x), int(text_bb_y)), col, 1, tipLength=0.01)
         cv2.imshow('mask_vis_rgb_', mask_vis_rgb_)
@@ -209,7 +211,7 @@ def vis_rle(starts, lengths, class_ids, class_to_col, image, mask, mask_flat):
     cv2.waitKey(0)
 
 
-def mask_to_rle(image, mask, class_to_col, max_length, starts_2d, starts_offset, lengths_offset, subsample, vis=1):
+def mask_to_rle(image, mask, class_id_to_col, max_length, starts_2d, starts_offset, lengths_offset, subsample, vis=1):
     """
     https://www.kaggle.com/stainsby/fast-tested-rle
     https://ccshenyltw.medium.com/run-length-encode-and-decode-a33383142e6b
@@ -221,7 +223,7 @@ def mask_to_rle(image, mask, class_to_col, max_length, starts_2d, starts_offset,
     """
     assert len(mask.shape) == 2, "only greyscale masks are supported"
 
-    n_classes = len(class_to_col)
+    n_classes = len(class_id_to_col)
     if n_classes > 2:
         multi_class = True
     else:
@@ -260,7 +262,7 @@ def mask_to_rle(image, mask, class_to_col, max_length, starts_2d, starts_offset,
         class_ids = [mask_flat[k] for k in starts]
 
     if vis:
-        vis_rle(starts, lengths, class_ids, class_to_col, image, mask, mask_flat)
+        vis_rle(starts, lengths, class_ids, class_id_to_col, image, mask, mask_flat)
 
     """
     lengths goes from 1 to max_length so 1 must be subtracted before normalizing so lengths_norm starts from 0
