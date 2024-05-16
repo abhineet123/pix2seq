@@ -135,6 +135,7 @@ def load_seg_annotations(annotation_path):
 def generate_annotations(
         params,
         class_id_to_col,
+        class_id_to_name,
         metrics,
         image_infos,
         vid_infos,
@@ -145,6 +146,7 @@ def generate_annotations(
         yield (
             params,
             class_id_to_col,
+            class_id_to_name,
             metrics,
             image_info,
             vid_infos[seq]
@@ -154,6 +156,7 @@ def generate_annotations(
 def create_tf_example(
         params,
         class_id_to_col,
+        class_id_to_name,
         metrics,
         image_info,
         vid_info):
@@ -230,6 +233,7 @@ def create_tf_example(
             image=image,
             mask=mask,
             class_id_to_col=class_id_to_col,
+            class_id_to_name=class_id_to_name,
             max_length=params.max_length,
             starts_2d=params.starts_2d,
             starts_offset=params.starts_offset,
@@ -274,6 +278,7 @@ def create_tf_example(
             image=image,
             mask=mask,
             class_id_to_col=class_id_to_col,
+            class_id_to_name=class_id_to_name,
             max_length=max_length_sub,
             starts_2d=params.starts_2d,
             starts_offset=params.starts_offset,
@@ -337,8 +342,8 @@ def main():
     # class_names, class_cols = list(class_names), list(class_cols),
     if 'background' not in class_names:
         assert 'black' not in class_cols, "black should only be used for background"
-        class_names = class_names + ('background',)
-        class_cols = class_cols + ('black',)
+        class_names = ('background',) + class_names
+        class_cols = ('black',) + class_cols
 
     class_id_to_col = {i: x for (i, x) in enumerate(class_cols)}
     class_id_to_name = {i: x for (i, x) in enumerate(class_names)}
@@ -389,7 +394,7 @@ def main():
     if params.subsample > 1:
         out_name = f'{out_name}-sub_{params.subsample}'
 
-    image_infos, class_id_to_name = load_seg_annotations(json_path)
+    image_infos, _ = load_seg_annotations(json_path)
 
     if not params.output_dir:
         params.output_dir = os.path.join(params.db_path, 'tfrecord')
@@ -438,6 +443,7 @@ def main():
     annotations_iter = generate_annotations(
         params=params,
         class_id_to_col=class_id_to_col,
+        class_id_to_name=class_id_to_name,
         metrics=metrics,
         image_infos=image_infos,
         vid_infos=vid_infos,

@@ -147,7 +147,18 @@ def check_rle(image, mask, rle, starts_offset, lengths_offset,
             exit()
 
 
-def vis_rle(starts, lengths, class_ids, class_id_to_col, image, mask, mask_flat):
+def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_flat):
+    n_runs = len(starts)
+    min_col, max_col = 100, 200
+    n_col_levels = int(n_runs ** (1. / 3) + 1)
+    col_range = max_col - min_col
+    assert n_col_levels <= col_range, "n_col_levels exceeds col_range"
+    col_levels = [int(x) for x in np.linspace(
+        min_col, max_col,
+        n_col_levels, dtype=int)]
+    import itertools
+    cols = list(itertools.product(col_levels, repeat=3))
+
     n_rows, n_cols = mask.shape
 
     mask_vis_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
@@ -157,18 +168,11 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, image, mask, mask_flat)
     vis_image = blend_mask(mask, image, class_id_to_col)
 
     text_x = text_y = 5
-    cols = (
-        'green', 'red', 'deep_sky_blue',
-        'yellow', 'forest_green', 'cyan',
-        'magenta', 'purple', 'orange',
-        'maroon', 'peach_puff', 'dark_orange',
-        'slate_gray', 'pale_turquoise', 'green_yellow',
-    )
     # col = (0, 255, 0)
     frg_col = (255, 255, 255)
     vis_size = 480
     resize_y, resize_x = float(vis_size) / n_rows, float(vis_size) / n_cols
-    text_img = np.full(((vis_size*2, 600, 3)), (0, 0, 0), dtype=np.uint8)
+    text_img = np.full(((vis_size * 2, 600, 3)), (0, 0, 0), dtype=np.uint8)
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
         mask_flat_bool = np.zeros_like(mask_flat, dtype=bool)
         mask_flat_bool[start:start + length] = True
@@ -177,17 +181,23 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, image, mask, mask_flat)
         # mask_vis_rgb[r[0]:r[1], c[0]:c[1], :] = col
 
         col_id = run_id % len(cols)
-        col = col_bgr[cols[col_id]]
+        col = cols[col_id]
 
         run_center = int(start + length / 2)
         r, c = np.unravel_index([run_center, ], (n_rows, n_cols))
         r, c = int(r[0]), int(c[0])
         mask_vis_rgb[mask_bool] = col
 
-        run_txt = f'{int(start)}, {int(length)}'
+        run_txt = f'{int(start)}, {int(length)}, '
+        if class_ids is not None:
+            class_id = class_ids[run_id]
+            class_name = class_id_to_name[class_id]
+            run_txt = f'{run_txt}, {class_name}, '
 
-        text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt + ', ', text_x, text_y, col,
+        text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
                                                                  wait=100, bb=1, show=0)
+        if run_id == n_runs - 1:
+            text_img, _, _ = vis_utils.write_text(text_img, 'EOS', text_x, text_y, (255, 255, 255), show=0)
 
         mask_vis_rgb_ = cv2.resize(mask_vis_rgb, (vis_size, vis_size))
         vis_image_ = cv2.resize(vis_image, (vis_size, vis_size))
@@ -205,13 +215,11 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, image, mask, mask_flat)
         mask_vis_rgb_ = cv2.arrowedLine(mask_vis_rgb_, (c, r), (int(text_bb_x), int(text_bb_y)), col, 1, tipLength=0.01)
         cv2.imshow('mask_vis_rgb_', mask_vis_rgb_)
         cv2.waitKey(100)
-
-        # mask_vis_rgb[r[0]:r[1], c[0]:c[1]] = (0, 255, 0)
-    vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col)
     cv2.waitKey(0)
 
 
-def mask_to_rle(image, mask, class_id_to_col, max_length, starts_2d, starts_offset, lengths_offset, subsample, vis=1):
+def mask_to_rle(image, mask, class_id_to_col, class_id_to_name,
+                max_length, starts_2d, starts_offset, lengths_offset, subsample, vis=1):
     """
     https://www.kaggle.com/stainsby/fast-tested-rle
     https://ccshenyltw.medium.com/run-length-encode-and-decode-a33383142e6b
@@ -262,7 +270,9 @@ def mask_to_rle(image, mask, class_id_to_col, max_length, starts_2d, starts_offs
         class_ids = [mask_flat[k] for k in starts]
 
     if vis:
-        vis_rle(starts, lengths, class_ids, class_id_to_col, image, mask, mask_flat)
+        vis_rle(starts, lengths, class_ids,
+                class_id_to_col, class_id_to_name,
+                image, mask, mask_flat)
 
     """
     lengths goes from 1 to max_length so 1 must be subtracted before normalizing so lengths_norm starts from 0
@@ -396,7 +406,7 @@ def mask_id_to_vis_rgb(mask, class_to_col):
     return mask_rgb
 
 
-def mask_id_to_vis(mask, n_classes, class_to_col=None, to_rgb=0):
+def mask_id_to_vis(mask, n_classes, to_rgb=0):
     if n_classes == 3:
         # labels_img[labels_img == 0] = 0
         mask[mask == 1] = 128
