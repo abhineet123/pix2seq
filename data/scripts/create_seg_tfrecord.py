@@ -32,6 +32,7 @@ class Params(paramparse.CFG):
 
     def __init__(self):
         paramparse.CFG.__init__(self, cfg_prefix='p2s_seg_tfrecord')
+        self.class_names_path = ''
         self.db_path = ''
         self.db_suffix = ''
         self.vis = 0
@@ -123,16 +124,17 @@ def load_seg_annotations(annotation_path):
         raise AssertionError(f'Invalid annotation_path: {annotation_path}')
 
     image_info = annotations['images']
-    category_id_to_name_map = dict(
+    class_id_to_name = dict(
         (element['id'], element['name']) for element in annotations['categories'])
 
-    assert 0 not in category_id_to_name_map.keys(), "class IDs must to be > 0"
+    assert 0 not in class_id_to_name.keys(), "class IDs must to be > 0"
 
-    return image_info, category_id_to_name_map
+    return image_info, class_id_to_name
 
 
 def generate_annotations(
         params,
+        class_to_col,
         metrics,
         image_infos,
         vid_infos,
@@ -142,6 +144,7 @@ def generate_annotations(
 
         yield (
             params,
+            class_to_col,
             metrics,
             image_info,
             vid_infos[seq]
@@ -150,12 +153,14 @@ def generate_annotations(
 
 def create_tf_example(
         params,
+        class_to_col,
         metrics,
         image_info,
         vid_info):
     """
     :param Params params:
     """
+    n_classes = len(class_to_col)
 
     image_height = image_info['height']
     image_width = image_info['width']
@@ -164,6 +169,7 @@ def create_tf_example(
     seq = image_info['seq']
     frame_id = int(image_info['frame_id'])
     mask_filename = image_info['mask_file_name']
+
     image_path = os.path.join(params.db_path, filename)
     mask_image_path = os.path.join(params.db_path, mask_filename)
 
@@ -209,48 +215,48 @@ def create_tf_example(
     if len(mask.shape) == 3:
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
 
-    task_utils.mask_vis_to_id(mask, n_classes=2)
-
-    mask[mask > 0] = 1
-
     n_rows, n_cols = mask.shape
 
     n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
     max_length_sub = int(params.max_length / params.subsample)
 
     if params.subsample <= 1 or params.subsample_method == 1:
+        task_utils.mask_vis_to_id(mask, n_classes=n_classes)
+        # mask[mask > 0] = 1
         """
-        create RLE of full-res mask and sample the starts and lengths thus generated
+        create RLE of full-res mask and subsample the starts and lengths thus generated
         """
         rle, _ = task_utils.mask_to_rle(
-            mask,
+            image=image,
+            mask=mask,
+            class_to_col=class_to_col,
             max_length=params.max_length,
             starts_2d=params.starts_2d,
             starts_offset=params.starts_offset,
             lengths_offset=params.lengths_offset,
             subsample=params.subsample,
         )
-        """reconstruct full-res mask by super sampling / scaling up the starts and lengths"""
-        # mask_rec = task_utils.rle_to_mask(
-        #     rle,
-        #     (n_rows, n_cols),
-        #     max_length=params.max_length,
-        #     starts_2d=params.starts_2d,
-        #     starts_offset=params.starts_offset,
-        #     lengths_offset=params.lengths_offset,
-        #     subsample=params.subsample,
-        # )
-        """reconstruct low-res mask and resize to scale it up"""
-        mask_rec2 = task_utils.rle_to_mask(
-            rle,
-            (n_rows_sub, n_cols_sub),
-            max_length=max_length_sub,
-            starts_2d=params.starts_2d,
-            starts_offset=params.starts_offset,
-            lengths_offset=params.lengths_offset,
-            subsample=1,
-        )
         if params.show:
+            """reconstruct full-res mask by super sampling / scaling up the starts and lengths"""
+            # mask_rec = task_utils.rle_to_mask(
+            #     rle,
+            #     (n_rows, n_cols),
+            #     max_length=params.max_length,
+            #     starts_2d=params.starts_2d,
+            #     starts_offset=params.starts_offset,
+            #     lengths_offset=params.lengths_offset,
+            #     subsample=params.subsample,
+            # )
+            """reconstruct low-res mask and resize to scale it up"""
+            mask_rec2 = task_utils.rle_to_mask(
+                rle,
+                (n_rows_sub, n_cols_sub),
+                max_length=max_length_sub,
+                starts_2d=params.starts_2d,
+                starts_offset=params.starts_offset,
+                lengths_offset=params.lengths_offset,
+                subsample=1,
+            )
             mask_rec2, mask_rec2_vis = resize_mask(mask_rec2, (n_rows, n_cols))
             metrics_ = eval_mask(mask_rec2, mask, rle)
             vis_txt.append(append_metrics(metrics_, metrics['method_1']))
@@ -259,11 +265,15 @@ def create_tf_example(
         """        
         decrease mask resolution by resizing and create RLE of the low-res mask
         """
-        mask_sub = cv2.resize(mask * 255, (n_rows_sub, n_cols_sub))
-        mask_sub[mask_sub > 0] = 1
+        # mask_sub = task_utils.mask_id_to_vis(mask, n_classes=n_classes)
+        mask_sub = cv2.resize(mask, (n_rows_sub, n_cols_sub))
+        task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
+        # mask_sub[mask_sub > 0] = 1
 
         rle_sub, _ = task_utils.mask_to_rle(
-            mask_sub,
+            image=image,
+            mask=mask,
+            class_to_col=class_to_col,
             max_length=max_length_sub,
             starts_2d=params.starts_2d,
             starts_offset=params.starts_offset,
@@ -275,19 +285,19 @@ def create_tf_example(
         metrics_ = dict(rle_len=len(rle))
         append_metrics(metrics_, metrics['method_2'])
 
-        mask_sub_rec = task_utils.rle_to_mask(
-            rle_sub,
-            (n_rows_sub, n_cols_sub),
-            max_length=max_length_sub,
-            starts_2d=params.starts_2d,
-            starts_offset=params.starts_offset,
-            lengths_offset=params.lengths_offset,
-            subsample=0,
-        )
-        mask_sub_rec, mask_sub_rec_vis = resize_mask(mask_sub_rec, (n_rows, n_cols))
-        # metrics_ = eval_mask(mask_sub_rec, mask, rle_sub)
-        # vis_txt.append(append_metrics(metrics_, metrics['method_2']))
         if params.show:
+            mask_sub_rec = task_utils.rle_to_mask(
+                rle_sub,
+                (n_rows_sub, n_cols_sub),
+                max_length=max_length_sub,
+                starts_2d=params.starts_2d,
+                starts_offset=params.starts_offset,
+                lengths_offset=params.lengths_offset,
+                subsample=0,
+            )
+            mask_sub_rec, mask_sub_rec_vis = resize_mask(mask_sub_rec, (n_rows, n_cols))
+            # metrics_ = eval_mask(mask_sub_rec, mask, rle_sub)
+            # vis_txt.append(append_metrics(metrics_, metrics['method_2']))
             vis_imgs.append(mask_sub_rec_vis)
 
     if params.show:
@@ -321,6 +331,16 @@ def main():
     assert params.db_path, "db_path must be provided"
 
     assert params.end_id >= params.start_id, f"invalid end_id: {params.end_id}"
+
+    class_info = [k.strip() for k in open(params.class_names_path, 'r').readlines() if k.strip()]
+    class_names, class_cols = zip(*[[m.strip() for m in k.split('\t')] for k in class_info])
+    if 'background' not in class_names:
+        assert 'black' not in class_cols, "black should only be used for background"
+        class_names.append('background')
+        class_cols.append('black')
+
+    class_to_id = {x: i for (i, x) in enumerate(class_names)}
+    class_to_col = {x: c for (x, c) in zip(class_names, class_cols)}
 
     if params.patch_width <= 0:
         params.patch_width = params.patch_height
@@ -367,7 +387,7 @@ def main():
     if params.subsample > 1:
         out_name = f'{out_name}-sub_{params.subsample}'
 
-    image_infos, category_id_to_name_map, = load_seg_annotations(json_path)
+    image_infos, class_id_to_name = load_seg_annotations(json_path)
 
     if not params.output_dir:
         params.output_dir = os.path.join(params.db_path, 'tfrecord')
@@ -415,6 +435,7 @@ def main():
     )
     annotations_iter = generate_annotations(
         params=params,
+        class_to_col=class_to_col,
         metrics=metrics,
         image_infos=image_infos,
         vid_infos=vid_infos,

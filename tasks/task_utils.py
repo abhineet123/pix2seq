@@ -147,46 +147,16 @@ def check_rle(image, mask, rle, starts_offset, lengths_offset,
             exit()
 
 
-def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subsample):
-    """
-    https://www.kaggle.com/stainsby/fast-tested-rle
-    https://ccshenyltw.medium.com/run-length-encode-and-decode-a33383142e6b
-
-    :param mask:
-    :param max_length:
-    :param starts_2d:
-    :return:
-    """
-    assert len(mask.shape) == 2, "only greyscale masks are supported"
-
+def vis_rle(starts, lengths, class_ids, class_to_col, image, mask, mask_flat):
     n_rows, n_cols = mask.shape
 
-    mask_flat = mask.flatten()
-    pixels = np.concatenate([[0], mask_flat, [0]])
-    """the +1 in the original code was to convert indices from 0-based to 1-based"""
-    runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
-
-    if len(runs) == 0:
-        return [], []
-
-    if len(runs) % 2 != 0:
-        # from datetime import datetime
-        # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
-        # cv2.imwrite(f'annoying_mask_rle_len_{len(runs)}_{time_stamp}.png', mask)
-        # return None
-        raise AssertionError("runs must have even length")
-
-    runs[1::2] -= runs[::2]
-    starts, lengths = runs[::2], runs[1::2]
-
-
-    mask_vis = mask * 255
-    mask_vis_ = cv2.resize(mask_vis, (640, 640))
+    mask_vis_rgb = mask_id_to_vis_rgb(mask, class_to_col)
+    mask_vis_ = cv2.resize(mask_vis_rgb, (640, 640))
     cv2.imshow('mask_vis_', mask_vis_)
 
-    mask_vis_rgb = np.stack((mask_vis,) * 3, axis=2)
-    text_x = text_y = 5
+    vis_image = blend_mask(mask, image, class_to_col)
 
+    text_x = text_y = 5
     cols = (
         'green', 'red', 'deep_sky_blue',
         'yellow', 'forest_green', 'cyan',
@@ -194,19 +164,14 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
         'maroon', 'peach_puff', 'dark_orange',
         'slate_gray', 'pale_turquoise', 'green_yellow',
     )
-
     # col = (0, 255, 0)
     frg_col = (255, 255, 255)
-
     vis_size = 960
     resize_y, resize_x = float(vis_size) / n_rows, float(vis_size) / n_cols
-
     text_img = np.full(((vis_size, 600, 3)), (0, 0, 0), dtype=np.uint8)
-
-
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
         mask_flat_bool = np.zeros_like(mask_flat, dtype=bool)
-        mask_flat_bool[start:start+length] = True
+        mask_flat_bool[start:start + length] = True
         mask_bool = np.reshape(mask_flat_bool, (n_rows, n_cols))
         # r, c = np.unravel_index([start, start + length], (n_rows, n_cols))
         # mask_vis_rgb[r[0]:r[1], c[0]:c[1], :] = col
@@ -227,22 +192,60 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
         mask_vis_rgb_ = cv2.resize(mask_vis_rgb, (vis_size, vis_size))
 
         mask_vis_rgb_ = np.concatenate((mask_vis_rgb_, text_img), axis=1)
-        
+
         # mask_vis_rgb_, text_bb = vis_utils.write_text(mask_vis_rgb_, run_txt, 5, 5, col, font_size=24, show=0, bb=1)
 
         left, top, right, bottom = text_bb
         text_bb_x, text_bb_y = (left + right) / 2 + vis_size, bottom + 10
 
-        c, r = int(c*resize_x), int(r*resize_x)
+        c, r = int(c * resize_x), int(r * resize_x)
 
         mask_vis_rgb_ = cv2.arrowedLine(mask_vis_rgb_, (c, r), (int(text_bb_x), int(text_bb_y)), col, 1, tipLength=0.01)
         cv2.imshow('mask_vis_rgb_', mask_vis_rgb_)
         cv2.waitKey(100)
 
-
         # mask_vis_rgb[r[0]:r[1], c[0]:c[1]] = (0, 255, 0)
     vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col)
     cv2.waitKey(0)
+
+
+def mask_to_rle(image, mask, class_to_col, max_length, starts_2d, starts_offset, lengths_offset, subsample, vis=1):
+    """
+    https://www.kaggle.com/stainsby/fast-tested-rle
+    https://ccshenyltw.medium.com/run-length-encode-and-decode-a33383142e6b
+
+    :param mask:
+    :param max_length:
+    :param starts_2d:
+    :return:
+    """
+    assert len(mask.shape) == 2, "only greyscale masks are supported"
+
+    n_classes = len(class_to_col)
+    if n_classes > 2:
+        multi_class = True
+    else:
+        multi_class = False
+
+    n_rows, n_cols = mask.shape[:2]
+
+    mask_flat = mask.flatten()
+    pixels = np.concatenate([[0], mask_flat, [0]])
+    """the +1 in the original code was to convert indices from 0-based to 1-based"""
+    runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
+
+    if len(runs) == 0:
+        return [], []
+
+    if len(runs) % 2 != 0:
+        # from datetime import datetime
+        # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
+        # cv2.imwrite(f'annoying_mask_rle_len_{len(runs)}_{time_stamp}.png', mask)
+        # return None
+        raise AssertionError("runs must have even length")
+
+    runs[1::2] -= runs[::2]
+    starts, lengths = runs[::2], runs[1::2]
 
     if max_length > 0:
         overlong_runs = np.nonzero(lengths > max_length)[0]
@@ -251,6 +254,14 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
 
     assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
     assert np.all(lengths > 0), "run length cannot be 0"
+
+    class_ids = None
+    if multi_class:
+        class_ids = [mask_flat[k] for k in starts]
+
+    if vis:
+        vis_rle(starts, lengths, class_ids, class_to_col, image, mask, mask_flat)
+
     """
     lengths goes from 1 to max_length so 1 must be subtracted before normalizing so lengths_norm starts from 0
     and un-normalizing works correctly    
@@ -289,7 +300,10 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
         """additional offset to convert starts_rows and starts_cols into vocabulary tokens"""
         starts_rows += starts_offset
         starts_cols += starts_offset
-        rle = [item for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
+        if multi_class:
+            rle = [item for sublist in zip(starts_rows, starts_cols, lengths, class_ids) for item in sublist]
+        else:
+            rle = [item for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
     else:
         n_rows, n_cols = mask.shape
 
@@ -321,7 +335,10 @@ def mask_to_rle(mask, max_length, starts_2d, starts_offset, lengths_offset, subs
         starts += 1
         """additional offset to convert coords into vocabulary tokens"""
         starts += starts_offset
-        rle = [int(item) for sublist in zip(starts, lengths) for item in sublist]
+        if multi_class:
+            rle = [int(item) for sublist in zip(starts, lengths, class_ids) for item in sublist]
+        else:
+            rle = [int(item) for sublist in zip(starts, lengths) for item in sublist]
 
     return rle, rle_norm
 
@@ -341,32 +358,56 @@ def resize_mask(mask, shape):
     return mask, mask_vis
 
 
-def mask_vis_to_id(labels_img, n_classes):
+def mask_vis_to_id(mask, n_classes):
     if n_classes == 3:
-        labels_img[labels_img < 64] = 0
-        labels_img[np.logical_and(labels_img >= 64, labels_img < 192)] = 1
-        labels_img[labels_img >= 192] = 2
+        mask[mask < 64] = 0
+        mask[np.logical_and(mask >= 64, mask < 192)] = 1
+        mask[mask >= 192] = 2
     elif n_classes == 2:
-        labels_img[labels_img < 128] = 0
-        labels_img[labels_img >= 128] = 1
+        mask[mask < 128] = 0
+        mask[mask >= 128] = 1
     else:
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
 
 
-def mask_id_to_vis(labels_img, n_classes, to_rgb=0):
+def blend_mask(mask, image, class_to_col):
+    n_classes = len(class_to_col)
+    """ignore class id 0 for background"""
+    vis_image = np.copy(image)
+
+    for class_id in range(1, n_classes):
+        class_col = class_to_col[class_id]
+        class_col = col_bgr[class_col]
+        class_mask_binary = (mask == class_id)
+        vis_image[class_mask_binary] = vis_image[class_mask_binary] * 0.5 + np.asarray(class_col) * 0.5
+    return vis_image
+
+
+def mask_id_to_vis_rgb(mask, class_to_col):
+    mask_rgb = np.stack((mask,) * 3, axis=2)
+
+    n_classes = len(class_to_col)
+    for class_id in range(n_classes):
+        class_col = class_to_col[class_id]
+        class_col = col_bgr[class_col]
+        mask_rgb[mask == class_id] = class_col
+    return mask_rgb
+
+
+def mask_id_to_vis(mask, n_classes, class_to_col=None, to_rgb=0):
     if n_classes == 3:
         # labels_img[labels_img == 0] = 0
-        labels_img[labels_img == 1] = 128
-        labels_img[labels_img == 2] = 255
+        mask[mask == 1] = 128
+        mask[mask == 2] = 255
     elif n_classes == 2:
         # labels_img[labels_img == 0] = 0
-        labels_img[labels_img == 1] = 255
+        mask[mask == 1] = 255
     else:
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
-    if to_rgb and len(labels_img.shape) == 2:
-        labels_img = np.stack((labels_img,) * 3, axis=2)
+    if to_rgb and len(mask.shape) == 2:
+        mask = np.stack((mask,) * 3, axis=2)
 
-    return labels_img
+    return mask
 
 
 def rle_to_mask(rle, shape, max_length, starts_offset, lengths_offset,
