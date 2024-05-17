@@ -173,6 +173,10 @@ def create_tf_example(
     frame_id = int(image_info['frame_id'])
     mask_filename = image_info['mask_file_name']
 
+    subsample_method = params.subsample_method
+    if params.subsample <= 1:
+        subsample_method = 0
+
     image_path = os.path.join(params.db_path, filename)
     mask_image_path = os.path.join(params.db_path, mask_filename)
 
@@ -219,93 +223,75 @@ def create_tf_example(
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
 
     n_rows, n_cols = mask.shape
+    max_length = params.max_length
 
-    n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
-    max_length_sub = int(params.max_length / params.subsample)
+    if subsample_method == 2:
+        """        
+        decrease mask resolution by resizing and create RLE of the low-res mask
+        """
+        max_length_sub = int(max_length / params.subsample)
+        n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
+        mask_sub = cv2.resize(mask, (n_rows_sub, n_cols_sub))
+    else:
+        mask_sub = mask
+        n_rows_sub, n_cols_sub = n_rows, n_cols
+        max_length_sub = max_length
 
-    if params.subsample <= 1 or params.subsample_method == 1:
-        task_utils.mask_vis_to_id(mask, n_classes=n_classes)
-        # mask[mask > 0] = 1
-        """
-        create RLE of full-res mask and subsample the starts and lengths thus generated
-        """
-        rle, _ = task_utils.mask_to_rle(
-            image=image,
-            mask=mask,
-            class_id_to_col=class_id_to_col,
-            class_id_to_name=class_id_to_name,
-            max_length=params.max_length,
+    task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
+    rle = task_utils.mask_to_rle(
+        image=image,
+        mask=mask_sub,
+        class_id_to_col=class_id_to_col,
+        class_id_to_name=class_id_to_name,
+        max_length=max_length_sub,
+        starts_2d=params.starts_2d,
+        starts_offset=params.starts_offset,
+        lengths_offset=params.lengths_offset,
+    )
+
+    if subsample_method == 1:
+        """subsample RLE of high-res mask"""
+        rle = task_utils.subsample_rle(
+            rle,
+            subsample=params.subsample,
+            shape=(n_rows, n_cols),
+            max_length=max_length,
             starts_2d=params.starts_2d,
             starts_offset=params.starts_offset,
             lengths_offset=params.lengths_offset,
-            subsample=params.subsample,
         )
-        if params.show:
+
+    metrics_ = dict(rle_len=len(rle))
+    append_metrics(metrics_, metrics[f'method_{subsample_method}'])
+
+    if params.show:
+        if subsample_method == 1:
             """reconstruct full-res mask by super sampling / scaling up the starts and lengths"""
-            # mask_rec = task_utils.rle_to_mask(
-            #     rle,
-            #     (n_rows, n_cols),
-            #     max_length=params.max_length,
-            #     starts_2d=params.starts_2d,
-            #     starts_offset=params.starts_offset,
-            #     lengths_offset=params.lengths_offset,
-            #     subsample=params.subsample,
-            # )
-            """reconstruct low-res mask and resize to scale it up"""
-            mask_rec2 = task_utils.rle_to_mask(
+            rle = task_utils.supersample_rle(
                 rle,
-                (n_rows_sub, n_cols_sub),
-                max_length=max_length_sub,
+                subsample=params.subsample,
+                shape=(n_rows, n_cols),
+                max_length=max_length,
                 starts_2d=params.starts_2d,
                 starts_offset=params.starts_offset,
                 lengths_offset=params.lengths_offset,
-                subsample=1,
             )
+
+        mask_rec2 = task_utils.rle_to_mask(
+            rle,
+            (n_rows_sub, n_cols_sub),
+            starts_2d=params.starts_2d,
+            starts_offset=params.starts_offset,
+            lengths_offset=params.lengths_offset,
+        )
+
+        if subsample_method == 2:
+            """reconstruct low-res mask and resize to scale it up"""
             mask_rec2, mask_rec2_vis = resize_mask(mask_rec2, (n_rows, n_cols))
             metrics_ = eval_mask(mask_rec2, mask, rle)
             vis_txt.append(append_metrics(metrics_, metrics['method_1']))
             vis_imgs.append(mask_rec2_vis)
-    else:
-        """        
-        decrease mask resolution by resizing and create RLE of the low-res mask
-        """
-        # mask_sub = task_utils.mask_id_to_vis(mask, n_classes=n_classes)
-        mask_sub = cv2.resize(mask, (n_rows_sub, n_cols_sub))
-        task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
-        # mask_sub[mask_sub > 0] = 1
 
-        rle_sub, _ = task_utils.mask_to_rle(
-            image=image,
-            mask=mask,
-            class_id_to_col=class_id_to_col,
-            class_id_to_name=class_id_to_name,
-            max_length=max_length_sub,
-            starts_2d=params.starts_2d,
-            starts_offset=params.starts_offset,
-            lengths_offset=params.lengths_offset,
-            subsample=0,
-        )
-        rle = rle_sub
-
-        metrics_ = dict(rle_len=len(rle))
-        append_metrics(metrics_, metrics['method_2'])
-
-        if params.show:
-            mask_sub_rec = task_utils.rle_to_mask(
-                rle_sub,
-                (n_rows_sub, n_cols_sub),
-                max_length=max_length_sub,
-                starts_2d=params.starts_2d,
-                starts_offset=params.starts_offset,
-                lengths_offset=params.lengths_offset,
-                subsample=0,
-            )
-            mask_sub_rec, mask_sub_rec_vis = resize_mask(mask_sub_rec, (n_rows, n_cols))
-            # metrics_ = eval_mask(mask_sub_rec, mask, rle_sub)
-            # vis_txt.append(append_metrics(metrics_, metrics['method_2']))
-            vis_imgs.append(mask_sub_rec_vis)
-
-    if params.show:
         import eval_utils
 
         vis_imgs = np.concatenate(vis_imgs, axis=1)
