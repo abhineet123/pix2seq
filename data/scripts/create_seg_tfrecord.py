@@ -66,6 +66,7 @@ class Params(paramparse.CFG):
         self.starts_2d = 0
         self.starts_offset = 1000
         self.lengths_offset = 100
+        self.class_offset = 0
         self.subsample = 1
         self.subsample_method = 2
 
@@ -238,47 +239,62 @@ def create_tf_example(
         max_length_sub = max_length
 
     task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
-    rle = task_utils.mask_to_rle(
-        image=image,
+    starts, lengths = task_utils.mask_to_rle(
         mask=mask_sub,
-        class_id_to_col=class_id_to_col,
-        class_id_to_name=class_id_to_name,
         max_length=max_length_sub,
-        starts_2d=params.starts_2d,
-        starts_offset=params.starts_offset,
-        lengths_offset=params.lengths_offset,
     )
 
     if subsample_method == 1:
         """subsample RLE of high-res mask"""
-        rle = task_utils.subsample_rle(
-            rle,
+        starts, lengths = task_utils.subsample_rle(
+            starts, lengths,
             subsample=params.subsample,
             shape=(n_rows, n_cols),
             max_length=max_length,
-            starts_2d=params.starts_2d,
-            starts_offset=params.starts_offset,
-            lengths_offset=params.lengths_offset,
         )
 
-    metrics_ = dict(rle_len=len(rle))
-    append_metrics(metrics_, metrics[f'method_{subsample_method}'])
+    rle_cmp = [starts, lengths]
+
+    n_classes = len(class_id_to_col)
+    multi_class = False
+    if n_classes > 2:
+        assert params.class_offset > 0, "class_offset must be > 0"
+        class_ids = task_utils.get_rle_class_ids(mask_sub, starts)
+        rle_cmp.append(class_ids)
+        multi_class = True
+
+    rle_tokens = task_utils.rle_to_tokens(
+        rle_cmp, mask_sub.shape,
+        params.starts_offset,
+        params.lengths_offset,
+        params.class_offset,
+        params.starts_2d,
+    )
 
     if params.show:
+        rle_rec_cmp = task_utils.rle_from_tokens(
+            rle_tokens, mask_sub.shape,
+            params.starts_offset,
+            params.lengths_offset,
+            params.class_offset,
+            params.starts_2d,
+            multi_class
+        )
+        starts, lengths = rle_rec_cmp[:2]
+        if multi_class:
+            class_ids = rle_rec_cmp[2]
+
         if subsample_method == 1:
             """reconstruct full-res mask by super sampling / scaling up the starts and lengths"""
-            rle = task_utils.supersample_rle(
-                rle,
+            starts, lengths = task_utils.supersample_rle(
+                starts, lengths,
                 subsample=params.subsample,
                 shape=(n_rows, n_cols),
                 max_length=max_length,
-                starts_2d=params.starts_2d,
-                starts_offset=params.starts_offset,
-                lengths_offset=params.lengths_offset,
             )
 
         mask_rec2 = task_utils.rle_to_mask(
-            rle,
+            starts, lengths, class_ids,
             (n_rows_sub, n_cols_sub),
             starts_2d=params.starts_2d,
             starts_offset=params.starts_offset,
@@ -305,12 +321,19 @@ def create_tf_example(
         if k == 27:
             exit()
 
+    task_utils.vis_rle(starts, lengths, class_ids,
+                       class_id_to_col, class_id_to_name,
+                       image, mask, mask_flat)
+
     seg_feature_dict = {
         'image/rle': tfrecord_lib.convert_to_feature(rle, value_type='int64_list'),
         'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
         'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
     }
     feature_dict.update(seg_feature_dict)
+
+    metrics_ = dict(rle_len=len(rle))
+    append_metrics(metrics_, metrics[f'method_{subsample_method}'])
 
     example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
     return example, 0

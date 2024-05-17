@@ -205,9 +205,11 @@ class TaskSemanticSegmentation(task_lib.Task):
                 allow_odd_rle=0,
             )
 
+            n_classes = len(self._category_names) + 1
+
             if subsample > 1:
-                mask, _ = task_utils.resize_mask(mask, orig_size_)
-                gt_mask, _ = task_utils.resize_mask(gt_mask, orig_size_)
+                mask = task_utils.resize_mask(mask, orig_size_, n_classes)
+                gt_mask = task_utils.resize_mask(gt_mask, orig_size_, n_classes)
 
             vis_utils.visualize_mask(
                 image_id_,

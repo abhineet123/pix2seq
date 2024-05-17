@@ -254,13 +254,12 @@ def deconstruct_rle(rle, shape, starts_2d, starts_offset, lengths_offset):
     return start_rows, start_cols, lengths
 
 
-def supersample_rle(rle, subsample, shape, max_length, starts_2d, starts_offset, lengths_offset):
+def supersample_rle(starts_sub, lengths_sub, subsample, shape, max_length):
     n_rows, n_cols = shape
     n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
     max_length_sub = int(max_length / subsample)
 
-    starts_rows_sub, starts_cols_sub, lengths = deconstruct_rle(rle, (n_rows_sub, n_cols_sub),
-                                                                starts_2d, starts_offset, lengths_offset)
+    starts_rows_sub, starts_cols_sub = np.unravel_index(starts_sub, (n_rows_sub, n_cols_sub))
 
     starts_rows = starts_rows_sub / (n_rows_sub - 1) * (n_rows - 1)
     starts_cols = starts_cols_sub / (n_cols_sub - 1) * (n_cols - 1)
@@ -268,34 +267,23 @@ def supersample_rle(rle, subsample, shape, max_length, starts_2d, starts_offset,
     starts_rows = starts_rows.astype(np.int64)
     starts_cols = starts_cols.astype(np.int64)
 
-    lengths = (lengths - 1).astype(np.float64) / (max_length_sub - 1) * (max_length - 1) + 1
+    lengths = (lengths_sub - 1).astype(np.float64) / (max_length_sub - 1) * (max_length - 1) + 1
     lengths = lengths.astype(np.int64)
 
-    rle = construct_rle(starts_rows, starts_cols, lengths, shape, starts_2d, starts_offset, lengths_offset)
+    starts = np.ravel_multi_index((starts_rows, starts_cols), shape)
 
-    return rle
+    return starts, lengths
 
 
-def subsample_rle(rle, subsample, shape, max_length, starts_2d, starts_offset, lengths_offset):
-    if len(rle) == 0:
-        return rle
+def subsample_rle(starts, lengths, subsample, shape, max_length):
+    if len(starts) == 0:
+        return starts, lengths
 
     n_rows, n_cols = shape
     max_length_sub = int(max_length / subsample)
     n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
 
-    if starts_2d:
-        starts_rows, starts_cols, lengths = [
-            np.asarray(x, dtype=int) for x in (rle[0:][::3], rle[1:][::3], rle[2:][::3])]
-        starts_rows -= (starts_offset + 1)
-        starts_cols -= (starts_offset + 1)
-    else:
-        starts, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::2], rle[1:][::2])]
-        starts -= (starts_offset + 1)
-
-        starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
-
-    lengths -= lengths_offset
+    starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
 
     starts_rows_norm, starts_cols_norm = (starts_rows.astype(np.float64) / (n_rows - 1),
                                           starts_cols.astype(np.float64) / (n_cols - 1))
@@ -319,21 +307,100 @@ def subsample_rle(rle, subsample, shape, max_length, starts_2d, starts_offset, l
     starts_cols = np.asarray(starts_cols)
     lengths = np.asarray(lengths)
 
+    starts = np.ravel_multi_index((starts_rows, starts_cols), (n_rows_sub, n_cols_sub))
+
+    return starts, lengths
+
+
+def rle_to_tokens(rle_cmp, shape, starts_offset, lengths_offset, class_offset, starts_2d):
+    starts, lengths = rle_cmp[:2]
+
+    starts += (starts_offset + 1)
     lengths += lengths_offset
+
+    rle_cmp.append(lengths)
+
     if starts_2d:
-        starts_rows += starts_offset + 1
-        starts_cols += starts_offset + 1
-        rle = [item for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
+        starts_rows, starts_cols = np.unravel_index(starts, shape)
+        starts_rows += (starts_offset + 1)
+        starts_cols += (starts_offset + 1)
+        rle_cmp = [starts_rows, starts_cols, lengths]
     else:
-        starts = np.ravel_multi_index((starts_rows, starts_cols), (n_rows_sub, n_cols_sub))
-        starts += starts_offset + 1
-        rle = [int(item) for sublist in zip(starts, lengths) for item in sublist]
+        rle_cmp = [starts, lengths]
+
+    if len(rle_cmp) == 3:
+        class_ids = rle_cmp[2]
+        class_ids += class_offset
+        rle_cmp.append(class_ids)
+
+    rle_tokens = [int(item) for sublist in zip(*rle_cmp) for item in sublist]
+
+    return rle_tokens
+
+
+def rle_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offset, starts_2d, multi_class):
+    n_run_tokens = 2
+    if starts_2d:
+        n_run_tokens += 1
+    if multi_class:
+        n_run_tokens += 1
+
+    assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
+
+    if starts_2d:
+        starts_rows = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=int)
+        starts_cols = np.asarray(rle_tokens[1:][::n_run_tokens], dtype=int)
+
+        starts_rows -= (starts_offset + 1)
+        starts_cols -= (starts_offset + 1)
+
+        len_id = 2
+
+        starts = np.ravel_multi_index((starts_rows, starts_cols), shape)
+    else:
+        starts = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=int)
+        starts -= (starts_offset + 1)
+
+        len_id = 1
+
+    lengths = np.asarray(rle_tokens[len_id:][::n_run_tokens], dtype=int)
+    lengths -= lengths_offset
+
+    rle_cmp = [starts, lengths]
+
+    if multi_class:
+        class_ids = np.asarray(rle_tokens[len_id + 1:][::n_run_tokens], dtype=int)
+        class_ids -= class_offset
+        rle_cmp.append(class_ids)
+
+    return rle_cmp
+
+
+def get_rle_class_ids(mask, starts):
+    mask_flat = mask.flatten()
+    class_ids = [mask_flat[k] for k in starts]
+
+    assert 0 not in class_ids, "class_ids must be non-zero"
+
+    return class_ids
+
+
+def rle_to_2d(rle, mask):
+    n_rows, n_cols = mask.shape[:2]
+
+    starts, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::2], rle[1:][::2])]
+
+    starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
+
+    assert np.all(starts_rows <= n_rows - 1), f"starts_rows cannot be > {n_rows - 1}"
+    assert np.all(starts_cols <= n_cols - 1), f"starts_rows cannot be > {n_cols - 1}"
+
+    rle = [int(item) for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
 
     return rle
 
 
-def mask_to_rle(image, mask, class_id_to_col, class_id_to_name,
-                max_length, starts_2d, starts_offset, lengths_offset, vis=1):
+def mask_to_rle(mask, max_length):
     """
     https://www.kaggle.com/stainsby/fast-tested-rle
     https://ccshenyltw.medium.com/run-length-encode-and-decode-a33383142e6b
@@ -345,14 +412,6 @@ def mask_to_rle(image, mask, class_id_to_col, class_id_to_name,
     """
     assert len(mask.shape) == 2, "only greyscale masks are supported"
 
-    n_classes = len(class_id_to_col)
-    if n_classes > 2:
-        multi_class = True
-    else:
-        multi_class = False
-
-    n_rows, n_cols = mask.shape[:2]
-
     mask_flat = mask.flatten()
     pixels = np.concatenate([[0], mask_flat, [0]])
     """the +1 in the original code was to convert indices from 0-based to 1-based"""
@@ -362,10 +421,6 @@ def mask_to_rle(image, mask, class_id_to_col, class_id_to_name,
         return [], []
 
     if len(runs) % 2 != 0:
-        # from datetime import datetime
-        # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
-        # cv2.imwrite(f'annoying_mask_rle_len_{len(runs)}_{time_stamp}.png', mask)
-        # return None
         raise AssertionError("runs must have even length")
 
     runs[1::2] -= runs[::2]
@@ -378,54 +433,17 @@ def mask_to_rle(image, mask, class_id_to_col, class_id_to_name,
 
     assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
     assert np.all(lengths > 0), "run length cannot be 0"
+    n_rows, n_cols = mask.shape
 
-    class_ids = None
-    if multi_class:
-        class_ids = [mask_flat[k] for k in starts]
+    n_pix = n_rows * n_cols
 
-    if vis:
-        vis_rle(starts, lengths, class_ids,
-                class_id_to_col, class_id_to_name,
-                image, mask, mask_flat)
+    assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
 
-    """additional offset to convert lengths into vocabulary tokens"""
-    lengths += lengths_offset
+    return starts, lengths
 
-    starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
 
-    assert np.all(starts_rows <= n_rows - 1), f"starts_rows cannot be > {n_rows - 1}"
-    assert np.all(starts_cols <= n_cols - 1), f"starts_rows cannot be > {n_cols - 1}"
-
-    if starts_2d:
-        """
-        0 is used for padding so cannot have 0 in starts_rows and starts_cols
-        additional offset to convert starts_rows and starts_cols into vocabulary tokens
-        """
-        starts_rows += 1 + starts_offset
-        starts_cols += 1 + starts_offset
-        if multi_class:
-            rle = [item for sublist in zip(starts_rows, starts_cols, lengths, class_ids) for item in sublist]
-        else:
-            rle = [item for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
-    else:
-        n_rows, n_cols = mask.shape
-
-        n_pix = n_rows * n_cols
-
-        assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
-
-        # starts_norm = starts.astype(np.float64) / (n_pix - 1)
-        # rle_norm = [float(item) for sublist in zip(starts_norm, lengths_norm) for item in sublist]
-
-        """0 is used for padding in vocabulary so there cannot be any 0s in starts"""
-        starts += 1
-        """additional offset to convert coords into vocabulary tokens"""
-        starts += starts_offset
-        if multi_class:
-            rle = [int(item) for sublist in zip(starts, lengths, class_ids) for item in sublist]
-        else:
-            rle = [int(item) for sublist in zip(starts, lengths) for item in sublist]
-
+def interleave_rle(rle_cmps):
+    rle = [int(item) for sublist in zip(*rle_cmps) for item in sublist]
     return rle
 
 
@@ -435,13 +453,11 @@ def remove_duplicates(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
-def resize_mask(mask, shape):
-    mask_vis = mask * 255
-    mask_vis = cv2.resize(mask_vis, shape)
-    mask = np.copy(mask_vis)
-    mask[mask > 0] = 1
-
-    return mask, mask_vis
+def resize_mask(mask, shape, n_classes):
+    mask_id_to_vis(mask, n_classes)
+    mask = cv2.resize(mask, shape)
+    mask_vis_to_id(mask, n_classes)
+    return mask
 
 
 def mask_vis_to_id(mask, n_classes):
@@ -496,50 +512,18 @@ def mask_id_to_vis(mask, n_classes, to_rgb=0):
     return mask
 
 
-def rle_to_mask(rle, shape, starts_offset, lengths_offset,
-                starts_2d, allow_odd_rle=0, label=1):
-    if len(rle) == 0:
+def rle_to_mask(starts, lengths, class_ids, shape):
+    if len(starts) == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
         return mask
-
-    if starts_2d:
-        if len(rle) % 3 != 0:
-            msg = "rle must be divisible by 3"
-            if allow_odd_rle:
-                print(msg)
-                """Simplest solution for odd length RLE is to discard the last element to make it even"""
-                rle = rle[:-1]
-            else:
-                raise AssertionError(msg)
-        start_rows, start_cols, lengths = [
-            np.asarray(x, dtype=int) for x in (rle[0:][::3], rle[1:][::3], rle[2:][::3])]
-        start_rows -= 1
-        start_cols -= 1
-
-        start_rows -= starts_offset
-        start_cols -= starts_offset
-
-        starts = np.ravel_multi_index((start_rows, start_cols), shape)
-    else:
-        if len(rle) % 2 != 0:
-            msg = "rle must be divisible by 2"
-            if allow_odd_rle:
-                print(msg)
-                """Simplest solution for odd length RLE is to discard the last element to make it even"""
-                rle = rle[:-1]
-            else:
-                raise AssertionError(msg)
-        starts, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::2], rle[1:][::2])]
-
-        starts -= 1
-        starts -= starts_offset
-
-    lengths -= lengths_offset
 
     """ends are exclusive while starts are inclusive"""
     ends = starts + lengths
     mask_flat = np.zeros(shape[0] * shape[1], dtype=np.uint8)
-    for lo, hi in zip(starts, ends):
+    if class_ids is None:
+        class_ids = [1, ] * len(starts)
+        
+    for lo, hi, label in zip(starts, ends, class_ids):
         mask_flat[lo:hi] = label
 
     mask = mask_flat.reshape(shape)
