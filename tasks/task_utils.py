@@ -520,9 +520,7 @@ def rle_to_mask(starts, lengths, class_ids, shape):
     """ends are exclusive while starts are inclusive"""
     ends = starts + lengths
     mask_flat = np.zeros(shape[0] * shape[1], dtype=np.uint8)
-    if class_ids is None:
-        class_ids = [1, ] * len(starts)
-        
+
     for lo, hi, label in zip(starts, ends, class_ids):
         mask_flat[lo:hi] = label
 

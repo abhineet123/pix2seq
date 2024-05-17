@@ -96,7 +96,7 @@ def resize_mask(mask, shape):
     return mask, mask_vis
 
 
-def eval_mask(pred_mask, gt_mask, rle):
+def eval_mask(pred_mask, gt_mask, rle_len):
     import densenet.evaluation.eval_segm as eval_segm
     class_ids = [0, 1]
     pix_acc = eval_segm.pixel_accuracy(pred_mask, gt_mask, class_ids)
@@ -104,7 +104,7 @@ def eval_mask(pred_mask, gt_mask, rle):
     _IU, mean_IU = eval_segm.mean_IU(pred_mask, gt_mask, class_ids, return_iu=1)
     fw_IU = eval_segm.frequency_weighted_IU(pred_mask, gt_mask, class_ids)
     return dict(
-        rle_len=len(rle),
+        rle_len=rle_len,
         pix_acc=pix_acc,
         mean_acc=mean_acc,
         mean_IU=mean_IU,
@@ -209,11 +209,14 @@ def create_tf_example(
         with tf.io.gfile.GFile(image_path, 'rb') as fid:
             encoded_jpg = fid.read()
 
+        image = cv2.imread(image_path)
         mask = cv2.imread(mask_image_path)
 
+    vis_imgs = [image,]
+    vis_txt = []
+
     if params.show:
-        vis_imgs = [image, np.copy(mask), ]
-        vis_txt = []
+        vis_imgs.append(np.copy(mask))
 
     image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
         image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
@@ -271,6 +274,8 @@ def create_tf_example(
         params.starts_2d,
     )
 
+    rle_len = len(rle_tokens)
+
     if params.show:
         rle_rec_cmp = task_utils.rle_from_tokens(
             rle_tokens, mask_sub.shape,
@@ -283,6 +288,8 @@ def create_tf_example(
         starts, lengths = rle_rec_cmp[:2]
         if multi_class:
             class_ids = rle_rec_cmp[2]
+        else:
+            class_ids = [1, ] * len(starts)
 
         if subsample_method == 1:
             """reconstruct full-res mask by super sampling / scaling up the starts and lengths"""
@@ -293,18 +300,16 @@ def create_tf_example(
                 max_length=max_length,
             )
 
-        mask_rec2 = task_utils.rle_to_mask(
+        mask_rec = task_utils.rle_to_mask(
             starts, lengths, class_ids,
             (n_rows_sub, n_cols_sub),
-            starts_2d=params.starts_2d,
-            starts_offset=params.starts_offset,
-            lengths_offset=params.lengths_offset,
         )
 
         if subsample_method == 2:
             """reconstruct low-res mask and resize to scale it up"""
-            mask_rec2, mask_rec2_vis = resize_mask(mask_rec2, (n_rows, n_cols))
-            metrics_ = eval_mask(mask_rec2, mask, rle)
+            mask_rec = task_utils.resize_mask(mask_rec, (n_rows, n_cols), n_classes)
+            mask_rec2_vis = task_utils.mask_id_to_vis_rgb(mask_rec, class_id_to_col)
+            metrics_ = eval_mask(mask_rec, mask, rle_len)
             vis_txt.append(append_metrics(metrics_, metrics['method_1']))
             vis_imgs.append(mask_rec2_vis)
 
