@@ -101,7 +101,8 @@ def load_video(vid_path, seq=''):
 def check_rle(
         image, mask, rle, n_classes,
         starts_offset, lengths_offset, class_offset,
-        max_length, subsample, multi_class, class_to_col, show):
+        max_length, subsample, multi_class,
+        class_to_col, show):
     if len(mask.shape) == 3:
         mask_gt = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
     else:

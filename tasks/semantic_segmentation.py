@@ -46,6 +46,10 @@ class TaskSemanticSegmentation(task_lib.Task):
         batch_size = frame_ids.shape[0]
         max_length = self.config.dataset.train.max_length
         subsample = self.config.dataset.train.subsample
+        multi_class = self.config.dataset.multi_class
+        class_id_to_col = self.class_id_to_col
+
+        n_classes = len(self._category_names)
 
         for batch_id in range(batch_size):
             mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
@@ -67,6 +71,8 @@ class TaskSemanticSegmentation(task_lib.Task):
                 class_offset=self.config.model.class_vocab_shift,
                 max_length=max_length,
                 subsample=subsample,
+                class_to_col=class_id_to_col,
+                multi_class=multi_class,
                 show=show,
             )
 
