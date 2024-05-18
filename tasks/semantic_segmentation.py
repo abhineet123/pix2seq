@@ -17,14 +17,15 @@ class TaskSemanticSegmentation(task_lib.Task):
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
 
-        class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(
-            config.dataset.get('category_names_path'))
+        class_info_path = config.dataset.get('class_info_path')
+        assert class_info_path, "class_info_path must be provided"
+
+        class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(class_info_path)
 
         assert self._category_names == class_names, "class_names mismatch"
 
         self.class_id_to_col = class_id_to_col
         self.class_id_to_name = class_id_to_name
-
 
     def preprocess_single(self, dataset, batch_duplicates, training, validation):
         if self.config.debug != 2:
