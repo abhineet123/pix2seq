@@ -147,8 +147,98 @@ def check_rle(image, mask, rle, starts_offset, lengths_offset,
             exit()
 
 
-def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_flat):
-    n_runs = len(starts)
+def interleave_rle(rle_cmps):
+    rle = [int(item) for sublist in zip(*rle_cmps) for item in sublist]
+    return rle
+
+
+def remove_duplicates(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
+
+
+def resize_mask_coord(mask, shape, n_classes, is_vis=1):
+    if is_vis:
+        mask_vis_to_id(mask, n_classes)
+    mask_out = np.zeros_like(mask, shape=shape)
+    mask_rows, mask_cols = mask.shape[:2]
+    out_rows, out_cols = mask_out.shape[:2]
+
+    res_x, res_y = float(out_cols) / mask_cols, float(out_rows) / mask_rows
+
+    for class_id in range(1, n_classes):
+        y, x = np.nonzero(mask == class_id)
+        out_x, out_y = (x * res_x).astype(np.int64), (y * res_y).astype(np.int64)
+        mask_out[out_y, out_x] = class_id
+    if is_vis:
+        mask_id_to_vis(mask_out, n_classes)
+    return mask_out
+
+
+def resize_mask(mask, shape, n_classes, is_vis=1):
+    if not is_vis:
+        mask = np.copy(mask)
+        mask_id_to_vis(mask, n_classes)
+    mask = cv2.resize(mask, shape)
+    if not is_vis:
+        mask_vis_to_id(mask, n_classes)
+    return mask
+
+
+def mask_id_to_vis(mask, n_classes, to_rgb=0):
+    if n_classes == 3:
+        # labels_img[labels_img == 0] = 0
+        mask[mask == 1] = 128
+        mask[mask == 2] = 255
+    elif n_classes == 2:
+        # labels_img[labels_img == 0] = 0
+        mask[mask == 1] = 255
+    else:
+        raise AssertionError('unsupported number of classes: {}'.format(n_classes))
+    if to_rgb and len(mask.shape) == 2:
+        mask = np.stack((mask,) * 3, axis=2)
+
+    return mask
+
+
+def mask_vis_to_id(mask, n_classes):
+    if n_classes == 3:
+        mask[mask < 64] = 0
+        mask[np.logical_and(mask >= 64, mask < 192)] = 1
+        mask[mask >= 192] = 2
+    elif n_classes == 2:
+        mask[mask < 128] = 0
+        mask[mask >= 128] = 1
+    else:
+        raise AssertionError('unsupported number of classes: {}'.format(n_classes))
+
+
+def blend_mask(mask, image, class_to_col):
+    n_classes = len(class_to_col)
+    """ignore class id 0 for background"""
+    vis_image = np.copy(image)
+
+    for class_id in range(1, n_classes):
+        class_col = class_to_col[class_id]
+        class_col = col_bgr[class_col]
+        class_mask_binary = (mask == class_id)
+        vis_image[class_mask_binary] = vis_image[class_mask_binary] * 0.5 + np.asarray(class_col) * 0.5
+    return vis_image
+
+
+def mask_id_to_vis_rgb(mask, class_to_col):
+    mask_rgb = np.stack((mask,) * 3, axis=2)
+
+    n_classes = len(class_to_col)
+    for class_id in range(n_classes):
+        class_col = class_to_col[class_id]
+        class_col = col_bgr[class_col]
+        mask_rgb[mask == class_id] = class_col
+    return mask_rgb
+
+
+def get_cols(n_runs):
     min_col, max_col = 100, 200
     n_col_levels = int(n_runs ** (1. / 3) + 1)
     col_range = max_col - min_col
@@ -159,64 +249,98 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image
     import itertools
     cols = list(itertools.product(col_levels, repeat=3))
 
-    n_rows, n_cols = mask.shape
+    return cols
 
-    mask_vis_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
-    mask_vis_ = cv2.resize(mask_vis_rgb, (640, 640))
-    cv2.imshow('mask_vis_', mask_vis_)
+
+def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_sub):
+    n_runs = len(starts)
+    n_classes = len(class_id_to_col)
+    # cols = get_cols(n_runs)
+
+    mask_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
+    mask_sub_rgb = mask_id_to_vis_rgb(mask_sub, class_id_to_col)
+
+    mask_sub_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1)
+    mask_sub_vis[mask_sub_vis > 0] = 255
 
     vis_image = blend_mask(mask, image, class_id_to_col)
 
     text_x = text_y = 5
     # col = (0, 255, 0)
+    bkg_col = (0, 0, 0)
     frg_col = (255, 255, 255)
-    vis_size = 480
-    font_size = 12
+    # mask_col = (0, 255, 0)
+    vis_size = 640
+    font_size = 16
+    n_rows, n_cols = mask_sub.shape
     resize_y, resize_x = float(vis_size) / n_rows, float(vis_size) / n_cols
-    text_img = np.full(((vis_size * 2, 600, 3)), (0, 0, 0), dtype=np.uint8)
+
+    mask_sub_vis_ = cv2.resize(mask_sub_vis, (vis_size, vis_size))
+    mask_sub_rgb_ = cv2.resize(mask_sub_rgb, (vis_size, vis_size))
+    mask_rgb_ = cv2.resize(mask_rgb, (vis_size, vis_size))
+    cv2.imshow('mask_sub_vis_', mask_sub_vis_)
+    cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
+    cv2.imshow('mask_rgb', mask_rgb_)
+
+    text_img = np.full((vis_size, vis_size, 3), bkg_col, dtype=np.uint8)
+    mask_flat = mask_sub.flatten()
+    _pause = 1
+
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
-        mask_flat_bool = np.zeros_like(mask_flat, dtype=bool)
-        mask_flat_bool[start:start + length] = True
-        mask_bool = np.reshape(mask_flat_bool, (n_rows, n_cols))
-        # r, c = np.unravel_index([start, start + length], (n_rows, n_cols))
-        # mask_vis_rgb[r[0]:r[1], c[0]:c[1], :] = col
-
-        col_id = run_id % len(cols)
-        col = cols[col_id]
-
-        run_center = int(start + length / 2)
-        r, c = np.unravel_index([run_center, ], (n_rows, n_cols))
-        r, c = int(r[0]), int(c[0])
-        mask_vis_rgb[mask_bool] = col
+        mask_bool_flat = np.zeros_like(mask_flat, dtype=bool)
+        mask_bool_flat[start:start + length] = True
+        mask_bool = np.reshape(mask_bool_flat, (n_rows, n_cols))
+        # run_y, run_x = np.unravel_index([start, start + length], (n_rows, n_cols))
+        # mask_sub_rgb[run_y[0]:run_y[1], run_x[0]:run_x[1], :] = col
 
         run_txt = f'{int(start)}, {int(length)}, '
         if class_ids is not None:
             class_id = class_ids[run_id]
             class_name = class_id_to_name[class_id]
-            run_txt = f'{run_txt}, {class_name}, '
+            run_txt = f'{run_txt}{class_name}, '
+        else:
+            class_id = 1
+
+        col = col_bgr[class_id_to_col[class_id]]
+
+        # col_id = run_id % len(cols)
+        # col = cols[col_id]
+        mask_sub_rgb[mask_bool] = col
 
         text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
                                                                  wait=100, bb=1, show=0, font_size=font_size)
         if run_id == n_runs - 1:
-            text_img, _, _ = vis_utils.write_text(text_img, 'EOS', text_x, text_y, (255, 255, 255),
+            text_img, _, _ = vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col,
                                                   show=0, font_size=font_size)
 
-        mask_vis_rgb_ = cv2.resize(mask_vis_rgb, (vis_size, vis_size))
+        vis_mask_ = cv2.resize(mask_sub_vis, (vis_size, vis_size))
         vis_image_ = cv2.resize(vis_image, (vis_size, vis_size))
 
-        mask_vis_rgb_ = np.concatenate((vis_image_, mask_vis_rgb_), axis=0)
-        mask_vis_rgb_ = np.concatenate((mask_vis_rgb_, text_img), axis=1)
+        # vis_mask_, text_bb = vis_utils.write_text(vis_mask_, run_txt, 5, 5, col, font_size=24, show=0, bb=1)
 
-        # mask_vis_rgb_, text_bb = vis_utils.write_text(mask_vis_rgb_, run_txt, 5, 5, col, font_size=24, show=0, bb=1)
+        run_center = int(start + length / 2)
+        run_y, run_x = np.unravel_index([run_center, ], (n_rows, n_cols))
+        run_y, run_x = int(run_y[0]), int(run_x[0])
+
+        run_x, run_y = int(run_x * resize_x), int(run_y * resize_y)
+        """vis_mask_ to the right of vis_image_"""
+        run_x += vis_size
+        vis_image_cat = np.concatenate((vis_image_, vis_mask_), axis=1)
 
         left, top, right, bottom = text_bb
-        text_bb_x, text_bb_y = (left + right) / 2 + vis_size, bottom + 10
+        text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
+        """text_img is to the right of vis_mask_"""
+        text_bb_x += int(vis_size * 2)
+        text_bb_y += 10
+        vis_image_cat = np.concatenate((vis_image_cat, text_img), axis=1)
 
-        c, r = int(c * resize_x), int(r * resize_x) + vis_size
-
-        mask_vis_rgb_ = cv2.arrowedLine(mask_vis_rgb_, (c, r), (int(text_bb_x), int(text_bb_y)), col, 1, tipLength=0.01)
-        cv2.imshow('mask_vis_rgb_', mask_vis_rgb_)
-        cv2.waitKey(100)
+        vis_image_cat = cv2.arrowedLine(vis_image_cat, (run_x, run_y), (text_bb_x, text_bb_y), col, 1, tipLength=0.01)
+        cv2.imshow('vis_image_cat', vis_image_cat)
+        k = cv2.waitKey(0 if _pause else 250)
+        if k == 27:
+            exit()
+        elif k == 32:
+            _pause = 1 - _pause
 
     cv2.waitKey(0)
 
@@ -412,6 +536,9 @@ def mask_to_rle(mask, max_length):
     """
     assert len(mask.shape) == 2, "only greyscale masks are supported"
 
+    mask = np.copy(mask)
+    mask[mask > 0] = 1
+
     mask_flat = mask.flatten()
     pixels = np.concatenate([[0], mask_flat, [0]])
     """the +1 in the original code was to convert indices from 0-based to 1-based"""
@@ -440,76 +567,6 @@ def mask_to_rle(mask, max_length):
     assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
 
     return starts, lengths
-
-
-def interleave_rle(rle_cmps):
-    rle = [int(item) for sublist in zip(*rle_cmps) for item in sublist]
-    return rle
-
-
-def remove_duplicates(seq):
-    seen = set()
-    seen_add = seen.add
-    return [x for x in seq if not (x in seen or seen_add(x))]
-
-
-def resize_mask(mask, shape, n_classes):
-    mask_id_to_vis(mask, n_classes)
-    mask = cv2.resize(mask, shape)
-    mask_vis_to_id(mask, n_classes)
-    return mask
-
-
-def mask_vis_to_id(mask, n_classes):
-    if n_classes == 3:
-        mask[mask < 64] = 0
-        mask[np.logical_and(mask >= 64, mask < 192)] = 1
-        mask[mask >= 192] = 2
-    elif n_classes == 2:
-        mask[mask < 128] = 0
-        mask[mask >= 128] = 1
-    else:
-        raise AssertionError('unsupported number of classes: {}'.format(n_classes))
-
-
-def blend_mask(mask, image, class_to_col):
-    n_classes = len(class_to_col)
-    """ignore class id 0 for background"""
-    vis_image = np.copy(image)
-
-    for class_id in range(1, n_classes):
-        class_col = class_to_col[class_id]
-        class_col = col_bgr[class_col]
-        class_mask_binary = (mask == class_id)
-        vis_image[class_mask_binary] = vis_image[class_mask_binary] * 0.5 + np.asarray(class_col) * 0.5
-    return vis_image
-
-
-def mask_id_to_vis_rgb(mask, class_to_col):
-    mask_rgb = np.stack((mask,) * 3, axis=2)
-
-    n_classes = len(class_to_col)
-    for class_id in range(n_classes):
-        class_col = class_to_col[class_id]
-        class_col = col_bgr[class_col]
-        mask_rgb[mask == class_id] = class_col
-    return mask_rgb
-
-
-def mask_id_to_vis(mask, n_classes, to_rgb=0):
-    if n_classes == 3:
-        # labels_img[labels_img == 0] = 0
-        mask[mask == 1] = 128
-        mask[mask == 2] = 255
-    elif n_classes == 2:
-        # labels_img[labels_img == 0] = 0
-        mask[mask == 1] = 255
-    else:
-        raise AssertionError('unsupported number of classes: {}'.format(n_classes))
-    if to_rgb and len(mask.shape) == 2:
-        mask = np.stack((mask,) * 3, axis=2)
-
-    return mask
 
 
 def rle_to_mask(starts, lengths, class_ids, shape):

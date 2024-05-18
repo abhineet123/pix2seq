@@ -212,11 +212,8 @@ def create_tf_example(
         image = cv2.imread(image_path)
         mask = cv2.imread(mask_image_path)
 
-    vis_imgs = [image,]
+    vis_imgs = [image, ]
     vis_txt = []
-
-    if params.show:
-        vis_imgs.append(np.copy(mask))
 
     image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
         image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
@@ -235,7 +232,11 @@ def create_tf_example(
         """
         max_length_sub = int(max_length / params.subsample)
         n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
-        mask_sub = cv2.resize(mask, (n_rows_sub, n_cols_sub))
+
+        # mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
+        mask_sub = task_utils.resize_mask_coord(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
+
+        task_utils.mask_vis_to_id(mask, n_classes=n_classes)
     else:
         mask_sub = mask
         n_rows_sub, n_cols_sub = n_rows, n_cols
@@ -260,11 +261,17 @@ def create_tf_example(
 
     n_classes = len(class_id_to_col)
     multi_class = False
+    class_ids = None
     if n_classes > 2:
         assert params.class_offset > 0, "class_offset must be > 0"
         class_ids = task_utils.get_rle_class_ids(mask_sub, starts)
         rle_cmp.append(class_ids)
         multi_class = True
+
+    task_utils.vis_rle(
+        starts, lengths, class_ids,
+        class_id_to_col, class_id_to_name,
+        image, mask, mask_sub)
 
     rle_tokens = task_utils.rle_to_tokens(
         rle_cmp, mask_sub.shape,
@@ -273,8 +280,19 @@ def create_tf_example(
         params.class_offset,
         params.starts_2d,
     )
-
     rle_len = len(rle_tokens)
+
+    seg_feature_dict = {
+        'image/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
+        'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
+        'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
+    }
+    feature_dict.update(seg_feature_dict)
+
+    metrics_ = dict(rle_len=rle_len)
+    append_metrics(metrics_, metrics[f'method_{subsample_method}'])
+
+    example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
 
     if params.show:
         rle_rec_cmp = task_utils.rle_from_tokens(
@@ -285,33 +303,39 @@ def create_tf_example(
             params.starts_2d,
             multi_class
         )
-        starts, lengths = rle_rec_cmp[:2]
+        starts_rec, lengths_rec = rle_rec_cmp[:2]
         if multi_class:
-            class_ids = rle_rec_cmp[2]
+            class_ids_rec = rle_rec_cmp[2]
         else:
-            class_ids = [1, ] * len(starts)
+            class_ids_rec = [1, ] * len(starts)
 
         if subsample_method == 1:
             """reconstruct full-res mask by super sampling / scaling up the starts and lengths"""
-            starts, lengths = task_utils.supersample_rle(
-                starts, lengths,
+            starts_rec, lengths_rec = task_utils.supersample_rle(
+                starts_rec, lengths_rec,
                 subsample=params.subsample,
                 shape=(n_rows, n_cols),
                 max_length=max_length,
             )
 
         mask_rec = task_utils.rle_to_mask(
-            starts, lengths, class_ids,
+            starts_rec, lengths_rec, class_ids_rec,
             (n_rows_sub, n_cols_sub),
         )
 
+        mask_vis = task_utils.mask_id_to_vis_rgb(mask_sub, class_id_to_col)
+        mask_rec_vis = task_utils.mask_id_to_vis_rgb(mask_rec, class_id_to_col)
+
         if subsample_method == 2:
             """reconstruct low-res mask and resize to scale it up"""
-            mask_rec = task_utils.resize_mask(mask_rec, (n_rows, n_cols), n_classes)
-            mask_rec2_vis = task_utils.mask_id_to_vis_rgb(mask_rec, class_id_to_col)
+            mask_vis = cv2.resize(mask_vis, (n_rows, n_cols))
+
+            mask_rec_vis = cv2.resize(mask_rec_vis, (n_rows, n_cols))
             metrics_ = eval_mask(mask_rec, mask, rle_len)
             vis_txt.append(append_metrics(metrics_, metrics['method_1']))
-            vis_imgs.append(mask_rec2_vis)
+
+        vis_imgs.append(mask_vis)
+        vis_imgs.append(mask_rec_vis)
 
         import eval_utils
 
@@ -320,27 +344,11 @@ def create_tf_example(
         vis_imgs = eval_utils.annotate(vis_imgs, f'{image_id}')
         # cv2.imshow('mask_vis', mask_vis)
         # cv2.imshow('mask_rec_vis', mask_rec_vis)
-        # cv2.imshow('mask_rec2_vis', mask_rec2_vis)
         cv2.imshow('vis_imgs', vis_imgs)
         k = cv2.waitKey(0)
         if k == 27:
             exit()
 
-    task_utils.vis_rle(starts, lengths, class_ids,
-                       class_id_to_col, class_id_to_name,
-                       image, mask, mask_flat)
-
-    seg_feature_dict = {
-        'image/rle': tfrecord_lib.convert_to_feature(rle, value_type='int64_list'),
-        'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
-        'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
-    }
-    feature_dict.update(seg_feature_dict)
-
-    metrics_ = dict(rle_len=len(rle))
-    append_metrics(metrics_, metrics[f'method_{subsample_method}'])
-
-    example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
     return example, 0
 
 
