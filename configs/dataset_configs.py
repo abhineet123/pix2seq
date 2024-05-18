@@ -39,6 +39,8 @@ def get_shared_data():
         train_cfg='',
         eval_cfg='',
 
+        category_names_path='',
+
         transforms=_transforms_config
     )
 
@@ -112,6 +114,8 @@ def get_sem_seg_data():
 
         train_cfg='',
         eval_cfg='',
+
+        category_names_path='',
 
         transforms=D(),
     )
@@ -322,10 +326,10 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
         ds_cfg[f'{mode}_name'] = name
         ds_cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name, 'shard*')
 
-    if training:
-        ds_cfg.category_names_path = os.path.join(ds_cfg.train_db_root_dir, ds_cfg.train_filename_for_metrics)
-    else:
-        ds_cfg.category_names_path = os.path.join(ds_cfg.eval_db_root_dir, ds_cfg.eval_filename_for_metrics)
+    # if training:
+    #     ds_cfg.category_names_path = os.path.join(ds_cfg.train_db_root_dir, ds_cfg.train_filename_for_metrics)
+    # else:
+    #     ds_cfg.category_names_path = os.path.join(ds_cfg.eval_db_root_dir, ds_cfg.eval_filename_for_metrics)
 
     ds_cfg.coco_annotations_dir_for_metrics = db_root_dir
 

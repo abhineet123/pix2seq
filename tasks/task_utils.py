@@ -98,52 +98,50 @@ def load_video(vid_path, seq=''):
     return vid_reader, vid_width, vid_height, num_frames
 
 
-d
-
-
-def check_rle(image, mask, rle, starts_offset, lengths_offset,
-              max_length, subsample, allow_odd_rle, show):
+def check_rle(
+        image, mask, rle, n_classes,
+        starts_offset, lengths_offset, class_offset,
+        max_length, subsample, multi_class, class_to_col, show):
     if len(mask.shape) == 3:
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        mask_gt = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
     else:
-        mask = np.copy(mask)
+        mask_gt = np.copy(mask)
 
-    mask[mask > 0] = 1
-    n_rows, n_cols = mask.shape
+    mask_vis_to_id(mask_gt, n_classes)
+
+    n_rows, n_cols = mask_gt.shape
 
     if subsample > 1:
         max_length = int(max_length / subsample)
         n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
-    mask_rec = rle_to_mask(
+    mask_rec = mask_from_tokens(
         rle,
-        shape=(n_rows, n_cols),
+        (n_rows, n_cols),
         starts_offset=starts_offset,
         lengths_offset=lengths_offset,
-        starts_2d=False, label=1,
-        max_length=max_length,
-        subsample=1,
-        allow_odd_rle=allow_odd_rle,
-    )
+        class_offset=class_offset,
+        starts_2d=False,
+        multi_class=multi_class,
 
+    )
     if subsample > 1:
-        mask_rec, _ = resize_mask(mask_rec, mask.shape)
+        mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=0)
     else:
-        mask_mismatch = np.nonzero(mask != mask_rec)
+        mask_mismatch = np.nonzero(mask_gt != mask_rec)
         assert mask_mismatch[0].size == 0, "mask_rec mismatch"
         print('masks match !')
 
     if show:
         # import eval_utils
-        mask_vis = cv2.cvtColor(mask * 255, cv2.COLOR_GRAY2BGR)
-        mask_rec_vis = cv2.cvtColor(mask_rec * 255, cv2.COLOR_GRAY2BGR)
+        mask_gt_vis = mask_id_to_vis_rgb(mask, class_to_col)
+        mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_to_col)
 
-        masks_all = np.concatenate([image, mask_vis, mask_rec_vis], axis=1)
+        masks_all = np.concatenate([image, mask_gt_vis, mask_rec_vis], axis=1)
         # vis_txt = ' '.join(vis_txt)
         # masks_all = eval_utils.annotate(masks_all, vis_txt)
-        # cv2.imshow('mask_vis', mask_vis)
+        # cv2.imshow('mask_gt_vis', mask_gt_vis)
         # cv2.imshow('mask_rec_vis', mask_rec_vis)
-        # cv2.imshow('mask_rec2_vis', mask_rec2_vis)
         cv2.imshow('masks_all', masks_all)
         k = cv2.waitKey(0)
         if k == 27:
@@ -467,10 +465,20 @@ def rle_to_tokens(rle_cmp, shape, starts_offset, lengths_offset, class_offset, s
     return rle_tokens
 
 
-def mask_from_logits(logits_, shape, starts_offset, lengths_offset, class_offset, starts_2d, multi_class):
+def mask_from_logits(
+        logits_, shape,
+        max_length,
+        starts_bins,
+        n_classes,
+        starts_offset, lengths_offset, class_offset,
+        starts_2d, multi_class
+):
     rle_cmp = rle_from_logits(
         logits_,
         shape,
+        max_length=max_length,
+        starts_bins=starts_bins,
+        n_classes=n_classes,
         starts_offset=starts_offset,
         lengths_offset=lengths_offset,
         class_offset=class_offset,
@@ -496,7 +504,10 @@ def selective_argmax(arr, idx_range):
 
 
 def rle_from_logits(
-        rle_logits, shape, max_length, starts_bins,
+        rle_logits,
+        shape,
+        max_length,
+        starts_bins,
         n_classes,
         starts_offset, lengths_offset, class_offset,
         starts_2d, multi_class):
@@ -532,20 +543,15 @@ def rle_from_logits(
     len_tokens = selective_argmax(len_logits, len_token_range)
     lengths = len_tokens - lengths_offset
 
+    rle_cmp = [starts, lengths]
+
     if multi_class:
         class_token_range = [class_offset, class_offset + n_classes]
         class_logits = rle_logits_non_padding[2::n_run_tokens, :]
         class_tokens = selective_argmax(class_logits, class_token_range)
         class_ids = class_tokens - class_offset
-    else:
-        class_ids = [1, ] * len(starts)
-
-    mask = rle_to_mask(
-        starts, lengths, class_ids,
-        shape,
-    )
-
-    return mask
+        rle_cmp.append(class_ids)
+    return rle_cmp
 
 
 def mask_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offset, starts_2d, multi_class):
@@ -693,6 +699,15 @@ def rle_to_mask(starts, lengths, class_ids, shape):
     mask = mask_flat.reshape(shape)
 
     return mask
+
+
+def read_class_info(class_names_path):
+    class_info = [k.strip() for k in open(class_names_path, 'r').readlines() if k.strip()]
+    class_names, class_cols = zip(*[[m.strip() for m in k.split('\t')] for k in class_info])
+    class_id_to_col = {i + 1: x for (i, x) in enumerate(class_cols)}
+    class_id_to_name = {i + 1: x for (i, x) in enumerate(class_names)}
+
+    return class_names, class_id_to_col, class_id_to_name
 
 
 def get_category_names(

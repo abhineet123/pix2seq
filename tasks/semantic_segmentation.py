@@ -17,6 +17,15 @@ class TaskSemanticSegmentation(task_lib.Task):
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
 
+        class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(
+            config.dataset.get('category_names_path'))
+
+        assert self._category_names == class_names, "class_names mismatch"
+
+        self.class_id_to_col = class_id_to_col
+        self.class_id_to_name = class_id_to_name
+
+
     def preprocess_single(self, dataset, batch_duplicates, training, validation):
         if self.config.debug != 2:
             """apply transforms"""
@@ -49,15 +58,16 @@ class TaskSemanticSegmentation(task_lib.Task):
             if rle_stripped.size == 0:
                 print(f'\n{img_id}: mask is empty\n')
 
-            task_utils.check_rle(image, mask, rle_stripped,
-                                 starts_offset=self.config.model.coord_vocab_shift,
-                                 lengths_offset=self.config.model.len_vocab_shift,
-                                 class_offset=self.config.model.class_vocab_shift,
-                                 max_length=max_length,
-                                 subsample=subsample,
-                                 allow_odd_rle=0,
-                                 show=show,
-                                 )
+            task_utils.check_rle(
+                image, mask, rle_stripped,
+                n_classes=n_classes,
+                starts_offset=self.config.model.coord_vocab_shift,
+                lengths_offset=self.config.model.len_vocab_shift,
+                class_offset=self.config.model.class_vocab_shift,
+                max_length=max_length,
+                subsample=subsample,
+                show=show,
+            )
 
     def preprocess_batched(self, batched_examples, training):
         config = self.config.task
