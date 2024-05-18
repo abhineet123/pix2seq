@@ -289,6 +289,11 @@ def create_tf_example(
     )
     rle_len = len(rle_tokens)
 
+    if multi_class:
+        assert rle_len % 3 == 0, "rle_len must be divisible by 3"
+    else:
+        assert rle_len % 2 == 0, "rle_len must be divisible by 2"
+
     seg_feature_dict = {
         'image/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
         'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
@@ -300,7 +305,6 @@ def create_tf_example(
     if rle_len > 0:
         metrics_ = dict(rle_len=rle_len)
         append_metrics(metrics_, metrics[f'method_{subsample_method}'])
-
 
     if params.show:
         rle_rec_cmp = task_utils.rle_from_tokens(
@@ -422,8 +426,6 @@ def main():
 
     if multi_class:
         out_name = f'{out_name}-mc'
-
-
 
     image_infos = load_seg_annotations(json_path)
 
