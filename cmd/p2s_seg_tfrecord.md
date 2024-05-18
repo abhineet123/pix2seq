@@ -64,7 +64,7 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-80:res-640:gz:seq-
 
 <a id="sz_80_mc___res_640_16_5_3_"></a>
 ### sz-80-mc       @ res-640/16_53-->p2s_seg_tfrecord
-python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:sz-80:res-640:gz:mc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_1:sz-80:res-640:gz:mc
 
 <a id="sz_160___res_640_16_5_3_"></a>
 ### sz-160       @ res-640/16_53-->p2s_seg_tfrecord

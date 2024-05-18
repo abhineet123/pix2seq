@@ -443,6 +443,9 @@ def subsample_rle(starts, lengths, subsample, shape, max_length):
 def rle_to_tokens(rle_cmp, shape, starts_offset, lengths_offset, class_offset, starts_2d):
     starts, lengths = rle_cmp[:2]
 
+    if len(starts) == 0:
+        return []
+
     starts += (starts_offset + 1)
     lengths += lengths_offset
 
@@ -705,10 +708,29 @@ def rle_to_mask(starts, lengths, class_ids, shape):
 def read_class_info(class_names_path):
     class_info = [k.strip() for k in open(class_names_path, 'r').readlines() if k.strip()]
     class_names, class_cols = zip(*[[m.strip() for m in k.split('\t')] for k in class_info])
-    class_id_to_col = {i + 1: x for (i, x) in enumerate(class_cols)}
-    class_id_to_name = {i + 1: x for (i, x) in enumerate(class_names)}
 
-    return class_names, class_id_to_col, class_id_to_name
+    if 'background' not in class_names:
+        assert 'black' not in class_cols, "black should only be used for background"
+        class_names = ('background',) + class_names
+        class_cols = ('black',) + class_cols
+
+    class_id_to_col = {i: x for (i, x) in enumerate(class_cols)}
+    class_id_to_name = {i: x for (i, x) in enumerate(class_names)}
+
+    n_classes = len(class_cols)
+    palette = []
+    for class_id in range(n_classes):
+        col = class_cols[class_id]
+
+        col_rgb = col_bgr[col][::-1]
+
+        palette.append(col_rgb)
+
+    palette_flat = [value for color in palette for value in color]
+
+    class_name_to_id = {x: i for (i, x) in enumerate(class_names)}
+
+    return class_names, class_id_to_col, class_id_to_name, class_name_to_id, palette_flat
 
 
 def get_category_names(
@@ -734,7 +756,14 @@ def get_category_names(
             annotations = json.load(f)
     category_names = {c['id']: c for c in annotations['categories']}
 
-    assert 0 not in category_names.keys(), "class IDs must to be > 0"
+    # assert 0 not in category_names.keys(), "class IDs must to be > 0"
+
+    try:
+        bkg_class = category_names[0]['name']
+    except KeyError:
+        pass
+    else:
+        assert bkg_class == 'background', "class id 0 must be used only for background"
 
     return category_names
 

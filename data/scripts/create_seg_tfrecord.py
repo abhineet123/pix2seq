@@ -125,12 +125,18 @@ def load_seg_annotations(annotation_path):
         raise AssertionError(f'Invalid annotation_path: {annotation_path}')
 
     image_info = annotations['images']
+
     class_id_to_name = dict(
         (element['id'], element['name']) for element in annotations['categories'])
 
-    assert 0 not in class_id_to_name.keys(), "class IDs must to be > 0"
+    try:
+        bkg_class = class_id_to_name[0]
+    except KeyError:
+        pass
+    else:
+        assert bkg_class == 'background', "class id 0 must be used only for background"
 
-    return image_info, class_id_to_name
+    return image_info
 
 
 def generate_annotations(
@@ -225,7 +231,6 @@ def create_tf_example(
 
     n_rows, n_cols = mask.shape
     max_length = params.max_length
-
 
     if subsample_method == 2:
         """        
@@ -361,17 +366,7 @@ def main():
 
     assert params.end_id >= params.start_id, f"invalid end_id: {params.end_id}"
 
-    class_info = [k.strip() for k in open(params.class_names_path, 'r').readlines() if k.strip()]
-    class_names, class_cols = zip(*[[m.strip() for m in k.split('\t')] for k in class_info])
-    # class_names, class_cols = list(class_names), list(class_cols),
-    if 'background' not in class_names:
-        assert 'black' not in class_cols, "black should only be used for background"
-        class_names = ('background',) + class_names
-        class_cols = ('black',) + class_cols
-
-    class_id_to_col = {i: x for (i, x) in enumerate(class_cols)}
-    class_id_to_name = {i: x for (i, x) in enumerate(class_names)}
-    # class_to_col = {x: c for (x, c) in zip(class_names, class_cols)}
+    class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)[:3]
 
     n_classes = len(class_id_to_col)
     multi_class = False
@@ -424,10 +419,10 @@ def main():
     if params.subsample > 1:
         out_name = f'{out_name}-sub_{params.subsample}'
 
-    if params.multi_class > 1:
+    if multi_class > 1:
         out_name = f'{out_name}-mc'
 
-    image_infos, _ = load_seg_annotations(json_path)
+    image_infos = load_seg_annotations(json_path)
 
     if not params.output_dir:
         params.output_dir = os.path.join(params.db_path, 'tfrecord')
@@ -469,6 +464,7 @@ def main():
                                         f"seq {seq}")
 
     metrics = dict(
+        method_0={},
         method_1={},
         method_2={},
 

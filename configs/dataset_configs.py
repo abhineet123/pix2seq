@@ -40,7 +40,7 @@ def get_shared_data():
         eval_cfg='',
 
         category_names_path='',
-        class_info_path='',
+        class_info_path='lists/classes/ipsc_2_class.txt',
 
         transforms=_transforms_config
     )
@@ -117,7 +117,7 @@ def get_sem_seg_data():
         eval_cfg='',
 
         category_names_path='',
-        class_info_path='',
+        class_info_path='lists/classes/ipsc_2_class.txt',
 
         transforms=D(),
     )

@@ -86,7 +86,14 @@ def load_ytvis_annotations(annotation_path, vid_id_offset):
     category_id_to_name_map = dict(
         (element['id'], element['name']) for element in annotations['categories'])
 
-    assert 0 not in category_id_to_name_map.keys(), "class IDs must to be > 0"
+    # assert 0 not in category_id_to_name_map.keys(), "class IDs must to be > 0"
+
+    try:
+        bkg_class = category_id_to_name_map[0]
+    except KeyError:
+        pass
+    else:
+        assert bkg_class == 'background', "class id 0 can be used only for background"
 
     vid_to_ann = collections.defaultdict(list)
     for ann in annotations['annotations']:
