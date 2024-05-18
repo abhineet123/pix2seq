@@ -226,6 +226,7 @@ def create_tf_example(
     n_rows, n_cols = mask.shape
     max_length = params.max_length
 
+
     if subsample_method == 2:
         """        
         decrease mask resolution by resizing and create RLE of the low-res mask
@@ -235,14 +236,14 @@ def create_tf_example(
 
         # mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
         mask_sub = task_utils.resize_mask_coord(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
-
-        task_utils.mask_vis_to_id(mask, n_classes=n_classes)
     else:
-        mask_sub = mask
+        mask_sub = np.copy(mask)
         n_rows_sub, n_cols_sub = n_rows, n_cols
         max_length_sub = max_length
 
+    task_utils.mask_vis_to_id(mask, n_classes=n_classes)
     task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
+
     starts, lengths = task_utils.mask_to_rle(
         mask=mask_sub,
         max_length=max_length_sub,

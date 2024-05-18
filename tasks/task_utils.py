@@ -160,7 +160,9 @@ def remove_duplicates(seq):
 
 def resize_mask_coord(mask, shape, n_classes, is_vis=1):
     if is_vis:
+        mask = np.copy(mask)
         mask_vis_to_id(mask, n_classes)
+
     mask_out = np.zeros_like(mask, shape=shape)
     mask_rows, mask_cols = mask.shape[:2]
     out_rows, out_cols = mask_out.shape[:2]
@@ -305,7 +307,7 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image
 
         # col_id = run_id % len(cols)
         # col = cols[col_id]
-        mask_sub_rgb[mask_bool] = col
+        mask_sub_vis[mask_bool] = col
 
         text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
                                                                  wait=100, bb=1, show=0, font_size=font_size)
