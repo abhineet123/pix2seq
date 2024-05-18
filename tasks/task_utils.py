@@ -116,7 +116,7 @@ def check_rle(
         max_length = int(max_length / subsample)
         n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
-    mask_rec = mask_from_tokens(
+    mask_rec, rle_rec_cmp = mask_from_tokens(
         rle,
         (n_rows, n_cols),
         starts_offset=starts_offset,

@@ -419,8 +419,10 @@ def main():
     if params.subsample > 1:
         out_name = f'{out_name}-sub_{params.subsample}'
 
-    if multi_class > 1:
+    if multi_class:
         out_name = f'{out_name}-mc'
+
+
 
     image_infos = load_seg_annotations(json_path)
 
@@ -428,6 +430,11 @@ def main():
         params.output_dir = os.path.join(params.db_path, 'tfrecord')
 
     os.makedirs(params.output_dir, exist_ok=True)
+
+    output_path = os.path.join(params.output_dir, out_name)
+    os.makedirs(output_path, exist_ok=True)
+
+    print(f'output_path: {output_path}')
 
     if params.max_length <= 0:
         params.max_length = params.patch_width
@@ -477,9 +484,6 @@ def main():
         image_infos=image_infos,
         vid_infos=vid_infos,
     )
-    output_path = os.path.join(params.output_dir, out_name)
-    os.makedirs(output_path, exist_ok=True)
-
     tfrecord_pattern = os.path.join(output_path, 'shard')
 
     tfrecord_lib.write_tf_record_dataset(

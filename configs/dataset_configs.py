@@ -178,6 +178,8 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
     else:
         modes = ['eval']
 
+    multi_class = ds_cfg[f'multi_class']
+
     for mode in modes:
         name = ds_cfg[f'{mode}_name']
         if not name:
@@ -188,6 +190,7 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
 
         if is_seg:
             mode_cfg = ds_cfg[f'{mode}']
+
             suffix = mode_cfg.suffix
 
             resize = mode_cfg[f'resize']
@@ -313,6 +316,9 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
         if is_seg:
             if subsample > 1:
                 name = f'{name}-sub_{subsample}'
+
+            if multi_class:
+                name = f'{name}-mc'
 
         if is_video:
             try:
