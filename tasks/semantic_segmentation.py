@@ -187,7 +187,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         image_ids_ = image_ids.numpy().flatten().astype(str)
         image_ids = list(image_ids_)
         images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
-        multi_class = self.config.model.multi_class
+        multi_class = self.config.dataset.multi_class
         for image_id_, image_, rle_, logits_, orig_size_, gt_rle_ in zip(
                 image_ids, images, rles, logits, orig_sizes, gt_rles):
             orig_size_ = tuple(orig_size_)
