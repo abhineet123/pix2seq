@@ -3,6 +3,7 @@
 - [resnet-640-16_53](#resnet_640_16_5_3_)
     - [res-2560       @ resnet-640-16_53](#res_2560___resnet_640_16_53_)
         - [sz-640-sub-8       @ res-2560/resnet-640-16_53](#sz_640_sub_8___res_2560_resnet_640_16_5_3_)
+        - [sz-640-sub-8-mc       @ res-2560/resnet-640-16_53](#sz_640_sub_8_mc___res_2560_resnet_640_16_5_3_)
         - [sz-640-aug-sub-8       @ res-2560/resnet-640-16_53](#sz_640_aug_sub_8___res_2560_resnet_640_16_5_3_)
         - [sz-640-aug-sub-4       @ res-2560/resnet-640-16_53](#sz_640_aug_sub_4___res_2560_resnet_640_16_5_3_)
     - [res-640       @ resnet-640-16_53](#res_640___resnet_640_16_53_)
@@ -32,6 +33,10 @@
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:psz-640:rsz-2560:sub-8,batch-24,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
 `seq-0`
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:psz-640:rsz-2560:sub-8:seq-0,batch-8,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1
+
+<a id="sz_640_sub_8_mc___res_2560_resnet_640_16_5_3_"></a>
+### sz-640-sub-8-mc       @ res-2560/resnet-640-16_53-->p2s_seg
+python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-0_1:psz-640:rsz-2560:sub-8,batch-2,dbg-1,dyn-1,dist-0,ep-10000,gz,pt-1,mc
 
 <a id="sz_640_aug_sub_8___res_2560_resnet_640_16_5_3_"></a>
 ### sz-640-aug-sub-8       @ res-2560/resnet-640-16_53-->p2s_seg
