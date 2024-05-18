@@ -127,12 +127,24 @@ def check_rle(
 
     )
     if subsample > 1:
-        mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=0)
+        mask_gt_sub = resize_mask_coord(mask_gt, mask_rec.shape, n_classes, is_vis=0)
+
+        mask_rec_ = mask_id_to_vis(mask_rec, n_classes, copy=True)
+        mask_gt_ = mask_id_to_vis(mask_gt, n_classes, copy=True)
+        cv2.imshow('mask_rec', mask_rec_)
+        cv2.imshow('mask_gt', mask_gt_)
+    else:
+        mask_gt_sub = mask_gt
 
     if show:
+        # if subsample > 1:
+        #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
+
         # import eval_utils
         mask_gt_vis = mask_id_to_vis_rgb(mask_gt, class_to_col)
         mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_to_col)
+
+        cv2.imshow('mask_rec_vis', mask_rec_vis)
 
         mask_gt_vis = resize_mask(mask_gt_vis, image.shape, n_classes, is_vis=1)
         mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
@@ -147,10 +159,9 @@ def check_rle(
         if k == 27:
             exit()
 
-    if subsample <= 1:
-        mask_mismatch = np.nonzero(mask_gt != mask_rec)
-        assert mask_mismatch[0].size == 0, "mask_rec mismatch"
-        print('masks match !')
+    mask_mismatch = np.nonzero(mask_gt_sub != mask_rec)
+    assert mask_mismatch[0].size == 0, "mask_rec mismatch"
+    print('masks match !')
 
 
 def interleave_rle(rle_cmps):
@@ -187,15 +198,16 @@ def resize_mask_coord(mask, shape, n_classes, is_vis=1):
 def resize_mask(mask, shape, n_classes, is_vis=1):
     n_rows, n_cols = shape[:2]
     if not is_vis:
-        mask = np.copy(mask)
-        mask_id_to_vis(mask, n_classes)
+        mask = mask_id_to_vis(mask, n_classes, copy=True)
     mask = cv2.resize(mask, (n_cols, n_rows))
     if not is_vis:
         mask_vis_to_id(mask, n_classes)
     return mask
 
 
-def mask_id_to_vis(mask, n_classes, to_rgb=0):
+def mask_id_to_vis(mask, n_classes, to_rgb=0, copy=False):
+    if to_rgb or copy:
+        mask = np.copy(mask)
     if n_classes == 3:
         # labels_img[labels_img == 0] = 0
         mask[mask == 1] = 128
@@ -207,8 +219,8 @@ def mask_id_to_vis(mask, n_classes, to_rgb=0):
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
     if to_rgb and len(mask.shape) == 2:
         mask = np.stack((mask,) * 3, axis=2)
-
-    return mask
+    if to_rgb or copy:
+        return mask
 
 
 def mask_vis_to_id(mask, n_classes):
@@ -269,7 +281,7 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image
     mask_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
     mask_sub_rgb = mask_id_to_vis_rgb(mask_sub, class_id_to_col)
 
-    mask_sub_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1)
+    mask_sub_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1, copy=True)
     mask_sub_vis[mask_sub_vis > 0] = 255
 
     vis_image = blend_mask(mask, image, class_id_to_col)
@@ -290,6 +302,9 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image
     cv2.imshow('mask_sub_vis_', mask_sub_vis_)
     cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
     cv2.imshow('mask_rgb', mask_rgb_)
+
+    # cv2.waitKey(0)
+    return
 
     text_img = np.full((vis_size, vis_size, 3), bkg_col, dtype=np.uint8)
     mask_flat = mask_sub.flatten()

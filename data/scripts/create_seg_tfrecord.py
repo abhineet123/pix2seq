@@ -265,6 +265,8 @@ def create_tf_example(
 
     rle_cmp = [starts, lengths]
 
+    n_runs = len(starts)
+
     n_classes = len(class_id_to_col)
     multi_class = False
     class_ids = None
@@ -274,7 +276,7 @@ def create_tf_example(
         rle_cmp.append(class_ids)
         multi_class = True
 
-    if params.vis:
+    if params.vis and n_runs > 0:
         task_utils.vis_rle(
             starts, lengths, class_ids,
             class_id_to_col, class_id_to_name,
@@ -306,7 +308,7 @@ def create_tf_example(
         metrics_ = dict(rle_len=rle_len)
         append_metrics(metrics_, metrics[f'method_{subsample_method}'])
 
-    if params.show:
+    if params.show and n_runs > 0:
         rle_rec_cmp = task_utils.rle_from_tokens(
             rle_tokens, mask_sub.shape,
             params.starts_offset,
@@ -340,11 +342,11 @@ def create_tf_example(
 
         if subsample_method == 2:
             """reconstruct low-res mask and resize to scale it up"""
-            mask_vis = cv2.resize(mask_vis, (n_rows, n_cols))
+            mask_vis = cv2.resize(mask_vis, (n_cols, n_rows))
 
-            mask_rec_vis = cv2.resize(mask_rec_vis, (n_rows, n_cols))
-            metrics_ = eval_mask(mask_rec, mask, rle_len)
-            vis_txt.append(append_metrics(metrics_, metrics['method_1']))
+            mask_rec_vis = cv2.resize(mask_rec_vis, (n_cols, n_rows))
+            # metrics_ = eval_mask(mask_rec, mask, rle_len)
+            # vis_txt.append(append_metrics(metrics_, metrics['method_1']))
 
         vis_imgs.append(mask_vis)
         vis_imgs.append(mask_rec_vis)
