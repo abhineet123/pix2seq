@@ -128,10 +128,6 @@ def check_rle(
     )
     if subsample > 1:
         mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=0)
-    else:
-        mask_mismatch = np.nonzero(mask_gt != mask_rec)
-        assert mask_mismatch[0].size == 0, "mask_rec mismatch"
-        print('masks match !')
 
     if show:
         # import eval_utils
@@ -147,6 +143,11 @@ def check_rle(
         k = cv2.waitKey(0)
         if k == 27:
             exit()
+
+    if subsample <= 1:
+        mask_mismatch = np.nonzero(mask_gt != mask_rec)
+        assert mask_mismatch[0].size == 0, "mask_rec mismatch"
+        print('masks match !')
 
 
 def interleave_rle(rle_cmps):
