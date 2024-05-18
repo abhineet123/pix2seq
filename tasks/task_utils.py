@@ -131,8 +131,11 @@ def check_rle(
 
     if show:
         # import eval_utils
-        mask_gt_vis = mask_id_to_vis_rgb(mask, class_to_col)
+        mask_gt_vis = mask_id_to_vis_rgb(mask_gt, class_to_col)
         mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_to_col)
+
+        mask_gt_vis = resize_mask(mask_gt_vis, image.shape, n_classes, is_vis=1)
+        mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
 
         masks_all = np.concatenate([image, mask_gt_vis, mask_rec_vis], axis=1)
         # vis_txt = ' '.join(vis_txt)
@@ -182,10 +185,11 @@ def resize_mask_coord(mask, shape, n_classes, is_vis=1):
 
 
 def resize_mask(mask, shape, n_classes, is_vis=1):
+    n_rows, n_cols = shape[:2]
     if not is_vis:
         mask = np.copy(mask)
         mask_id_to_vis(mask, n_classes)
-    mask = cv2.resize(mask, shape)
+    mask = cv2.resize(mask, (n_cols, n_rows))
     if not is_vis:
         mask_vis_to_id(mask, n_classes)
     return mask
@@ -450,22 +454,22 @@ def rle_to_tokens(rle_cmp, shape, starts_offset, lengths_offset, class_offset, s
     starts += (starts_offset + 1)
     lengths += lengths_offset
 
-    rle_cmp.append(lengths)
-
     if starts_2d:
         starts_rows, starts_cols = np.unravel_index(starts, shape)
         starts_rows += (starts_offset + 1)
         starts_cols += (starts_offset + 1)
-        rle_cmp = [starts_rows, starts_cols, lengths]
+        rle_tokens_cmp = [starts_rows, starts_cols, lengths]
     else:
-        rle_cmp = [starts, lengths]
+        rle_tokens_cmp = [starts, lengths]
 
     if len(rle_cmp) == 3:
-        class_ids = rle_cmp[2]
+        class_ids = np.asarray(rle_cmp[2])
         class_ids += class_offset
-        rle_cmp.append(class_ids)
+        rle_tokens_cmp.append(class_ids)
+    else:
+        assert len(rle_cmp) == 2, "rle_cmp length must be 2 or 3"
 
-    rle_tokens = [int(item) for sublist in zip(*rle_cmp) for item in sublist]
+    rle_tokens = [int(item) for sublist in zip(*rle_tokens_cmp) for item in sublist]
 
     return rle_tokens
 

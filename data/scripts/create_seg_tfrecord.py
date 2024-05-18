@@ -295,11 +295,12 @@ def create_tf_example(
         'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
     }
     feature_dict.update(seg_feature_dict)
-
-    metrics_ = dict(rle_len=rle_len)
-    append_metrics(metrics_, metrics[f'method_{subsample_method}'])
-
     example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
+
+    if rle_len > 0:
+        metrics_ = dict(rle_len=rle_len)
+        append_metrics(metrics_, metrics[f'method_{subsample_method}'])
+
 
     if params.show:
         rle_rec_cmp = task_utils.rle_from_tokens(
