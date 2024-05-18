@@ -269,10 +269,11 @@ def create_tf_example(
         rle_cmp.append(class_ids)
         multi_class = True
 
-    task_utils.vis_rle(
-        starts, lengths, class_ids,
-        class_id_to_col, class_id_to_name,
-        image, mask, mask_sub)
+    if params.vis:
+        task_utils.vis_rle(
+            starts, lengths, class_ids,
+            class_id_to_col, class_id_to_name,
+            image, mask, mask_sub)
 
     rle_tokens = task_utils.rle_to_tokens(
         rle_cmp, mask_sub.shape,
@@ -372,6 +373,12 @@ def main():
     class_id_to_name = {i: x for (i, x) in enumerate(class_names)}
     # class_to_col = {x: c for (x, c) in zip(class_names, class_cols)}
 
+    n_classes = len(class_id_to_col)
+    multi_class = False
+    if n_classes > 2:
+        assert params.class_offset > 0, "class_offset must be > 0 for multi_class mode"
+        multi_class = True
+
     if params.patch_width <= 0:
         params.patch_width = params.patch_height
 
@@ -416,6 +423,9 @@ def main():
     out_name = json_suffix
     if params.subsample > 1:
         out_name = f'{out_name}-sub_{params.subsample}'
+
+    if params.multi_class > 1:
+        out_name = f'{out_name}-mc'
 
     image_infos, _ = load_seg_annotations(json_path)
 
