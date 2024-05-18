@@ -98,6 +98,9 @@ def load_video(vid_path, seq=''):
     return vid_reader, vid_width, vid_height, num_frames
 
 
+d
+
+
 def check_rle(image, mask, rle, starts_offset, lengths_offset,
               max_length, subsample, allow_odd_rle, show):
     if len(mask.shape) == 3:
@@ -462,6 +465,110 @@ def rle_to_tokens(rle_cmp, shape, starts_offset, lengths_offset, class_offset, s
     rle_tokens = [int(item) for sublist in zip(*rle_cmp) for item in sublist]
 
     return rle_tokens
+
+
+def mask_from_logits(logits_, shape, starts_offset, lengths_offset, class_offset, starts_2d, multi_class):
+    rle_cmp = rle_from_logits(
+        logits_,
+        shape,
+        starts_offset=starts_offset,
+        lengths_offset=lengths_offset,
+        class_offset=class_offset,
+        starts_2d=starts_2d,
+        multi_class=multi_class,
+    )
+    starts, lengths = rle_cmp[:2]
+    if multi_class:
+        class_ids = rle_cmp[2]
+    else:
+        class_ids = [1, ] * len(starts)
+
+    mask = rle_to_mask(
+        starts, lengths, class_ids,
+        shape,
+    )
+    return mask, rle_cmp
+
+
+def selective_argmax(arr, idx_range):
+    start_idx, end_idx = idx_range
+    return start_idx + np.argmax(arr[:, start_idx:end_idx], axis=1)
+
+
+def rle_from_logits(
+        rle_logits, shape, max_length, starts_bins,
+        n_classes,
+        starts_offset, lengths_offset, class_offset,
+        starts_2d, multi_class):
+    assert not starts_2d, "starts_2d is not supported yet"
+
+    rle_tokens_raw = np.argmax(rle_logits, axis=1).squeeze()
+    n_tokens_raw = len(rle_tokens_raw)
+
+    """
+    index of the first non-zero (non-padding) token from end
+    EOS is the next token to this one
+    """
+    eos_idx = np.nonzero(rle_tokens_raw[::-1])[0]
+    eos_idx = n_tokens_raw - eos_idx
+
+    rle_logits_non_padding = rle_logits[:eos_idx, :]
+    seq_len, vocab_size = rle_logits_non_padding.shape
+
+    assert vocab_size >= starts_offset + starts_bins, "invalid vocab_size"
+
+    coord_token_range = [starts_offset, starts_offset + starts_bins]
+    len_token_range = [lengths_offset, lengths_offset + max_length]
+    n_run_tokens = 2 if not multi_class else 3
+
+    if seq_len % n_run_tokens != 0:
+        rle_logits_non_padding = rle_logits_non_padding[:-(seq_len % n_run_tokens), :]
+
+    starts_logits = rle_logits_non_padding[0::n_run_tokens, :]
+    starts_tokens = selective_argmax(starts_logits, coord_token_range)
+    starts = starts_tokens - starts_offset - 1
+
+    len_logits = rle_logits_non_padding[1::n_run_tokens, :]
+    len_tokens = selective_argmax(len_logits, len_token_range)
+    lengths = len_tokens - lengths_offset
+
+    if multi_class:
+        class_token_range = [class_offset, class_offset + n_classes]
+        class_logits = rle_logits_non_padding[2::n_run_tokens, :]
+        class_tokens = selective_argmax(class_logits, class_token_range)
+        class_ids = class_tokens - class_offset
+    else:
+        class_ids = [1, ] * len(starts)
+
+    mask = rle_to_mask(
+        starts, lengths, class_ids,
+        shape,
+    )
+
+    return mask
+
+
+def mask_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offset, starts_2d, multi_class):
+    rle_cmp = rle_from_tokens(
+        rle_tokens,
+        shape,
+        starts_offset=starts_offset,
+        lengths_offset=lengths_offset,
+        class_offset=class_offset,
+        starts_2d=starts_2d,
+        multi_class=multi_class,
+    )
+    starts, lengths = rle_cmp[:2]
+    if multi_class:
+        class_ids = rle_cmp[2]
+    else:
+        class_ids = [1, ] * len(starts)
+
+    mask = rle_to_mask(
+        starts, lengths, class_ids,
+        shape,
+    )
+    return mask, rle_cmp
 
 
 def rle_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offset, starts_2d, multi_class):

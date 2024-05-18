@@ -51,7 +51,8 @@ class TaskSemanticSegmentation(task_lib.Task):
 
             task_utils.check_rle(image, mask, rle_stripped,
                                  starts_offset=self.config.model.coord_vocab_shift,
-                                 lengths_offset=vocab.BASE_VOCAB_SHIFT,
+                                 lengths_offset=self.config.model.len_vocab_shift,
+                                 class_offset=self.config.model.class_vocab_shift,
                                  max_length=max_length,
                                  subsample=subsample,
                                  allow_odd_rle=0,
@@ -72,7 +73,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         response_seq = batched_examples['rle']
         token_weights = tf.ones_like(response_seq, dtype=tf.float32)
 
-        # self.check_rle(batched_examples, show=1)
+        self.check_rle(batched_examples, show=1)
 
         # response_seq, token_weights = build_response_seq_from_rle(
         #     batched_examples['rle'],
@@ -169,7 +170,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         image_ids_ = image_ids.numpy().flatten().astype(str)
         image_ids = list(image_ids_)
         images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
-
+        multi_class = self.config.model.multi_class
         for image_id_, image_, rle_, logits_, orig_size_, gt_rle_ in zip(
                 image_ids, images, rles, logits, orig_sizes, gt_rles):
             orig_size_ = tuple(orig_size_)
@@ -183,39 +184,37 @@ class TaskSemanticSegmentation(task_lib.Task):
                 n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
             rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
-            mask = task_utils.rle_to_mask(
+
+            mask_rec, rle_rec_cmp = task_utils.mask_from_tokens(
                 rle_,
-                shape=(n_rows, n_cols),
+                (n_rows, n_cols),
                 starts_offset=self.config.model.coord_vocab_shift,
-                lengths_offset=vocab.BASE_VOCAB_SHIFT,
+                lengths_offset=self.config.model.len_vocab_shift,
+                class_offset=self.config.model.class_vocab_shift,
                 starts_2d=False,
-                max_length=max_length,
-                subsample=0,
-                allow_odd_rle=1,
+                multi_class=multi_class,
             )
 
-            gt_mask = task_utils.rle_to_mask(
+            mask_gt, rle_gt_cmp = task_utils.mask_from_tokens(
                 gt_rle_,
-                shape=(n_rows, n_cols),
+                (n_rows, n_cols),
                 starts_offset=self.config.model.coord_vocab_shift,
-                lengths_offset=vocab.BASE_VOCAB_SHIFT,
+                lengths_offset=self.config.model.len_vocab_shift,
+                class_offset=self.config.model.class_vocab_shift,
                 starts_2d=False,
-                max_length=max_length,
-                subsample=0,
-                allow_odd_rle=0,
+                multi_class=multi_class,
             )
-
             n_classes = len(self._category_names) + 1
 
             if subsample > 1:
-                mask = task_utils.resize_mask(mask, orig_size_, n_classes)
-                gt_mask = task_utils.resize_mask(gt_mask, orig_size_, n_classes)
+                mask_rec = task_utils.resize_mask(mask_rec, orig_size_, n_classes)
+                mask_gt = task_utils.resize_mask(mask_gt, orig_size_, n_classes)
 
             vis_utils.visualize_mask(
                 image_id_,
                 image_,
-                mask,
-                gt_mask,
+                mask_rec,
+                mask_gt,
                 self._category_names,
                 out_mask_dir=out_mask_dir,
                 out_vis_dir=out_vis_dir,

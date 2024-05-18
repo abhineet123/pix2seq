@@ -308,7 +308,7 @@ def create_tf_example(
         if multi_class:
             class_ids_rec = rle_rec_cmp[2]
         else:
-            class_ids_rec = [1, ] * len(starts)
+            class_ids_rec = [1, ] * len(starts_rec)
 
         if subsample_method == 1:
             """reconstruct full-res mask by super sampling / scaling up the starts and lengths"""
