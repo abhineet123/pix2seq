@@ -37,7 +37,7 @@ class Params(paramparse.CFG):
         self.db_path = ''
         self.db_suffix = ''
         self.vis = 0
-        self.stats = 0
+        self.stats_only = 0
 
         self.n_proc = 0
         self.ann_ext = 'json'
@@ -202,7 +202,7 @@ def create_tf_example(
         }
         feature_dict.update(vid_feature_dict)
 
-        if not params.stats:
+        if not params.stats_only:
             image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
             # from PIL import Image
             # from io import BytesIO
@@ -215,7 +215,7 @@ def create_tf_example(
 
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
     else:
-        if not params.stats:
+        if not params.stats_only:
             with tf.io.gfile.GFile(image_path, 'rb') as fid:
                 encoded_jpg = fid.read()
 
@@ -225,7 +225,7 @@ def create_tf_example(
     vis_imgs = []
     vis_txt = []
 
-    if not params.stats:
+    if not params.stats_only:
         vis_imgs.append(image)
         image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
             image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
@@ -302,7 +302,7 @@ def create_tf_example(
     else:
         assert rle_len % 2 == 0, "rle_len must be divisible by 2"
     example = None
-    if not params.stats:
+    if not params.stats_only:
         seg_feature_dict = {
             'image/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
             'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
@@ -382,7 +382,7 @@ def main():
 
     class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)[:3]
 
-    if params.stats:
+    if params.stats_only:
         print('running in stats only mode')
         params.vis = params.show = False
 
@@ -501,7 +501,7 @@ def main():
         vid_infos=vid_infos,
     )
 
-    if not params.stats:
+    if not params.stats_only:
         tfrecord_pattern = os.path.join(output_path, 'shard')
         tfrecord_lib.write_tf_record_dataset(
             output_path=tfrecord_pattern,

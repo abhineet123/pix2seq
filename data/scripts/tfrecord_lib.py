@@ -163,16 +163,16 @@ def video_seg_frame_info_to_feature_dict(
         _id,
         image_id,
         frame_id,
-        filename, encoded_str, encoded_format):
-    key = hashlib.sha256(encoded_str).hexdigest()
+        filename, encoded_img, encoded_format):
+    key = hashlib.sha256(encoded_img).hexdigest()
 
     video_frame_feature_dict = {
-        f'video/filename-{_id}': convert_to_feature(filename.encode('utf8')),
-        f'image/image_id-{_id}': convert_to_feature(str(image_id).encode('utf8')),
-        f'image/frame_id-{_id}': convert_to_feature(int(frame_id)),
-        f'image/key-{_id}/sha256': convert_to_feature(key.encode('utf8')),
-        f'image/encoded-{_id}': convert_to_feature(encoded_str),
-        f'image/format-{_id}': convert_to_feature(encoded_format.encode('utf8')),
+        f'video/frame-{_id}/filename': convert_to_feature(filename.encode('utf8')),
+        f'video/frame-{_id}/image_id': convert_to_feature(str(image_id).encode('utf8')),
+        f'video/frame-{_id}/frame_id': convert_to_feature(int(frame_id)),
+        f'video/frame-{_id}/key/sha256': convert_to_feature(key.encode('utf8')),
+        f'video/frame-{_id}/encoded': convert_to_feature(encoded_img),
+        f'video/frame-{_id}/format': convert_to_feature(encoded_format.encode('utf8')),
     }
     return video_frame_feature_dict
 

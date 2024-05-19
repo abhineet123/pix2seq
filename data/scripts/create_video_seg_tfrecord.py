@@ -23,6 +23,7 @@ from tasks import task_utils
 from eval_utils import add_suffix
 
 
+
 class Params(paramparse.CFG):
     """
     :ivar subsample_method:
@@ -36,6 +37,7 @@ class Params(paramparse.CFG):
         self.db_path = ''
         self.db_suffix = ''
         self.vis = 0
+        self.stats_only = 0
 
         self.n_proc = 0
         self.ann_ext = 'json'
@@ -46,10 +48,7 @@ class Params(paramparse.CFG):
         self.seq_start_id = 0
         self.seq_end_id = -1
 
-        self.frame_gap = 1
-        self.length = 2
-        self.stride = 1
-        self.sample = 0
+
 
         self.n_rot = 0
         self.max_rot = 0
@@ -76,6 +75,14 @@ class Params(paramparse.CFG):
         self.subsample_method = 2
 
         self.show = 0
+        self.vid = Params.Video()
+
+    class Video:
+        def __init__(self):
+            self.frame_gap = 1
+            self.length = 2
+            self.stride = 1
+            self.sample = 0
 
 
 def append_metrics(metrics, out):
@@ -165,16 +172,16 @@ def generate_patch_vid_infos(
         sorted(patch_infos, key=lambda x: int(x['frame_id']))
 
         n_all_files = len(patch_infos)
-        subseq_start_ids = list(range(0, n_all_files, params.stride))
+        subseq_start_ids = list(range(0, n_all_files, params.vid.stride))
         for subseq_id, subseq_start_id in enumerate(subseq_start_ids):
-            subseq_end_id = min(subseq_start_id + (params.length - 1) * params.frame_gap, n_all_files - 1)
+            subseq_end_id = min(subseq_start_id + (params.vid.length - 1) * params.vid.frame_gap, n_all_files - 1)
             if subseq_start_id > subseq_end_id:
                 break
-            subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:params.frame_gap]
+            subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:params.vid.frame_gap]
 
             n_subseq_files = len(subseq_img_infos)
 
-            if n_subseq_files < params.length:
+            if n_subseq_files < params.vid.length:
                 print(f'skipping subseq {subseq_id + 1} - with length {n_subseq_files}')
                 continue
             all_subseq_img_infos.append(subseq_img_infos)
@@ -228,8 +235,7 @@ def create_tf_example(
     max_length = params.max_length
     n_rows, n_cols = vid_height, vid_width
 
-    image = encoded_jpg = None
-
+    vid = None
 
     for _id, image_info in enumerate(subseq_img_infos):
 
@@ -254,10 +260,21 @@ def create_tf_example(
         if not image_id.startswith('seq'):
             image_id = f'{seq}/{image_id}'
 
-        image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
-        mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
+        if not params.stats_only:
+            image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
 
-        subseq_imgs.append(image)
+            img_h, img_w = image.shape
+            assert img_h == vid_height, "img_h mismatch"
+            assert img_w == vid_width, "img_w mismatch"
+
+            subseq_imgs.append(image)
+
+            encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
+            video_frame_feature_dict = tfrecord_lib.video_seg_frame_info_to_feature_dict(
+                _id, image_id, frame_id, filename, encoded_jpg, 'jpg')
+            video_feature_dict.update(video_frame_feature_dict)
+
+        mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
 
         if len(mask.shape) == 3:
             mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
@@ -265,10 +282,6 @@ def create_tf_example(
         mask_h, mask_w = mask.shape
         assert mask_h == vid_height, "mask_h mismatch"
         assert mask_w == vid_width, "mask_w mismatch"
-
-        img_h, img_w = image.shape
-        assert img_h == vid_height, "img_h mismatch"
-        assert img_w == vid_width, "img_w mismatch"
 
         if subsample_method == 2:
             # mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
@@ -283,14 +296,9 @@ def create_tf_example(
         subseq_masks.append(mask)
         subseq_masks_sub.append(mask_sub)
 
-        encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
+    if not params.stats_only:
+        vid = np.stack(subseq_imgs, axis=0)
 
-        video_frame_feature_dict = tfrecord_lib.video_seg_frame_info_to_feature_dict(
-            _id, image_id, frame_id, filename, encoded_jpg, 'jpg')
-
-        video_feature_dict.update(video_frame_feature_dict)
-
-    vid = np.stack(subseq_imgs, axis=0)
     vid_mask = np.stack(subseq_masks, axis=0)
     vid_mask_sub = np.stack(subseq_masks_sub, axis=0)
 
@@ -334,7 +342,7 @@ def create_tf_example(
             vid, vid_mask, vid_mask_sub)
 
     rle_tokens = task_utils.rle_to_tokens(
-        rle_cmp, mask_sub.shape,
+        rle_cmp, vid_mask_sub.shape,
         params.starts_offset,
         params.lengths_offset,
         params.class_offset,
@@ -347,13 +355,12 @@ def create_tf_example(
     else:
         assert rle_len % 2 == 0, "rle_len must be divisible by 2"
 
-    seg_feature_dict = {
-        'image/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
-        'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
-        'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
-    }
-    feature_dict.update(seg_feature_dict)
-    example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
+    if not params.stats_only:
+        seg_feature_dict = {
+            'image/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
+        }
+        video_feature_dict.update(seg_feature_dict)
+        example = tf.train.Example(features=tf.train.Features(feature=video_feature_dict))
 
     if rle_len > 0:
         metrics_ = dict(rle_len=rle_len)
@@ -424,6 +431,10 @@ def main():
 
     assert params.end_id >= params.start_id, f"invalid end_id: {params.end_id}"
 
+    if params.stats_only:
+        print('running in stats only mode')
+        params.vis = params.show = False
+
     class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)[:3]
 
     n_classes = len(class_id_to_col)
@@ -476,6 +487,23 @@ def main():
     out_name = json_suffix
     if params.subsample > 1:
         out_name = f'{out_name}-sub_{params.subsample}'
+
+    vid_suffixes = []
+    if params.vid.length:
+        vid_suffixes.append(f'len_{params.vid.length}')
+
+    if params.vid.stride:
+        vid_suffixes.append(f'strd_{params.vid.stride}')
+
+    if params.vid.sample:
+        vid_suffixes.append(f'smp_{params.vid.sample}')
+
+    if params.vid.frame_gap:
+        vid_suffixes.append(f'fg_{params.vid.frame_gap}')
+
+    if vid_suffixes:
+        vid_suffix = '-'.join(vid_suffixes)
+        out_name = f'{out_name}-{vid_suffix}'
 
     if multi_class:
         out_name = f'{out_name}-mc'
