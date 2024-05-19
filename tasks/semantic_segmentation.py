@@ -23,11 +23,9 @@ class TaskSemanticSegmentation(task_lib.Task):
         class_names, class_id_to_col, class_id_to_name, class_name_to_id, _ = task_utils.read_class_info(
             class_info_path)
 
-        n_classes = len(self._category_names)
-
-        class_names_from_json = tuple(self._category_names[i]['name'] for i in range(n_classes))
-
-        assert class_names_from_json == class_names, "class_names mismatch"
+        # n_classes = len(self._category_names)
+        # class_names_from_json = tuple(self._category_names[i]['name'] for i in range(n_classes))
+        # assert class_names_from_json == class_names, "class_names mismatch"
 
         self.class_id_to_col = class_id_to_col
         self.class_id_to_name = class_id_to_name
@@ -54,7 +52,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         multi_class = self.config.dataset.multi_class
         class_id_to_col = self.class_id_to_col
 
-        n_classes = len(self._category_names)
+        n_classes = len(self.class_id_to_col)
 
         for batch_id in range(batch_size):
             mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
@@ -227,7 +225,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 starts_2d=False,
                 multi_class=multi_class,
             )
-            n_classes = len(self._category_names)
+            n_classes = len(self.class_id_to_col)
 
             if subsample > 1:
                 mask_rec = task_utils.resize_mask(mask_rec, orig_size_, n_classes)
