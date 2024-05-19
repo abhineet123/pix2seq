@@ -274,6 +274,10 @@ def get_cols(n_runs):
     return cols
 
 
+def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, vid, vid_mask, vid_mask_sub):
+
+    pass
+
 def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_sub):
     n_runs = len(starts)
     n_classes = len(class_id_to_col)
@@ -640,11 +644,16 @@ def rle_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offs
     return rle_cmp
 
 
-def get_rle_class_ids(mask, starts):
+def get_rle_class_ids(mask, starts, lengths):
     mask_flat = mask.flatten()
+
     class_ids = [mask_flat[k] for k in starts]
 
     assert 0 not in class_ids, "class_ids must be non-zero"
+
+    for start, length, class_id in zip(starts, lengths, class_ids):
+        run_class_ids = mask_flat[start:start + length]
+        assert np.all(run_class_ids == class_id), "multiple class IDs found in the same run"
 
     return class_ids
 
@@ -698,6 +707,7 @@ def vid_mask_to_rle(vid_mask, max_length):
     assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
 
     return starts, lengths
+
 
 def mask_to_rle(mask, max_length):
     """

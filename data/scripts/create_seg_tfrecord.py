@@ -36,6 +36,7 @@ class Params(paramparse.CFG):
         self.db_path = ''
         self.db_suffix = ''
         self.vis = 0
+        self.stats = 0
 
         self.n_proc = 0
         self.ann_ext = 'json'
@@ -161,15 +162,13 @@ def generate_annotations(
 
 
 def create_tf_example(
-        params,
-        class_id_to_col,
-        class_id_to_name,
-        metrics,
-        image_info,
-        vid_info):
-    """
-    :param Params params:
-    """
+        params: Params,
+        class_id_to_col: dict,
+        class_id_to_name: dict,
+        metrics: dict,
+        image_info: dict,
+        vid_info: dict
+):
     n_classes = len(class_id_to_col)
 
     image_height = image_info['height']
@@ -192,6 +191,8 @@ def create_tf_example(
 
     feature_dict = {}
 
+    image = encoded_jpg = None
+
     if vid_info is not None:
         vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
         vid_feature_dict = {
@@ -200,31 +201,35 @@ def create_tf_example(
         }
         feature_dict.update(vid_feature_dict)
 
-        image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
+        if not params.stats:
+            image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
+            # from PIL import Image
+            # from io import BytesIO
+            # buffer = BytesIO()
+            # Image.fromarray(image).save(buffer, format="JPEG")
+            # encoded_jpg = buffer.getvalue()
+
+            encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
+            # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
+
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
-
-        # from PIL import Image
-        # from io import BytesIO
-        # buffer = BytesIO()
-        # Image.fromarray(image).save(buffer, format="JPEG")
-        # encoded_jpg = buffer.getvalue()
-
-        encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
-        # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
     else:
-        with tf.io.gfile.GFile(image_path, 'rb') as fid:
-            encoded_jpg = fid.read()
+        if not params.stats:
+            with tf.io.gfile.GFile(image_path, 'rb') as fid:
+                encoded_jpg = fid.read()
 
-        image = cv2.imread(image_path)
+            image = cv2.imread(image_path)
         mask = cv2.imread(mask_image_path)
 
-    vis_imgs = [image, ]
+    vis_imgs = []
     vis_txt = []
 
-    image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
-        image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
+    if not params.stats:
+        vis_imgs.append(image)
+        image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
+            image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
 
-    feature_dict.update(image_feature_dict)
+        feature_dict.update(image_feature_dict)
 
     if len(mask.shape) == 3:
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
@@ -272,7 +277,7 @@ def create_tf_example(
     class_ids = None
     if n_classes > 2:
         assert params.class_offset > 0, "class_offset must be > 0"
-        class_ids = task_utils.get_rle_class_ids(mask_sub, starts)
+        class_ids = task_utils.get_rle_class_ids(mask_sub, starts, lengths)
         rle_cmp.append(class_ids)
         multi_class = True
 
@@ -295,14 +300,15 @@ def create_tf_example(
         assert rle_len % 3 == 0, "rle_len must be divisible by 3"
     else:
         assert rle_len % 2 == 0, "rle_len must be divisible by 2"
-
-    seg_feature_dict = {
-        'image/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
-        'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
-        'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
-    }
-    feature_dict.update(seg_feature_dict)
-    example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
+    example = None
+    if not params.stats:
+        seg_feature_dict = {
+            'image/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
+            'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
+            'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
+        }
+        feature_dict.update(seg_feature_dict)
+        example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
 
     if rle_len > 0:
         metrics_ = dict(rle_len=rle_len)
@@ -374,6 +380,10 @@ def main():
     assert params.end_id >= params.start_id, f"invalid end_id: {params.end_id}"
 
     class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)[:3]
+
+    if params.stats:
+        print('running in stats only mode')
+        params.vis = params.show = False
 
     n_classes = len(class_id_to_col)
     multi_class = False
@@ -489,16 +499,22 @@ def main():
         image_infos=image_infos,
         vid_infos=vid_infos,
     )
-    tfrecord_pattern = os.path.join(output_path, 'shard')
 
-    tfrecord_lib.write_tf_record_dataset(
-        output_path=tfrecord_pattern,
-        annotation_iterator=annotations_iter,
-        process_func=create_tf_example,
-        num_shards=params.num_shards,
-        multiple_processes=params.n_proc,
-        iter_len=len(image_infos),
-    )
+    if not params.stats:
+        tfrecord_pattern = os.path.join(output_path, 'shard')
+        tfrecord_lib.write_tf_record_dataset(
+            output_path=tfrecord_pattern,
+            annotation_iterator=annotations_iter,
+            process_func=create_tf_example,
+            num_shards=params.num_shards,
+            multiple_processes=params.n_proc,
+            iter_len=len(image_infos),
+        )
+    else:
+        from tqdm import tqdm
+        for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
+                create_tf_example(*annotations_iter_)
+
     print(f'output_path: {output_path}')
 
     for method, metrics_ in metrics.items():

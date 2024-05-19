@@ -205,20 +205,18 @@ def generate_annotations(
 
 
 def create_tf_example(
-        params,
+        params: Params,
         class_id_to_col,
         class_id_to_name,
         metrics,
         subseq_img_infos,
         seq,
         vid_info):
-    """
-    :param Params params:
-    """
     n_classes = len(class_id_to_col)
 
     subseq_imgs = []
     subseq_masks = []
+    subseq_masks_sub = []
 
     vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
 
@@ -229,6 +227,9 @@ def create_tf_example(
     subsample_method = params.subsample_method
     max_length = params.max_length
     n_rows, n_cols = vid_height, vid_width
+
+    image = encoded_jpg = None
+
 
     for _id, image_info in enumerate(subseq_img_infos):
 
@@ -280,6 +281,7 @@ def create_tf_example(
         task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
 
         subseq_masks.append(mask)
+        subseq_masks_sub.append(mask_sub)
 
         encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
 
@@ -288,7 +290,9 @@ def create_tf_example(
 
         video_feature_dict.update(video_frame_feature_dict)
 
+    vid = np.stack(subseq_imgs, axis=0)
     vid_mask = np.stack(subseq_masks, axis=0)
+    vid_mask_sub = np.stack(subseq_masks_sub, axis=0)
 
     if subsample_method == 2:
         max_length_sub = int(max_length / params.subsample)
@@ -298,18 +302,17 @@ def create_tf_example(
         max_length_sub = max_length
 
     starts, lengths = task_utils.vid_mask_to_rle(
-        vid_mask=vid_mask,
+        vid_mask=vid_mask_sub,
         max_length=max_length_sub,
     )
-
-    if subsample_method == 1:
-        """subsample RLE of high-res mask"""
-        starts, lengths = task_utils.subsample_rle(
-            starts, lengths,
-            subsample=params.subsample,
-            shape=(n_rows, n_cols),
-            max_length=max_length,
-        )
+    # if subsample_method == 1:
+    #     """subsample RLE of high-res mask"""
+    #     starts, lengths = task_utils.subsample_rle(
+    #         starts, lengths,
+    #         subsample=params.subsample,
+    #         shape=(n_rows, n_cols),
+    #         max_length=max_length,
+    #     )
 
     rle_cmp = [starts, lengths]
 
@@ -320,15 +323,15 @@ def create_tf_example(
     class_ids = None
     if n_classes > 2:
         assert params.class_offset > 0, "class_offset must be > 0"
-        class_ids = task_utils.get_rle_class_ids(mask_sub, starts)
+        class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths)
         rle_cmp.append(class_ids)
         multi_class = True
 
     if params.vis and n_runs > 0:
-        task_utils.vis_rle(
+        task_utils.vis_video_rle(
             starts, lengths, class_ids,
             class_id_to_col, class_id_to_name,
-            image, mask, mask_sub)
+            vid, vid_mask, vid_mask_sub)
 
     rle_tokens = task_utils.rle_to_tokens(
         rle_cmp, mask_sub.shape,
@@ -490,7 +493,7 @@ def main():
     print(f'output_path: {output_path}')
 
     if params.max_length <= 0:
-        params.max_length = params.patch_width
+        params.max_length = params.patch_width * params.length
 
     vid_infos = {}
 
