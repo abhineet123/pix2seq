@@ -459,7 +459,7 @@ def main():
 
     # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
 
-    for image_info in tqdm(image_infos):
+    for image_info in image_infos:
         seq = image_info['seq']
         mask_filename = image_info['mask_file_name']
         vid_path = os.path.join(params.db_path, f'{seq}.mp4')
