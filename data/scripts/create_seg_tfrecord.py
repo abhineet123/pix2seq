@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import cv2
+from tqdm import tqdm
 
 dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
 seg_path = os.path.join(os.path.expanduser("~"), "617")
@@ -458,7 +459,7 @@ def main():
 
     # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
 
-    for image_info in image_infos:
+    for image_info in tqdm(image_infos):
         seq = image_info['seq']
         mask_filename = image_info['mask_file_name']
         vid_path = os.path.join(params.db_path, f'{seq}.mp4')
@@ -468,8 +469,8 @@ def main():
         try:
             vid_info = vid_infos[seq]
         except KeyError:
-            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(vid_path, seq)
-            mask_reader, mask_width, mask_height, mask_num_frames = task_utils.load_video(mask_vid_path, seq)
+            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(vid_path)
+            mask_reader, mask_width, mask_height, mask_num_frames = task_utils.load_video(mask_vid_path)
 
             assert num_frames == mask_num_frames, "num_frames mismatch"
             assert vid_width == mask_width, "vid_width mismatch"
@@ -511,7 +512,6 @@ def main():
             iter_len=len(image_infos),
         )
     else:
-        from tqdm import tqdm
         for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
                 create_tf_example(*annotations_iter_)
 
