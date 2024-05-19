@@ -31,7 +31,7 @@ class Params(paramparse.CFG):
     """
 
     def __init__(self):
-        paramparse.CFG.__init__(self, cfg_prefix='p2s_seg_tf')
+        paramparse.CFG.__init__(self, cfg_prefix='p2s_vid_seg_tf')
         self.class_names_path = ''
         self.db_path = ''
         self.db_suffix = ''
@@ -45,6 +45,11 @@ class Params(paramparse.CFG):
         self.seq_id = -1
         self.seq_start_id = 0
         self.seq_end_id = -1
+
+        self.frame_gap = 1
+        self.length = 2
+        self.stride = 1
+        self.sample = 0
 
         self.n_rot = 0
         self.max_rot = 0
@@ -134,9 +139,47 @@ def load_seg_annotations(annotation_path):
     except KeyError:
         pass
     else:
-        assert bkg_class == 'background', "class id 0 must be used only for background"
+        assert bkg_class == 'background', "class id 0 can be used only for background"
 
     return image_info
+
+
+def generate_patch_vid_infos(
+        params: Params,
+        image_infos: list[dict],
+        vid_infos: dict,
+):
+    from collections import defaultdict
+    patch_vids = defaultdict(list)
+    seq_names = list(vid_infos.keys()).sort()
+    for image_info in image_infos:
+        img_id = image_info['img_id']
+        src_id, patch_id = img_id.split('_')
+        seq_id = image_info['seq']
+
+        patch_seq_id = f'{seq_id}_{patch_id}'
+        patch_vids[patch_seq_id].append(image_info)
+
+    all_subseq_img_infos = []
+    for patch_seq_id, patch_infos in patch_vids.items():
+        sorted(patch_infos, key=lambda x: int(x['frame_id']))
+
+        n_all_files = len(patch_infos)
+        subseq_start_ids = list(range(0, n_all_files, params.stride))
+        for subseq_id, subseq_start_id in enumerate(subseq_start_ids):
+            subseq_end_id = min(subseq_start_id + (params.length - 1) * params.frame_gap, n_all_files - 1)
+            if subseq_start_id > subseq_end_id:
+                break
+            subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:params.frame_gap]
+
+            n_subseq_files = len(subseq_img_infos)
+
+            if n_subseq_files < params.length:
+                print(f'skipping subseq {subseq_id + 1} - with length {n_subseq_files}')
+                continue
+            all_subseq_img_infos.append(subseq_img_infos)
+
+    return all_subseq_img_infos
 
 
 def generate_annotations(
@@ -144,18 +187,19 @@ def generate_annotations(
         class_id_to_col,
         class_id_to_name,
         metrics,
-        image_infos,
+        all_subseq_img_infos,
         vid_infos,
 ):
-    for image_info in image_infos:
-        seq = image_info['seq']
+    for subseq_img_infos in all_subseq_img_infos:
+        seq = subseq_img_infos[0]['seq']
 
         yield (
             params,
             class_id_to_col,
             class_id_to_name,
             metrics,
-            image_info,
+            subseq_img_infos,
+            seq,
             vid_infos[seq]
         )
 
@@ -165,40 +209,48 @@ def create_tf_example(
         class_id_to_col,
         class_id_to_name,
         metrics,
-        image_info,
+        subseq_img_infos,
+        seq,
         vid_info):
     """
     :param Params params:
     """
     n_classes = len(class_id_to_col)
 
-    image_height = image_info['height']
-    image_width = image_info['width']
-    filename = image_info['file_name']
-    image_id = image_info['img_id']
-    seq = image_info['seq']
-    frame_id = int(image_info['frame_id'])
-    mask_filename = image_info['mask_file_name']
+    subseq_imgs = []
+    subseq_masks = []
 
-    subsample_method = params.subsample_method
-    if params.subsample <= 1:
-        subsample_method = 0
+    import hashlib
 
-    image_path = os.path.join(params.db_path, filename)
-    mask_image_path = os.path.join(params.db_path, mask_filename)
+    vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
 
-    if not image_id.startswith('seq'):
-        image_id = f'{seq}/{image_id}'
+    video_feature_dict = tfrecord_lib.video_seg_info_to_feature_dict(
+        vid_height, vid_width, vid_path, mask_vid_path,
+        len(subseq_img_infos), seq)
 
-    feature_dict = {}
+    for _id, image_info in enumerate(subseq_img_infos):
 
-    if vid_info is not None:
-        vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
-        vid_feature_dict = {
-            'image/vid_path': tfrecord_lib.convert_to_feature(vid_path.encode('utf8')),
-            'image/mask_vid_path': tfrecord_lib.convert_to_feature(mask_vid_path.encode('utf8')),
-        }
-        feature_dict.update(vid_feature_dict)
+        image_height = image_info['height']
+        image_width = image_info['width']
+
+        assert image_height == vid_height, "vid_height mismatch"
+        assert image_width == vid_width, "vid_height mismatch"
+
+        filename = image_info['file_name']
+        image_id = image_info['img_id']
+        seq = image_info['seq']
+        frame_id = int(image_info['frame_id'])
+        mask_filename = image_info['mask_file_name']
+
+        subsample_method = params.subsample_method
+        if params.subsample <= 1:
+            subsample_method = 0
+
+        image_path = os.path.join(params.db_path, filename)
+        mask_image_path = os.path.join(params.db_path, mask_filename)
+
+        if not image_id.startswith('seq'):
+            image_id = f'{seq}/{image_id}'
 
         image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
@@ -211,20 +263,11 @@ def create_tf_example(
 
         encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
         # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
-    else:
-        with tf.io.gfile.GFile(image_path, 'rb') as fid:
-            encoded_jpg = fid.read()
 
-        image = cv2.imread(image_path)
-        mask = cv2.imread(mask_image_path)
+        video_frame_feature_dict = tfrecord_lib.video_seg_frame_info_to_feature_dict(
+            _id, image_id, frame_id, filename, encoded_jpg, 'jpg')
 
-    vis_imgs = [image, ]
-    vis_txt = []
-
-    image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
-        image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
-
-    feature_dict.update(image_feature_dict)
+        video_feature_dict.update(video_frame_feature_dict)
 
     if len(mask.shape) == 3:
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
@@ -474,6 +517,12 @@ def main():
 
         assert frame_id <= num_frames, (f"frame_id {frame_id} for image {img_id} exceeds num_frames {num_frames} for "
                                         f"seq {seq}")
+
+    generate_patch_vid_infos(
+        params,
+        image_infos,
+        vid_infos,
+    )
 
     metrics = dict(
         method_0={},

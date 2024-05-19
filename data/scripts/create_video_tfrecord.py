@@ -22,7 +22,7 @@ from eval_utils import col_bgr
 
 class Params(paramparse.CFG):
     def __init__(self):
-        paramparse.CFG.__init__(self, cfg_prefix='p2s_vid_tfrecord')
+        paramparse.CFG.__init__(self, cfg_prefix='p2s_vid_tf')
         self.ann_file = ''
         self.ann_suffix = ''
         self.ann_ext = 'json'
