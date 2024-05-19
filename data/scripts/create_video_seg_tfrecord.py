@@ -220,21 +220,23 @@ def create_tf_example(
     subseq_imgs = []
     subseq_masks = []
 
-    import hashlib
-
     vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
 
     video_feature_dict = tfrecord_lib.video_seg_info_to_feature_dict(
         vid_height, vid_width, vid_path, mask_vid_path,
         len(subseq_img_infos), seq)
 
+    subsample_method = params.subsample_method
+    max_length = params.max_length
+    n_rows, n_cols = vid_height, vid_width
+
     for _id, image_info in enumerate(subseq_img_infos):
 
         image_height = image_info['height']
         image_width = image_info['width']
 
-        assert image_height == vid_height, "vid_height mismatch"
-        assert image_width == vid_width, "vid_height mismatch"
+        assert image_height == vid_height, "image_info height mismatch"
+        assert image_width == vid_width, "image_info width mismatch"
 
         filename = image_info['file_name']
         image_id = image_info['img_id']
@@ -242,12 +244,11 @@ def create_tf_example(
         frame_id = int(image_info['frame_id'])
         mask_filename = image_info['mask_file_name']
 
-        subsample_method = params.subsample_method
         if params.subsample <= 1:
             subsample_method = 0
 
-        image_path = os.path.join(params.db_path, filename)
-        mask_image_path = os.path.join(params.db_path, mask_filename)
+        # image_path = os.path.join(params.db_path, filename)
+        # mask_image_path = os.path.join(params.db_path, mask_filename)
 
         if not image_id.startswith('seq'):
             image_id = f'{seq}/{image_id}'
@@ -255,45 +256,48 @@ def create_tf_example(
         image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
 
-        # from PIL import Image
-        # from io import BytesIO
-        # buffer = BytesIO()
-        # Image.fromarray(image).save(buffer, format="JPEG")
-        # encoded_jpg = buffer.getvalue()
+        subseq_imgs.append(image)
+
+        if len(mask.shape) == 3:
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+
+        mask_h, mask_w = mask.shape
+        assert mask_h == vid_height, "mask_h mismatch"
+        assert mask_w == vid_width, "mask_w mismatch"
+
+        img_h, img_w = image.shape
+        assert img_h == vid_height, "img_h mismatch"
+        assert img_w == vid_width, "img_w mismatch"
+
+        if subsample_method == 2:
+            # mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
+            mask_sub = task_utils.resize_mask_coord(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
+        else:
+            mask_sub = np.copy(mask)
+
+        task_utils.mask_vis_to_id(mask, n_classes=n_classes)
+        task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
+
+        subseq_masks.append(mask)
 
         encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
-        # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
 
         video_frame_feature_dict = tfrecord_lib.video_seg_frame_info_to_feature_dict(
             _id, image_id, frame_id, filename, encoded_jpg, 'jpg')
 
         video_feature_dict.update(video_frame_feature_dict)
 
-    if len(mask.shape) == 3:
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-
-    n_rows, n_cols = mask.shape
-    max_length = params.max_length
+    vid_mask = np.stack(subseq_masks, axis=0)
 
     if subsample_method == 2:
-        """        
-        decrease mask resolution by resizing and create RLE of the low-res mask
-        """
         max_length_sub = int(max_length / params.subsample)
         n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
-
-        # mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
-        mask_sub = task_utils.resize_mask_coord(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
     else:
-        mask_sub = np.copy(mask)
         n_rows_sub, n_cols_sub = n_rows, n_cols
         max_length_sub = max_length
 
-    task_utils.mask_vis_to_id(mask, n_classes=n_classes)
-    task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
-
-    starts, lengths = task_utils.mask_to_rle(
-        mask=mask_sub,
+    tarts, lengths = task_utils.mask_to_rle(
+        vid_mask=vid_mask,
         max_length=max_length_sub,
     )
 

@@ -664,6 +664,41 @@ def rle_to_2d(rle, mask):
     return rle
 
 
+def vid_mask_to_rle(vid_mask, max_length):
+    assert len(vid_mask.shape) == 3, "only greyscale masks are supported"
+
+    vid_mask = np.copy(vid_mask)
+    vid_mask[vid_mask > 0] = 1
+
+    vid_mask_flat = vid_mask.flatten()
+    pixels = np.concatenate([[0], vid_mask_flat, [0]])
+    """the +1 in the original code was to convert indices from 0-based to 1-based"""
+    runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
+
+    if len(runs) == 0:
+        return [], []
+
+    if len(runs) % 2 != 0:
+        raise AssertionError("runs must have even length")
+
+    runs[1::2] -= runs[::2]
+    starts, lengths = runs[::2], runs[1::2]
+
+    if max_length > 0:
+        overlong_runs = np.nonzero(lengths > max_length)[0]
+        if len(overlong_runs) > 0:
+            starts, lengths = split_runs(overlong_runs, starts, lengths, max_length)
+
+    assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
+    assert np.all(lengths > 0), "run length cannot be 0"
+    n_frames, n_rows, n_cols = vid_mask.shape
+
+    n_pix = n_frames * n_rows * n_cols
+
+    assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
+
+    return starts, lengths
+
 def mask_to_rle(mask, max_length):
     """
     https://www.kaggle.com/stainsby/fast-tested-rle
