@@ -116,6 +116,8 @@ def check_rle(
         max_length = int(max_length / subsample)
         n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
+    rle_len = len(rle)
+
     mask_rec, rle_rec_cmp = mask_from_tokens(
         rle,
         (n_rows, n_cols),
@@ -128,15 +130,14 @@ def check_rle(
     )
     if subsample > 1:
         mask_gt_sub = resize_mask_coord(mask_gt, mask_rec.shape, n_classes, is_vis=0)
-
-        mask_rec_ = mask_id_to_vis(mask_rec, n_classes, copy=True)
-        mask_gt_ = mask_id_to_vis(mask_gt, n_classes, copy=True)
-        cv2.imshow('mask_rec', mask_rec_)
-        cv2.imshow('mask_gt', mask_gt_)
+        # mask_rec_ = mask_id_to_vis(mask_rec, n_classes, copy=True)
+        # mask_gt_ = mask_id_to_vis(mask_gt, n_classes, copy=True)
+        # cv2.imshow('mask_rec', mask_rec_)
+        # cv2.imshow('mask_gt', mask_gt_)
     else:
         mask_gt_sub = mask_gt
 
-    if show:
+    if show and rle_len > 0:
         # if subsample > 1:
         #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
 
@@ -155,7 +156,7 @@ def check_rle(
         # cv2.imshow('mask_gt_vis', mask_gt_vis)
         # cv2.imshow('mask_rec_vis', mask_rec_vis)
         cv2.imshow('masks_all', masks_all)
-        k = cv2.waitKey(0)
+        k = cv2.waitKey(100)
         if k == 27:
             exit()
 
