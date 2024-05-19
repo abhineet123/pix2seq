@@ -95,7 +95,8 @@ class TaskSemanticSegmentation(task_lib.Task):
         response_seq = batched_examples['rle']
         token_weights = tf.ones_like(response_seq, dtype=tf.float32)
 
-        self.check_rle(batched_examples, show=1)
+        if self.config.debug:
+            self.check_rle(batched_examples, show=1)
 
         # response_seq, token_weights = build_response_seq_from_rle(
         #     batched_examples['rle'],
