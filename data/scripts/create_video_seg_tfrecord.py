@@ -271,6 +271,7 @@ def create_tf_example(
 
         if subsample_method == 2:
             # mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
+            n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
             mask_sub = task_utils.resize_mask_coord(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
         else:
             mask_sub = np.copy(mask)
@@ -296,7 +297,7 @@ def create_tf_example(
         n_rows_sub, n_cols_sub = n_rows, n_cols
         max_length_sub = max_length
 
-    tarts, lengths = task_utils.mask_to_rle(
+    starts, lengths = task_utils.vid_mask_to_rle(
         vid_mask=vid_mask,
         max_length=max_length_sub,
     )
