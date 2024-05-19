@@ -152,10 +152,10 @@ def video_seg_info_to_feature_dict(height, width, vid_path, mask_vid_path,
     video_feature_dict = {
         'video/height': convert_to_feature(height),
         'video/width': convert_to_feature(width),
-        'video/path': convert_to_feature(vid_path),
-        'video/mask_path': convert_to_feature(mask_vid_path),
+        'video/path': convert_to_feature(vid_path.encode('utf8')),
+        'video/mask_path': convert_to_feature(mask_vid_path.encode('utf8')),
         'video/num_frames': convert_to_feature(num_frames),
-        'video/seq': convert_to_feature(seq),
+        'video/seq': convert_to_feature(seq.encode('utf8')),
     }
     return video_feature_dict
 

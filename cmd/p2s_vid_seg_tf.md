@@ -35,7 +35,7 @@
 ## rsz-2560       @ 16_53-->p2s_vid_seg_tf
 <a id="psz_640_sub_8___rsz_2560_16_53_"></a>
 ### psz-640-sub-8       @ rsz-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:psz-640:sub-8:rsz-2560:gz:proc-1
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:psz-640:sub-8:rsz-2560:gz:proc-1:stats
 `seq-0`
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:psz-640:sub-8:rsz-2560:gz:seq-0
 

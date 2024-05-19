@@ -1,8 +1,7 @@
-import collections
-import json
 import os
 import sys
 import cv2
+from tqdm import tqdm
 
 dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
 seg_path = os.path.join(os.path.expanduser("~"), "617")
@@ -226,10 +225,10 @@ def create_tf_example(
     subseq_masks_sub = []
 
     vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
-
-    video_feature_dict = tfrecord_lib.video_seg_info_to_feature_dict(
-        vid_height, vid_width, vid_path, mask_vid_path,
-        len(subseq_img_infos), seq)
+    if not params.stats_only:
+        video_feature_dict = tfrecord_lib.video_seg_info_to_feature_dict(
+            vid_height, vid_width, vid_path, mask_vid_path,
+            len(subseq_img_infos), seq)
 
     subsample_method = params.subsample_method
     max_length = params.max_length
@@ -521,7 +520,7 @@ def main():
     print(f'output_path: {output_path}')
 
     if params.max_length <= 0:
-        params.max_length = params.patch_width * params.length
+        params.max_length = params.patch_width * params.vid.length
 
     vid_infos = {}
 
@@ -554,7 +553,7 @@ def main():
         assert frame_id <= num_frames, (f"frame_id {frame_id} for image {img_id} exceeds num_frames {num_frames} for "
                                         f"seq {seq}")
 
-    generate_patch_vid_infos(
+    all_subseq_img_infos = generate_patch_vid_infos(
         params,
         image_infos,
         vid_infos,
@@ -571,19 +570,22 @@ def main():
         class_id_to_col=class_id_to_col,
         class_id_to_name=class_id_to_name,
         metrics=metrics,
-        image_infos=image_infos,
+        all_subseq_img_infos=all_subseq_img_infos,
         vid_infos=vid_infos,
     )
-    tfrecord_pattern = os.path.join(output_path, 'shard')
-
-    tfrecord_lib.write_tf_record_dataset(
-        output_path=tfrecord_pattern,
-        annotation_iterator=annotations_iter,
-        process_func=create_tf_example,
-        num_shards=params.num_shards,
-        multiple_processes=params.n_proc,
-        iter_len=len(image_infos),
-    )
+    if params.stats_only:
+        for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
+            create_tf_example(*annotations_iter_)
+    else:
+        tfrecord_pattern = os.path.join(output_path, 'shard')
+        tfrecord_lib.write_tf_record_dataset(
+            output_path=tfrecord_pattern,
+            annotation_iterator=annotations_iter,
+            process_func=create_tf_example,
+            num_shards=params.num_shards,
+            multiple_processes=params.n_proc,
+            iter_len=len(image_infos),
+        )
     print(f'output_path: {output_path}')
 
     for method, metrics_ in metrics.items():
