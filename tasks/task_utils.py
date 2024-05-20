@@ -183,7 +183,7 @@ def check_rle_tokens(
         if k == 27:
             exit()
 
-    print('masks match !')
+    # print('masks match !')
 
 
 def interleave_rle(rle_cmps):
