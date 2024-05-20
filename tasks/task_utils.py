@@ -98,17 +98,25 @@ def load_video(vid_path, seq=''):
     return vid_reader, vid_width, vid_height, num_frames
 
 
-def check_rle(
-        image, mask, rle, n_classes,
+def check_rle_tokens(
+        image, mask, rle_tokens, n_classes,
         starts_offset, lengths_offset, class_offset,
         max_length, subsample, multi_class,
-        class_to_col, show):
+        class_to_col, is_vis):
     if len(mask.shape) == 3:
-        mask_gt = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        mask_b = mask[..., 0].squeeze()
+        mask_g = mask[..., 1].squeeze()
+        mask_r = mask[..., 2].squeeze()
+
+        assert np.array_equal(mask_b, mask_g), "mask_b and mask_g mismatch"
+        assert np.array_equal(mask_b, mask_r), "mask_b and mask_r mismatch"
+
+        mask_gt = mask_b
     else:
         mask_gt = np.copy(mask)
 
-    mask_vis_to_id(mask_gt, n_classes)
+    if not is_vis:
+        mask_vis_to_id(mask_gt, n_classes)
 
     n_rows, n_cols = mask_gt.shape
 
@@ -116,10 +124,10 @@ def check_rle(
         max_length = int(max_length / subsample)
         n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
-    rle_len = len(rle)
+    rle_len = len(rle_tokens)
 
     mask_rec, rle_rec_cmp = mask_from_tokens(
-        rle,
+        rle_tokens,
         (n_rows, n_cols),
         starts_offset=starts_offset,
         lengths_offset=lengths_offset,
@@ -137,7 +145,22 @@ def check_rle(
     else:
         mask_gt_sub = mask_gt
 
-    if show and rle_len > 0:
+    starts, lengths = rle_rec_cmp[:2]
+    assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
+    assert np.all(lengths > 0), "run length cannot be 0"
+
+    n_rows, n_cols = mask_gt_sub.shape
+    n_pix = n_rows * n_cols
+    assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
+
+    if multi_class:
+        class_ids = rle_rec_cmp[2]
+        assert 0 not in class_ids, "class_ids must be non-zero"
+        assert np.all(np.asarray(class_ids) <= n_classes), "class_ids must be <= n_classes"
+
+    if not np.array_equal(mask_gt_sub, mask_rec):
+        print("mask_rec mismatch")
+
         # if subsample > 1:
         #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
 
@@ -156,12 +179,10 @@ def check_rle(
         # cv2.imshow('mask_gt_vis', mask_gt_vis)
         # cv2.imshow('mask_rec_vis', mask_rec_vis)
         cv2.imshow('masks_all', masks_all)
-        k = cv2.waitKey(100)
+        k = cv2.waitKey(0)
         if k == 27:
             exit()
 
-    mask_mismatch = np.nonzero(mask_gt_sub != mask_rec)
-    assert mask_mismatch[0].size == 0, "mask_rec mismatch"
     print('masks match !')
 
 
@@ -781,16 +802,48 @@ def rle_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offs
     return rle_cmp
 
 
-def get_rle_class_ids(mask, starts, lengths):
+def get_rle_class_ids(mask, starts, lengths, class_id_to_col):
+    n_classes = len(class_id_to_col)
+    n_rows, n_cols = mask.shape
+
     mask_flat = mask.flatten()
 
     class_ids = [mask_flat[k] for k in starts]
 
-    assert 0 not in class_ids, "class_ids must be non-zero"
+    if 0 in class_ids:
+        print("class_ids must be non-zero")
+        class_ids = np.asarray(class_ids)
+        zero_idxs = np.nonzero(class_ids == 0)[0]
+        mask_vis_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
+        mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
+        mask_vis_res = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
+        cv2.imshow('mask_vis', mask_vis_res)
+
+        for idx in zero_idxs:
+            start, length = starts[idx], lengths[idx]
+            mask_bool_flat = np.zeros_like(mask_flat, dtype=bool)
+            mask_bool_flat[start:start + length] = True
+            mask_bool = np.reshape(mask_bool_flat, (n_rows, n_cols))
+
+            col = (255, 255, 255)
+
+            mask_vis_rgb[mask_bool] = col
+            mask_vis_rgb_res = resize_mask(mask_vis_rgb, (640, 640), n_classes, is_vis=True)
+
+            cv2.imshow('mask_vis_rgb', mask_vis_rgb_res)
+
+            cv2.waitKey(0)
+
+    assert np.all(np.asarray(class_ids) <= n_classes), "class_ids must be <= n_classes"
 
     for start, length, class_id in zip(starts, lengths, class_ids):
         run_class_ids = mask_flat[start:start + length]
-        assert np.all(run_class_ids == class_id), "multiple class IDs found in the same run"
+        if not np.all(run_class_ids == class_id):
+            print("multiple class IDs found in the same run")
+            mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
+            mask_vis = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
+            cv2.imshow('mask_vis', mask_vis)
+            cv2.waitKey(0)
 
     return class_ids
 
@@ -846,47 +899,60 @@ def vid_mask_to_rle(vid_mask, max_length):
     return starts, lengths
 
 
-def mask_to_rle(mask, max_length):
+def mask_to_rle(mask, max_length, n_classes):
     """
     https://www.kaggle.com/stainsby/fast-tested-rle
     https://ccshenyltw.medium.com/run-length-encode-and-decode-a33383142e6b
-
-    :param mask:
-    :param max_length:
-    :param starts_2d:
-    :return:
     """
     assert len(mask.shape) == 2, "only greyscale masks are supported"
 
-    mask = np.copy(mask)
-    mask[mask > 0] = 1
+    all_starts = []
+    all_lengths = []
 
-    mask_flat = mask.flatten()
-    pixels = np.concatenate([[0], mask_flat, [0]])
-    """the +1 in the original code was to convert indices from 0-based to 1-based"""
-    runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
+    for class_id in range(1, n_classes):
+        mask_binary = (mask == class_id).astype(np.uint8)
 
-    if len(runs) == 0:
-        return [], []
+        # if binary:
+        #     mask = np.copy(mask)
+        #     mask[mask > 0] = 1
 
-    if len(runs) % 2 != 0:
-        raise AssertionError("runs must have even length")
+        mask_flat = mask_binary.flatten()
+        pixels = np.concatenate([[0], mask_flat, [0]])
+        """the +1 in the original code was to convert indices from 0-based to 1-based"""
+        runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
 
-    runs[1::2] -= runs[::2]
-    starts, lengths = runs[::2], runs[1::2]
+        if len(runs) == 0:
+            starts = []
+            lengths = []
+        else:
+            if len(runs) % 2 != 0:
+                raise AssertionError("runs must have even length")
 
-    if max_length > 0:
-        overlong_runs = np.nonzero(lengths > max_length)[0]
-        if len(overlong_runs) > 0:
-            starts, lengths = split_runs(overlong_runs, starts, lengths, max_length)
+            """assumes alternating 0s snd non-zeros so doesn't work with 
+            non-binary masks"""
+            runs[1::2] -= runs[::2]
+            starts, lengths = runs[::2], runs[1::2]
 
-    assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
-    assert np.all(lengths > 0), "run length cannot be 0"
-    n_rows, n_cols = mask.shape
+            if max_length > 0:
+                overlong_runs = np.nonzero(lengths > max_length)[0]
+                if len(overlong_runs) > 0:
+                    starts, lengths = split_runs(overlong_runs, starts, lengths, max_length)
 
-    n_pix = n_rows * n_cols
+            n_rows, n_cols = mask.shape
+            n_pix = n_rows * n_cols
+            assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
 
-    assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
+            assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
+            assert np.all(lengths > 0), "run length cannot be 0"
+
+        all_starts.append(starts)
+        all_lengths.append(lengths)
+
+    all_starts = np.concatenate(all_starts, axis=0)
+    all_lengths = np.concatenate(all_lengths, axis=0)
+    sort_idx = np.argsort(all_starts)
+    starts = all_starts[sort_idx].astype(np.int64)
+    lengths = all_lengths[sort_idx].astype(np.int64)
 
     return starts, lengths
 

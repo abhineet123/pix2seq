@@ -88,16 +88,6 @@ def append_metrics(metrics, out):
     # return vis_txt
 
 
-def resize_mask(mask, shape):
-    mask_vis = mask * 255
-    mask_vis = cv2.resize(mask_vis, shape)
-    mask = np.copy(mask_vis)
-    mask[mask > 0] = 1
-    mask_vis = cv2.cvtColor(mask_vis, cv2.COLOR_GRAY2BGR)
-
-    return mask, mask_vis
-
-
 def eval_mask(pred_mask, gt_mask, rle_len):
     import densenet.evaluation.eval_segm as eval_segm
     class_ids = [0, 1]
@@ -281,7 +271,33 @@ def create_tf_example(
     starts, lengths = task_utils.mask_to_rle(
         mask=mask_sub,
         max_length=max_length_sub,
+        n_classes=n_classes,
+        # binary=False,
     )
+
+    # starts_bin, lengths_bin = task_utils.mask_to_rle(
+    #     mask=mask_sub,
+    #     max_length=max_length_sub,
+    #     binary=True,
+    # )
+    # mismatch = False
+    # if not np.array_equal(starts, starts_bin):
+    #     print('starts mismatch')
+    #     mismatch = True
+    #
+    # if not np.array_equal(lengths, lengths_bin):
+    #     print('lengths mismatch')
+    #     mismatch = True
+    # if mismatch:
+    #     mask_bin_vis = (mask > 0).astype(np.uint8) * 255
+    #     mask_bin_vis = task_utils.resize_mask(mask_bin_vis, (640, 640), n_classes, is_vis=True)
+    #
+    #     mask_vis = task_utils.mask_id_to_vis(mask, n_classes, copy=True)
+    #     mask_vis = task_utils.resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
+    #
+    #     masks = np.concatenate((mask_bin_vis, mask_vis), axis=1)
+    #     cv2.imshow('masks', masks)
+    #     cv2.waitKey(0)
 
     if subsample_method == 1:
         """subsample RLE of high-res mask"""
@@ -296,14 +312,11 @@ def create_tf_example(
 
     n_runs = len(starts)
 
-    n_classes = len(class_id_to_col)
-    multi_class = False
     class_ids = None
-    if n_classes > 2:
+    if multi_class:
         assert params.class_offset > 0, "class_offset must be > 0"
-        class_ids = task_utils.get_rle_class_ids(mask_sub, starts, lengths)
+        class_ids = task_utils.get_rle_class_ids(mask_sub, starts, lengths, class_id_to_col)
         rle_cmp.append(class_ids)
-        multi_class = True
 
     if params.vis and n_runs > 0:
         task_utils.vis_rle(
@@ -324,6 +337,18 @@ def create_tf_example(
         assert rle_len % 3 == 0, "rle_len must be divisible by 3"
     else:
         assert rle_len % 2 == 0, "rle_len must be divisible by 2"
+
+    task_utils.check_rle_tokens(
+        image, mask, rle_tokens, n_classes,
+        params.starts_offset,
+        params.lengths_offset,
+        params.class_offset,
+        max_length,
+        params.subsample,
+        multi_class,
+        class_id_to_col,
+        is_vis=True)
+
     example = None
     if not params.stats_only:
         seg_feature_dict = {
@@ -393,7 +418,8 @@ def create_tf_example(
         if k == 27:
             exit()
 
-    return example, 0
+    if not params.stats_only:
+        return example, 0
 
 
 def main():

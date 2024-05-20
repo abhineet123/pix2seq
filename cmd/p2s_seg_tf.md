@@ -1,5 +1,14 @@
 <!-- MarkdownTOC -->
 
+- [0_37       @ ipsc](#0_37___ipsc_)
+    - [rsz-2560       @ 0_37](#rsz_2560___0_37_)
+        - [psz-640-sub-8       @ rsz-2560/0_37](#psz_640_sub_8___rsz_2560_0_3_7_)
+        - [psz-640-sub-8-mc       @ rsz-2560/0_37](#psz_640_sub_8_mc___rsz_2560_0_3_7_)
+    - [res-640       @ 0_37](#res_640___0_37_)
+        - [sz-80       @ res-640/0_37](#sz_80___res_640_0_37_)
+        - [sz-80-mc       @ res-640/0_37](#sz_80_mc___res_640_0_37_)
+        - [sz-160       @ res-640/0_37](#sz_160___res_640_0_37_)
+        - [sz-160-mc       @ res-640/0_37](#sz_160_mc___res_640_0_37_)
 - [16_53       @ ipsc](#16_53___ipsc_)
     - [rsz-2560       @ 16_53](#rsz_2560___16_5_3_)
         - [psz-640-sub-8       @ rsz-2560/16_53](#psz_640_sub_8___rsz_2560_16_53_)
@@ -31,6 +40,38 @@
         - [sz-160       @ res-320/54_126](#sz_160___res_320_54_126_)
 
 <!-- /MarkdownTOC -->
+
+<a id="0_37___ipsc_"></a>
+# 0_37       @ ipsc-->p2s_seg_tfrecord
+<a id="rsz_2560___0_37_"></a>
+## rsz-2560       @ 0_37-->p2s_seg_tf
+<a id="psz_640_sub_8___rsz_2560_0_3_7_"></a>
+### psz-640-sub-8       @ rsz-2560/0_37-->p2s_seg_tf
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_37:psz-640:sub-8:rsz-2560:gz:proc-1
+
+<a id="psz_640_sub_8_mc___rsz_2560_0_3_7_"></a>
+### psz-640-sub-8-mc       @ rsz-2560/0_37-->p2s_seg_tf
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_37:psz-640:sub-8:rsz-2560:gz:proc-1:mc
+
+<a id="res_640___0_37_"></a>
+## res-640       @ 0_37-->p2s_seg_tf
+<a id="sz_80___res_640_0_37_"></a>
+### sz-80       @ res-640/0_37-->p2s_seg_tf
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_37:psz-80:rsz-640:gz
+
+<a id="sz_80_mc___res_640_0_37_"></a>
+### sz-80-mc       @ res-640/0_37-->p2s_seg_tf
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_37:psz-80:rsz-640:gz:mc
+
+<a id="sz_160___res_640_0_37_"></a>
+### sz-160       @ res-640/0_37-->p2s_seg_tf
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_37:gz:psz-160:rsz-640
+<a id="sz_160_mc___res_640_0_37_"></a>
+### sz-160-mc       @ res-640/0_37-->p2s_seg_tf
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_37:gz:psz-160:rsz-640:mc:stats-0
+
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_37:gz:psz-160:rsz-640:mc:seq-5
+
 <a id="16_53___ipsc_"></a>
 # 16_53       @ ipsc-->p2s_seg_tfrecord
 <a id="rsz_2560___16_5_3_"></a>
@@ -83,7 +124,7 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:psz-80:rsz-640:gz:seq
 
 <a id="sz_80_mc___res_640_16_5_3_"></a>
 ### sz-80-mc       @ res-640/16_53-->p2s_seg_tf
-python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:psz-80:rsz-640:gz:mc:stats
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:psz-80:rsz-640:gz:mc
 
 <a id="sz_160___res_640_16_5_3_"></a>
 ### sz-160       @ res-640/16_53-->p2s_seg_tf

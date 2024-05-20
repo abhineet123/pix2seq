@@ -66,7 +66,7 @@ class TaskSemanticSegmentation(task_lib.Task):
             if rle_stripped.size == 0:
                 print(f'\n{img_id}: mask is empty\n')
 
-            task_utils.check_rle(
+            task_utils.check_rle_tokens(
                 image, mask, rle_stripped,
                 n_classes=n_classes,
                 starts_offset=self.config.model.coord_vocab_shift,
