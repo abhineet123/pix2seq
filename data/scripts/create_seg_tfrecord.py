@@ -237,7 +237,14 @@ def create_tf_example(
         feature_dict.update(image_feature_dict)
 
     if len(mask.shape) == 3:
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        mask_b = mask[..., 0].squeeze()
+        mask_g = mask[..., 1].squeeze()
+        mask_r = mask[..., 2].squeeze()
+
+        assert np.all(mask_b == mask_g), "mask_b and mask_g mismatch"
+        assert np.all(mask_b == mask_r), "mask_b and mask_r mismatch"
+
+        mask = mask_b
 
     n_rows, n_cols = mask.shape
     max_length = params.max_length
@@ -256,17 +263,17 @@ def create_tf_example(
         n_rows_sub, n_cols_sub = n_rows, n_cols
         max_length_sub = max_length
 
-    mask_sub_vis = task_utils.resize_mask(mask_sub, mask.shape, n_classes)
-    mask_sub_vis = np.stack((mask_sub_vis,) * 3, axis=2)
-    mask_vis = np.stack((mask,) * 3, axis=2)
-    file_txt = f'{image_id}'
-    frg_col = (255, 255, 255)
-    concat_img = np.concatenate((image, mask_vis, mask_sub_vis), axis=1)
-    concat_img, _, _ = vis_utils.write_text(concat_img, file_txt, 5, 5, frg_col, font_size=24)
-    cv2.imshow('concat_img', concat_img)
-    cv2.waitKey(0)
-
-    return
+    # mask_sub_vis = task_utils.resize_mask(mask_sub, mask.shape, n_classes)
+    # mask_sub_vis = np.stack((mask_sub_vis,) * 3, axis=2)
+    # mask_vis = np.stack((mask,) * 3, axis=2)
+    # file_txt = f'{image_id}'
+    # frg_col = (255, 255, 255)
+    # concat_img = np.concatenate((image, mask_vis, mask_sub_vis), axis=1)
+    # concat_img, _, _ = vis_utils.write_text(concat_img, file_txt, 5, 5, frg_col, font_size=24)
+    # cv2.imshow('concat_img', concat_img)
+    # cv2.waitKey(0)
+    #
+    # return
 
     task_utils.mask_vis_to_id(mask, n_classes=n_classes)
     task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
@@ -522,7 +529,7 @@ def main():
 
     if params.stats_only:
         for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
-                create_tf_example(*annotations_iter_)
+            create_tf_example(*annotations_iter_)
     else:
         tfrecord_pattern = os.path.join(output_path, 'shard')
         tfrecord_lib.write_tf_record_dataset(
