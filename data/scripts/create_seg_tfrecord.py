@@ -171,6 +171,7 @@ def create_tf_example(
         vid_info: dict
 ):
     n_classes = len(class_id_to_col)
+    multi_class = n_classes > 2
 
     image_height = image_info['height']
     image_width = image_info['width']
@@ -214,6 +215,9 @@ def create_tf_example(
             # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
 
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
+
+        if not multi_class:
+            mask[mask > 0] = 255
     else:
         if not params.stats_only:
             with tf.io.gfile.GFile(image_path, 'rb') as fid:
@@ -251,6 +255,18 @@ def create_tf_example(
         mask_sub = np.copy(mask)
         n_rows_sub, n_cols_sub = n_rows, n_cols
         max_length_sub = max_length
+
+    mask_sub_vis = task_utils.resize_mask(mask_sub, mask.shape, n_classes)
+    mask_sub_vis = np.stack((mask_sub_vis,) * 3, axis=2)
+    mask_vis = np.stack((mask,) * 3, axis=2)
+    file_txt = f'{image_id}'
+    frg_col = (255, 255, 255)
+    concat_img = np.concatenate((image, mask_vis, mask_sub_vis), axis=1)
+    concat_img, _, _ = vis_utils.write_text(concat_img, file_txt, 5, 5, frg_col, font_size=24)
+    cv2.imshow('concat_img', concat_img)
+    cv2.waitKey(0)
+
+    return
 
     task_utils.mask_vis_to_id(mask, n_classes=n_classes)
     task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
@@ -501,19 +517,22 @@ def main():
         vid_infos=vid_infos,
     )
 
-    if params.stats_only:
-        for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
-                create_tf_example(*annotations_iter_)
-    else:
-        tfrecord_pattern = os.path.join(output_path, 'shard')
-        tfrecord_lib.write_tf_record_dataset(
-            output_path=tfrecord_pattern,
-            annotation_iterator=annotations_iter,
-            process_func=create_tf_example,
-            num_shards=params.num_shards,
-            multiple_processes=params.n_proc,
-            iter_len=len(image_infos),
-        )
+    for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
+        create_tf_example(*annotations_iter_)
+
+    # if params.stats_only:
+    #     for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
+    #             create_tf_example(*annotations_iter_)
+    # else:
+    #     tfrecord_pattern = os.path.join(output_path, 'shard')
+    #     tfrecord_lib.write_tf_record_dataset(
+    #         output_path=tfrecord_pattern,
+    #         annotation_iterator=annotations_iter,
+    #         process_func=create_tf_example,
+    #         num_shards=params.num_shards,
+    #         multiple_processes=params.n_proc,
+    #         iter_len=len(image_infos),
+    #     )
     print(f'output_path: {output_path}')
 
     for method, metrics_ in metrics.items():

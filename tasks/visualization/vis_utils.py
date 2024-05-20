@@ -62,13 +62,13 @@ STANDARD_COLORS = [
 from PIL import Image, ImageDraw, ImageFont
 
 
-def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=1, bb=0):
+def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, bb=0):
     image = Image.fromarray(img_np)
     width, height = image.size
     draw = ImageDraw.Draw(image)
 
-    # font = ImageFont.load_default(font_size)
-    font = ImageFont.truetype("arial.ttf", font_size)
+    font = ImageFont.load_default(font_size)
+    # font = ImageFont.truetype("arial.ttf", font_size)
     # font = ImageFont.truetype("sans-serif.ttf", font_size)
 
     textheight = font_size

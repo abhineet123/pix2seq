@@ -3,8 +3,13 @@ import sys
 import cv2
 from tqdm import tqdm
 
-dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
-seg_path = os.path.join(os.path.expanduser("~"), "617")
+
+def linux_path(*args, **kwargs):
+    return os.path.join(*args, **kwargs).replace(os.sep, '/')
+
+
+dproc_path = linux_path(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
+seg_path = linux_path(os.path.expanduser("~"), "617")
 
 sys.path.append(os.getcwd())
 sys.path.append(dproc_path)
@@ -20,7 +25,6 @@ from tasks.visualization import vis_utils
 from tasks import task_utils
 
 from eval_utils import add_suffix
-
 
 
 class Params(paramparse.CFG):
@@ -46,8 +50,6 @@ class Params(paramparse.CFG):
         self.seq_id = -1
         self.seq_start_id = 0
         self.seq_end_id = -1
-
-
 
         self.n_rot = 0
         self.max_rot = 0
@@ -95,16 +97,6 @@ def append_metrics(metrics, out):
     #                    else f'{metric}: {val}'
     #                    for metric, val in metrics.items())
     # return vis_txt
-
-
-def resize_mask(mask, shape):
-    mask_vis = mask * 255
-    mask_vis = cv2.resize(mask_vis, shape)
-    mask = np.copy(mask_vis)
-    mask[mask > 0] = 1
-    mask_vis = cv2.cvtColor(mask_vis, cv2.COLOR_GRAY2BGR)
-
-    return mask, mask_vis
 
 
 def eval_mask(pred_mask, gt_mask, rle_len):
@@ -220,6 +212,8 @@ def create_tf_example(
         vid_info):
     n_classes = len(class_id_to_col)
 
+    frame_ids = []
+    image_ids = []
     subseq_imgs = []
     subseq_masks = []
     subseq_masks_sub = []
@@ -235,6 +229,9 @@ def create_tf_example(
     n_rows, n_cols = vid_height, vid_width
 
     vid = None
+    example = None
+
+    multi_class = n_classes > 2
 
     for _id, image_info in enumerate(subseq_img_infos):
 
@@ -250,11 +247,14 @@ def create_tf_example(
         frame_id = int(image_info['frame_id'])
         mask_filename = image_info['mask_file_name']
 
+        frame_ids.append(frame_id)
+        image_ids.append(image_id)
+
         if params.subsample <= 1:
             subsample_method = 0
 
-        # image_path = os.path.join(params.db_path, filename)
-        # mask_image_path = os.path.join(params.db_path, mask_filename)
+        # image_path = linux_path(params.db_path, filename)
+        # mask_image_path = linux_path(params.db_path, mask_filename)
 
         if not image_id.startswith('seq'):
             image_id = f'{seq}/{image_id}'
@@ -262,7 +262,7 @@ def create_tf_example(
         if not params.stats_only:
             image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
 
-            img_h, img_w = image.shape
+            img_h, img_w = image.shape[:2]
             assert img_h == vid_height, "img_h mismatch"
             assert img_w == vid_width, "img_w mismatch"
 
@@ -275,8 +275,18 @@ def create_tf_example(
 
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
 
+        if not multi_class:
+            mask = (mask > 0).astype(np.uint8) * 255
+
         if len(mask.shape) == 3:
-            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+            mask = mask[..., 0].squeeze()
+            # mask_g = mask[..., 1].squeeze()
+            # mask_r = mask[..., 2].squeeze()
+            # cv2.imshow('mask', mask)
+            # cv2.imshow('mask_b', mask_b)
+            # cv2.imshow('mask_g', mask_g)
+            # cv2.imshow('mask_r', mask_r)
+            # mask = mask_b
 
         mask_h, mask_w = mask.shape
         assert mask_h == vid_height, "mask_h mismatch"
@@ -289,11 +299,22 @@ def create_tf_example(
         else:
             mask_sub = np.copy(mask)
 
+        # mask_sub_vis = task_utils.resize_mask(mask_sub, mask.shape, n_classes)
+        # mask_sub_vis = np.stack((mask_sub_vis,) * 3, axis=2)
+        # mask_vis = np.stack((mask,) * 3, axis=2)
+        # file_txt = f'{image_id}'
+        # frg_col = (255, 255, 255)
+        # concat_img = np.concatenate((image, mask_vis, mask_sub_vis), axis=1)
+        # concat_img, _, _ = vis_utils.write_text(concat_img, file_txt, 5, 5, frg_col, font_size=24)
+        # cv2.imshow('concat_img', concat_img)
+        # cv2.waitKey(0)
+
         task_utils.mask_vis_to_id(mask, n_classes=n_classes)
         task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
 
         subseq_masks.append(mask)
         subseq_masks_sub.append(mask_sub)
+    # return
 
     if not params.stats_only:
         vid = np.stack(subseq_imgs, axis=0)
@@ -334,10 +355,11 @@ def create_tf_example(
         rle_cmp.append(class_ids)
         multi_class = True
 
-    if params.vis and n_runs > 0:
+    if params.vis:
         task_utils.vis_video_rle(
             starts, lengths, class_ids,
             class_id_to_col, class_id_to_name,
+            image_ids,
             vid, vid_mask, vid_mask_sub)
 
     rle_tokens = task_utils.rle_to_tokens(
@@ -420,7 +442,8 @@ def create_tf_example(
         if k == 27:
             exit()
 
-    return example, 0
+    if not params.stats_only:
+        return example, 0
 
 
 def main():
@@ -432,7 +455,7 @@ def main():
 
     if params.stats_only:
         print('running in stats only mode')
-        params.vis = params.show = False
+        # params.vis = params.show = False
 
     class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)[:3]
 
@@ -481,7 +504,7 @@ def main():
         json_suffix = f'{json_suffix}-{seq_suffix}'
 
     output_json_fname = f'{json_suffix}.{params.ann_ext}'
-    json_path = os.path.join(params.db_path, output_json_fname)
+    json_path = linux_path(params.db_path, output_json_fname)
 
     out_name = json_suffix
     if params.subsample > 1:
@@ -510,11 +533,11 @@ def main():
     image_infos = load_seg_annotations(json_path)
 
     if not params.output_dir:
-        params.output_dir = os.path.join(params.db_path, 'tfrecord')
+        params.output_dir = linux_path(params.db_path, 'tfrecord')
 
     os.makedirs(params.output_dir, exist_ok=True)
 
-    output_path = os.path.join(params.output_dir, out_name)
+    output_path = linux_path(params.output_dir, out_name)
     os.makedirs(output_path, exist_ok=True)
 
     print(f'output_path: {output_path}')
@@ -529,9 +552,9 @@ def main():
     for image_info in image_infos:
         seq = image_info['seq']
         mask_filename = image_info['mask_file_name']
-        vid_path = os.path.join(params.db_path, f'{seq}.mp4')
+        vid_path = linux_path(params.db_path, f'{seq}.mp4')
         mask_dir = os.path.dirname(mask_filename)
-        mask_vid_path = os.path.join(params.db_path, f'{mask_dir}.mp4')
+        mask_vid_path = linux_path(params.db_path, f'{mask_dir}.mp4')
 
         try:
             vid_info = vid_infos[seq]
@@ -573,24 +596,25 @@ def main():
         all_subseq_img_infos=all_subseq_img_infos,
         vid_infos=vid_infos,
     )
-    if params.stats_only:
-        for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
-            create_tf_example(*annotations_iter_)
-    else:
-        tfrecord_pattern = os.path.join(output_path, 'shard')
-        tfrecord_lib.write_tf_record_dataset(
-            output_path=tfrecord_pattern,
-            annotation_iterator=annotations_iter,
-            process_func=create_tf_example,
-            num_shards=params.num_shards,
-            multiple_processes=params.n_proc,
-            iter_len=len(image_infos),
-        )
+    # if params.stats_only:
+
+    for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
+        create_tf_example(*annotations_iter_)
+    # else:
+    #     tfrecord_pattern = linux_path(output_path, 'shard')
+    #     tfrecord_lib.write_tf_record_dataset(
+    #         output_path=tfrecord_pattern,
+    #         annotation_iterator=annotations_iter,
+    #         process_func=create_tf_example,
+    #         num_shards=params.num_shards,
+    #         multiple_processes=params.n_proc,
+    #         iter_len=len(image_infos),
+    #     )
     print(f'output_path: {output_path}')
 
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
-            metrics_path = os.path.join(output_path, f'{method}_{metric_}')
+            metrics_path = linux_path(output_path, f'{method}_{metric_}')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
 
