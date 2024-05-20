@@ -38,6 +38,7 @@ class Params(paramparse.CFG):
         self.db_suffix = ''
         self.vis = 0
         self.stats_only = 0
+        self.check = 1
 
         self.n_proc = 0
         self.ann_ext = 'json'
@@ -205,9 +206,6 @@ def create_tf_example(
             # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
 
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
-
-        if not multi_class:
-            mask[mask > 0] = 255
     else:
         if not params.stats_only:
             with tf.io.gfile.GFile(image_path, 'rb') as fid:
@@ -217,7 +215,6 @@ def create_tf_example(
         mask = cv2.imread(mask_image_path)
 
     vis_imgs = []
-    vis_txt = []
 
     if not params.stats_only:
         vis_imgs.append(image)
@@ -226,15 +223,9 @@ def create_tf_example(
 
         feature_dict.update(image_feature_dict)
 
-    if len(mask.shape) == 3:
-        mask_b = mask[..., 0].squeeze()
-        mask_g = mask[..., 1].squeeze()
-        mask_r = mask[..., 2].squeeze()
-
-        assert np.all(mask_b == mask_g), "mask_b and mask_g mismatch"
-        assert np.all(mask_b == mask_r), "mask_b and mask_r mismatch"
-
-        mask = mask_b
+    if not multi_class:
+        mask = task_utils.mask_to_binary(mask)
+    mask = task_utils.mask_to_gs(mask)
 
     n_rows, n_cols = mask.shape
     max_length = params.max_length
@@ -338,16 +329,17 @@ def create_tf_example(
     else:
         assert rle_len % 2 == 0, "rle_len must be divisible by 2"
 
-    task_utils.check_rle_tokens(
-        image, mask, rle_tokens, n_classes,
-        params.starts_offset,
-        params.lengths_offset,
-        params.class_offset,
-        max_length,
-        params.subsample,
-        multi_class,
-        class_id_to_col,
-        is_vis=True)
+    if params.check:
+        task_utils.check_rle_tokens(
+            image, mask, rle_tokens, n_classes,
+            params.starts_offset,
+            params.lengths_offset,
+            params.class_offset,
+            max_length,
+            params.subsample,
+            multi_class,
+            class_id_to_col,
+            is_vis=True)
 
     example = None
     if not params.stats_only:

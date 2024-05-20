@@ -276,17 +276,8 @@ def create_tf_example(
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
 
         if not multi_class:
-            mask = (mask > 0).astype(np.uint8) * 255
-
-        if len(mask.shape) == 3:
-            mask = mask[..., 0].squeeze()
-            # mask_g = mask[..., 1].squeeze()
-            # mask_r = mask[..., 2].squeeze()
-            # cv2.imshow('mask', mask)
-            # cv2.imshow('mask_b', mask_b)
-            # cv2.imshow('mask_g', mask_g)
-            # cv2.imshow('mask_r', mask_r)
-            # mask = mask_b
+            mask = task_utils.mask_to_binary(mask)
+        mask = task_utils.mask_to_gs(mask)
 
         mask_h, mask_w = mask.shape
         assert mask_h == vid_height, "mask_h mismatch"

@@ -76,7 +76,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 subsample=subsample,
                 class_to_col=class_id_to_col,
                 multi_class=multi_class,
-                show=show,
+                is_vis=1,
             )
 
     def preprocess_batched(self, batched_examples, training):

@@ -98,6 +98,22 @@ def load_video(vid_path, seq=''):
     return vid_reader, vid_width, vid_height, num_frames
 
 
+def mask_to_binary(mask):
+    return (mask > 0).astype(np.uint8) * 255
+
+
+def mask_to_gs(mask, check=True):
+    if len(mask.shape) == 2:
+        return mask
+    mask_b = mask[..., 0].squeeze()
+    if check:
+        mask_g = mask[..., 1].squeeze()
+        mask_r = mask[..., 2].squeeze()
+        assert np.array_equal(mask_b, mask_g), "mask_b and mask_g mismatch"
+        assert np.array_equal(mask_b, mask_r), "mask_b and mask_r mismatch"
+    return mask_b
+
+
 def check_rle_tokens(
         image, mask, rle_tokens, n_classes,
         starts_offset, lengths_offset, class_offset,
@@ -863,38 +879,48 @@ def rle_to_2d(rle, mask):
     return rle
 
 
-def vid_mask_to_rle(vid_mask, max_length):
+def vid_mask_to_rle(vid_mask, max_length, n_classes):
     assert len(vid_mask.shape) == 3, "only greyscale masks are supported"
+    all_starts = []
+    all_lengths = []
+    for class_id in range(1, n_classes):
+        vid_mask_binary = (vid_mask == class_id).astype(np.uint8)
+        vid_mask_flat = vid_mask_binary.flatten()
+        pixels = np.concatenate([[0], vid_mask_flat, [0]])
+        """the +1 in the original code was to convert indices from 0-based to 1-based"""
+        runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
 
-    vid_mask = np.copy(vid_mask)
-    vid_mask[vid_mask > 0] = 1
+        if len(runs) == 0:
+            starts = []
+            lengths = []
+        else:
+            if len(runs) % 2 != 0:
+                raise AssertionError("runs must have even length")
 
-    vid_mask_flat = vid_mask.flatten()
-    pixels = np.concatenate([[0], vid_mask_flat, [0]])
-    """the +1 in the original code was to convert indices from 0-based to 1-based"""
-    runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
+            """assumes alternating 0s snd non-zeros so doesn't work with 
+            non-binary masks"""
+            runs[1::2] -= runs[::2]
+            starts, lengths = runs[::2], runs[1::2]
 
-    if len(runs) == 0:
-        return [], []
+            if max_length > 0:
+                overlong_runs = np.nonzero(lengths > max_length)[0]
+                if len(overlong_runs) > 0:
+                    starts, lengths = split_runs(overlong_runs, starts, lengths, max_length)
 
-    if len(runs) % 2 != 0:
-        raise AssertionError("runs must have even length")
+            n_frames, n_rows, n_cols = vid_mask.shape
+            n_pix = n_frames * n_rows * n_cols
+            assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
+            assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
+            assert np.all(lengths > 0), "run length cannot be 0"
 
-    runs[1::2] -= runs[::2]
-    starts, lengths = runs[::2], runs[1::2]
+        all_starts.append(starts)
+        all_lengths.append(lengths)
 
-    if max_length > 0:
-        overlong_runs = np.nonzero(lengths > max_length)[0]
-        if len(overlong_runs) > 0:
-            starts, lengths = split_runs(overlong_runs, starts, lengths, max_length)
-
-    assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
-    assert np.all(lengths > 0), "run length cannot be 0"
-    n_frames, n_rows, n_cols = vid_mask.shape
-
-    n_pix = n_frames * n_rows * n_cols
-
-    assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
+    all_starts = np.concatenate(all_starts, axis=0)
+    all_lengths = np.concatenate(all_lengths, axis=0)
+    sort_idx = np.argsort(all_starts)
+    starts = all_starts[sort_idx].astype(np.int64)
+    lengths = all_lengths[sort_idx].astype(np.int64)
 
     return starts, lengths
 
