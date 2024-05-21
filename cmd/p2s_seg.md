@@ -66,7 +66,6 @@ python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,batch-36,dbg-0
 <a id="on_train___sz_80_seq_0_res_640_resnet_640_16_53_"></a>
 #### on-train       @ sz-80-seq-0/res-640/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-16_53-80_80-80_80-seq_0_0-batch_36,_eval_,batch-18,save-vis-1,dbg-0,dyn-1,seg-16_53:psz-80:rsz-640:seq-0
-
 <a id="on_seq_1___sz_80_seq_0_res_640_resnet_640_16_53_"></a>
 #### on-seq-1       @ sz-80-seq-0/res-640/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-16_53-80_80-80_80-seq_0_0-batch_36,_eval_,batch-18,save-vis-1,dbg-0,dyn-1,seg-16_53:psz-80:rsz-640:seq-1
