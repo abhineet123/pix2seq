@@ -323,6 +323,7 @@ def create_tf_example(
     starts, lengths = task_utils.vid_mask_to_rle(
         vid_mask=vid_mask_sub,
         max_length=max_length_sub,
+        n_classes=n_classes,
     )
     # if subsample_method == 1:
     #     """subsample RLE of high-res mask"""
@@ -342,7 +343,7 @@ def create_tf_example(
     class_ids = None
     if n_classes > 2:
         assert params.class_offset > 0, "class_offset must be > 0"
-        class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths)
+        class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths, class_id_to_col)
         rle_cmp.append(class_ids)
         multi_class = True
 

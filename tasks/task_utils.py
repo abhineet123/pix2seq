@@ -330,7 +330,7 @@ def concat_vid(vid, axis):
 
 
 def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image_ids,
-                  vid, vid_mask, vid_mask_sub):
+                  vid_vis, vid_mask, vid_mask_sub):
     n_runs = len(starts)
     n_classes = len(class_id_to_col)
     # cols = get_cols(n_runs)
@@ -352,36 +352,42 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     mask_rgb_ = []
     vid_mask_sub_binary_vis = []
 
-    for mask, mask_sub, image, image_id in zip(vid_mask, vid_mask_sub, vid, image_ids):
+    for mask, mask_sub, image, image_id in zip(vid_mask, vid_mask_sub, vid_vis, image_ids):
         mask_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
         mask_sub_rgb = mask_id_to_vis_rgb(mask_sub, class_id_to_col)
 
         mask_sub_binary_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1, copy=True)
         mask_sub_binary_vis[mask_sub_binary_vis > 0] = 255
-
         vid_mask_sub_binary_vis.append(mask_sub_binary_vis)
 
         vis_image = blend_mask(mask, image, class_id_to_col)
+        vis_image = cv2.resize(vis_image, (vis_size, vis_size))
 
         file_txt = f'{image_id}'
-        vis_image, _, _ = vis_utils.write_text(vis_image, file_txt, 5, 5, frg_col, font_size=48)
-        vis_images.append(vis_image)
+        vis_image, _, _ = vis_utils.write_text(vis_image, file_txt, 5, 5, frg_col, font_size=12)
 
+        # vis_images.append(vis_image)
+
+        vis_images.append(vis_image)
         mask_sub_vis_.append(cv2.resize(mask_sub_binary_vis, (vis_size, vis_size)))
         mask_sub_rgb_.append(cv2.resize(mask_sub_rgb, (vis_size, vis_size)))
         mask_rgb_.append(cv2.resize(mask_rgb, (vis_size, vis_size)))
 
-    # vis_images = np.concatenate(vis_images, axis=1)
-    # mask_sub_vis_ = np.concatenate(mask_sub_vis_, axis=1)
-    # mask_sub_rgb_ = np.concatenate(mask_sub_rgb_, axis=1)
-    # mask_rgb_ = np.concatenate(mask_rgb_, axis=1)
-    # cv2.imshow('vis_images', vis_images)
-    # cv2.imshow('mask_sub_vis_', mask_sub_vis_)
-    # cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
-    # cv2.imshow('mask_rgb', mask_rgb_)
+    vid_vis = np.stack(vis_images, axis=0)
+    vid_mask_sub_binary_vis = np.stack(vid_mask_sub_binary_vis, axis=0)
 
-    vid = np.concatenate(vis_images, axis=0)
-    vid_mask_sub_binary_vis = np.concatenate(vid_mask_sub_binary_vis, axis=0)
+    vis_images_ = np.concatenate(vis_images, axis=1)
+    mask_sub_vis_ = np.concatenate(mask_sub_vis_, axis=1)
+    mask_sub_rgb_ = np.concatenate(mask_sub_rgb_, axis=1)
+    mask_rgb_ = np.concatenate(mask_rgb_, axis=1)
+
+    # cv2.imshow('vid_vis', vid_vis)
+    cv2.imshow('vis_images_', vis_images_)
+    cv2.imshow('mask_sub_vis_', mask_sub_vis_)
+    cv2.imshow('mask_sub_vis_', mask_sub_vis_)
+    cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
+    cv2.imshow('mask_rgb', mask_rgb_)
+    cv2.waitKey(100)
 
     # cv2.waitKey(0)
     # return
@@ -411,14 +417,8 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         # col = cols[col_id]
         vid_mask_sub_binary_vis[vid_mask_bool] = col
 
-        text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
-                                                                 wait=100, bb=1, show=0, font_size=font_size)
-        if run_id == n_runs - 1:
-            text_img, _, _ = vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col,
-                                                  show=0, font_size=font_size)
-
         vis_vid_masks_ = resize_vid(vid_mask_sub_binary_vis, (vis_size, vis_size))
-        vis_vid_images_ = resize_vid(vid, (vis_size, vis_size))
+        vis_vid_images_ = resize_vid(vid_vis, (vis_size, vis_size))
 
         vis_vid_masks_ = concat_vid(vis_vid_masks_, axis=0)
         vis_vid_images_ = concat_vid(vis_vid_images_, axis=0)
@@ -427,12 +427,19 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
 
         run_center = int(start + length / 2)
         run_img_id, run_y, run_x = np.unravel_index([run_center, ], (vid_len, n_rows, n_cols))
-        run_y, run_x = int(run_y[0]), int(run_x[0])
+        run_img_id, run_y, run_x = int(run_img_id[0]),  int(run_y[0]), int(run_x[0])
 
         run_x, run_y = int(run_x * resize_x), int(run_y * resize_y)
         """vis_vid_masks_ to the right of vis_vid_images_"""
         run_x += vis_size
         vis_image_cat = np.concatenate((vis_vid_images_, vis_vid_masks_), axis=1)
+
+
+        text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
+                                                                 wait=100, bb=1, show=0, font_size=font_size)
+        if run_id == n_runs - 1:
+            text_img, _, _ = vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col,
+                                                  show=0, font_size=font_size)
 
         left, top, right, bottom = text_bb
         text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
@@ -449,7 +456,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         elif k == 32:
             _pause = 1 - _pause
 
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
 
 def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_sub):
@@ -820,46 +827,49 @@ def rle_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offs
 
 def get_rle_class_ids(mask, starts, lengths, class_id_to_col):
     n_classes = len(class_id_to_col)
-    n_rows, n_cols = mask.shape
 
     mask_flat = mask.flatten()
 
     class_ids = [mask_flat[k] for k in starts]
 
-    if 0 in class_ids:
-        print("class_ids must be non-zero")
-        class_ids = np.asarray(class_ids)
-        zero_idxs = np.nonzero(class_ids == 0)[0]
-        mask_vis_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
-        mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
-        mask_vis_res = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
-        cv2.imshow('mask_vis', mask_vis_res)
+    # if 0 in class_ids:
+    #     print("class_ids must be non-zero")
+    #     class_ids = np.asarray(class_ids)
+    #     zero_idxs = np.nonzero(class_ids == 0)[0]
+    #     mask_vis_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
+    #     mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
+    #     mask_vis_res = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
+    #     cv2.imshow('mask_vis', mask_vis_res)
+    #
+    #     for idx in zero_idxs:
+    #         start, length = starts[idx], lengths[idx]
+    #         mask_bool_flat = np.zeros_like(mask_flat, dtype=bool)
+    #         mask_bool_flat[start:start + length] = True
+    #         mask_bool = np.reshape(mask_bool_flat, mask.shape)
+    #
+    #         col = (255, 255, 255)
+    #
+    #         mask_vis_rgb[mask_bool] = col
+    #         mask_vis_rgb_res = resize_mask(mask_vis_rgb, (640, 640), n_classes, is_vis=True)
+    #
+    #         cv2.imshow('mask_vis_rgb', mask_vis_rgb_res)
+    #
+    #         cv2.waitKey(0)
 
-        for idx in zero_idxs:
-            start, length = starts[idx], lengths[idx]
-            mask_bool_flat = np.zeros_like(mask_flat, dtype=bool)
-            mask_bool_flat[start:start + length] = True
-            mask_bool = np.reshape(mask_bool_flat, (n_rows, n_cols))
-
-            col = (255, 255, 255)
-
-            mask_vis_rgb[mask_bool] = col
-            mask_vis_rgb_res = resize_mask(mask_vis_rgb, (640, 640), n_classes, is_vis=True)
-
-            cv2.imshow('mask_vis_rgb', mask_vis_rgb_res)
-
-            cv2.waitKey(0)
-
-    assert np.all(np.asarray(class_ids) <= n_classes), "class_ids must be <= n_classes"
+    assert np.all(np.asarray(class_ids) > 0), "class_ids must be > 0"
+    assert np.all(np.asarray(class_ids) <= n_classes), f"class_ids must be <= {n_classes}"
 
     for start, length, class_id in zip(starts, lengths, class_ids):
         run_class_ids = mask_flat[start:start + length]
-        if not np.all(run_class_ids == class_id):
-            print("multiple class IDs found in the same run")
-            mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
-            mask_vis = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
-            cv2.imshow('mask_vis', mask_vis)
-            cv2.waitKey(0)
+
+        assert np.all(run_class_ids == class_id), "multiple class IDs found in the same run"
+
+        # if not np.all(run_class_ids == class_id):
+        #     print("multiple class IDs found in the same run")
+        #     mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
+        #     mask_vis = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
+        #     cv2.imshow('mask_vis', mask_vis)
+        #     cv2.waitKey(0)
 
     return class_ids
 
@@ -883,6 +893,9 @@ def vid_mask_to_rle(vid_mask, max_length, n_classes):
     assert len(vid_mask.shape) == 3, "only greyscale masks are supported"
     all_starts = []
     all_lengths = []
+
+    assert np.all(vid_mask <= n_classes), f"vid_mask pixels must be <= {n_classes}"
+
     for class_id in range(1, n_classes):
         vid_mask_binary = (vid_mask == class_id).astype(np.uint8)
         vid_mask_flat = vid_mask_binary.flatten()
@@ -890,15 +903,12 @@ def vid_mask_to_rle(vid_mask, max_length, n_classes):
         """the +1 in the original code was to convert indices from 0-based to 1-based"""
         runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
 
+        assert len(runs) % 2 == 0, "runs must have even length"
+
         if len(runs) == 0:
             starts = []
             lengths = []
         else:
-            if len(runs) % 2 != 0:
-                raise AssertionError("runs must have even length")
-
-            """assumes alternating 0s snd non-zeros so doesn't work with 
-            non-binary masks"""
             runs[1::2] -= runs[::2]
             starts, lengths = runs[::2], runs[1::2]
 
