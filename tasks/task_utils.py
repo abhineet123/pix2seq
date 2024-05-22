@@ -324,10 +324,18 @@ def resize_vid(vid, shape):
     return vid_out
 
 
-def concat_vid(vid, axis):
+def concat_vid(vid, axis, border):
     vid_out = []
     for img in vid:
         vid_out.append(img)
+        if border:
+            if axis == 0:
+                border_img = np.full((border, img.shape[1], 3), 255, dtype=np.uint8)
+            elif axis == 1:
+                border_img = np.full((img.shape[0], border, 3), 255, dtype=np.uint8)
+            else:
+                raise AssertionError('invalid axis')
+            vid_out.append(border_img)
     vid_out = np.concatenate(vid_out, axis=axis)
     return vid_out
 
@@ -457,9 +465,21 @@ def vis_video_run_pix(start, length, vid_mask_sub_flat, vid_mask_sub_binary_vis,
     return vid_mask_sub_binary_vis, img_to_run_pixs
 
 
+def concat_with_boder(img1, img2, axis, border_size):
+    if axis == 0:
+        border_img = np.full((border_size, img1.shape[1], 3), 255, dtype=np.uint8)
+    elif axis == 1:
+        border_img = np.full((img1.shape[0], border_size, 3), 255, dtype=np.uint8)
+    else:
+        raise AssertionError('invalid axis')
+    img = np.concatenate((img1, border_img, img2), axis=axis)
+    return img
+
+
 def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
                       text_info, font_size, vis_size,
-                      time_as_class, tac_mask_cat,
+                      time_as_class, tac_mask_sub, tac_mask,
+                      tac_id_to_name, tac_id_to_col,
                       class_id_to_name, class_id_to_col,
                       col, eos, eos_col, arrow):
     assert vid_mask_vis.shape[0] == vid_vis.shape[0], "vid_mask_vis shape mismatch"
@@ -469,24 +489,19 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
     vid_masks_vis_ = resize_vid(vid_mask_vis, (vis_size, vis_size))
     vid_vis_ = resize_vid(vid_vis, (vis_size, vis_size))
 
-    vid_masks_vis_ = concat_vid(vid_masks_vis_, axis=0)
-    vid_vis_ = concat_vid(vid_vis_, axis=0)
-
+    vid_masks_vis_ = concat_vid(vid_masks_vis_, axis=0, border=1)
+    vid_vis_ = concat_vid(vid_vis_, axis=0, border=1)
+    tac_mask_cat = None
     if time_as_class:
-        text_x = text_y = 2
-        font_size = 24
-        for class_id, class_col in class_id_to_col.items():
-            if class_id == 0:
-                continue
-            class_name = class_id_to_name[class_id]
-            if isinstance(class_col, str):
-                from eval_utils import col_bgr
-                class_col = col_bgr[class_col]
+        vid_masks_vis_ = label_video_mask(vid_masks_vis_, class_id_to_name, class_id_to_col)
 
-            vid_masks_vis_, _, _ = vis_utils.write_text(
-                vid_masks_vis_, f'{class_name} ', text_x, text_y,
-                class_col,
-                wait=100, bb=0, show=0, font_size=font_size)
+        tac_mask_sub_rgb = mask_id_to_vis_rgb(tac_mask_sub, tac_id_to_col)
+        tac_mask_sub_rgb = resize_mask(tac_mask_sub_rgb, (vis_size, vis_size))
+        # tac_mask_cat = tac_mask_sub_rgb
+        tac_mask_rgb = mask_id_to_vis_rgb(tac_mask, tac_id_to_col)
+        tac_mask_rgb = resize_mask(tac_mask_rgb, (vis_size, vis_size))
+        tac_mask_cat = np.concatenate((tac_mask_rgb, tac_mask_sub_rgb), axis=1)
+        tac_mask_cat = label_tac_mask(tac_mask_cat, tac_id_to_name, tac_id_to_col)
 
     vis_image_cat = np.concatenate((vid_vis_, vid_masks_vis_), axis=1)
     # if time_as_class:
@@ -495,10 +510,14 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
     text_img, text_x, text_y = text_info
 
     if text_img is None:
-        overall_h = vis_image_cat.shape[0]
-        overall_w = int(16*overall_h / 9)
-        text_img_w = overall_w - vis_image_cat.shape[1]
-        text_img = np.full((overall_h, text_img_w, 3), (0, 0, 0), dtype=np.uint8)
+        if time_as_class:
+            text_img_h, text_img_w = tac_mask_cat.shape[:2]
+        else:
+            overall_h = vis_image_cat.shape[0]
+            overall_w = int(18 * overall_h / 9)
+            text_img_h = overall_h
+            text_img_w = overall_w - vis_image_cat.shape[1]
+        text_img = np.full((text_img_h, text_img_w, 3), (0, 0, 0), dtype=np.uint8)
 
     text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
                                                              wait=100, bb=1, show=0, font_size=font_size)
@@ -507,15 +526,18 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
         text_img, _, _ = vis_utils.write_text(
             text_img, 'EOS', text_x, text_y, eos_col, show=0, font_size=font_size)
 
-    vis_image_cat = np.concatenate((vis_image_cat, text_img), axis=1)
+    if time_as_class:
+        text_img = concat_with_boder(tac_mask_cat, text_img, 0, 1)
+
+    vis_image_cat = concat_with_boder(vis_image_cat, text_img, 1, 1)
 
     if arrow:
         left, top, right, bottom = text_bb
         text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
         """text_img is to the right of vid_vis_ and vid_masks_vis_"""
         text_bb_x += int(vis_size * 2)
-        # if time_as_class:
-        #     text_bb_x += vis_size
+        if time_as_class:
+            text_bb_y += tac_mask_cat.shape[0]
 
         text_bb_y += 10
 
@@ -602,6 +624,52 @@ def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size,
     return vid_vis, vid_mask_sub_binary_vis
 
 
+def label_video_mask(vid_masks_vis_, class_id_to_name, class_id_to_col):
+    text_x = 2
+    text_y = 2
+    font_size = 24
+    # vid_masks_vis_, _, _ = vis_utils.write_text(
+    #     vid_masks_vis_, f'Image mask with classes:', text_x, text_y,
+    #     (255, 255, 255),
+    #     wait=100, bb=0, show=0, font_size=font_size)
+    # text_y += font_size
+    for class_id, class_col in class_id_to_col.items():
+        if class_id == 0:
+            continue
+        class_name = class_id_to_name[class_id]
+        if isinstance(class_col, str):
+            from eval_utils import col_bgr
+            class_col = col_bgr[class_col]
+
+        vid_masks_vis_, _, _ = vis_utils.write_text(
+            vid_masks_vis_, f'{class_id}: {class_name}', text_x, text_y,
+            class_col,
+            wait=100, bb=0, show=0, font_size=font_size)
+        text_y += font_size
+
+    return vid_masks_vis_
+
+
+def label_tac_mask(tac_mask_cat, tac_id_to_name, tac_id_to_col):
+    font_size = 24
+    text_x = text_y = 2
+    # tac_mask_cat, _, _ = vis_utils.write_text(
+    #     tac_mask_cat, f'Time-as-Class video mask with classes:', text_x, text_y,
+    #     (255, 255, 255),
+    #     wait=100, bb=0, show=0, font_size=font_size)
+    # text_y += font_size
+    for rle_id, rle_col in tac_id_to_col.items():
+        if rle_id == 0:
+            continue
+        rle_name = tac_id_to_name[rle_id]
+        tac_mask_cat, _, _ = vis_utils.write_text(
+            tac_mask_cat, f'{rle_id}: {rle_name}', text_x, text_y,
+            rle_col,
+            wait=100, bb=0, show=0, font_size=font_size)
+        text_y += font_size
+    return tac_mask_cat
+
+
 def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image_ids,
                   vid_vis, vid_mask, vid_mask_sub, time_as_class, flat_order,
                   tac_id_to_name, tac_id_to_col):
@@ -613,7 +681,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     frg_col = (255, 255, 255)
     temp_col = col_bgr['medium_purple']
     vis_size = 480
-    font_size = 16
+    font_size = 24
     _pause = 1
 
     vid_len, n_rows, n_cols, _ = vid_vis.shape
@@ -624,22 +692,6 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         vid_mask_sub_ = vid_mask_from_tac(vid_mask_sub, vid_len, n_classes)
         tac_mask = vid_mask
         tac_mask_sub = vid_mask_sub
-
-        tac_mask_rgb = mask_id_to_vis_rgb(tac_mask, tac_id_to_col)
-        tac_mask_sub_rgb = mask_id_to_vis_rgb(tac_mask_sub, tac_id_to_col)
-        tac_mask_sub_rgb = resize_mask(tac_mask_sub_rgb, (vis_size, vis_size), n_classes)
-        tac_mask_rgb = resize_mask(tac_mask_rgb, (vis_size, vis_size), n_classes)
-        tac_mask_cat = np.concatenate((tac_mask_rgb, tac_mask_sub_rgb), axis=0)
-        font_size = 24
-        text_x = text_y = 5
-        for rle_id, rle_col in tac_id_to_col.items():
-            if rle_id == 0:
-                continue
-            rle_name = tac_id_to_name[rle_id]
-            tac_mask_cat, text_x, text_y = vis_utils.write_text(
-                tac_mask_cat, f'{rle_name}  ', text_x, text_y,
-                rle_col,
-                wait=100, bb=0, show=0, font_size=font_size)
         # cv2.imshow('tac_masks', tac_mask_cat)
         # cv2.waitKey(10)
     else:
@@ -685,12 +737,14 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         vis_image_cat, _, _ = vis_video_run_txt(
             img_to_run_pixs, run_txt, vid_mask_sub_binary_vis,
             vid_vis, text_info, font_size, vis_size,
-            time_as_class,tac_mask_cat,
+            time_as_class, tac_mask_sub, tac_mask,
+            tac_id_to_name, tac_id_to_col,
             class_id_to_name, class_id_to_col,
             temp_col, eos, frg_col, arrow=1)
 
-        vis_image_cat = resize_ar(vis_image_cat, int(1920/1.25), int(1080/1.25))
+        vis_image_cat = resize_ar(vis_image_cat, int(1920 / 1.25), int(1080 / 1.25))
         cv2.imshow('vis_image_cat', vis_image_cat)
+        # cv2.imshow('tac_mask_cat', tac_mask_cat)
         k = cv2.waitKey(0 if _pause else 250)
         if k == 27:
             exit()
@@ -716,7 +770,8 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         _, vid_mask_sub_binary_vis, text_info = vis_video_run_txt(
             img_to_run_pixs, run_txt, vid_mask_sub_binary_vis,
             vid_vis, text_info, font_size, vis_size,
-            time_as_class,tac_mask_cat,
+            time_as_class, tac_mask_sub, tac_mask,
+            tac_id_to_name, tac_id_to_col,
             class_id_to_name, class_id_to_col,
             col, eos, frg_col, arrow=0)
         text_img, text_x, text_y = text_info
