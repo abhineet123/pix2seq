@@ -27,7 +27,7 @@ import tensorflow as tf
 import numpy as np
 
 from tasks.visualization import vis_utils
-from eval_utils import col_bgr, bgr_col
+from eval_utils import col_bgr, bgr_col, resize_ar
 
 
 def split_runs(run_ids, starts, lengths, max_length):
@@ -346,8 +346,8 @@ def time_as_class_info(vid_len, class_id_to_name):
         if vid_len == 2:
             cols = (
                 'black',  # 0, 0, 0
-                'green',  # 0, 1, 0
-                'blue',  # 0, 0, 1
+                'maroon',  # 0, 1, 0
+                'forest_green',  # 0, 0, 1
                 # 'royal_blue',  # 0, 0, 1
                 # 'sky_blue',  # 0, 0, 1
                 # 'deep_sky_blue',  # 0, 0, 1
@@ -489,14 +489,16 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
                 wait=100, bb=0, show=0, font_size=font_size)
 
     vis_image_cat = np.concatenate((vid_vis_, vid_masks_vis_), axis=1)
-    if time_as_class:
-        vis_image_cat = np.concatenate((vis_image_cat, tac_mask_cat), axis=0)
+    # if time_as_class:
+    #     vis_image_cat = np.concatenate((vis_image_cat, tac_mask_cat), axis=1)
 
     text_img, text_x, text_y = text_info
 
     if text_img is None:
-        text_img = np.full((vis_image_cat.shape[0], vis_size, 3), (0, 0, 0), dtype=np.uint8)
-
+        overall_h = vis_image_cat.shape[0]
+        overall_w = int(16*overall_h / 9)
+        text_img_w = overall_w - vis_image_cat.shape[1]
+        text_img = np.full((overall_h, text_img_w, 3), (0, 0, 0), dtype=np.uint8)
 
     text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
                                                              wait=100, bb=1, show=0, font_size=font_size)
@@ -512,6 +514,9 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
         text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
         """text_img is to the right of vid_vis_ and vid_masks_vis_"""
         text_bb_x += int(vis_size * 2)
+        # if time_as_class:
+        #     text_bb_x += vis_size
+
         text_bb_y += 10
 
         resize_y, resize_x = float(vis_size) / n_rows, float(vis_size) / n_cols
@@ -591,6 +596,7 @@ def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size,
     cv2.imshow('mask_sub_vis_', mask_sub_vis_)
     cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
     cv2.imshow('mask_rgb', mask_rgb_)
+    cv2.waitKey(1)
 
     # cv2.waitKey(0 if n_runs > 0 else 10)
     return vid_vis, vid_mask_sub_binary_vis
@@ -605,11 +611,10 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     text_bkg_col = (0, 0, 0)
     # text_bkg_col = (50, 50, 50)
     frg_col = (255, 255, 255)
-    temp_col = col_bgr['deep_pink']
-    vis_size = 360
+    temp_col = col_bgr['medium_purple']
+    vis_size = 480
     font_size = 16
     _pause = 1
-
 
     vid_len, n_rows, n_cols, _ = vid_vis.shape
     assert vid_len == len(image_ids), "vid_len mismatch"
@@ -624,7 +629,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         tac_mask_sub_rgb = mask_id_to_vis_rgb(tac_mask_sub, tac_id_to_col)
         tac_mask_sub_rgb = resize_mask(tac_mask_sub_rgb, (vis_size, vis_size), n_classes)
         tac_mask_rgb = resize_mask(tac_mask_rgb, (vis_size, vis_size), n_classes)
-        tac_mask_cat = np.concatenate((tac_mask_rgb, tac_mask_sub_rgb), axis=1)
+        tac_mask_cat = np.concatenate((tac_mask_rgb, tac_mask_sub_rgb), axis=0)
         font_size = 24
         text_x = text_y = 5
         for rle_id, rle_col in tac_id_to_col.items():
@@ -684,6 +689,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
             class_id_to_name, class_id_to_col,
             temp_col, eos, frg_col, arrow=1)
 
+        vis_image_cat = resize_ar(vis_image_cat, int(1920/1.25), int(1080/1.25))
         cv2.imshow('vis_image_cat', vis_image_cat)
         k = cv2.waitKey(0 if _pause else 250)
         if k == 27:
