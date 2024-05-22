@@ -409,7 +409,8 @@ def vis_tac_run(start, length, tac_mask_flat, vid_mask, col, class_id_to_col, fl
             if isinstance(col_, str):
                 col_ = col_bgr[col_]
             vid_mask[_id, row_id, col_id] = col_
-            img_to_run_pixs[_id].append((row_id, col_id))
+            if class_id > 0:
+                img_to_run_pixs[_id].append((row_id, col_id))
     return vid_mask, img_to_run_pixs
 
 
