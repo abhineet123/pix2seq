@@ -326,9 +326,9 @@ def resize_vid(vid, shape):
 
 def concat_vid(vid, axis, border):
     vid_out = []
-    for img in vid:
+    for img_id, img in enumerate(vid):
         vid_out.append(img)
-        if border:
+        if border and img_id < vid.shape[0] - 1:
             if axis == 0:
                 border_img = np.full((border, img.shape[1], 3), 255, dtype=np.uint8)
             elif axis == 1:
@@ -527,9 +527,11 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
             text_img, 'EOS', text_x, text_y, eos_col, show=0, font_size=font_size)
 
     if time_as_class:
-        text_img = concat_with_boder(tac_mask_cat, text_img, 0, 1)
+        text_img_vis = concat_with_boder(tac_mask_cat, text_img, 0, 1)
+    else:
+        text_img_vis = text_img
 
-    vis_image_cat = concat_with_boder(vis_image_cat, text_img, 1, 1)
+    vis_image_cat = concat_with_boder(vis_image_cat, text_img_vis, 1, 1)
 
     if arrow:
         left, top, right, bottom = text_bb
