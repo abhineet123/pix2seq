@@ -42,6 +42,8 @@ class Params(paramparse.CFG):
         self.vis = 0
         self.stats_only = 0
 
+        self.excluded_src_ids = []
+
         self.flat_order = 'C'
         self.time_as_class = 1
 
@@ -158,6 +160,9 @@ def generate_patch_vid_infos(
         src_id, patch_id = img_id.split('_')
         seq_id = image_info['seq']
 
+        image_info['src_id'] = src_id
+        image_info['patch_id'] = patch_id
+
         patch_seq_id = f'{seq_id}_{patch_id}'
         patch_vids[patch_seq_id].append(image_info)
 
@@ -172,6 +177,11 @@ def generate_patch_vid_infos(
             if subseq_start_id > subseq_end_id:
                 break
             subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:params.vid.frame_gap]
+
+            src_ids = tuple(image_info['src_id'] for image_info in subseq_img_infos)
+            if src_ids in params.excluded_src_ids:
+                print(f'Skipping excluded src_ids: {src_ids}')
+                continue
 
             n_subseq_files = len(subseq_img_infos)
 
@@ -317,11 +327,11 @@ def create_tf_example(
     vid_mask_sub = np.stack(subseq_masks_sub, axis=0)
 
     if params.time_as_class:
-        tac_mask = task_utils.vid_mask_to_time_as_class(vid_mask, n_classes)
-        tac_mask_sub = task_utils.vid_mask_to_time_as_class(vid_mask_sub, n_classes)
+        tac_mask = task_utils.vid_mask_to_tac(vid_mask, n_classes)
+        tac_mask_sub = task_utils.vid_mask_to_tac(vid_mask_sub, n_classes)
 
-        vid_mask_rec = task_utils.vid_mask_from_time_as_class(tac_mask, vid_len, n_classes)
-        vid_mask_sub_rec = task_utils.vid_mask_from_time_as_class(tac_mask_sub, vid_len, n_classes)
+        vid_mask_rec = task_utils.vid_mask_from_tac(tac_mask, vid_len, n_classes)
+        vid_mask_sub_rec = task_utils.vid_mask_from_tac(tac_mask_sub, vid_len, n_classes)
 
         assert np.array_equal(vid_mask, vid_mask_rec), "vid_mask_rec mismatch"
         assert np.array_equal(vid_mask_sub, vid_mask_sub_rec), "vid_mask_rec mismatch"
