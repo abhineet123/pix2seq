@@ -401,6 +401,8 @@ def vis_tac_run(start, length, tac_mask_flat, vid_mask, col, class_id_to_col, fl
     for row_id, col_id, vid_class_id in zip(row_ids, col_ids, vid_class_ids):
         for _id, class_id in enumerate(vid_class_id):
             col_ = col if col is not None else class_id_to_col[class_id]
+            if isinstance(col_, str):
+                col_ = col_bgr[col_]
             vid_mask[_id, row_id, col_id] = col_
     return vid_mask
 
