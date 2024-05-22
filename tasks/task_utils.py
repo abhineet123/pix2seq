@@ -562,8 +562,8 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
             mean_run_xs_, mean_run_ys_ = int(mean_run_xs_ * resize_x), int(mean_run_ys_ * resize_y)
 
             """vis_vid_masks_ to the right of vis_vid_images_"""
-            mean_run_xs_ += vis_size
-            mean_run_ys_ += img_id_ * vis_size
+            mean_run_xs_ += img_id_*vis_size
+            mean_run_ys_ += vis_size
 
             vis_image_cat = cv2.arrowedLine(vis_image_cat,
                                             (text_bb_x, text_bb_y),
