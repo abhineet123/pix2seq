@@ -327,10 +327,10 @@ def create_tf_example(
         assert np.array_equal(vid_mask_sub, vid_mask_sub_rec), "vid_mask_rec mismatch"
 
         n_rle_classes = int(n_classes ** vid_len)
-        class_id_to_col, class_id_to_name = task_utils.time_as_class_info(vid_len, n_classes)
+        rle_id_to_col, rle_id_to_name = task_utils.time_as_class_info(vid_len, n_classes)
 
-        tac_mask_rgb = task_utils.mask_id_to_vis_rgb(tac_mask, class_id_to_col)
-        tac_mask_sub_rgb = task_utils.mask_id_to_vis_rgb(tac_mask_sub, class_id_to_col)
+        tac_mask_rgb = task_utils.mask_id_to_vis_rgb(tac_mask, rle_id_to_col)
+        tac_mask_sub_rgb = task_utils.mask_id_to_vis_rgb(tac_mask_sub, rle_id_to_col)
         tac_mask_sub_rgb = task_utils.resize_mask(tac_mask_sub_rgb, tac_mask_rgb.shape, n_classes)
         cv2.imshow('tac_mask_rgb', tac_mask_rgb)
         cv2.imshow('tac_mask_sub_rgb', tac_mask_sub_rgb)
@@ -338,10 +338,10 @@ def create_tf_example(
 
         vid_mask = tac_mask
         vid_mask_sub = tac_mask_sub
-
         # return
     else:
         n_rle_classes = n_classes
+        rle_id_to_col, rle_id_to_name = class_id_to_col, class_id_to_name
 
     if subsample_method == 2:
         max_length_sub = int(max_length / params.subsample)
@@ -350,8 +350,8 @@ def create_tf_example(
         n_rows_sub, n_cols_sub = n_rows, n_cols
         max_length_sub = max_length
 
-    starts, lengths = task_utils.vid_mask_to_rle(
-        vid_mask=vid_mask_sub,
+    starts, lengths = task_utils.mask_to_rle(
+        mask=vid_mask_sub,
         max_length=max_length_sub,
         n_classes=n_rle_classes,
         order=params.flat_order,
@@ -364,7 +364,7 @@ def create_tf_example(
     class_ids = None
     if n_rle_classes > 2:
         assert params.class_offset > 0, "class_offset must be > 0"
-        class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths, class_id_to_col)
+        class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths, rle_id_to_col)
         rle_cmp.append(class_ids)
         multi_class = True
 
@@ -376,6 +376,8 @@ def create_tf_example(
             vid, vid_mask, vid_mask_sub,
             params.time_as_class,
             params.flat_order,
+            rle_id_to_name,
+            rle_id_to_col,
         )
 
     rle_tokens = task_utils.rle_to_tokens(

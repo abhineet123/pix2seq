@@ -40,6 +40,8 @@ class Params(paramparse.CFG):
         self.stats_only = 0
         self.check = 1
 
+        self.flat_order = 'C'
+
         self.n_proc = 0
         self.ann_ext = 'json'
         self.num_shards = 32
@@ -263,7 +265,7 @@ def create_tf_example(
         mask=mask_sub,
         max_length=max_length_sub,
         n_classes=n_classes,
-        # binary=False,
+        order=params.flat_order,
     )
 
     # starts_bin, lengths_bin = task_utils.mask_to_rle(
