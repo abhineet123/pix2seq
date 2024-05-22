@@ -27,7 +27,7 @@ import tensorflow as tf
 import numpy as np
 
 from tasks.visualization import vis_utils
-from eval_utils import col_bgr
+from eval_utils import col_bgr, bgr_col
 
 
 def split_runs(run_ids, starts, lengths, max_length):
@@ -274,7 +274,7 @@ def mask_vis_to_id(mask, n_classes):
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
 
 
-def blend_mask(mask, image, class_to_col):
+def blend_mask(mask, image, class_to_col, alpha=0.5):
     n_classes = len(class_to_col)
     """ignore class id 0 for background"""
     vis_image = np.copy(image)
@@ -284,7 +284,7 @@ def blend_mask(mask, image, class_to_col):
         if isinstance(class_col, str):
             class_col = col_bgr[class_col]
         class_mask_binary = (mask == class_id)
-        vis_image[class_mask_binary] = vis_image[class_mask_binary] * 0.5 + np.asarray(class_col) * 0.5
+        vis_image[class_mask_binary] = vis_image[class_mask_binary] * (1 - alpha) + np.asarray(class_col) * alpha
     return vis_image
 
 
@@ -332,7 +332,8 @@ def concat_vid(vid, axis):
     return vid_out
 
 
-def time_as_class_info(vid_len, n_classes):
+def time_as_class_info(vid_len, class_id_to_name):
+    n_classes = len(class_id_to_name)
     cols = (
         'black',
         'green', 'red', 'deep_sky_blue',
@@ -344,15 +345,15 @@ def time_as_class_info(vid_len, n_classes):
     if n_classes == 2:
         if vid_len == 2:
             cols = (
-                'black',  # 0, 0
-                'blue',  # 0, 1
-                'green',  # 1, 0
-                'cyan',  # 1, 1
+                'black',  # 0, 0, 0
+                'green',  # 0, 1, 0
+                'deep_sky_blue',  # 0, 0, 1
+                'cyan',  # 0, 1, 1
             )
         elif vid_len == 3:
             cols = (
                 'black',  # 0, 0, 0
-                'blue',  # 0, 0, 1
+                'deep_sky_blue',  # 0, 0, 1
                 'green',  # 0, 1, 0
                 'cyan',  # 0, 1, 1
                 'red',  # 1, 0, 0
@@ -375,18 +376,21 @@ def time_as_class_info(vid_len, n_classes):
         random.shuffle(cols)
         cols.insert(0, (0, 0, 0))
 
-    class_id_to_col = {
+    tac_id_to_col = {
         col_id: cols[col_id] for col_id in range(n_cols)
     }
 
     import itertools
-    col_level_str = [str(col_id) for col_id in range(n_classes)]
-    col_names = list(itertools.product(col_level_str, repeat=vid_len))
-    class_id_to_name = {
-        col_id: col_name for col_id, col_name in enumerate(col_names)
+    # class_names_str = [str(class_id) for class_id in range(n_classes)]
+    class_names_str = [class_id_to_name[class_id] if class_id > 0 else 'bkg'
+                       for class_id in range(n_classes)]
+    tac_names = list(itertools.product(class_names_str, repeat=vid_len))
+    tac_id_to_name = {
+        tac_id: '-'.join(col_name[::-1]) for tac_id, col_name in enumerate(tac_names)
+        # tac_id: ''.join(col_name) for tac_id, col_name in enumerate(tac_names)
     }
 
-    return class_id_to_col, class_id_to_name
+    return tac_id_to_col, tac_id_to_name
 
 
 def vis_tac_run(start, length, tac_mask_flat, vid_mask, col, class_id_to_col, flat_order):
@@ -405,12 +409,14 @@ def vis_tac_run(start, length, tac_mask_flat, vid_mask, col, class_id_to_col, fl
 
     for row_id, col_id, vid_class_id in zip(row_ids, col_ids, vid_class_ids):
         for _id, class_id in enumerate(vid_class_id):
+            if class_id == 0:
+                continue
             col_ = col if col is not None else class_id_to_col[class_id]
             if isinstance(col_, str):
                 col_ = col_bgr[col_]
             vid_mask[_id, row_id, col_id] = col_
-            if class_id > 0:
-                img_to_run_pixs[_id].append((row_id, col_id))
+            img_to_run_pixs[_id].append((row_id, col_id))
+
     return vid_mask, img_to_run_pixs
 
 
@@ -458,14 +464,14 @@ def vis_video_run(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis, vid_mask_bool
             mean_run_ys_ = int(np.mean(run_ys_))
             mean_run_xs_ = int(np.mean(run_xs_))
 
-            mean_run_xs_, mean_run_ys_ = int(mean_run_xs_ * resize_x), int(mean_run_ys_ * resize_y)
+            # mean_run_xs_, mean_run_ys_ = int(mean_run_xs_ * resize_x), int(mean_run_ys_ * resize_y)
 
             """vis_vid_masks_ to the right of vis_vid_images_"""
-            mean_run_ys_ += vis_size
-            mean_run_xs_ += img_id_ * vis_size
+            mean_run_xs_ += vis_size
+            mean_run_ys_ += img_id_ * vis_size
 
             vis_image_cat = cv2.arrowedLine(vis_image_cat, (mean_run_xs_, mean_run_ys_),
-                                            (text_bb_x, text_bb_y), col, 1, tipLength=0.01)
+                                            (text_bb_x, text_bb_y), col, 2, tipLength=0.01)
 
     return vis_image_cat, vid_mask_vis, (text_img, text_x, text_y)
 
@@ -494,7 +500,7 @@ def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size, class_id_to_c
         mask_sub_binary_vis[mask_sub_binary_vis > 0] = 255
         vid_mask_sub_binary_vis.append(mask_sub_binary_vis)
 
-        vis_image = blend_mask(mask, image, class_id_to_col)
+        vis_image = blend_mask(mask, image, class_id_to_col, alpha=0.25)
         vis_image = cv2.resize(vis_image, (vis_size, vis_size))
 
         file_txt = f'{image_id}'
@@ -552,9 +558,10 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         tac_mask = tac_mask_sub = None
 
     text_x = text_y = 5
-    bkg_col = (0, 0, 0)
+    text_bkg_col = (0, 0, 0)
+    # text_bkg_col = (50, 50, 50)
     frg_col = (255, 255, 255)
-    temp_col = col_bgr['orange']
+    temp_col = col_bgr['deep_pink']
     vis_size = 640
     font_size = 16
     _pause = 1
@@ -563,7 +570,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         vid_vis, vid_mask_, vid_mask_sub_,
         vis_size, class_id_to_col, image_ids)
 
-    text_img = np.full((2 * vis_size, vis_size, 3), bkg_col, dtype=np.uint8)
+    text_img = np.full((2 * vis_size, vis_size, 3), text_bkg_col, dtype=np.uint8)
     vid_mask_sub_flat = vid_mask_sub_.flatten(order=flat_order)
     tac_mask_sub_flat = tac_mask_sub.flatten(order=flat_order)
 
@@ -579,15 +586,11 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         else:
             class_id = 1
         if time_as_class:
-            tac_mask_sub_res = resize_mask(tac_mask_sub, tac_mask.shape)
-            tac_mask_cat = np.concatenate((tac_mask, tac_mask_sub_res), axis=1)
-            cv2.imshow('tac_mask', tac_mask_cat)
-
             vid_mask_sub_binary_vis, img_to_run_pixs = vis_tac_run(
                 start, length,
                 tac_mask_sub_flat, vid_mask_sub_binary_vis,
                 temp_col, class_id_to_col, flat_order,
-                )
+            )
             vid_mask_bool = None
         else:
             vid_mask_bool_flat = np.zeros_like(vid_mask_sub_flat, dtype=bool)
@@ -616,7 +619,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
             _pause = 1 - _pause
 
         if time_as_class:
-            vid_mask_sub_binary_vis = vis_tac_run(
+            vid_mask_sub_binary_vis, _ = vis_tac_run(
                 start, length,
                 tac_mask_sub_flat, vid_mask_sub_binary_vis,
                 None, class_id_to_col, flat_order)
@@ -645,7 +648,7 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image
     mask_sub_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1, copy=True)
     mask_sub_vis[mask_sub_vis > 0] = 255
 
-    vis_image = blend_mask(mask, image, class_id_to_col)
+    vis_image = blend_mask(mask, image, class_id_to_col, alpha=0.25)
 
     text_x = text_y = 5
     # col = (0, 255, 0)

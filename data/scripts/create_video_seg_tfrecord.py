@@ -337,13 +337,30 @@ def create_tf_example(
         assert np.array_equal(vid_mask_sub, vid_mask_sub_rec), "vid_mask_rec mismatch"
 
         n_rle_classes = int(n_classes ** vid_len)
-        rle_id_to_col, rle_id_to_name = task_utils.time_as_class_info(vid_len, n_classes)
+        rle_id_to_col, rle_id_to_name = task_utils.time_as_class_info(vid_len, class_id_to_name)
 
         tac_mask_rgb = task_utils.mask_id_to_vis_rgb(tac_mask, rle_id_to_col)
         tac_mask_sub_rgb = task_utils.mask_id_to_vis_rgb(tac_mask_sub, rle_id_to_col)
         tac_mask_sub_rgb = task_utils.resize_mask(tac_mask_sub_rgb, tac_mask_rgb.shape, n_classes)
-        cv2.imshow('tac_mask_rgb', tac_mask_rgb)
-        cv2.imshow('tac_mask_sub_rgb', tac_mask_sub_rgb)
+        tac_mask_cat = np.concatenate((tac_mask_rgb, tac_mask_sub_rgb), axis=1)
+
+        font_size = 24
+        text_x = text_y = 5
+        for rle_id, rle_col in rle_id_to_col.items():
+            if rle_id == 0:
+                continue
+            rle_name = rle_id_to_name[rle_id]
+            # try:
+            #     rle_col_name = task_utils.bgr_col[rle_col]
+            # except KeyError:
+            #     rle_col_name = rle_col
+            # text_y = int((rle_id - 1) * font_size + 5)
+
+            tac_mask_cat, text_x, text_y = vis_utils.write_text(
+                tac_mask_cat, f'{rle_name} ',text_x, text_y,
+                rle_col,
+                wait=100, bb=0, show=0, font_size=font_size)
+        cv2.imshow('tac_masks', tac_mask_cat)
         cv2.waitKey(10)
 
         vid_mask = tac_mask
