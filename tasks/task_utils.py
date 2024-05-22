@@ -373,8 +373,8 @@ def time_as_class_info(vid_len, class_id_to_name):
         if vid_len == 2:
             cols = (
                 'black',  # 0, 0, 0
-                'maroon',  # 0, 1, 0
-                'forest_green',  # 0, 0, 1
+                'red',  # 0, 1, 0
+                'green',  # 0, 0, 1
                 # 'royal_blue',  # 0, 0, 1
                 # 'sky_blue',  # 0, 0, 1
                 # 'deep_sky_blue',  # 0, 0, 1
@@ -568,7 +568,7 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
             vis_image_cat = cv2.arrowedLine(vis_image_cat,
                                             (text_bb_x, text_bb_y),
                                             (mean_run_xs_, mean_run_ys_),
-                                            col, 2, tipLength=0.01)
+                                            col, 2, tipLength=0.02)
 
     return vis_image_cat, vid_mask_vis, (text_img, text_x, text_y)
 
