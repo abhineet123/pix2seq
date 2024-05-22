@@ -280,7 +280,8 @@ def blend_mask(mask, image, class_to_col):
 
     for class_id in range(1, n_classes):
         class_col = class_to_col[class_id]
-        class_col = col_bgr[class_col]
+        if isinstance(class_col, str):
+            class_col = col_bgr[class_col]
         class_mask_binary = (mask == class_id)
         vis_image[class_mask_binary] = vis_image[class_mask_binary] * 0.5 + np.asarray(class_col) * 0.5
     return vis_image
@@ -292,7 +293,8 @@ def mask_id_to_vis_rgb(mask, class_to_col):
     n_classes = len(class_to_col)
     for class_id in range(n_classes):
         class_col = class_to_col[class_id]
-        class_col = col_bgr[class_col]
+        if isinstance(class_col, str):
+            class_col = col_bgr[class_col]
         mask_rgb[mask == class_id] = class_col
     return mask_rgb
 
@@ -329,8 +331,65 @@ def concat_vid(vid, axis):
     return vid_out
 
 
+def time_as_class_info(vid_len, n_classes):
+    cols = (
+        'black',
+        'green', 'red', 'deep_sky_blue',
+        'yellow', 'forest_green', 'cyan',
+        'magenta', 'purple', 'orange',
+        'maroon', 'peach_puff', 'dark_orange',
+        'slate_gray', 'pale_turquoise', 'green_yellow',
+    )
+    if n_classes == 2:
+        if vid_len == 2:
+            cols = (
+                'black',  # 0, 0
+                'blue',  # 0, 1
+                'green',  # 1, 0
+                'cyan',  # 1, 1
+            )
+        elif vid_len == 3:
+            cols = (
+                'black',  # 0, 0, 0
+                'blue',  # 0, 0, 1
+                'green',  # 0, 1, 0
+                'cyan',  # 0, 1, 1
+                'red',  # 1, 0, 0
+                'magenta',  # 1, 0, 1
+                'yellow',  # 1, 1, 0
+                'white',  # 1, 1, 1
+            )
+    cols = [col_bgr[col] for col in cols]
+
+    n_cols = int(n_classes ** vid_len)
+
+    if n_cols > len(cols):
+        n_col_levels = int(n_cols ** (1. / 3) + 1)
+        col_levels = [int(x) for x in np.linspace(
+            50, 200,
+            n_col_levels, dtype=int)]
+        import itertools
+        cols = list(itertools.product(col_levels, repeat=3))
+        import random
+        random.shuffle(cols)
+        cols.insert(0, (0, 0, 0))
+
+    class_id_to_col = {
+        col_id: cols[col_id] for col_id in range(n_cols)
+    }
+
+    import itertools
+    col_level_str = [str(col_id) for col_id in range(n_classes)]
+    col_names = list(itertools.product(col_level_str, repeat=vid_len))
+    class_id_to_name = {
+        col_id: col_name for col_id, col_name in enumerate(col_names)
+    }
+
+    return class_id_to_col, class_id_to_name
+
+
 def vis_video_run(start, length, shape, run_txt, vid_mask_vis, vid_vis, vid_mask_bool,
-                  text_info, font_size, vis_size, col, eos, eos_col, arrow):
+                  text_info, font_size, vis_size, col, eos, eos_col, time_as_class, arrow):
     vid_mask_vis = np.copy(vid_mask_vis)
     vid_mask_vis[vid_mask_bool] = col
 
@@ -390,11 +449,13 @@ def vis_video_run(start, length, shape, run_txt, vid_mask_vis, vid_vis, vid_mask
 
 
 def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image_ids,
-                  vid_vis, vid_mask, vid_mask_sub):
+                  vid_vis, vid_mask, vid_mask_sub, time_as_class, flat_order):
     n_runs = len(starts)
     n_classes = len(class_id_to_col)
     # cols = get_cols(n_runs)
-    vid_len = len(image_ids)
+
+    vid_len, n_rows, n_cols, _ = vid_vis.shape
+    assert vid_len == len(image_ids), "vid_len mismatch"
 
     # a1 = np.full((5, 5), 32)
     # a2 = np.full((5, 5), 64)
@@ -406,10 +467,9 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     text_x = text_y = 5
     bkg_col = (0, 0, 0)
     frg_col = (255, 255, 255)
-    temp_col = (255, 255, 0)
+    temp_col = col_bgr['slate_gray']
     vis_size = 640
     font_size = 16
-    n_rows, n_cols = vid_mask_sub.shape[1:]
 
     vis_images = []
     mask_sub_vis_ = []
@@ -417,11 +477,22 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     mask_rgb_ = []
     vid_mask_sub_binary_vis = []
 
-    for mask, mask_sub, image, image_id in zip(vid_mask, vid_mask_sub, vid_vis, image_ids):
+    for frame_id in range(vid_len):
+        image = vid_vis[frame_id, ...]
+        image_id = image_ids[frame_id]
+
+        if time_as_class:
+            mask = vid_mask
+            mask_sub = vid_mask_sub
+            mask_sub_binary_vis = np.copy(mask_sub)
+        else:
+            mask = vid_mask[frame_id, ...]
+            mask_sub = vid_mask_sub[frame_id, ...]
+            mask_sub_binary_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1, copy=True)
+
         mask_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
         mask_sub_rgb = mask_id_to_vis_rgb(mask_sub, class_id_to_col)
 
-        mask_sub_binary_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1, copy=True)
         mask_sub_binary_vis[mask_sub_binary_vis > 0] = 255
         vid_mask_sub_binary_vis.append(mask_sub_binary_vis)
 
@@ -450,13 +521,12 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     cv2.imshow('mask_sub_vis_', mask_sub_vis_)
     cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
     cv2.imshow('mask_rgb', mask_rgb_)
-    cv2.waitKey(1)
 
-    # cv2.waitKey(0)
+    # cv2.waitKey(0 if n_runs > 0 else 10)
     # return
 
     text_img = np.full((2 * vis_size, vis_size, 3), bkg_col, dtype=np.uint8)
-    vid_mask_flat = vid_mask_sub.flatten(order="F")
+    vid_mask_flat = vid_mask_sub.flatten(order=flat_order)
     _pause = 1
 
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
@@ -467,18 +537,19 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
             run_txt = f'{run_txt}{class_name}, '
         else:
             class_id = 1
-        col = col_bgr[class_id_to_col[class_id]]
-
+        col = class_id_to_col[class_id]
+        if isinstance(col, str):
+            col = col_bgr[col]
         vid_mask_bool_flat = np.zeros_like(vid_mask_flat, dtype=bool)
         vid_mask_bool_flat[start:start + length] = True
-        vid_mask_bool = np.reshape(vid_mask_bool_flat, (vid_len, n_rows, n_cols), order='F')
+        vid_mask_bool = np.reshape(vid_mask_bool_flat, vid_mask_sub.shape, order=flat_order)
 
         eos = run_id == n_runs - 1
 
         vis_image_cat, _, _ = vis_video_run(
             start, length, (vid_len, n_rows, n_cols), run_txt, vid_mask_sub_binary_vis,
             vid_vis, vid_mask_bool, (text_img, text_x, text_y), font_size, vis_size, temp_col,
-            eos, frg_col, arrow=1)
+            eos, frg_col, time_as_class, arrow=1)
 
         cv2.imshow('vis_image_cat', vis_image_cat)
         k = cv2.waitKey(0 if _pause else 250)
@@ -490,7 +561,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         _, vid_mask_sub_binary_vis, text_info = vis_video_run(
             start, length, ((vid_len, n_rows, n_cols)), run_txt, vid_mask_sub_binary_vis,
             vid_vis, vid_mask_bool, (text_img, text_x, text_y), font_size, vis_size, col,
-            eos, frg_col, arrow=0)
+            eos, frg_col, time_as_class, arrow=0)
         text_img, text_x, text_y = text_info
 
     # cv2.waitKey(0)
@@ -548,7 +619,9 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image
         else:
             class_id = 1
 
-        col = col_bgr[class_id_to_col[class_id]]
+        col = class_id_to_col[class_id]
+        if isinstance(col, str):
+            col = col_bgr[col]
 
         # col_id = run_id % len(cols)
         # col = cols[col_id]
@@ -926,8 +999,55 @@ def rle_to_2d(rle, mask):
     return rle
 
 
-def vid_mask_to_rle(vid_mask, max_length, n_classes):
-    assert len(vid_mask.shape) == 3, "only greyscale masks are supported"
+def nbits_to_decimal(nbits, base):
+    assert np.all(nbits < base), f"bits must be < {base}"
+
+    out = 0
+    for bit_id, nbit in enumerate(nbits):
+        out += (base ** bit_id) * nbit
+    return out
+
+
+def vid_mask_from_time_as_class(mask: np.ndarray, vid_len: int, n_classes: int):
+    n_rows, n_cols = mask.shape
+
+    # n_pix = int(n_rows * n_cols)
+    n_time_classes = int(n_classes ** vid_len)
+
+    # vid_mask_flat = vid_mask.reshape(vid_len, n_pix)
+    vid_mask = np.zeros((vid_len, n_rows, n_cols), dtype=np.int64 if n_time_classes > 256 else np.uint8)
+
+    for vid_id in range(vid_len):
+        vid_mask[vid_id, ...] = mask % n_classes
+        mask = mask // n_classes
+
+    return vid_mask
+
+
+def vid_mask_to_time_as_class(vid_mask: np.ndarray, n_classes: int):
+    vid_len, n_rows, n_cols = vid_mask.shape
+
+    # n_pix = int(n_rows * n_cols)
+    n_time_classes = int(n_classes ** vid_len)
+
+    # vid_mask_flat = vid_mask.reshape(vid_len, n_pix)
+    mask = np.zeros((n_rows, n_cols), dtype=np.int64 if n_time_classes > 256 else np.uint8)
+
+    for vid_id in range(vid_len):
+        mask += (n_classes ** vid_id) * vid_mask[vid_id, ...]
+
+    # vid_mask_flat = vid_mask.flatten(order='F')
+    # nbits_arr = np.split(vid_mask_flat, n_pix)
+    # decimal_arr = np.asarray([nbits_to_decimal(nbits, n_classes) for nbits in nbits_arr])
+    # decimal_arr = np.reshape(decimal_arr, (n_rows, n_cols), order='F')
+
+    assert np.all(mask < n_time_classes), f"decimal_arr must be < {n_time_classes}"
+
+    return mask
+
+
+def vid_mask_to_rle(vid_mask, max_length, n_classes, order):
+    # assert len(vid_mask.shape) == 3, "only greyscale masks are supported"
     all_starts = []
     all_lengths = []
 
@@ -935,7 +1055,7 @@ def vid_mask_to_rle(vid_mask, max_length, n_classes):
 
     for class_id in range(1, n_classes):
         vid_mask_binary = (vid_mask == class_id).astype(np.uint8)
-        vid_mask_flat = vid_mask_binary.flatten(order="F")
+        vid_mask_flat = vid_mask_binary.flatten(order=order)
         pixels = np.concatenate([[0], vid_mask_flat, [0]])
         """the +1 in the original code was to convert indices from 0-based to 1-based"""
         runs = np.nonzero(pixels[1:] != pixels[:-1])[0]
@@ -954,7 +1074,12 @@ def vid_mask_to_rle(vid_mask, max_length, n_classes):
                 if len(overlong_runs) > 0:
                     starts, lengths = split_runs(overlong_runs, starts, lengths, max_length)
 
-            n_frames, n_rows, n_cols = vid_mask.shape
+            if len(vid_mask.shape) == 3:
+                n_frames, n_rows, n_cols = vid_mask.shape
+            else:
+                n_rows, n_cols = vid_mask.shape
+                n_frames = 1
+
             n_pix = n_frames * n_rows * n_cols
             assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
             assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
@@ -1063,8 +1188,9 @@ def read_class_info(class_names_path):
     palette = []
     for class_id in range(n_classes):
         col = class_cols[class_id]
-
-        col_rgb = col_bgr[col][::-1]
+        if isinstance(col, str):
+            col = col_bgr[col]
+        col_rgb = col[::-1]
 
         palette.append(col_rgb)
 

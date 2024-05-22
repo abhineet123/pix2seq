@@ -42,6 +42,9 @@ class Params(paramparse.CFG):
         self.vis = 0
         self.stats_only = 0
 
+        self.flat_order = 'C'
+        self.time_as_class = 1
+
         self.n_proc = 0
         self.ann_ext = 'json'
         self.num_shards = 32
@@ -70,8 +73,8 @@ class Params(paramparse.CFG):
         self.max_length = 0
         self.starts_2d = 0
         self.starts_offset = 1000
-        self.lengths_offset = 100
-        self.class_offset = 0
+        self.lengths_offset = 200
+        self.class_offset = 100
         self.subsample = 1
         self.subsample_method = 2
 
@@ -211,7 +214,7 @@ def create_tf_example(
         seq,
         vid_info):
     n_classes = len(class_id_to_col)
-
+    vid_len = len(subseq_img_infos)
     frame_ids = []
     image_ids = []
     subseq_imgs = []
@@ -222,7 +225,7 @@ def create_tf_example(
     if not params.stats_only:
         video_feature_dict = tfrecord_lib.video_seg_info_to_feature_dict(
             vid_height, vid_width, vid_path, mask_vid_path,
-            len(subseq_img_infos), seq)
+            vid_len, seq)
 
     subsample_method = params.subsample_method
     max_length = params.max_length
@@ -313,6 +316,33 @@ def create_tf_example(
     vid_mask = np.stack(subseq_masks, axis=0)
     vid_mask_sub = np.stack(subseq_masks_sub, axis=0)
 
+    if params.time_as_class:
+        tac_mask = task_utils.vid_mask_to_time_as_class(vid_mask, n_classes)
+        tac_mask_sub = task_utils.vid_mask_to_time_as_class(vid_mask_sub, n_classes)
+
+        vid_mask_rec = task_utils.vid_mask_from_time_as_class(tac_mask, vid_len, n_classes)
+        vid_mask_sub_rec = task_utils.vid_mask_from_time_as_class(tac_mask_sub, vid_len, n_classes)
+
+        assert np.array_equal(vid_mask, vid_mask_rec), "vid_mask_rec mismatch"
+        assert np.array_equal(vid_mask_sub, vid_mask_sub_rec), "vid_mask_rec mismatch"
+
+        n_rle_classes = int(n_classes ** vid_len)
+        class_id_to_col, class_id_to_name = task_utils.time_as_class_info(vid_len, n_classes)
+
+        tac_mask_rgb = task_utils.mask_id_to_vis_rgb(tac_mask, class_id_to_col)
+        tac_mask_sub_rgb = task_utils.mask_id_to_vis_rgb(tac_mask_sub, class_id_to_col)
+        tac_mask_sub_rgb = task_utils.resize_mask(tac_mask_sub_rgb, tac_mask_rgb.shape, n_classes)
+        cv2.imshow('tac_mask_rgb', tac_mask_rgb)
+        cv2.imshow('tac_mask_sub_rgb', tac_mask_sub_rgb)
+        cv2.waitKey(10)
+
+        vid_mask = tac_mask
+        vid_mask_sub = tac_mask_sub
+
+        # return
+    else:
+        n_rle_classes = n_classes
+
     if subsample_method == 2:
         max_length_sub = int(max_length / params.subsample)
         n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
@@ -323,25 +353,16 @@ def create_tf_example(
     starts, lengths = task_utils.vid_mask_to_rle(
         vid_mask=vid_mask_sub,
         max_length=max_length_sub,
-        n_classes=n_classes,
+        n_classes=n_rle_classes,
+        order=params.flat_order,
     )
-    # if subsample_method == 1:
-    #     """subsample RLE of high-res mask"""
-    #     starts, lengths = task_utils.subsample_rle(
-    #         starts, lengths,
-    #         subsample=params.subsample,
-    #         shape=(n_rows, n_cols),
-    #         max_length=max_length,
-    #     )
-
     rle_cmp = [starts, lengths]
 
     n_runs = len(starts)
 
-    n_classes = len(class_id_to_col)
     multi_class = False
     class_ids = None
-    if n_classes > 2:
+    if n_rle_classes > 2:
         assert params.class_offset > 0, "class_offset must be > 0"
         class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths, class_id_to_col)
         rle_cmp.append(class_ids)
@@ -352,7 +373,10 @@ def create_tf_example(
             starts, lengths, class_ids,
             class_id_to_col, class_id_to_name,
             image_ids,
-            vid, vid_mask, vid_mask_sub)
+            vid, vid_mask, vid_mask_sub,
+            params.time_as_class,
+            params.flat_order,
+        )
 
     rle_tokens = task_utils.rle_to_tokens(
         rle_cmp, vid_mask_sub.shape,
