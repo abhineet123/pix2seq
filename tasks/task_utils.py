@@ -393,7 +393,7 @@ def time_as_class_info(vid_len, class_id_to_name):
     return tac_id_to_col, tac_id_to_name
 
 
-def vis_tac_run_pix(start, length, tac_mask_flat, vid_mask, col, class_id_to_col, tac_id_to_col,
+def vis_tac_run_pix(start, length, tac_mask_flat, vid_mask, col, tac_id_to_col, class_id_to_col,
                     flat_order):
     n_classes = len(class_id_to_col)
     vid_len, n_rows, n_cols = vid_mask.shape[:3]
@@ -408,7 +408,7 @@ def vis_tac_run_pix(start, length, tac_mask_flat, vid_mask, col, class_id_to_col
     from collections import defaultdict
     img_to_run_pixs = defaultdict(list)
 
-    for tac_id, row_id, col_id, vid_class_id in zip(row_ids, col_ids, vid_class_ids, tac_class_ids):
+    for row_id, col_id, vid_class_id, tac_id in zip(row_ids, col_ids, vid_class_ids, tac_class_ids):
         for _id, class_id in enumerate(vid_class_id):
             if class_id == 0:
                 continue
@@ -443,7 +443,10 @@ def vis_video_run_pix(start, length, vid_mask_sub_flat, vid_mask_sub_binary_vis,
 
 
 def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
-                      text_info, font_size, vis_size, col, eos, eos_col, arrow):
+                      text_info, font_size, vis_size,
+                      time_as_class,
+                      class_id_to_name, class_id_to_col,
+                      col, eos, eos_col, arrow):
     assert vid_mask_vis.shape[0] == vid_vis.shape[0], "vid_mask_vis shape mismatch"
 
     vid_len, n_rows, n_cols, _ = vid_mask_vis.shape
@@ -453,6 +456,18 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
 
     vid_masks_vis_ = concat_vid(vid_masks_vis_, axis=0)
     vid_vis_ = concat_vid(vid_vis_, axis=0)
+
+    if time_as_class:
+        text_x = text_y = 2
+        font_size = 24
+        for class_id, class_col in class_id_to_col.items():
+            if class_id == 0:
+                continue
+            class_name = class_id_to_name[class_id]
+            vid_masks_vis_, _, _ = vis_utils.write_text(
+                vid_masks_vis_, f'{class_name} ', text_x, text_y,
+                class_col,
+                wait=100, bb=0, show=0, font_size=font_size)
 
     vis_image_cat = np.concatenate((vid_vis_, vid_masks_vis_), axis=1)
 
@@ -538,18 +553,6 @@ def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size,
 
     vid_vis = np.stack(vis_images, axis=0)
     vid_mask_sub_binary_vis = np.stack(vid_mask_sub_binary_vis, axis=0)
-
-    if time_as_class:
-        text_x = text_y = 5
-        font_size = 24
-        for class_id, class_col in class_id_to_col.items():
-            if class_id == 0:
-                continue
-            class_name = class_id_to_name[class_id]
-            vid_mask_sub_binary_vis, _, _ = vis_utils.write_text(
-                vid_mask_sub_binary_vis, f'{class_name} ', text_x, text_y,
-                class_col,
-                wait=100, bb=0, show=0, font_size=font_size)
 
     vis_images_ = np.concatenate(vis_images, axis=1)
     mask_sub_vis_ = np.concatenate(mask_sub_vis_, axis=1)
@@ -640,8 +643,10 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
 
         vis_image_cat, _, _ = vis_video_run_txt(
             img_to_run_pixs, run_txt, vid_mask_sub_binary_vis,
-            vid_vis, text_info, font_size, vis_size, temp_col,
-            eos, frg_col, arrow=1)
+            vid_vis, text_info, font_size, vis_size,
+            time_as_class,
+            class_id_to_name, class_id_to_col,
+            temp_col, eos, frg_col, arrow=1)
 
         cv2.imshow('vis_image_cat', vis_image_cat)
         k = cv2.waitKey(0 if _pause else 250)
@@ -668,8 +673,10 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
 
         _, vid_mask_sub_binary_vis, text_info = vis_video_run_txt(
             img_to_run_pixs, run_txt, vid_mask_sub_binary_vis,
-            vid_vis, text_info, font_size, vis_size, col,
-            eos, frg_col, arrow=0)
+            vid_vis, text_info, font_size, vis_size,
+            time_as_class,
+            class_id_to_name, class_id_to_col,
+            col, eos, frg_col, arrow=0)
         text_img, text_x, text_y = text_info
     # cv2.waitKey(0)
 
