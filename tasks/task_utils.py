@@ -323,19 +323,38 @@ def resize_vid(vid, shape):
     vid_out = np.stack(vid_out, axis=0)
     return vid_out
 
+def concat_with_boder(img1, img2, axis, border):
+    # if axis == 0:
+    #     border_img = np.full((border_size, img1.shape[1], 3), 255, dtype=np.uint8)
+    # elif axis == 1:
+    #     border_img = np.full((img1.shape[0], border_size, 3), 255, dtype=np.uint8)
+    # else:
+    #     raise AssertionError('invalid axis')
+    # img = np.concatenate((img1, border_img, img2), axis=axis)
+
+    img1 = cv2.copyMakeBorder(img1, border, border, border, border, cv2.BORDER_CONSTANT, None, (255, 255, 255))
+    img2 = cv2.copyMakeBorder(img2, border, border, border, border, cv2.BORDER_CONSTANT, None, (255, 255, 255))
+    img = np.concatenate((img1, img2), axis=axis)
+
+    return img
 
 def concat_vid(vid, axis, border):
     vid_out = []
     for img_id, img in enumerate(vid):
+        if border:
+            img = cv2.copyMakeBorder(img, border, border, border, border, cv2.BORDER_CONSTANT, None, (255, 255, 255))
+
         vid_out.append(img)
-        if border and img_id < vid.shape[0] - 1:
-            if axis == 0:
-                border_img = np.full((border, img.shape[1], 3), 255, dtype=np.uint8)
-            elif axis == 1:
-                border_img = np.full((img.shape[0], border, 3), 255, dtype=np.uint8)
-            else:
-                raise AssertionError('invalid axis')
-            vid_out.append(border_img)
+        # if border and img_id < vid.shape[0] - 1:
+        #     if axis == 0:
+        #         border_img = np.full((border, img.shape[1], 3), 255, dtype=np.uint8)
+        #     elif axis == 1:
+        #         border_img = np.full((img.shape[0], border, 3), 255, dtype=np.uint8)
+        #     else:
+        #         raise AssertionError('invalid axis')
+        #     vid_out.append(border_img)
+
+
     vid_out = np.concatenate(vid_out, axis=axis)
     return vid_out
 
@@ -465,17 +484,6 @@ def vis_video_run_pix(start, length, vid_mask_sub_flat, vid_mask_sub_binary_vis,
     return vid_mask_sub_binary_vis, img_to_run_pixs
 
 
-def concat_with_boder(img1, img2, axis, border_size):
-    if axis == 0:
-        border_img = np.full((border_size, img1.shape[1], 3), 255, dtype=np.uint8)
-    elif axis == 1:
-        border_img = np.full((img1.shape[0], border_size, 3), 255, dtype=np.uint8)
-    else:
-        raise AssertionError('invalid axis')
-    img = np.concatenate((img1, border_img, img2), axis=axis)
-    return img
-
-
 def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
                       text_info, font_size, vis_size,
                       time_as_class, tac_mask_sub, tac_mask,
@@ -489,8 +497,8 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
     vid_masks_vis_ = resize_vid(vid_mask_vis, (vis_size, vis_size))
     vid_vis_ = resize_vid(vid_vis, (vis_size, vis_size))
 
-    vid_masks_vis_ = concat_vid(vid_masks_vis_, axis=0, border=1)
-    vid_vis_ = concat_vid(vid_vis_, axis=0, border=1)
+    vid_masks_vis_ = concat_vid(vid_masks_vis_, axis=1, border=1)
+    vid_vis_ = concat_vid(vid_vis_, axis=1, border=1)
     tac_mask_cat = None
     if time_as_class:
         vid_masks_vis_ = label_video_mask(vid_masks_vis_, class_id_to_name, class_id_to_col)
@@ -503,7 +511,7 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
         tac_mask_cat = np.concatenate((tac_mask_rgb, tac_mask_sub_rgb), axis=1)
         tac_mask_cat = label_tac_mask(tac_mask_cat, tac_id_to_name, tac_id_to_col)
 
-    vis_image_cat = np.concatenate((vid_vis_, vid_masks_vis_), axis=1)
+    vis_image_cat = np.concatenate((vid_vis_, vid_masks_vis_), axis=0)
     # if time_as_class:
     #     vis_image_cat = np.concatenate((vis_image_cat, tac_mask_cat), axis=1)
 
