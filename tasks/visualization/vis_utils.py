@@ -67,6 +67,10 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
     width, height = image.size
     draw = ImageDraw.Draw(image)
 
+    if isinstance(col, str):
+        from eval_utils import col_bgr
+        col = col_bgr[col][::-1]
+
     font = ImageFont.load_default(font_size)
     # font = ImageFont.truetype("arial.ttf", font_size)
     # font = ImageFont.truetype("sans-serif.ttf", font_size)

@@ -393,7 +393,8 @@ def time_as_class_info(vid_len, class_id_to_name):
     return tac_id_to_col, tac_id_to_name
 
 
-def vis_tac_run(start, length, tac_mask_flat, vid_mask, col, class_id_to_col, flat_order):
+def vis_tac_run_pix(start, length, tac_mask_flat, vid_mask, col, class_id_to_col, tac_id_to_col,
+                    flat_order):
     n_classes = len(class_id_to_col)
     vid_len, n_rows, n_cols = vid_mask.shape[:3]
     flat_ids = range(start, start + length)
@@ -407,11 +408,12 @@ def vis_tac_run(start, length, tac_mask_flat, vid_mask, col, class_id_to_col, fl
     from collections import defaultdict
     img_to_run_pixs = defaultdict(list)
 
-    for row_id, col_id, vid_class_id in zip(row_ids, col_ids, vid_class_ids):
+    for tac_id, row_id, col_id, vid_class_id in zip(row_ids, col_ids, vid_class_ids, tac_class_ids):
         for _id, class_id in enumerate(vid_class_id):
             if class_id == 0:
                 continue
-            col_ = col if col is not None else class_id_to_col[class_id]
+            col_ = col if col is not None else tac_id_to_col[tac_id]
+            # col_ = col if col is not None else class_id_to_col[class_id]
             if isinstance(col_, str):
                 col_ = col_bgr[col_]
             vid_mask[_id, row_id, col_id] = col_
@@ -420,15 +422,31 @@ def vis_tac_run(start, length, tac_mask_flat, vid_mask, col, class_id_to_col, fl
     return vid_mask, img_to_run_pixs
 
 
-def vis_video_run(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis, vid_mask_bool,
-                  text_info, font_size, vis_size, col, eos, eos_col, arrow):
+def vis_video_run_pix(start, length, vid_mask_sub_flat, vid_mask_sub_binary_vis,
+                      temp_col, flat_order):
+    vid_len, n_rows, n_cols = vid_mask_sub_binary_vis.shape
+    vid_mask_bool_flat = np.zeros_like(vid_mask_sub_flat, dtype=bool)
+    vid_mask_bool_flat[start:start + length] = True
+    vid_mask_bool = np.reshape(vid_mask_bool_flat, vid_mask_sub_binary_vis.shape[:3],
+                               order=flat_order)
+
+    from collections import defaultdict
+    img_to_run_pixs = defaultdict(list)
+    for run_pix in range(start, start + length):
+        _id, run_y, run_x = np.unravel_index([run_pix, ], (vid_len, n_rows, n_cols), order="F")
+        _id, run_y, run_x = int(_id[0]), int(run_y[0]), int(run_x[0])
+        img_to_run_pixs[_id].append((run_y, run_x))
+    vid_mask_sub_binary_vis = np.copy(vid_mask_sub_binary_vis)
+    vid_mask_sub_binary_vis[vid_mask_bool] = temp_col
+
+    return vid_mask_sub_binary_vis, img_to_run_pixs
+
+
+def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
+                      text_info, font_size, vis_size, col, eos, eos_col, arrow):
     assert vid_mask_vis.shape[0] == vid_vis.shape[0], "vid_mask_vis shape mismatch"
 
-    if vid_mask_bool is not None:
-        vid_mask_vis = np.copy(vid_mask_vis)
-        vid_mask_vis[vid_mask_bool] = col
-
-    vid_len, n_rows, n_cols, _ = vid_vis.shape
+    vid_len, n_rows, n_cols, _ = vid_mask_vis.shape
 
     vid_masks_vis_ = resize_vid(vid_mask_vis, (vis_size, vis_size))
     vid_vis_ = resize_vid(vid_vis, (vis_size, vis_size))
@@ -457,26 +475,29 @@ def vis_video_run(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis, vid_mask_bool
         text_bb_y += 10
 
         resize_y, resize_x = float(vis_size) / n_rows, float(vis_size) / n_cols
-
-        for img_id_, run_pixs_ in img_to_run_pixs.items():
+        n_vis_imgs = len(img_to_run_pixs)
+        for k, (img_id_, run_pixs_) in enumerate(img_to_run_pixs.items()):
             run_xs_ = [run_pix[1] for run_pix in run_pixs_]
             run_ys_ = [run_pix[0] for run_pix in run_pixs_]
             mean_run_ys_ = int(np.mean(run_ys_))
             mean_run_xs_ = int(np.mean(run_xs_))
 
-            # mean_run_xs_, mean_run_ys_ = int(mean_run_xs_ * resize_x), int(mean_run_ys_ * resize_y)
+            mean_run_xs_, mean_run_ys_ = int(mean_run_xs_ * resize_x), int(mean_run_ys_ * resize_y)
 
             """vis_vid_masks_ to the right of vis_vid_images_"""
             mean_run_xs_ += vis_size
             mean_run_ys_ += img_id_ * vis_size
 
             vis_image_cat = cv2.arrowedLine(vis_image_cat, (mean_run_xs_, mean_run_ys_),
-                                            (text_bb_x, text_bb_y), col, 2, tipLength=0.01)
+                                            (text_bb_x, text_bb_y), col, 2,
+                                            tipLength=0.01 if k == n_vis_imgs - 1 else 0)
 
     return vis_image_cat, vid_mask_vis, (text_img, text_x, text_y)
 
 
-def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size, class_id_to_col, image_ids):
+def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size,
+                        class_id_to_col, class_id_to_name,
+                        image_ids, time_as_class):
     n_classes = len(class_id_to_col)
     vid_len = vid_vis.shape[0]
 
@@ -492,12 +513,16 @@ def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size, class_id_to_c
 
         mask = vid_mask[frame_id, ...]
         mask_sub = vid_mask_sub[frame_id, ...]
-        mask_sub_binary_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1, copy=True)
 
         mask_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
         mask_sub_rgb = mask_id_to_vis_rgb(mask_sub, class_id_to_col)
 
-        mask_sub_binary_vis[mask_sub_binary_vis > 0] = 255
+        if time_as_class:
+            mask_sub_binary_vis = mask_id_to_vis_rgb(mask_sub, class_id_to_col)
+        else:
+            mask_sub_binary_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1, copy=True)
+            mask_sub_binary_vis[mask_sub_binary_vis > 0] = 255
+
         vid_mask_sub_binary_vis.append(mask_sub_binary_vis)
 
         vis_image = blend_mask(mask, image, class_id_to_col, alpha=0.25)
@@ -513,6 +538,18 @@ def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size, class_id_to_c
 
     vid_vis = np.stack(vis_images, axis=0)
     vid_mask_sub_binary_vis = np.stack(vid_mask_sub_binary_vis, axis=0)
+
+    if time_as_class:
+        text_x = text_y = 5
+        font_size = 24
+        for class_id, class_col in class_id_to_col.items():
+            if class_id == 0:
+                continue
+            class_name = class_id_to_name[class_id]
+            vid_mask_sub_binary_vis, _, _ = vis_utils.write_text(
+                vid_mask_sub_binary_vis, f'{class_name} ', text_x, text_y,
+                class_col,
+                wait=100, bb=0, show=0, font_size=font_size)
 
     vis_images_ = np.concatenate(vis_images, axis=1)
     mask_sub_vis_ = np.concatenate(mask_sub_vis_, axis=1)
@@ -557,7 +594,6 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         vid_mask_sub_ = vid_mask_sub
         tac_mask = tac_mask_sub = None
 
-    text_x = text_y = 5
     text_bkg_col = (0, 0, 0)
     # text_bkg_col = (50, 50, 50)
     frg_col = (255, 255, 255)
@@ -568,13 +604,16 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
 
     vid_vis, vid_mask_sub_binary_vis = vis_video_and_masks(
         vid_vis, vid_mask_, vid_mask_sub_,
-        vis_size, class_id_to_col, image_ids)
+        vis_size, class_id_to_col, class_id_to_name, image_ids, time_as_class)
 
     text_img = np.full((2 * vis_size, vis_size, 3), text_bkg_col, dtype=np.uint8)
+    text_x = text_y = 5
+
     vid_mask_sub_flat = vid_mask_sub_.flatten(order=flat_order)
     tac_mask_sub_flat = tac_mask_sub.flatten(order=flat_order)
 
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
+        text_info = (text_img, text_x, text_y)
         run_txt = f'{int(start)}, {int(length)}, '
         if class_ids is not None:
             class_id = class_ids[run_id]
@@ -586,29 +625,22 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         else:
             class_id = 1
         if time_as_class:
-            vid_mask_sub_binary_vis, img_to_run_pixs = vis_tac_run(
+            vid_mask_sub_binary_vis, img_to_run_pixs = vis_tac_run_pix(
                 start, length,
                 tac_mask_sub_flat, vid_mask_sub_binary_vis,
-                temp_col, class_id_to_col, flat_order,
+                temp_col, tac_id_to_col, class_id_to_col, flat_order,
             )
-            vid_mask_bool = None
         else:
-            vid_mask_bool_flat = np.zeros_like(vid_mask_sub_flat, dtype=bool)
-            vid_mask_bool_flat[start:start + length] = True
-            vid_mask_bool = np.reshape(vid_mask_bool_flat, vid_mask_sub.shape, order=flat_order)
-
-            from collections import defaultdict
-            img_to_run_pixs = defaultdict(list)
-            for run_pix in range(start, start + length):
-                run_img_id, run_y, run_x = np.unravel_index([run_pix, ], (vid_len, n_rows, n_cols), order="F")
-                run_img_id, run_y, run_x = int(run_img_id[0]), int(run_y[0]), int(run_x[0])
-                img_to_run_pixs[run_img_id].append((run_y, run_x))
-
+            vid_mask_sub_binary_vis, img_to_run_pixs = vis_video_run_pix(
+                start, length,
+                vid_mask_sub_flat, vid_mask_sub_binary_vis,
+                temp_col, flat_order,
+            )
         eos = run_id == n_runs - 1
 
-        vis_image_cat, _, _ = vis_video_run(
+        vis_image_cat, _, _ = vis_video_run_txt(
             img_to_run_pixs, run_txt, vid_mask_sub_binary_vis,
-            vid_vis, vid_mask_bool, (text_img, text_x, text_y), font_size, vis_size, temp_col,
+            vid_vis, text_info, font_size, vis_size, temp_col,
             eos, frg_col, arrow=1)
 
         cv2.imshow('vis_image_cat', vis_image_cat)
@@ -619,19 +651,24 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
             _pause = 1 - _pause
 
         if time_as_class:
-            vid_mask_sub_binary_vis, _ = vis_tac_run(
+            vid_mask_sub_binary_vis, _ = vis_tac_run_pix(
                 start, length,
                 tac_mask_sub_flat, vid_mask_sub_binary_vis,
-                None, class_id_to_col, flat_order)
+                None, tac_id_to_col, class_id_to_col, flat_order)
             col = tac_id_to_col[class_id]
         else:
             col = class_id_to_col[class_id]
+            vid_mask_sub_binary_vis, _ = vis_video_run_pix(
+                start, length,
+                vid_mask_sub_flat, vid_mask_sub_binary_vis,
+                col, flat_order,
+            )
         if isinstance(col, str):
             col = col_bgr[col]
 
-        _, vid_mask_sub_binary_vis, text_info = vis_video_run(
+        _, vid_mask_sub_binary_vis, text_info = vis_video_run_txt(
             img_to_run_pixs, run_txt, vid_mask_sub_binary_vis,
-            vid_vis, vid_mask_bool, (text_img, text_x, text_y), font_size, vis_size, col,
+            vid_vis, text_info, font_size, vis_size, col,
             eos, frg_col, arrow=0)
         text_img, text_x, text_y = text_info
     # cv2.waitKey(0)
