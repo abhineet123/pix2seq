@@ -308,14 +308,14 @@ def create_tf_example(
     class_ids = None
     if multi_class:
         assert params.class_offset > 0, "class_offset must be > 0"
-        class_ids = task_utils.get_rle_class_ids(mask_sub, starts, lengths, class_id_to_col)
+        class_ids = task_utils.get_rle_class_ids(mask_sub, starts, lengths, class_id_to_col, order=params.flat_order)
         rle_cmp.append(class_ids)
 
     if params.vis and n_runs > 0:
         task_utils.vis_rle(
             starts, lengths, class_ids,
             class_id_to_col, class_id_to_name,
-            image, mask, mask_sub)
+            image, mask, mask_sub, order=params.flat_order)
 
     rle_tokens = task_utils.rle_to_tokens(
         rle_cmp, mask_sub.shape,

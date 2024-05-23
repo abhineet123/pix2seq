@@ -376,7 +376,7 @@ def create_tf_example(
     class_ids = None
     if n_rle_classes > 2:
         assert params.class_offset > 0, "class_offset must be > 0"
-        class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths, rle_id_to_col)
+        class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths, rle_id_to_col, order=params.flat_order)
         rle_cmp.append(class_ids)
         multi_class = True
 
@@ -404,7 +404,10 @@ def create_tf_example(
     if multi_class:
         assert rle_len % 3 == 0, "rle_len must be divisible by 3"
     else:
-        assert rle_len % 2 == 0, "rle_len must be divisible by 2"
+        if params.time_as_class:
+            assert rle_len % 3 == 0, "rle_len must be divisible by 3"
+        else:
+            assert rle_len % 2 == 0, "rle_len must be divisible by 2"
 
     if not params.stats_only:
         seg_feature_dict = {
@@ -656,7 +659,7 @@ def main():
 
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
-            metrics_path = linux_path(output_path, f'{method}_{metric_}')
+            metrics_path = linux_path(output_path, f'{method}_{metric_}.txt')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
 

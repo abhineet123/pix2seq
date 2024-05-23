@@ -845,7 +845,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         cv2.waitKey(0)
 
 
-def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_sub):
+def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_sub, order):
     n_runs = len(starts)
     n_classes = len(class_id_to_col)
     # cols = get_cols(n_runs)
@@ -879,7 +879,7 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image
     return
 
     text_img = np.full((vis_size, vis_size, 3), bkg_col, dtype=np.uint8)
-    mask_flat = mask_sub.flatten()
+    mask_flat = mask_sub.flatten(order=order)
     _pause = 1
 
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
@@ -1213,36 +1213,36 @@ def rle_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offs
     return rle_cmp
 
 
-def get_rle_class_ids(mask, starts, lengths, class_id_to_col):
+def get_rle_class_ids(mask, starts, lengths, class_id_to_col, order):
     n_classes = len(class_id_to_col)
 
-    mask_flat = mask.flatten()
+    mask_flat = mask.flatten(order=order)
 
     class_ids = [mask_flat[k] for k in starts]
 
-    # if 0 in class_ids:
-    #     print("class_ids must be non-zero")
-    #     class_ids = np.asarray(class_ids)
-    #     zero_idxs = np.nonzero(class_ids == 0)[0]
-    #     mask_vis_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
-    #     mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
-    #     mask_vis_res = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
-    #     cv2.imshow('mask_vis', mask_vis_res)
-    #
-    #     for idx in zero_idxs:
-    #         start, length = starts[idx], lengths[idx]
-    #         mask_bool_flat = np.zeros_like(mask_flat, dtype=bool)
-    #         mask_bool_flat[start:start + length] = True
-    #         mask_bool = np.reshape(mask_bool_flat, mask.shape)
-    #
-    #         col = (255, 255, 255)
-    #
-    #         mask_vis_rgb[mask_bool] = col
-    #         mask_vis_rgb_res = resize_mask(mask_vis_rgb, (640, 640), n_classes, is_vis=True)
-    #
-    #         cv2.imshow('mask_vis_rgb', mask_vis_rgb_res)
-    #
-    #         cv2.waitKey(0)
+    if 0 in class_ids:
+        print("class_ids must be non-zero")
+        class_ids = np.asarray(class_ids)
+        zero_idxs = np.nonzero(class_ids == 0)[0]
+        mask_vis_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
+        mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
+        mask_vis_res = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
+        cv2.imshow('mask_vis', mask_vis_res)
+
+        for idx in zero_idxs:
+            start, length = starts[idx], lengths[idx]
+            mask_bool_flat = np.zeros_like(mask_flat, dtype=bool)
+            mask_bool_flat[start:start + length] = True
+            mask_bool = np.reshape(mask_bool_flat, mask.shape)
+
+            col = (255, 255, 255)
+
+            mask_vis_rgb[mask_bool] = col
+            mask_vis_rgb_res = resize_mask(mask_vis_rgb, (640, 640), n_classes, is_vis=True)
+
+            cv2.imshow('mask_vis_rgb', mask_vis_rgb_res)
+
+            cv2.waitKey(0)
 
     assert np.all(np.asarray(class_ids) > 0), "class_ids must be > 0"
     assert np.all(np.asarray(class_ids) <= n_classes), f"class_ids must be <= {n_classes}"
