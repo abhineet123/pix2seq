@@ -466,7 +466,7 @@ def vis_tac_run_pix(start, length, tac_mask_flat, vid_mask, col, tac_id_to_col, 
 
 def vis_video_run_pix(start, length, vid_mask_sub_flat, vid_mask_sub_binary_vis,
                       temp_col, flat_order):
-    vid_len, n_rows, n_cols = vid_mask_sub_binary_vis.shape
+    vid_len, n_rows, n_cols = vid_mask_sub_binary_vis.shape[:3]
     vid_mask_bool_flat = np.zeros_like(vid_mask_sub_flat, dtype=bool)
     vid_mask_bool_flat[start:start + length] = True
     vid_mask_bool = np.reshape(vid_mask_bool_flat, vid_mask_sub_binary_vis.shape[:3],
@@ -475,7 +475,7 @@ def vis_video_run_pix(start, length, vid_mask_sub_flat, vid_mask_sub_binary_vis,
     from collections import defaultdict
     img_to_run_pixs = defaultdict(list)
     for run_pix in range(start, start + length):
-        _id, run_y, run_x = np.unravel_index([run_pix, ], (vid_len, n_rows, n_cols), order="F")
+        _id, run_y, run_x = np.unravel_index([run_pix, ], (vid_len, n_rows, n_cols), order=flat_order)
         _id, run_y, run_x = int(_id[0]), int(run_y[0]), int(run_x[0])
         img_to_run_pixs[_id].append((run_y, run_x))
     vid_mask_sub_binary_vis = np.copy(vid_mask_sub_binary_vis)
@@ -702,12 +702,14 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         vid_mask_sub_ = vid_mask_from_tac(vid_mask_sub, vid_len, n_classes)
         tac_mask = vid_mask
         tac_mask_sub = vid_mask_sub
+        tac_mask_sub_flat = tac_mask_sub.flatten(order=flat_order)
+
         # cv2.imshow('tac_masks', tac_mask_cat)
         # cv2.waitKey(10)
     else:
         vid_mask_ = vid_mask
         vid_mask_sub_ = vid_mask_sub
-        tac_mask = tac_mask_sub = tac_mask_cat = None
+        tac_mask = tac_mask_sub = tac_mask_sub_flat = None
     vid_vis, vid_mask_sub_binary_vis = vis_video_and_masks(
         vid_vis, vid_mask_, vid_mask_sub_,
         vis_size, class_id_to_col, class_id_to_name, image_ids, time_as_class)
@@ -716,7 +718,6 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     text_x = text_y = 5
 
     vid_mask_sub_flat = vid_mask_sub_.flatten(order=flat_order)
-    tac_mask_sub_flat = tac_mask_sub.flatten(order=flat_order)
 
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
         text_info = (text_img, text_x, text_y)
@@ -1318,8 +1319,7 @@ def mask_to_rle(mask, max_length, n_classes, order):
                 if len(overlong_runs) > 0:
                     starts, lengths = split_runs(overlong_runs, starts, lengths, max_length)
 
-            n_rows, n_cols = mask.shape
-            n_pix = n_rows * n_cols
+            n_pix = mask.size
             assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
 
             assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
