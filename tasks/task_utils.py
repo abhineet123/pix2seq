@@ -810,7 +810,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         vis_image_cat = resize_ar(vis_image_cat, int(1920 / 1.25), int(1080 / 1.25))
         cv2.imshow('vis_image_cat', vis_image_cat)
         # cv2.imshow('tac_mask_cat', tac_mask_cat)
-        k = cv2.waitKey(0 if _pause else 250)
+        k = cv2.waitKey(0 if _pause else 10)
         if k == 27:
             exit()
         elif k == 32:
@@ -840,7 +840,9 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
             class_id_to_name, class_id_to_col,
             col, eos, frg_col, arrow=0)
         text_img, text_x, text_y = text_info
-    # cv2.waitKey(0)
+
+    if n_runs > 0:
+        cv2.waitKey(0)
 
 
 def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_sub):

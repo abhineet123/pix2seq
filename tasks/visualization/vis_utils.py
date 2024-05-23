@@ -62,7 +62,7 @@ STANDARD_COLORS = [
 from PIL import Image, ImageDraw, ImageFont
 
 
-def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, bb=0):
+def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, bb=0, sep=', '):
     image = Image.fromarray(img_np)
     width, height = image.size
     draw = ImageDraw.Draw(image)
@@ -72,37 +72,35 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
 
     textheight = font_size
 
-    words = text.split(', ')
-
-    if fill:
-        left, top, right, bottom = draw.textbbox((x, y,), text, font=font)
-        ImageDraw.floodfill(image, ((left, top), (right, bottom)), (0, 0, 0), border=None, thresh=0)
+    words = [k for k in text.split(sep) if k]
 
     x_, y_ = x, y
     line_change = False
     text_bbs = []
     for word_id, word in enumerate(words):
+        if word_id < len(words) - 1 or text.endswith(sep):
+            word = f'{word}{sep}'
 
-        if word_id < len(words) - 1:
-            word = f'{word}, '
-
-        textwidth = draw.textlength(word, font=font)
-
-        if x_ + textwidth >= width:
+        # textwidth = draw.textlength(word, font=font)
+        left, top, right, bottom = draw.textbbox((x_, y_,), word, font=font)
+        if right >=width:
             x_ = 5
-            y_ += textheight
-            if y_ >= height:
+            if bottom >= height - textheight:
                 y_ = 5
-                ImageDraw.floodfill(image, ((0, 0), (width, height)), (0, 0, 0), border=None, thresh=0)
-
+                image.paste((0, 0, 0), (0, 0, image.size[0], image.size[1]))
+            else:
+                y_ += textheight
             line_change = True
 
         # _, _, textwidth, textheight = draw.textbbox((0, 0), text=text, font=font)
 
-        text_bb = draw.textbbox((x_, y_,), text, font=font)
-        text_bbs.append(text_bb)
-
         draw.text((x_, y_), word, font=font, fill=col)
+
+        text_bb = draw.textbbox((x_, y_,), word, font=font)
+
+        textwidth = draw.textlength(word, font=font)
+
+        text_bbs.append(text_bb)
 
         x_ += textwidth
 
