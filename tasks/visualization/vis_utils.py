@@ -80,6 +80,7 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
 
     x_, y_ = x, y
     line_change = False
+    text_bbs = []
     for word_id, word in enumerate(words):
 
         if word_id < len(words) - 1:
@@ -90,9 +91,16 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
         if x_ + textwidth >= width:
             x_ = 5
             y_ += textheight
+            if y_ >= height:
+                y_ = 5
+                ImageDraw.floodfill(image, ((0, 0), (width, height)), (0, 0, 0), border=None, thresh=0)
+
             line_change = True
 
         # _, _, textwidth, textheight = draw.textbbox((0, 0), text=text, font=font)
+
+        text_bb = draw.textbbox((x_, y_,), text, font=font)
+        text_bbs.append(text_bb)
 
         draw.text((x_, y_), word, font=font, fill=col)
 
@@ -106,12 +114,10 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
         # out_x, out_y = x + textwidth, y + textheight
 
     if bb:
-        text_bb = draw.textbbox((x, y,), text, font=font)
-        if line_change:
-            left, top, right, bottom = text_bb
-            left, top, right, bottom = 5, top + textheight, right - left + 5, bottom + textheight
-            text_bb = (left, top, right, bottom)
-        return img_np, x_, y_, text_bb
+        # left, top, right, bottom = text_bb
+        # left, top, right, bottom = 5, top + textheight, right - left + 5, bottom + textheight
+        # text_bb = (left, top, right, bottom)
+        return img_np, x_, y_, text_bbs[-1]
 
     return img_np, x_, y_
 

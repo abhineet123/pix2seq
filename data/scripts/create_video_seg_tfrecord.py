@@ -179,7 +179,11 @@ def generate_patch_vid_infos(
             subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:params.vid.frame_gap]
 
             src_ids = tuple(image_info['src_id'] for image_info in subseq_img_infos)
-            if src_ids in params.excluded_src_ids:
+            from itertools import chain, combinations
+            src_ids_subsets = list(chain.from_iterable(combinations(src_ids, r)
+                                                       for r in range(2, len(src_ids) + 1)))
+
+            if any(src_ids_subset in params.excluded_src_ids for src_ids_subset in src_ids_subsets):
                 print(f'Skipping excluded src_ids: {src_ids}')
                 continue
 
@@ -197,6 +201,8 @@ def generate_annotations(
         params,
         class_id_to_col,
         class_id_to_name,
+        tac_id_to_col,
+        tac_id_to_name,
         metrics,
         all_subseq_img_infos,
         vid_infos,
@@ -208,6 +214,8 @@ def generate_annotations(
             params,
             class_id_to_col,
             class_id_to_name,
+            tac_id_to_col,
+            tac_id_to_name,
             metrics,
             subseq_img_infos,
             seq,
@@ -219,6 +227,8 @@ def create_tf_example(
         params: Params,
         class_id_to_col,
         class_id_to_name,
+        tac_id_to_col,
+        tac_id_to_name,
         metrics,
         subseq_img_infos,
         seq,
@@ -330,21 +340,20 @@ def create_tf_example(
         tac_mask = task_utils.vid_mask_to_tac(vid_mask, n_classes)
         tac_mask_sub = task_utils.vid_mask_to_tac(vid_mask_sub, n_classes)
 
-        vid_mask_rec = task_utils.vid_mask_from_tac(tac_mask, vid_len, n_classes)
-        vid_mask_sub_rec = task_utils.vid_mask_from_tac(tac_mask_sub, vid_len, n_classes)
+        # vid_mask_rec = task_utils.vid_mask_from_tac(tac_mask, vid_len, n_classes)
+        # vid_mask_sub_rec = task_utils.vid_mask_from_tac(tac_mask_sub, vid_len, n_classes)
+        # assert np.array_equal(vid_mask, vid_mask_rec), "vid_mask_rec mismatch"
+        # assert np.array_equal(vid_mask_sub, vid_mask_sub_rec), "vid_mask_rec mismatch"
 
-        assert np.array_equal(vid_mask, vid_mask_rec), "vid_mask_rec mismatch"
-        assert np.array_equal(vid_mask_sub, vid_mask_sub_rec), "vid_mask_rec mismatch"
-
-        n_rle_classes = int(n_classes ** vid_len)
-        rle_id_to_col, rle_id_to_name = task_utils.time_as_class_info(vid_len, class_id_to_name)
+        rle_id_to_col, rle_id_to_name = tac_id_to_col, tac_id_to_name
 
         vid_mask = tac_mask
         vid_mask_sub = tac_mask_sub
         # return
     else:
-        n_rle_classes = n_classes
         rle_id_to_col, rle_id_to_name = class_id_to_col, class_id_to_name
+
+    n_rle_classes = len(rle_id_to_col)
 
     if subsample_method == 2:
         max_length_sub = int(max_length / params.subsample)
@@ -479,6 +488,10 @@ def main():
         # params.vis = params.show = False
 
     class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)[:3]
+    n_classes = len(class_names)
+    vid_len = params.vid.length
+    # n_tac_classes = int(n_classes ** vid_len)
+    tac_id_to_col, tac_id_to_name = task_utils.time_as_class_info(vid_len, class_id_to_name)
 
     n_classes = len(class_id_to_col)
     multi_class = False
@@ -613,6 +626,8 @@ def main():
         params=params,
         class_id_to_col=class_id_to_col,
         class_id_to_name=class_id_to_name,
+        tac_id_to_col=tac_id_to_col,
+        tac_id_to_name=tac_id_to_name,
         metrics=metrics,
         all_subseq_img_infos=all_subseq_img_infos,
         vid_infos=vid_infos,

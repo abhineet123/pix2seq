@@ -323,6 +323,7 @@ def resize_vid(vid, shape):
     vid_out = np.stack(vid_out, axis=0)
     return vid_out
 
+
 def concat_with_boder(img1, img2, axis, border):
     # if axis == 0:
     #     border_img = np.full((border_size, img1.shape[1], 3), 255, dtype=np.uint8)
@@ -337,6 +338,7 @@ def concat_with_boder(img1, img2, axis, border):
     img = np.concatenate((img1, img2), axis=axis)
 
     return img
+
 
 def concat_vid(vid, axis, border):
     vid_out = []
@@ -354,7 +356,6 @@ def concat_vid(vid, axis, border):
         #         raise AssertionError('invalid axis')
         #     vid_out.append(border_img)
 
-
     vid_out = np.concatenate(vid_out, axis=axis)
     return vid_out
 
@@ -363,11 +364,12 @@ def time_as_class_info(vid_len, class_id_to_name):
     n_classes = len(class_id_to_name)
     cols = (
         'black',
-        'green', 'red', 'deep_sky_blue',
-        'yellow', 'forest_green', 'cyan',
-        'magenta', 'purple', 'orange',
-        'maroon', 'peach_puff', 'dark_orange',
-        'slate_gray', 'pale_turquoise', 'green_yellow',
+        'deep_sky_blue', 'yellow', 'forest_green', 'cyan', 'magenta',
+        'orange', 'maroon', 'peach_puff', 'dark_orange', 'slate_gray',
+        'pale_turquoise', 'green_yellow', 'indian_red', 'sienna', 'dark_orange',
+        'hot_pink', 'deep_pink', 'orchid', 'blue_violet', 'tomato',
+        'orange_red', 'brown', 'peru', 'gold', 'chartreuse',
+        'steel_blue', 'gray',
     )
     if n_classes == 2:
         if vid_len == 2:
@@ -388,35 +390,67 @@ def time_as_class_info(vid_len, class_id_to_name):
                 'cyan',  # 0, 1, 1
                 'maroon',  # 1, 0, 0
                 'magenta',  # 1, 0, 1
-                'orange',  # 1, 1, 0
-                'white',  # 1, 1, 1
+                'yellow',  # 1, 1, 1
+                'slate_gray',  # 1, 1, 1
             )
     elif n_classes == 3:
         if vid_len == 2:
             cols = (
-                'black',  # 0, 0, 0
-                'deep_sky_blue',  # 0, 0, 1
-                'forest_green',  # 0, 1, 0
-                'cyan',  # 0, 1, 1
-                'maroon',  # 1, 0, 0
-                'magenta',  # 1, 0, 1
-                'orange',  # 1, 1, 0
-                'white',  # 1, 1, 1
+                'black',  # 00
+                'deep_sky_blue',  # 10
+                'magenta',  # 20
+                'orange',  # 01
+                'forest_green',  # 11
+                'maroon',  # 21
+                'cyan',  # 02
+                'slate_gray',  # 12
+                'yellow',  # 22
             )
     cols = [col_bgr[col] for col in cols]
 
     n_cols = int(n_classes ** vid_len)
 
     if n_cols > len(cols):
-        n_col_levels = int(n_cols ** (1. / 3) + 1)
-        col_levels = [int(x) for x in np.linspace(
-            50, 200,
-            n_col_levels, dtype=int)]
+
+        invalid_cols = [
+            'white',
+            'black',
+            'red',
+            'green',
+            'purple',
+        ]
+
         import itertools
-        cols = list(itertools.product(col_levels, repeat=3))
-        import random
-        random.shuffle(cols)
-        cols.insert(0, (0, 0, 0))
+
+        n_col_levels = int(n_cols ** (1. / 3) + 1)
+        col_levels = [int(x) for x in np.linspace(100, 200, n_col_levels + 1, dtype=int)]
+        # col_levels = list(range(100, 201))
+        all_cols = list(itertools.product(col_levels, repeat=3))
+
+        # all_cols = list(col_bgr.keys())
+        # all_cols = [col_bgr[col] for col in all_cols]
+
+        for col in invalid_cols:
+            try:
+                all_cols.remove(col_bgr[col])
+            except ValueError:
+                pass
+
+        assert len(all_cols) > n_cols - 1, "too few all_cols"
+
+        cols = [(0, 0, 0), (255, 255, 255)]
+        for col_id in range(n_cols - 1):
+            sorted(all_cols, key=lambda x: get_min_col_diff(cols, x))
+            new_col = all_cols.pop(-1)
+            cols.append(new_col)
+
+        cols.remove((255, 255, 255))
+        # import random
+        # random.shuffle(cols)
+
+        # sample = len(cols) // (n_cols - 1)
+        # cols = cols[::sample]
+        # cols.insert(0, (0, 0, 0))
 
     tac_id_to_col = {
         col_id: cols[col_id] for col_id in range(n_cols)
@@ -479,9 +513,25 @@ def vis_video_run_pix(start, length, vid_mask_sub_flat, vid_mask_sub_binary_vis,
         _id, run_y, run_x = int(_id[0]), int(run_y[0]), int(run_x[0])
         img_to_run_pixs[_id].append((run_y, run_x))
     vid_mask_sub_binary_vis = np.copy(vid_mask_sub_binary_vis)
+    if isinstance(temp_col, str):
+        temp_col = col_bgr[temp_col]
+
     vid_mask_sub_binary_vis[vid_mask_bool] = temp_col
 
     return vid_mask_sub_binary_vis, img_to_run_pixs
+
+
+def get_min_col_diff(cols, _col2):
+    col_diffs = [np.sum(np.fabs(np.asarray(_col1, dtype=np.float32) - np.asarray(_col2, dtype=np.float32))) / 3.0
+                 for _col1 in cols]
+    mean_col_diff = np.amin(col_diffs)
+    return mean_col_diff
+
+def get_mean_col_diff(cols, _col2):
+    col_diffs = [np.sum(np.fabs(np.asarray(_col1, dtype=np.float32) - np.asarray(_col2, dtype=np.float32))) / 3.0
+                 for _col1 in cols]
+    mean_col_diff = np.mean(col_diffs)
+    return mean_col_diff
 
 
 def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
@@ -508,6 +558,8 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
         # tac_mask_cat = tac_mask_sub_rgb
         tac_mask_rgb = mask_id_to_vis_rgb(tac_mask, tac_id_to_col)
         tac_mask_rgb = resize_mask(tac_mask_rgb, (vis_size, vis_size))
+
+        # tac_mask_cat = concat_with_boder(tac_mask_rgb, tac_mask_sub_rgb, axis=1, border=1)
         tac_mask_cat = np.concatenate((tac_mask_rgb, tac_mask_sub_rgb), axis=1)
         tac_mask_cat = label_tac_mask(tac_mask_cat, tac_id_to_name, tac_id_to_col)
 
@@ -522,9 +574,11 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
             text_img_h, text_img_w = tac_mask_cat.shape[:2]
         else:
             overall_h = vis_image_cat.shape[0]
-            overall_w = int(18 * overall_h / 9)
             text_img_h = overall_h
-            text_img_w = overall_w - vis_image_cat.shape[1]
+
+            # overall_w = int(18 * overall_h / 9)
+            # text_img_w = overall_w - vis_image_cat.shape[1]
+            text_img_w = vis_size
         text_img = np.full((text_img_h, text_img_w, 3), (0, 0, 0), dtype=np.uint8)
 
     text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
@@ -545,7 +599,7 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
         left, top, right, bottom = text_bb
         text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
         """text_img is to the right of vid_vis_ and vid_masks_vis_"""
-        text_bb_x += int(vis_size * 2)
+        text_bb_x += int(vis_size * vid_len)
         if time_as_class:
             text_bb_y += tac_mask_cat.shape[0]
 
@@ -562,7 +616,7 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
             mean_run_xs_, mean_run_ys_ = int(mean_run_xs_ * resize_x), int(mean_run_ys_ * resize_y)
 
             """vis_vid_masks_ to the right of vis_vid_images_"""
-            mean_run_xs_ += img_id_*vis_size
+            mean_run_xs_ += img_id_ * vis_size
             mean_run_ys_ += vis_size
 
             vis_image_cat = cv2.arrowedLine(vis_image_cat,
@@ -624,10 +678,10 @@ def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size,
 
     # cv2.imshow('vid_vis', vid_vis)
     cv2.imshow('vis_images_', vis_images_)
-    cv2.imshow('mask_sub_vis_', mask_sub_vis_)
-    cv2.imshow('mask_sub_vis_', mask_sub_vis_)
-    cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
-    cv2.imshow('mask_rgb', mask_rgb_)
+    # cv2.imshow('mask_sub_vis_', mask_sub_vis_)
+    # cv2.imshow('mask_sub_vis_', mask_sub_vis_)
+    # cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
+    # cv2.imshow('mask_rgb', mask_rgb_)
     cv2.waitKey(1)
 
     # cv2.waitKey(0 if n_runs > 0 else 10)
@@ -651,11 +705,11 @@ def label_video_mask(vid_masks_vis_, class_id_to_name, class_id_to_col):
             from eval_utils import col_bgr
             class_col = col_bgr[class_col]
 
-        vid_masks_vis_, _, _ = vis_utils.write_text(
-            vid_masks_vis_, f'{class_id}: {class_name}', text_x, text_y,
+        vid_masks_vis_, text_x, text_y = vis_utils.write_text(
+            vid_masks_vis_, f'{class_name}   ', text_x, text_y,
             class_col,
             wait=100, bb=0, show=0, font_size=font_size)
-        text_y += font_size
+        # text_y += font_size
 
     return vid_masks_vis_
 
@@ -672,11 +726,11 @@ def label_tac_mask(tac_mask_cat, tac_id_to_name, tac_id_to_col):
         if rle_id == 0:
             continue
         rle_name = tac_id_to_name[rle_id]
-        tac_mask_cat, _, _ = vis_utils.write_text(
-            tac_mask_cat, f'{rle_id}: {rle_name}', text_x, text_y,
+        tac_mask_cat, text_x, text_y = vis_utils.write_text(
+            tac_mask_cat, f'{rle_name}   ', text_x, text_y,
             rle_col,
             wait=100, bb=0, show=0, font_size=font_size)
-        text_y += font_size
+        # text_y += font_size
     return tac_mask_cat
 
 
