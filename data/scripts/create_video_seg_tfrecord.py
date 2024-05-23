@@ -184,13 +184,13 @@ def generate_patch_vid_infos(
                                                        for r in range(2, len(src_ids) + 1)))
 
             if any(src_ids_subset in params.excluded_src_ids for src_ids_subset in src_ids_subsets):
-                print(f'Skipping excluded src_ids: {src_ids}')
+                # print(f'Skipping excluded src_ids: {src_ids}')
                 continue
 
             n_subseq_files = len(subseq_img_infos)
 
             if n_subseq_files < params.vid.length:
-                print(f'skipping subseq {subseq_id + 1} - with length {n_subseq_files}')
+                # print(f'skipping subseq {subseq_id + 1} - with length {n_subseq_files}')
                 continue
             all_subseq_img_infos.append(subseq_img_infos)
 
@@ -599,8 +599,8 @@ def main():
         try:
             vid_info = vid_infos[seq]
         except KeyError:
-            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(vid_path, seq)
-            mask_reader, mask_width, mask_height, mask_num_frames = task_utils.load_video(mask_vid_path, seq)
+            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(vid_path)
+            mask_reader, mask_width, mask_height, mask_num_frames = task_utils.load_video(mask_vid_path)
 
             assert num_frames == mask_num_frames, "num_frames mismatch"
             assert vid_width == mask_width, "vid_width mismatch"
