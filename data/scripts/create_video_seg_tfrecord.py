@@ -564,6 +564,9 @@ def main():
     if multi_class:
         out_name = f'{out_name}-mc'
 
+    if params.flat_order != 'C':
+        out_name = f'{out_name}-flat_{params.flat_order}'
+
     image_infos = load_seg_annotations(json_path)
 
     if not params.output_dir:
