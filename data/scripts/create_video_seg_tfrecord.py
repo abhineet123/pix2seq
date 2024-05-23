@@ -45,7 +45,7 @@ class Params(paramparse.CFG):
         self.excluded_src_ids = []
 
         self.flat_order = 'C'
-        self.time_as_class = 1
+        self.time_as_class = 0
 
         self.n_proc = 0
         self.ann_ext = 'json'
@@ -560,6 +560,9 @@ def main():
     if vid_suffixes:
         vid_suffix = '-'.join(vid_suffixes)
         out_name = f'{out_name}-{vid_suffix}'
+
+    if params.time_as_class:
+        out_name = f'{out_name}-tac'
 
     if multi_class:
         out_name = f'{out_name}-mc'
