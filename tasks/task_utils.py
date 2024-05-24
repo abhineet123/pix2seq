@@ -894,6 +894,13 @@ def rle_to_length_as_class(rle_cmp, max_length):
 
     lac = np.asarray([max_length * (class_id - 1) + length
                       for class_id, length in zip(class_ids, lengths)], dtype=np.int64)
+
+    lengths_rec = lengths_from_lac(lac, max_length)
+    class_ids_rec = class_ids_from_lac(lac, max_length)
+
+    assert np.array_equal(lengths_rec, lengths), "lengths_rec mismatch"
+    assert np.array_equal(class_ids_rec, class_ids), "class_ids_rec mismatch"
+
     rle_cmp.append(lac)
     return lac
 
@@ -914,15 +921,17 @@ def class_ids_from_lac(lac, max_length):
 
 
 def rle_from_length_as_class(rle_cmp, max_length):
-    lac = rle_cmp.pop(-1)
+    assert len(rle_cmp) == 2, "rle_cmp len must be 2 for length_as_class"
+
+    lac = rle_cmp[-1]
 
     assert np.all(lac > 0), "lac must be > 0"
 
     lengths = lengths_from_lac(lac, max_length)
     class_ids = class_ids_from_lac(lac, max_length)
 
-    rle_cmp.append(lengths)
-    rle_cmp.append(class_ids)
+    # rle_cmp.append(lengths)
+    # rle_cmp.append(class_ids)
     return lengths, class_ids
 
 
@@ -1269,7 +1278,8 @@ def mask_from_tokens(
         flat_order=flat_order,
     )
     if length_as_class:
-        rle_from_length_as_class(rle_cmp, max_length)
+        lengths, class_ids = rle_from_length_as_class(rle_cmp, max_length)
+        rle_cmp = [rle_cmp[0], lengths, class_ids]
 
     starts, lengths = rle_cmp[:2]
     if multi_class:

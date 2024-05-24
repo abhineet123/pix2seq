@@ -291,7 +291,7 @@ def create_tf_example(
         rle_cmp.append(class_ids)
 
         if params.length_as_class:
-            task_utils.rle_to_length_as_class(rle_cmp, max_length)
+            task_utils.rle_to_length_as_class(rle_cmp, max_length_sub)
 
     if params.vis and n_runs > 0:
         task_utils.vis_rle(
@@ -357,7 +357,7 @@ def create_tf_example(
             params.flat_order,
         )
         if params.length_as_class:
-            task_utils.rle_from_length_as_class(rle_rec_cmp, max_length)
+            task_utils.rle_from_length_as_class(rle_rec_cmp, max_length_sub)
 
         starts_rec, lengths_rec = rle_rec_cmp[:2]
         if multi_class:
@@ -481,10 +481,12 @@ def main():
         assert multi_class, "length_as_class can be enabled only in multi_class mode"
         params.lengths_offset = params.class_offset
         out_name = f'{out_name}-lac'
-        n_lac_classes = params.max_length * (n_classes - 1)
+
+        n_lac_classes = int(params.max_length / params.subsample) * (n_classes - 1)
         if params.starts_offset < n_lac_classes:
             print(f'setting starts_offset to {n_lac_classes}')
             params.starts_offset = n_lac_classes
+
     elif multi_class:
         out_name = f'{out_name}-mc'
 
