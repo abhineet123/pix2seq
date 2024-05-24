@@ -899,14 +899,17 @@ def rle_to_length_as_class(rle_cmp, max_length):
 
 
 def lengths_from_lac(lac, max_length):
-    lengths = np.asarray([(lac_id - 1) % max_length + 1
-                          for lac_id in zip(lac)], dtype=np.int64)
+    # lengths = np.asarray([(lac_id - 1) % max_length + 1
+    #                       for lac_id in lac], dtype=np.int64)
+    lengths = (lac - 1) % max_length + 1
     return lengths
 
 
 def class_ids_from_lac(lac, max_length):
-    class_ids = np.asarray([(lac_id - 1) // max_length + 1
-                            for lac_id in zip(lac)], dtype=np.int64)
+    # class_ids = np.asarray([(lac_id - 1) // max_length + 1
+    #                         for lac_id in lac], dtype=np.int64)
+    class_ids = (lac - 1) // max_length + 1
+
     return class_ids
 
 
@@ -1266,7 +1269,7 @@ def mask_from_tokens(
         flat_order=flat_order,
     )
     if length_as_class:
-        rle_to_length_as_class(rle_cmp, max_length)
+        rle_from_length_as_class(rle_cmp, max_length)
 
     starts, lengths = rle_cmp[:2]
     if multi_class:
@@ -1289,7 +1292,7 @@ def rle_from_tokens(
 ):
     if not rle_tokens:
         rle_cmp = [[], []]
-        if not length_as_class and multi_class:
+        if multi_class and not length_as_class:
             rle_cmp.append([])
         return rle_cmp
 
@@ -1297,7 +1300,7 @@ def rle_from_tokens(
     if starts_2d:
         n_run_tokens += 1
 
-    if not length_as_class and multi_class:
+    if multi_class and not length_as_class:
         n_run_tokens += 1
 
     assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
@@ -1319,14 +1322,11 @@ def rle_from_tokens(
         len_id = 1
 
     lengths = np.asarray(rle_tokens[len_id:][::n_run_tokens], dtype=int)
-    if length_as_class:
-        lengths -= class_offset
-    else:
-        lengths -= lengths_offset
+    lengths -= lengths_offset
 
     rle_cmp = [starts, lengths]
 
-    if not length_as_class and multi_class:
+    if multi_class and not length_as_class:
         class_ids = np.asarray(rle_tokens[len_id + 1:][::n_run_tokens], dtype=int)
         class_ids -= class_offset
         rle_cmp.append(class_ids)

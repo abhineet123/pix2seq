@@ -311,7 +311,7 @@ def create_tf_example(
     )
     rle_len = len(rle_tokens)
 
-    if multi_class:
+    if multi_class and not params.length_as_class:
         assert rle_len % 3 == 0, "rle_len must be divisible by 3"
     else:
         assert rle_len % 2 == 0, "rle_len must be divisible by 2"
@@ -479,6 +479,7 @@ def main():
 
     if params.length_as_class:
         assert multi_class, "length_as_class can be enabled only in multi_class mode"
+        params.lengths_offset = params.class_offset
         out_name = f'{out_name}-lac'
         n_lac_classes = params.max_length * (n_classes - 1)
         if params.starts_offset < n_lac_classes:
