@@ -148,6 +148,7 @@ def check_rle_tokens(
         rle_tokens,
         (n_rows, n_cols),
         length_as_class=length_as_class,
+        max_length=max_length,
         starts_offset=starts_offset,
         lengths_offset=lengths_offset,
         class_offset=class_offset,
@@ -1238,8 +1239,17 @@ def rle_from_logits(
 def mask_from_tokens(
         rle_tokens, shape,
         length_as_class,
+        max_length,
         starts_offset, lengths_offset, class_offset,
         starts_2d, multi_class, flat_order):
+
+    if not rle_tokens:
+        mask = np.zeros(tuple(shape), dtype=np.uint8)
+        rle_cmp = [[], []]
+        if not length_as_class and multi_class:
+            rle_cmp.append([])
+        return mask, rle_cmp
+
     rle_cmp = rle_from_tokens(
         rle_tokens,
         shape,
@@ -1251,6 +1261,9 @@ def mask_from_tokens(
         multi_class=multi_class,
         flat_order=flat_order,
     )
+    if length_as_class:
+        rle_to_length_as_class(rle_cmp, max_length)
+
     starts, lengths = rle_cmp[:2]
     if multi_class:
         class_ids = rle_cmp[2]
@@ -1270,6 +1283,12 @@ def rle_from_tokens(
         starts_offset, lengths_offset, class_offset,
         starts_2d, multi_class, flat_order
 ):
+    if not rle_tokens:
+        rle_cmp = [[], []]
+        if not length_as_class and multi_class:
+            rle_cmp.append([])
+        return rle_cmp
+
     n_run_tokens = 2
     if starts_2d:
         n_run_tokens += 1
@@ -1303,9 +1322,7 @@ def rle_from_tokens(
 
     rle_cmp = [starts, lengths]
 
-    if length_as_class:
-        pass
-    elif multi_class:
+    if not length_as_class and multi_class:
         class_ids = np.asarray(rle_tokens[len_id + 1:][::n_run_tokens], dtype=int)
         class_ids -= class_offset
         rle_cmp.append(class_ids)
