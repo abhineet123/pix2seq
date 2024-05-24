@@ -67,6 +67,8 @@ class Params(paramparse.CFG):
 
         self.enable_flip = 0
 
+        self.length_as_class = 0
+
         self.max_length = 0
         self.starts_2d = 0
         self.starts_offset = 1000
@@ -316,14 +318,17 @@ def create_tf_example(
         task_utils.vis_rle(
             starts, lengths, class_ids,
             class_id_to_col, class_id_to_name,
-            image, mask, mask_sub, order=params.flat_order)
+            image, mask, mask_sub,
+            flat_order=params.flat_order)
 
     rle_tokens = task_utils.rle_to_tokens(
         rle_cmp, mask_sub.shape,
+        params.length_as_class,
         params.starts_offset,
         params.lengths_offset,
         params.class_offset,
         params.starts_2d,
+        params.flat_order,
     )
     rle_len = len(rle_tokens)
 

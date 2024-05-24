@@ -1014,14 +1014,15 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     cv2.waitKey(0)
 
 
-def construct_rle(starts_rows, starts_cols, lengths, shape, starts_2d, starts_offset, lengths_offset):
+def construct_rle(starts_rows, starts_cols, lengths, shape, starts_2d,
+                  starts_offset, lengths_offset, flat_order):
     lengths += lengths_offset
     if starts_2d:
         starts_rows += 1 + starts_offset
         starts_cols += 1 + starts_offset
         rle = [item for sublist in zip(starts_rows, starts_cols, lengths) for item in sublist]
     else:
-        starts = np.ravel_multi_index((starts_rows, starts_cols), shape)
+        starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
 
         starts += 1 + starts_offset + 1
         rle = [int(item) for sublist in zip(starts, lengths) for item in sublist]
@@ -1064,7 +1065,7 @@ def supersample_rle(starts_sub, lengths_sub, subsample, shape, max_length, flat_
     lengths = (lengths_sub - 1).astype(np.float64) / (max_length_sub - 1) * (max_length - 1) + 1
     lengths = lengths.astype(np.int64)
 
-    starts = np.ravel_multi_index((starts_rows, starts_cols), shape)
+    starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
 
     return starts, lengths
 
@@ -1101,12 +1102,14 @@ def subsample_rle(starts, lengths, subsample, shape, max_length, flat_order):
     starts_cols = np.asarray(starts_cols)
     lengths = np.asarray(lengths)
 
-    starts = np.ravel_multi_index((starts_rows, starts_cols), (n_rows_sub, n_cols_sub))
+    starts = np.ravel_multi_index((starts_rows, starts_cols), (n_rows_sub, n_cols_sub),
+                                  order=flat_order)
 
     return starts, lengths
 
 
-def rle_to_tokens(rle_cmp, shape, length_as_class, starts_offset, lengths_offset, class_offset,
+def rle_to_tokens(rle_cmp, shape, length_as_class,
+                  starts_offset, lengths_offset, class_offset,
                   starts_2d, flat_order):
     starts, lengths = rle_cmp[:2]
 
@@ -1116,6 +1119,7 @@ def rle_to_tokens(rle_cmp, shape, length_as_class, starts_offset, lengths_offset
     starts += (starts_offset + 1)
 
     if length_as_class:
+        assert len(rle_cmp) == 2, "rle must have 2 components with length_as_class enabled"
         lengths += class_offset
     else:
         lengths += lengths_offset
@@ -1252,7 +1256,12 @@ def mask_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_off
     return mask, rle_cmp
 
 
-def rle_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offset, starts_2d, multi_class):
+def rle_from_tokens(
+        rle_tokens, shape,
+        length_as_class,
+        starts_offset, lengths_offset, class_offset,
+        starts_2d, multi_class, flat_order
+):
     n_run_tokens = 2
     if starts_2d:
         n_run_tokens += 1
@@ -1270,7 +1279,7 @@ def rle_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offs
 
         len_id = 2
 
-        starts = np.ravel_multi_index((starts_rows, starts_cols), shape)
+        starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
     else:
         starts = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=int)
         starts -= (starts_offset + 1)
