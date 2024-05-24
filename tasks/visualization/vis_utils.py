@@ -83,7 +83,7 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
 
         # textwidth = draw.textlength(word, font=font)
         left, top, right, bottom = draw.textbbox((x_, y_,), word, font=font)
-        if right >=width:
+        if right >= width:
             x_ = 5
             if bottom >= height - textheight:
                 y_ = 5

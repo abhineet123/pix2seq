@@ -46,6 +46,9 @@ class Params(paramparse.CFG):
 
         self.flat_order = 'C'
         self.time_as_class = 0
+        self.length_as_class = 0
+
+        self.pad_tokens = 0
 
         self.n_proc = 0
         self.ann_ext = 'json'
@@ -55,6 +58,9 @@ class Params(paramparse.CFG):
         self.seq_id = -1
         self.seq_start_id = 0
         self.seq_end_id = -1
+
+        self.patch_start_id = 0
+        self.patch_end_id = -1
 
         self.n_rot = 0
         self.max_rot = 0
@@ -160,8 +166,17 @@ def generate_patch_vid_infos(
         src_id, patch_id = img_id.split('_')
         seq_id = image_info['seq']
 
+        patch_id = int(patch_id)
+
         image_info['src_id'] = src_id
         image_info['patch_id'] = patch_id
+
+
+        if patch_id < params.patch_start_id > 0:
+            continue
+
+        if patch_id > params.patch_end_id > 0:
+            continue
 
         patch_seq_id = f'{seq_id}_{patch_id}'
         patch_vids[patch_seq_id].append(image_info)
@@ -242,6 +257,8 @@ def create_tf_example(
     subseq_masks_sub = []
 
     vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
+    video_feature_dict = dict()
+
     if not params.stats_only:
         video_feature_dict = tfrecord_lib.video_seg_info_to_feature_dict(
             vid_height, vid_width, vid_path, mask_vid_path,
@@ -373,23 +390,28 @@ def create_tf_example(
     n_runs = len(starts)
 
     multi_class = False
-    class_ids = None
     if n_rle_classes > 2:
+        multi_class = True
+
         assert params.class_offset > 0, "class_offset must be > 0"
         class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths, rle_id_to_col, order=params.flat_order)
         rle_cmp.append(class_ids)
-        multi_class = True
+        if params.length_as_class:
+            task_utils.rle_to_length_as_class(rle_cmp, max_length)
 
     if params.vis:
         task_utils.vis_video_rle(
-            starts, lengths, class_ids,
+            rle_cmp,
             class_id_to_col, class_id_to_name,
             image_ids,
             vid, vid_mask, vid_mask_sub,
             params.time_as_class,
+            params.length_as_class,
+            max_length,
             params.flat_order,
             rle_id_to_name,
             rle_id_to_col,
+            params.pad_tokens,
         )
 
     rle_tokens = task_utils.rle_to_tokens(
@@ -402,12 +424,20 @@ def create_tf_example(
     rle_len = len(rle_tokens)
 
     if multi_class:
-        assert rle_len % 3 == 0, "rle_len must be divisible by 3"
+        if params.length_as_class:
+            run_len = 2
+        else:
+            run_len = 3
     else:
         if params.time_as_class:
-            assert rle_len % 3 == 0, "rle_len must be divisible by 3"
+            if params.length_as_class:
+                run_len = 2
+            else:
+                run_len = 3
         else:
-            assert rle_len % 2 == 0, "rle_len must be divisible by 2"
+            run_len = 2
+
+    assert rle_len % run_len == 0, f"rle_len must be divisible by {run_len}"
 
     if not params.stats_only:
         seg_feature_dict = {
@@ -422,7 +452,7 @@ def create_tf_example(
 
     if params.show and n_runs > 0:
         rle_rec_cmp = task_utils.rle_from_tokens(
-            rle_tokens, mask_sub.shape,
+            rle_tokens, vid_mask_sub.shape,
             params.starts_offset,
             params.lengths_offset,
             params.class_offset,
@@ -565,7 +595,12 @@ def main():
         out_name = f'{out_name}-{vid_suffix}'
 
     if params.time_as_class:
-        out_name = f'{out_name}-tac'
+        if params.length_as_class:
+            out_name = f'{out_name}-ltac'
+        else:
+            out_name = f'{out_name}-tac'
+    elif params.length_as_class:
+        out_name = f'{out_name}-lac'
 
     if multi_class:
         out_name = f'{out_name}-mc'
@@ -641,20 +676,20 @@ def main():
         all_subseq_img_infos=all_subseq_img_infos,
         vid_infos=vid_infos,
     )
-    # if params.stats_only:
+    if params.vis:
+        for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
+            create_tf_example(*annotations_iter_)
+    else:
+        tfrecord_pattern = linux_path(output_path, 'shard')
+        tfrecord_lib.write_tf_record_dataset(
+            output_path=tfrecord_pattern,
+            annotation_iterator=annotations_iter,
+            process_func=create_tf_example,
+            num_shards=params.num_shards,
+            multiple_processes=params.n_proc,
+            iter_len=len(image_infos),
+        )
 
-    for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
-        create_tf_example(*annotations_iter_)
-    # else:
-    #     tfrecord_pattern = linux_path(output_path, 'shard')
-    #     tfrecord_lib.write_tf_record_dataset(
-    #         output_path=tfrecord_pattern,
-    #         annotation_iterator=annotations_iter,
-    #         process_func=create_tf_example,
-    #         num_shards=params.num_shards,
-    #         multiple_processes=params.n_proc,
-    #         iter_len=len(image_infos),
-    #     )
     print(f'output_path: {output_path}')
 
     for method, metrics_ in metrics.items():

@@ -527,6 +527,7 @@ def get_min_col_diff(cols, _col2):
     mean_col_diff = np.amin(col_diffs)
     return mean_col_diff
 
+
 def get_mean_col_diff(cols, _col2):
     col_diffs = [np.sum(np.fabs(np.asarray(_col1, dtype=np.float32) - np.asarray(_col2, dtype=np.float32))) / 3.0
                  for _col1 in cols]
@@ -689,7 +690,7 @@ def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size,
 
 
 def label_video_mask(vid_masks_vis_, class_id_to_name, class_id_to_col):
-    text_x = 2
+    text_x = 5
     text_y = 2
     font_size = 24
     # vid_masks_vis_, _, _ = vis_utils.write_text(
@@ -716,7 +717,8 @@ def label_video_mask(vid_masks_vis_, class_id_to_name, class_id_to_col):
 
 def label_tac_mask(tac_mask_cat, tac_id_to_name, tac_id_to_col):
     font_size = 24
-    text_x = text_y = 2
+    text_x = 5
+    text_y = 2
     # tac_mask_cat, _, _ = vis_utils.write_text(
     #     tac_mask_cat, f'Time-as-Class video mask with classes:', text_x, text_y,
     #     (255, 255, 255),
@@ -734,11 +736,19 @@ def label_tac_mask(tac_mask_cat, tac_id_to_name, tac_id_to_col):
     return tac_mask_cat
 
 
-def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image_ids,
-                  vid_vis, vid_mask, vid_mask_sub, time_as_class, flat_order,
-                  tac_id_to_name, tac_id_to_col):
-    n_runs = len(starts)
+def vis_video_rle(rle_cmp, class_id_to_col, class_id_to_name, image_ids,
+                  vid_vis, vid_mask, vid_mask_sub, time_as_class,
+                  length_as_class, max_length, flat_order,
+                  tac_id_to_name, tac_id_to_col, pad_tokens):
     n_classes = len(class_id_to_col)
+
+    starts, lengths = rle_cmp[:2]
+    class_ids = None
+
+    if len(rle_cmp) == 3:
+        class_ids = rle_cmp[2]
+
+    n_runs = len(starts)
 
     text_bkg_col = (0, 0, 0)
     # text_bkg_col = (50, 50, 50)
@@ -773,9 +783,19 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
 
     vid_mask_sub_flat = vid_mask_sub_.flatten(order=flat_order)
 
+    if pad_tokens:
+        max_token_len = max(
+            len(str(np.amax(starts))),
+            len(str(np.amax(lengths)))
+        )
+        fmt = f'0{max_token_len}d'
+    else:
+        fmt = f'd'
+
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
         text_info = (text_img, text_x, text_y)
-        run_txt = f'{int(start)}, {int(length)}, '
+        run_txt = f'{int(start):{fmt}}, {int(length):{fmt}}, '
+
         if class_ids is not None:
             class_id = class_ids[run_id]
             if time_as_class:
@@ -785,6 +805,11 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
             run_txt = f'{run_txt}{class_name}, '
         else:
             class_id = 1
+
+        if length_as_class:
+            class_id = (length - 1) // max_length + 1
+            length = (length - 1) % max_length + 1
+
         if time_as_class:
             vid_mask_sub_binary_vis, img_to_run_pixs = vis_tac_run_pix(
                 start, length,
@@ -812,9 +837,11 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         # cv2.imshow('tac_mask_cat', tac_mask_cat)
         k = cv2.waitKey(0 if _pause else 10)
         if k == 27:
-            exit()
+            return
         elif k == 32:
             _pause = 1 - _pause
+        elif k == ord('q'):
+            exit()
 
         if time_as_class:
             vid_mask_sub_binary_vis, _ = vis_tac_run_pix(
@@ -832,7 +859,7 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         if isinstance(col, str):
             col = col_bgr[col]
 
-        _, vid_mask_sub_binary_vis, text_info = vis_video_run_txt(
+        vis_image_cat, vid_mask_sub_binary_vis, text_info = vis_video_run_txt(
             img_to_run_pixs, run_txt, vid_mask_sub_binary_vis,
             vid_vis, text_info, font_size, vis_size,
             time_as_class, tac_mask_sub, tac_mask,
@@ -842,7 +869,50 @@ def vis_video_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         text_img, text_x, text_y = text_info
 
     if n_runs > 0:
-        cv2.waitKey(0)
+        vis_image_cat = resize_ar(vis_image_cat, int(1920 / 1.25), int(1080 / 1.25))
+        cv2.imshow('vis_image_cat', vis_image_cat)
+        k = cv2.waitKey(0)
+        if k == 27:
+            return
+        elif k == 32:
+            _pause = 1 - _pause
+        elif k == ord('q'):
+            exit()
+
+
+def rle_to_length_as_class(rle_cmp, max_length):
+    class_ids = rle_cmp.pop(-1)
+    lengths = rle_cmp.pop(-1)
+
+    lac = np.asarray([max_length * (class_id - 1) + length
+                      for class_id, length in zip(class_ids, lengths)], dtype=np.int64)
+    rle_cmp.append(lac)
+    return lac
+
+
+def lengths_from_lac(lac, max_length):
+    lengths = np.asarray([(lac_id - 1) % max_length + 1
+                          for lac_id in zip(lac)], dtype=np.int64)
+    return lengths
+
+
+def class_ids_from_lac(lac, max_length):
+    class_ids = np.asarray([(lac_id - 1) // max_length + 1
+                            for lac_id in zip(lac)], dtype=np.int64)
+    return class_ids
+
+
+def rle_from_length_as_class(rle_cmp, max_length):
+    lac = rle_cmp.pop(-1)
+
+    assert np.all(lac > 0), "lac must be > 0"
+
+    lengths = lengths_from_lac(lac, max_length)
+    class_ids = class_ids_from_lac(lac, max_length)
+
+    rle_cmp.append(lengths)
+    rle_cmp.append(class_ids)
+    return lengths, class_ids
 
 
 def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_sub, order):

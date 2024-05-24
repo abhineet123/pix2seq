@@ -1,2 +1,2 @@
-ipsc	green
-diff	red
+ips	green
+dif	red
