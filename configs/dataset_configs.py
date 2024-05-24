@@ -120,8 +120,13 @@ def get_sem_seg_data():
         class_info_path='lists/classes/ipsc_2_class.txt',
 
         transforms=D(),
-    )
 
+        subsample=0,
+        max_length=0,
+        multi_class=0,
+        length_as_class=0,
+        flat_order='C',
+    )
     for mode in ['train', 'eval']:
         mode_data = D()
         mode_data[f'suffix'] = ''
@@ -139,11 +144,6 @@ def get_sem_seg_data():
         mode_data[f'seq_id'] = -1
         mode_data[f'seq_start_id'] = 0
         mode_data[f'seq_end_id'] = -1
-        mode_data[f'subsample'] = 0
-        mode_data[f'max_length'] = 0
-        mode_data[f'multi_class'] = 0
-        mode_data[f'length_as_class'] = 0
-        mode_data[f'flat_order'] = 'C'
 
         data[f'{mode}'] = mode_data
     return data
