@@ -51,26 +51,22 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:ord
 
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:ltac:seq-0
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:ltac
 <a id="vis___p_640_sub_8_r_2560_16_53_"></a>
 #### vis       @ p-640-sub-8/r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:88_100:p-640:sub-4:r-2560:gz:proc-1:ltac:seq-0:vis
 
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:88_100:p-640:sub-8:r-2560:gz:proc-1:ltac:mc:seq-0:vis
-`seq-0:88_90`
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:p-640:sub-8:r-2560:gz:proc-1:ltac:mc:seq-0:88_90:vis:strd-100:patch-48
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:p-640:sub-8:r-2560:gz:proc-1:ltac:mc:seq-0:88_90:vis:strd-100:patch-69
-`seq-5:68_70`
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:p-640:sub-8:r-2560:gz:proc-1:ltac:mc:seq-5:68_70:vis:strd-25:patch-258
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:p-640:sub-8:r-2560:gz:proc-1:ltac:mc:seq-5:85_87:vis:strd-25
 
 <a id="p_640_sub_8_mc___r_2560_16_53_"></a>
 ### p-640-sub-8-mc       @ r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:lac:mc
 
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:ord:mc
 
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:tac:mc
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:ltac:mc
 
 <a id="p_640_sub_8_mc_len_3___r_2560_16_53_"></a>
 ### p-640-sub-8-mc-len-3       @ r-2560/16_53-->p2s_vid_seg_tf
