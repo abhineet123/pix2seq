@@ -53,6 +53,18 @@ class TaskSemanticSegmentation(task_lib.Task):
         class_id_to_col = self.class_id_to_col
 
         n_classes = len(self.class_id_to_col)
+        flat_order = self.config.dataset.flat_order
+        length_as_class = self.config.dataset.length_as_class
+
+        starts_offset = self.config.model.coord_vocab_shift
+        lengths_offset = self.config.model.len_vocab_shift
+        class_offset = self.config.model.class_vocab_shift
+
+        if length_as_class:
+            n_lac_classes = int(max_length / subsample) * (n_classes - 1)
+            if starts_offset < n_lac_classes:
+                print(f'setting starts_offset to {n_lac_classes}')
+                starts_offset = n_lac_classes
 
         for batch_id in range(batch_size):
             mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
@@ -69,13 +81,15 @@ class TaskSemanticSegmentation(task_lib.Task):
             task_utils.check_rle_tokens(
                 image, mask, rle_stripped,
                 n_classes=n_classes,
-                starts_offset=self.config.model.coord_vocab_shift,
-                lengths_offset=self.config.model.len_vocab_shift,
-                class_offset=self.config.model.class_vocab_shift,
+                length_as_class=self.config.dataset.length_as_class,
+                starts_offset=starts_offset,
+                lengths_offset=lengths_offset,
+                class_offset=class_offset,
                 max_length=max_length,
                 subsample=subsample,
                 class_to_col=class_id_to_col,
                 multi_class=multi_class,
+                flat_order=flat_order,
                 is_vis=1,
             )
 

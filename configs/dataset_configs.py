@@ -141,6 +141,9 @@ def get_sem_seg_data():
         mode_data[f'seq_end_id'] = -1
         mode_data[f'subsample'] = 0
         mode_data[f'max_length'] = 0
+        mode_data[f'multi_class'] = 0
+        mode_data[f'length_as_class'] = 0
+        mode_data[f'flat_order'] = 'C'
 
         data[f'{mode}'] = mode_data
     return data
@@ -179,6 +182,8 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
         modes = ['eval']
 
     multi_class = ds_cfg[f'multi_class']
+    length_as_class = ds_cfg[f'length_as_class']
+    flat_order = ds_cfg[f'flat_order']
 
     for mode in modes:
         name = ds_cfg[f'{mode}_name']
@@ -317,11 +322,14 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
             if subsample > 1:
                 name = f'{name}-sub_{subsample}'
 
-            if multi_class:
+            if length_as_class:
+                name = f'{name}-lac'
+
+            elif multi_class:
                 name = f'{name}-mc'
 
-            if multi_class:
-                name = f'{name}-mc'
+            if flat_order != 'C':
+                name = f'{name}-flat_{flat_order}'
 
         if is_video:
             try:
