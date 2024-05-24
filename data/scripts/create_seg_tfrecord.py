@@ -299,6 +299,7 @@ def create_tf_example(
             subsample=params.subsample,
             shape=(n_rows, n_cols),
             max_length=max_length,
+            flat_order=params.flat_order,
         )
 
     rle_cmp = [starts, lengths]
@@ -379,6 +380,7 @@ def create_tf_example(
                 subsample=params.subsample,
                 shape=(n_rows, n_cols),
                 max_length=max_length,
+                flat_order=params.flat_order,
             )
 
         mask_rec = task_utils.rle_to_mask(

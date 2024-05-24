@@ -415,11 +415,14 @@ def create_tf_example(
         )
 
     rle_tokens = task_utils.rle_to_tokens(
-        rle_cmp, vid_mask_sub.shape,
+        rle_cmp,
+        vid_mask_sub.shape,
+        params.length_as_class,
         params.starts_offset,
         params.lengths_offset,
         params.class_offset,
         params.starts_2d,
+        params.flat_order,
     )
     rle_len = len(rle_tokens)
 
@@ -472,6 +475,7 @@ def create_tf_example(
                 subsample=params.subsample,
                 shape=(n_rows, n_cols),
                 max_length=max_length,
+                flat_order=params.flat_order,
             )
 
         mask_rec = task_utils.rle_to_mask(

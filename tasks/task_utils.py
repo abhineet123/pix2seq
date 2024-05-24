@@ -915,7 +915,8 @@ def rle_from_length_as_class(rle_cmp, max_length):
     return lengths, class_ids
 
 
-def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image, mask, mask_sub, order):
+def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
+            image, mask, mask_sub, flat_order):
     n_runs = len(starts)
     n_classes = len(class_id_to_col)
     # cols = get_cols(n_runs)
@@ -956,7 +957,7 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image
         mask_bool_flat = np.zeros_like(mask_flat, dtype=bool)
         mask_bool_flat[start:start + length] = True
         mask_bool = np.reshape(mask_bool_flat, (n_rows, n_cols))
-        # run_y, run_x = np.unravel_index([start, start + length], (n_rows, n_cols))
+        # run_y, run_x = np.unravel_index([start, start + length], (n_rows, n_cols), order=flat_order)
         # mask_sub_rgb[run_y[0]:run_y[1], run_x[0]:run_x[1], :] = col
 
         run_txt = f'{int(start)}, {int(length)}, '
@@ -987,7 +988,7 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name, image
         # vis_mask_, text_bb = vis_utils.write_text(vis_mask_, run_txt, 5, 5, col, font_size=24, show=0, bb=1)
 
         run_center = int(start + length / 2)
-        run_y, run_x = np.unravel_index([run_center, ], (n_rows, n_cols))
+        run_y, run_x = np.unravel_index([run_center, ], (n_rows, n_cols), order=flat_order)
         run_y, run_x = int(run_y[0]), int(run_x[0])
 
         run_x, run_y = int(run_x * resize_x), int(run_y * resize_y)
@@ -1027,7 +1028,7 @@ def construct_rle(starts_rows, starts_cols, lengths, shape, starts_2d, starts_of
     return rle
 
 
-def deconstruct_rle(rle, shape, starts_2d, starts_offset, lengths_offset):
+def deconstruct_rle(rle, shape, starts_2d, starts_offset, lengths_offset, flat_order):
     if starts_2d:
         start_rows, start_cols, lengths = [
             np.asarray(x, dtype=int) for x in (rle[0:][::3], rle[1:][::3], rle[2:][::3])]
@@ -1039,19 +1040,20 @@ def deconstruct_rle(rle, shape, starts_2d, starts_offset, lengths_offset):
     else:
         starts, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::2], rle[1:][::2])]
         starts -= (starts_offset + 1)
-        start_rows, start_cols = np.unravel_index(starts, shape)
+        start_rows, start_cols = np.unravel_index(starts, shape, order=flat_order)
 
     lengths -= lengths_offset
 
     return start_rows, start_cols, lengths
 
 
-def supersample_rle(starts_sub, lengths_sub, subsample, shape, max_length):
+def supersample_rle(starts_sub, lengths_sub, subsample, shape, max_length, flat_order):
     n_rows, n_cols = shape
     n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
     max_length_sub = int(max_length / subsample)
 
-    starts_rows_sub, starts_cols_sub = np.unravel_index(starts_sub, (n_rows_sub, n_cols_sub))
+    starts_rows_sub, starts_cols_sub = np.unravel_index(starts_sub, (n_rows_sub, n_cols_sub),
+                                                        order=flat_order)
 
     starts_rows = starts_rows_sub / (n_rows_sub - 1) * (n_rows - 1)
     starts_cols = starts_cols_sub / (n_cols_sub - 1) * (n_cols - 1)
@@ -1067,7 +1069,7 @@ def supersample_rle(starts_sub, lengths_sub, subsample, shape, max_length):
     return starts, lengths
 
 
-def subsample_rle(starts, lengths, subsample, shape, max_length):
+def subsample_rle(starts, lengths, subsample, shape, max_length, flat_order):
     if len(starts) == 0:
         return starts, lengths
 
@@ -1075,7 +1077,7 @@ def subsample_rle(starts, lengths, subsample, shape, max_length):
     max_length_sub = int(max_length / subsample)
     n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
 
-    starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
+    starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols), order=flat_order)
 
     starts_rows_norm, starts_cols_norm = (starts_rows.astype(np.float64) / (n_rows - 1),
                                           starts_cols.astype(np.float64) / (n_cols - 1))
@@ -1104,17 +1106,22 @@ def subsample_rle(starts, lengths, subsample, shape, max_length):
     return starts, lengths
 
 
-def rle_to_tokens(rle_cmp, shape, starts_offset, lengths_offset, class_offset, starts_2d):
+def rle_to_tokens(rle_cmp, shape, length_as_class, starts_offset, lengths_offset, class_offset,
+                  starts_2d, flat_order):
     starts, lengths = rle_cmp[:2]
 
     if len(starts) == 0:
         return []
 
     starts += (starts_offset + 1)
-    lengths += lengths_offset
+
+    if length_as_class:
+        lengths += class_offset
+    else:
+        lengths += lengths_offset
 
     if starts_2d:
-        starts_rows, starts_cols = np.unravel_index(starts, shape)
+        starts_rows, starts_cols = np.unravel_index(starts, shape, order=flat_order)
         starts_rows += (starts_offset + 1)
         starts_cols += (starts_offset + 1)
         rle_tokens_cmp = [starts_rows, starts_cols, lengths]
@@ -1332,12 +1339,12 @@ def get_rle_class_ids(mask, starts, lengths, class_id_to_col, order):
     return class_ids
 
 
-def rle_to_2d(rle, mask):
+def rle_to_2d(rle, mask, flat_order):
     n_rows, n_cols = mask.shape[:2]
 
     starts, lengths = [np.asarray(x, dtype=int) for x in (rle[0:][::2], rle[1:][::2])]
 
-    starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols))
+    starts_rows, starts_cols = np.unravel_index(starts, (n_rows, n_cols), order=flat_order)
 
     assert np.all(starts_rows <= n_rows - 1), f"starts_rows cannot be > {n_rows - 1}"
     assert np.all(starts_cols <= n_cols - 1), f"starts_rows cannot be > {n_cols - 1}"
