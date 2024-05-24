@@ -133,6 +133,10 @@ def check_rle_tokens(
     else:
         mask_gt = np.copy(mask)
 
+    if not rle_tokens:
+        assert np.all(mask_gt == 0), "non-zero mask found for empty rle_tokens"
+        return
+
     if not is_vis:
         mask_vis_to_id(mask_gt, n_classes)
 
@@ -142,7 +146,7 @@ def check_rle_tokens(
         max_length = int(max_length / subsample)
         n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
-    rle_len = len(rle_tokens)
+    # rle_len = len(rle_tokens)
 
     mask_rec, rle_rec_cmp = mask_from_tokens(
         rle_tokens,
