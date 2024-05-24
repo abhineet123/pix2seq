@@ -121,8 +121,6 @@ def get_sem_seg_data():
 
         transforms=D(),
 
-        subsample=0,
-        max_length=0,
         multi_class=0,
         length_as_class=0,
         flat_order='C',
@@ -144,6 +142,8 @@ def get_sem_seg_data():
         mode_data[f'seq_id'] = -1
         mode_data[f'seq_start_id'] = 0
         mode_data[f'seq_end_id'] = -1
+        mode_data[f'subsample'] = 1
+        mode_data[f'max_length'] = 0
 
         data[f'{mode}'] = mode_data
     return data
