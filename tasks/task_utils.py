@@ -116,8 +116,10 @@ def mask_to_gs(mask, check=True):
 
 def check_rle_tokens(
         image, mask, rle_tokens, n_classes,
+        length_as_class,
         starts_offset, lengths_offset, class_offset,
         max_length, subsample, multi_class,
+        flat_order,
         class_to_col, is_vis):
     if len(mask.shape) == 3:
         mask_b = mask[..., 0].squeeze()
@@ -145,12 +147,13 @@ def check_rle_tokens(
     mask_rec, rle_rec_cmp = mask_from_tokens(
         rle_tokens,
         (n_rows, n_cols),
+        length_as_class=length_as_class,
         starts_offset=starts_offset,
         lengths_offset=lengths_offset,
         class_offset=class_offset,
         starts_2d=False,
         multi_class=multi_class,
-
+        flat_order=flat_order,
     )
     if subsample > 1:
         mask_gt_sub = resize_mask_coord(mask_gt, mask_rec.shape, n_classes, is_vis=0)
@@ -939,18 +942,17 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     n_rows, n_cols = mask_sub.shape
     resize_y, resize_x = float(vis_size) / n_rows, float(vis_size) / n_cols
 
-    mask_sub_vis_ = cv2.resize(mask_sub_vis, (vis_size, vis_size))
-    mask_sub_rgb_ = cv2.resize(mask_sub_rgb, (vis_size, vis_size))
-    mask_rgb_ = cv2.resize(mask_rgb, (vis_size, vis_size))
-    cv2.imshow('mask_sub_vis_', mask_sub_vis_)
-    cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
-    cv2.imshow('mask_rgb', mask_rgb_)
-
+    # mask_sub_vis_ = cv2.resize(mask_sub_vis, (vis_size, vis_size))
+    # mask_sub_rgb_ = cv2.resize(mask_sub_rgb, (vis_size, vis_size))
+    # mask_rgb_ = cv2.resize(mask_rgb, (vis_size, vis_size))
+    # cv2.imshow('mask_sub_vis_', mask_sub_vis_)
+    # cv2.imshow('mask_sub_rgb', mask_sub_rgb_)
+    # cv2.imshow('mask_rgb', mask_rgb_)
     # cv2.waitKey(0)
-    return
+    # return
 
     text_img = np.full((vis_size, vis_size, 3), bkg_col, dtype=np.uint8)
-    mask_flat = mask_sub.flatten(order=order)
+    mask_flat = mask_sub.flatten(order=flat_order)
     _pause = 1
 
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
@@ -1233,15 +1235,21 @@ def rle_from_logits(
     return rle_cmp
 
 
-def mask_from_tokens(rle_tokens, shape, starts_offset, lengths_offset, class_offset, starts_2d, multi_class):
+def mask_from_tokens(
+        rle_tokens, shape,
+        length_as_class,
+        starts_offset, lengths_offset, class_offset,
+        starts_2d, multi_class, flat_order):
     rle_cmp = rle_from_tokens(
         rle_tokens,
         shape,
+        length_as_class=length_as_class,
         starts_offset=starts_offset,
         lengths_offset=lengths_offset,
         class_offset=class_offset,
         starts_2d=starts_2d,
         multi_class=multi_class,
+        flat_order=flat_order,
     )
     starts, lengths = rle_cmp[:2]
     if multi_class:
@@ -1265,7 +1273,8 @@ def rle_from_tokens(
     n_run_tokens = 2
     if starts_2d:
         n_run_tokens += 1
-    if multi_class:
+
+    if not length_as_class and multi_class:
         n_run_tokens += 1
 
     assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
@@ -1287,11 +1296,16 @@ def rle_from_tokens(
         len_id = 1
 
     lengths = np.asarray(rle_tokens[len_id:][::n_run_tokens], dtype=int)
-    lengths -= lengths_offset
+    if length_as_class:
+        lengths -= class_offset
+    else:
+        lengths -= lengths_offset
 
     rle_cmp = [starts, lengths]
 
-    if multi_class:
+    if length_as_class:
+        pass
+    elif multi_class:
         class_ids = np.asarray(rle_tokens[len_id + 1:][::n_run_tokens], dtype=int)
         class_ids -= class_offset
         rle_cmp.append(class_ids)

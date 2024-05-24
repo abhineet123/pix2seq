@@ -320,6 +320,9 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
             if multi_class:
                 name = f'{name}-mc'
 
+            if multi_class:
+                name = f'{name}-mc'
+
         if is_video:
             try:
                 frame_gaps = ds_cfg[f'{mode}_frame_gaps']

@@ -270,30 +270,6 @@ def create_tf_example(
         order=params.flat_order,
     )
 
-    # starts_bin, lengths_bin = task_utils.mask_to_rle(
-    #     mask=mask_sub,
-    #     max_length=max_length_sub,
-    #     binary=True,
-    # )
-    # mismatch = False
-    # if not np.array_equal(starts, starts_bin):
-    #     print('starts mismatch')
-    #     mismatch = True
-    #
-    # if not np.array_equal(lengths, lengths_bin):
-    #     print('lengths mismatch')
-    #     mismatch = True
-    # if mismatch:
-    #     mask_bin_vis = (mask > 0).astype(np.uint8) * 255
-    #     mask_bin_vis = task_utils.resize_mask(mask_bin_vis, (640, 640), n_classes, is_vis=True)
-    #
-    #     mask_vis = task_utils.mask_id_to_vis(mask, n_classes, copy=True)
-    #     mask_vis = task_utils.resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
-    #
-    #     masks = np.concatenate((mask_bin_vis, mask_vis), axis=1)
-    #     cv2.imshow('masks', masks)
-    #     cv2.waitKey(0)
-
     if subsample_method == 1:
         """subsample RLE of high-res mask"""
         starts, lengths = task_utils.subsample_rle(
@@ -313,6 +289,9 @@ def create_tf_example(
         assert params.class_offset > 0, "class_offset must be > 0"
         class_ids = task_utils.get_rle_class_ids(mask_sub, starts, lengths, class_id_to_col, order=params.flat_order)
         rle_cmp.append(class_ids)
+
+        if params.length_as_class:
+            task_utils.rle_to_length_as_class(rle_cmp, max_length)
 
     if params.vis and n_runs > 0:
         task_utils.vis_rle(
@@ -340,12 +319,14 @@ def create_tf_example(
     if params.check:
         task_utils.check_rle_tokens(
             image, mask, rle_tokens, n_classes,
+            params.length_as_class,
             params.starts_offset,
             params.lengths_offset,
             params.class_offset,
             max_length,
             params.subsample,
             multi_class,
+            params.flat_order,
             class_id_to_col,
             is_vis=True)
 
@@ -365,13 +346,19 @@ def create_tf_example(
 
     if params.show and n_runs > 0:
         rle_rec_cmp = task_utils.rle_from_tokens(
-            rle_tokens, mask_sub.shape,
+            rle_tokens,
+            mask_sub.shape,
+            params.length_as_class,
             params.starts_offset,
             params.lengths_offset,
             params.class_offset,
             params.starts_2d,
-            multi_class
+            multi_class,
+            params.flat_order,
         )
+        if params.length_as_class:
+            task_utils.rle_from_length_as_class(rle_rec_cmp, max_length)
+
         starts_rec, lengths_rec = rle_rec_cmp[:2]
         if multi_class:
             class_ids_rec = rle_rec_cmp[2]
@@ -448,6 +435,9 @@ def main():
     if params.min_stride <= 0:
         params.min_stride = params.patch_height
 
+    if params.max_length <= 0:
+        params.max_length = params.patch_width
+
     if params.max_stride <= params.min_stride:
         params.max_stride = params.min_stride
 
@@ -487,8 +477,18 @@ def main():
     if params.subsample > 1:
         out_name = f'{out_name}-sub_{params.subsample}'
 
-    if multi_class:
+    if params.length_as_class:
+        assert multi_class, "length_as_class can be enabled only in multi_class mode"
+        out_name = f'{out_name}-lac'
+        n_lac_classes = params.max_length * (n_classes - 1)
+        if params.starts_offset < n_lac_classes:
+            print(f'setting starts_offset to {n_lac_classes}')
+            params.starts_offset = n_lac_classes
+    elif multi_class:
         out_name = f'{out_name}-mc'
+
+    if params.flat_order != 'C':
+        out_name = f'{out_name}-flat_{params.flat_order}'
 
     image_infos = load_seg_annotations(json_path)
 
@@ -501,9 +501,6 @@ def main():
     os.makedirs(output_path, exist_ok=True)
 
     print(f'output_path: {output_path}')
-
-    if params.max_length <= 0:
-        params.max_length = params.patch_width
 
     vid_infos = {}
 
