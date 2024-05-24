@@ -686,7 +686,7 @@ def main():
 
     for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
         create_tf_example(*annotations_iter_)
-        
+
     # else:
     #     tfrecord_pattern = linux_path(output_path, 'shard')
     #     tfrecord_lib.write_tf_record_dataset(

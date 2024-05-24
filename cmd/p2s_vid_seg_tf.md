@@ -71,6 +71,7 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 <a id="p_640_sub_8_mc_len_3___r_2560_16_53_"></a>
 ### p-640-sub-8-mc-len-3       @ r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-3 
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-3:lac 
 
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:ord:mc:len-3
 
