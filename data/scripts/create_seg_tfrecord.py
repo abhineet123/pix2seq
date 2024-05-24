@@ -571,7 +571,7 @@ def main():
 
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
-            metrics_path = os.path.join(output_path, f'{method}_{metric_}')
+            metrics_path = os.path.join(output_path, f'{method}_{metric_}.txt')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
 
