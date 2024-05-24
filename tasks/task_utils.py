@@ -133,7 +133,7 @@ def check_rle_tokens(
     else:
         mask_gt = np.copy(mask)
 
-    if not rle_tokens:
+    if len(rle_tokens) == 0:
         assert np.all(mask_gt == 0), "non-zero mask found for empty rle_tokens"
         return
 
@@ -168,6 +168,7 @@ def check_rle_tokens(
         # cv2.imshow('mask_gt', mask_gt_)
     else:
         mask_gt_sub = mask_gt
+
 
     starts, lengths = rle_rec_cmp[:2]
     assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
@@ -1258,8 +1259,7 @@ def mask_from_tokens(
         max_length,
         starts_offset, lengths_offset, class_offset,
         starts_2d, multi_class, flat_order):
-
-    if not rle_tokens:
+    if len(rle_tokens) == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
         rle_cmp = [[], []]
         if not length_as_class and multi_class:
@@ -1300,7 +1300,7 @@ def rle_from_tokens(
         starts_offset, lengths_offset, class_offset,
         starts_2d, multi_class, flat_order
 ):
-    if not rle_tokens:
+    if len(rle_tokens) == 0:
         rle_cmp = [[], []]
         if multi_class and not length_as_class:
             rle_cmp.append([])

@@ -41,7 +41,7 @@ python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-64
 
 <a id="s_640_sub_8_lac___r_2560_resnet_640_16_5_3_"></a>
 ### s-640-sub-8-lac       @ r-2560/resnet-640-16_53-->p2s_seg
-python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:sub-8,batch-32,dbg-1,dyn-1,dist-1,ep-10000,gz,pt-1,lac
+python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:sub-8,batch-2,dbg-1,dyn-1,dist-0,ep-10000,gz,pt-1,lac
 
 <a id="sz_640_aug_sub_8___r_2560_resnet_640_16_5_3_"></a>
 ### sz-640-aug-sub-8       @ r-2560/resnet-640-16_53-->p2s_seg

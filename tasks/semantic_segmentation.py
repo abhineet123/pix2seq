@@ -74,6 +74,8 @@ class TaskSemanticSegmentation(task_lib.Task):
             frame_id = frame_ids[batch_id]
             vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(mask_vid_path)
             mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
+            task_utils.mask_vis_to_id(mask, n_classes=n_classes)
+
             rle_stripped = rle[rle != vocab.PADDING_TOKEN]
             if rle_stripped.size == 0:
                 print(f'\n{img_id}: mask is empty\n')
