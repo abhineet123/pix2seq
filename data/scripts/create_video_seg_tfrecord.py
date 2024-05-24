@@ -171,7 +171,6 @@ def generate_patch_vid_infos(
         image_info['src_id'] = src_id
         image_info['patch_id'] = patch_id
 
-
         if patch_id < params.patch_start_id > 0:
             continue
 
@@ -456,11 +455,14 @@ def create_tf_example(
     if params.show and n_runs > 0:
         rle_rec_cmp = task_utils.rle_from_tokens(
             rle_tokens, vid_mask_sub.shape,
+            params.length_as_class,
             params.starts_offset,
             params.lengths_offset,
             params.class_offset,
             params.starts_2d,
-            multi_class
+            multi_class,
+            params.flat_order,
+
         )
         starts_rec, lengths_rec = rle_rec_cmp[:2]
         if multi_class:
