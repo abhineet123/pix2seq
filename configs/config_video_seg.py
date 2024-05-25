@@ -26,10 +26,10 @@ def update_task_config(cfg):
     for task in cfg.tasks + [cfg.task, ]:
         task.image_size = image_size
 
-        task.eval_transforms = transform_configs.get_semantic_segmentation_eval_transforms(
+        task.eval_transforms = transform_configs.get_video_segmentation_eval_transforms(
             image_size, max_seq_len)
 
-        task.train_transforms = transform_configs.get_semantic_segmentation_train_transforms(
+        task.train_transforms = transform_configs.get_video_segmentation_train_transforms(
             image_size, max_seq_len)
 
 

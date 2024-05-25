@@ -304,6 +304,7 @@ def generate_patch_vid_infos(
                 "width": vid_w,
                 "height": vid_h,
                 "length": params.vid.length,
+                "seq": seq,
                 "date_captured": "",
                 "license": 1,
                 "flickr_url": "",
@@ -320,7 +321,7 @@ def generate_patch_vid_infos(
 
     if skipped > 0:
         print(f'skipped {skipped} videos')
-        
+
     return all_subseq_img_infos, videos
 
 

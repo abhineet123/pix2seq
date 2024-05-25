@@ -301,12 +301,12 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 if sample_suffix not in name:
                     name = f'{name}-{sample_suffix}'
 
-            suffix = ds_cfg[f'{mode}_suffix']
-            """suffix is already in name when the latter is loaded from a trained model config.json"""
-            if suffix and not name.endswith(suffix):
-                name = f'{name}-{suffix}'
-
             if not is_seg:
+                suffix = ds_cfg[f'{mode}_suffix']
+                """suffix is already in name when the latter is loaded from a trained model config.json"""
+                if suffix and not name.endswith(suffix):
+                    name = f'{name}-{suffix}'
+
                 start_seq_id = ds_cfg[f'{mode}_start_seq_id']
                 end_seq_id = ds_cfg[f'{mode}_end_seq_id']
                 if start_seq_id > 0 or end_seq_id >= 0:
