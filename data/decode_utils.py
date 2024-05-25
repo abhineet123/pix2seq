@@ -87,8 +87,8 @@ def get_feature_map_for_video_segmentation(length):
         'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),
-        'video/frame_ids': tf.io.FixedLenFeature((length,), tf.int64),
-        'video/image_ids': tf.io.FixedLenFeature((length,), tf.string),
+        # 'video/frame_ids': tf.io.FixedLenFeature((length,), tf.int64),
+        # 'video/image_ids': tf.io.FixedLenFeature((length,), tf.string),
         'video/rle': tf.io.VarLenFeature(tf.int64),
     }
 
