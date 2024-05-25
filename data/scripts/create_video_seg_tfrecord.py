@@ -126,7 +126,47 @@ def eval_mask(pred_mask, gt_mask, rle_len):
     )
 
 
-def save_vid_info_to_json(json_dict, out_path):
+def save_vid_info_to_json(videos, class_id_to_name, out_path):
+    from datetime import datetime
+
+    annotations = []
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
+    info = {
+        "version": "1.0",
+        "year": datetime.now().strftime("%y"),
+        "contributor": "asingh1",
+        "date_created": time_stamp,
+        "counts": dict(
+            videos=len(videos),
+            annotations=len(annotations),
+        ),
+    }
+    licenses = [
+        {
+            "url": "https://creativecommons.org/licenses/by/4.0/",
+            "id": 1,
+            "name": "Creative Commons Attribution 4.0 License"
+        }
+    ]
+    categories = []
+    for label_id, label in class_id_to_name.items():
+        if label_id == 0:
+            continue
+        category_info = {
+            'supercategory': 'object',
+            'id': label_id,
+            'name': label
+        }
+        categories.append(category_info)
+    annotations = []
+    json_dict = {
+        "info": info,
+        "licenses": licenses,
+        "videos": videos,
+        "categories": categories,
+        "annotations": annotations,
+    }
+
     n_vids = len(json_dict['videos'])
     print(f'saving json for {n_vids} videos to: {out_path}')
     json_kwargs = dict(
@@ -142,6 +182,7 @@ def save_vid_info_to_json(json_dict, out_path):
         compress_json.dump(json_dict, out_path, json_kwargs=json_kwargs)
     else:
         raise AssertionError(f'Invalid out_path: {out_path}')
+
 
 def load_img_info_from_json(annotation_path):
     print(f'Reading annotations from {annotation_path}')
@@ -198,6 +239,8 @@ def generate_patch_vid_infos(
         patch_vids[patch_seq_id].append(image_info)
 
     all_subseq_img_infos = []
+    videos = []
+    vid_id = 0
     for patch_seq_id, patch_infos in patch_vids.items():
         sorted(patch_infos, key=lambda x: int(x['frame_id']))
 
@@ -225,7 +268,33 @@ def generate_patch_vid_infos(
                 continue
             all_subseq_img_infos.append(subseq_img_infos)
 
-    return all_subseq_img_infos
+            img_info = subseq_img_infos[0]
+
+            vid_w, vid_h, seq = img_info['width'], img_info['height'], img_info['seq']
+
+            mask_file_names = [img_info['mask_file_name'] for img_info in subseq_img_infos]
+            file_names = [img_info['file_name'] for img_info in subseq_img_infos]
+            file_ids = [img_info['img_id'] for img_info in subseq_img_infos]
+            frame_ids = [img_info['frame_id'] for img_info in subseq_img_infos]
+
+            video_dict = {
+                "width": vid_w,
+                "height": vid_h,
+                "length": params.vid.length,
+                "date_captured": "",
+                "license": 1,
+                "flickr_url": "",
+                "file_names": file_names,
+                "mask_file_names": mask_file_names,
+                "file_ids": file_ids,
+                "frame_ids": frame_ids,
+                "id": vid_id,
+                "coco_url": "",
+            }
+            videos.append(video_dict)
+            vid_id += 1
+
+    return all_subseq_img_infos, videos
 
 
 def generate_annotations(
@@ -506,6 +575,66 @@ def get_vid_infos(image_infos, db_path):
     return vid_infos
 
 
+def get_db_suffix(params: Params):
+    if not params.db_suffix:
+        db_suffixes = []
+        if params.resize:
+            db_suffixes.append(f'resize_{params.resize}')
+
+        db_suffixes += [f'{params.start_id:d}_{params.end_id:d}',
+                        f'{params.patch_height:d}_{params.patch_width:d}',
+                        f'{params.min_stride:d}_{params.max_stride:d}',
+                        ]
+        if params.n_rot > 0:
+            db_suffixes.append(f'rot_{params.min_rot:d}_{params.max_rot:d}_{params.n_rot:d}')
+
+        if params.enable_flip:
+            db_suffixes.append('flip')
+
+        params.db_suffix = '-'.join(db_suffixes)
+
+
+def get_vid_suffix(vid_params: Params.Video):
+    vid_suffixes = []
+    assert vid_params.length > 1, "video length must be > 1"
+
+    vid_suffixes.append(f'length-{vid_params.length}')
+
+    if vid_params.stride:
+        vid_suffixes.append(f'stride-{vid_params.stride}')
+
+    if vid_params.sample:
+        vid_suffixes.append(f'sample-{vid_params.sample}')
+
+    if vid_params.frame_gap:
+        vid_suffixes.append(f'fg_{vid_params.frame_gap}')
+
+    vid_suffix = '-'.join(vid_suffixes)
+    return vid_suffix
+
+
+def get_rle_suffix(params, multi_class):
+    rle_suffixes = []
+    if params.subsample > 1:
+        rle_suffixes.append(f'sub_{params.subsample}')
+
+    if params.time_as_class:
+        if params.length_as_class:
+            rle_suffixes.append('ltac')
+        else:
+            rle_suffixes.append('tac')
+    elif params.length_as_class:
+        rle_suffixes.append('lac')
+
+    if multi_class:
+        rle_suffixes.append('mc')
+
+    if params.flat_order != 'C':
+        rle_suffixes.append(f'flat_{params.flat_order}')
+
+    rle_suffix = '-'.join(rle_suffixes)
+    return rle_suffix
+
 def main():
     params: Params = paramparse.process(Params)
 
@@ -556,6 +685,7 @@ def main():
 
     img_json_fname = f'{img_json_suffix}.{params.ann_ext}'
     img_json_path = linux_path(params.db_path, img_json_fname)
+
     image_infos = load_img_info_from_json(img_json_path)
 
     vid_json_name = img_json_suffix
@@ -568,7 +698,7 @@ def main():
 
     """RLE-specific stuff that doesn't go into output json since that doesn't contain RLE"""
     tfrecord_name = vid_json_name
-    rle_suffix =  get_rle_suffix(params, multi_class)
+    rle_suffix = get_rle_suffix(params, multi_class)
     if rle_suffix:
         tfrecord_name = f'{tfrecord_name}-{rle_suffix}'
 
@@ -584,45 +714,13 @@ def main():
 
     vid_infos = get_vid_infos(image_infos, params.db_path)
 
-    all_subseq_img_infos, videos_dict = generate_patch_vid_infos(
+    all_subseq_img_infos, videos = generate_patch_vid_infos(
         params,
         image_infos,
         vid_infos,
     )
 
-    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
-    info = {
-        "version": "1.0",
-        "year": datetime.now().strftime("%y"),
-        "contributor": "asingh1",
-        "date_created": time_stamp
-    }
-    licenses = [
-        {
-            "url": "https://creativecommons.org/licenses/by/4.0/",
-            "id": 1,
-            "name": "Creative Commons Attribution 4.0 License"
-        }
-    ]
-    categories = []
-    for label_id, label in class_id_to_name.items():
-        if label_id == 0:
-            continue
-        category_info = {
-            'supercategory': 'object',
-            'id': label_id,
-            'name': label
-        }
-        categories.append(category_info)
-    annotations = []
-    json_dict = {
-        "info": info,
-        "licenses": licenses,
-        "videos": videos_dict,
-        "categories": categories,
-        "annotations": annotations,
-    }
-    save_vid_info_to_json(json_dict, vid_json_path)
+    save_vid_info_to_json(videos, class_id_to_name, vid_json_path)
 
     metrics = dict(
         method_0={},
@@ -661,66 +759,6 @@ def main():
             metrics_path = linux_path(tfrecord_path, f'{method}_{metric_}.txt')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
-
-def get_db_suffix(params:Params):
-    if not params.db_suffix:
-        db_suffixes = []
-        if params.resize:
-            db_suffixes.append(f'resize_{params.resize}')
-
-        db_suffixes += [f'{params.start_id:d}_{params.end_id:d}',
-                        f'{params.patch_height:d}_{params.patch_width:d}',
-                        f'{params.min_stride:d}_{params.max_stride:d}',
-                        ]
-        if params.n_rot > 0:
-            db_suffixes.append(f'rot_{params.min_rot:d}_{params.max_rot:d}_{params.n_rot:d}')
-
-        if params.enable_flip:
-            db_suffixes.append('flip')
-
-        params.db_suffix = '-'.join(db_suffixes)
-
-def get_vid_suffix(vid_params:Params.Video):
-
-    vid_suffixes = []
-    assert vid_params.length > 1, "video length must be > 1"
-
-    vid_suffixes.append(f'length-{vid_params.length}')
-
-    if vid_params.stride:
-        vid_suffixes.append(f'stride-{vid_params.stride}')
-
-    if vid_params.sample:
-        vid_suffixes.append(f'sample-{vid_params.sample}')
-
-    if vid_params.frame_gap:
-        vid_suffixes.append(f'fg_{vid_params.frame_gap}')
-
-    vid_suffix = '-'.join(vid_suffixes)
-    return vid_suffix
-
-def get_rle_suffix(params, multi_class):
-    rle_suffixes = []
-    if params.subsample > 1:
-        rle_suffixes.append(f'sub_{params.subsample}')
-
-    if params.time_as_class:
-        if params.length_as_class:
-            rle_suffixes.append('ltac')
-        else:
-            rle_suffixes.append('tac')
-    elif params.length_as_class:
-        rle_suffixes.append('lac')
-
-    if multi_class:
-        rle_suffixes.append('mc')
-
-    if params.flat_order != 'C':
-        rle_suffixes.append(f'flat_{params.flat_order}')
-
-    rle_suffix = '-'.join(rle_suffixes)
-    return rle_suffix
-
 
 if __name__ == '__main__':
     main()
