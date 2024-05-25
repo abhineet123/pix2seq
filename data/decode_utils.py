@@ -40,7 +40,6 @@ def get_feature_map_for_object_detection():
         'image/object/score': tf.io.VarLenFeature(tf.float32),
     }
 
-
 def get_feature_map_for_semantic_segmentation():
     return {
         'image/rle': tf.io.VarLenFeature(tf.int64),
@@ -49,8 +48,6 @@ def get_feature_map_for_semantic_segmentation():
         'image/mask_vid_path': tf.io.FixedLenFeature((), tf.string, ''),
         'image/frame_id': tf.io.FixedLenFeature((), tf.int64, -1),
     }
-
-
 def get_feature_map_for_video(length):
     return {
         'video/source_id': tf.io.FixedLenFeature((), tf.int64, -1),
@@ -85,6 +82,29 @@ def get_feature_map_for_video_detection(vid_len):
     return feat_dict
 
 
+def get_feature_map_for_video_segmentation(length):
+    feat_dict =  {
+        'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
+        'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
+        'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),
+        'video/frame_ids': tf.io.FixedLenFeature((length,), tf.int64),
+        'video/image_ids': tf.io.FixedLenFeature((length,), tf.string),
+        'video/rle': tf.io.VarLenFeature(tf.int64),
+    }
+
+    for _id in range(length):
+        frame_feat_dict = {
+            f'video/frame-{_id}/filename': tf.io.FixedLenFeature((), tf.string),
+            f'video/frame-{_id}/image_id': tf.io.FixedLenFeature((), tf.string),
+            f'video/frame-{_id}/frame_id': tf.io.FixedLenFeature((), tf.int64, -1),
+            f'video/frame-{_id}/key/sha256': tf.io.FixedLenFeature((), tf.string),
+            f'video/frame-{_id}/encoded': tf.io.FixedLenFeature((), tf.string),
+            f'video/frame-{_id}/format': tf.io.FixedLenFeature((), tf.string),
+        }
+        feat_dict.update(frame_feat_dict)
+
+    return feat_dict
+
 def get_feature_map_for_instance_segmentation():
     return {
         'image/object/segmentation':
@@ -117,9 +137,9 @@ def get_feature_map_for_captioning():
     }
 
 
-def decode_image(example):
+def decode_image(example, key='image/encoded'):
     """Decodes the image and set its static shape."""
-    image = tf.io.decode_image(example['image/encoded'], channels=3)
+    image = tf.io.decode_image(example[key], channels=3)
     image.set_shape([None, None, 3])
     image = tf.image.convert_image_dtype(image, tf.float32)
     return image

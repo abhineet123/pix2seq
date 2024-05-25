@@ -443,7 +443,9 @@ def create_tf_example(
 
     if not params.stats_only:
         seg_feature_dict = {
-            'image/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
+            # 'video/frame_ids': tfrecord_lib.convert_to_feature(frame_ids, value_type='int64_list'),
+            # 'video/image_ids': tfrecord_lib.convert_to_feature(image_ids, value_type='bytes_list'),
+            'video/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
         }
         video_feature_dict.update(seg_feature_dict)
         example = tf.train.Example(features=tf.train.Features(feature=video_feature_dict))
@@ -451,65 +453,6 @@ def create_tf_example(
     if rle_len > 0:
         metrics_ = dict(rle_len=rle_len)
         append_metrics(metrics_, metrics[f'method_{subsample_method}'])
-
-    if params.show and n_runs > 0:
-        rle_rec_cmp = task_utils.rle_from_tokens(
-            rle_tokens, vid_mask_sub.shape,
-            params.length_as_class,
-            params.starts_offset,
-            params.lengths_offset,
-            params.class_offset,
-            params.starts_2d,
-            multi_class,
-            params.flat_order,
-
-        )
-        starts_rec, lengths_rec = rle_rec_cmp[:2]
-        if multi_class:
-            class_ids_rec = rle_rec_cmp[2]
-        else:
-            class_ids_rec = [1, ] * len(starts_rec)
-
-        if subsample_method == 1:
-            """reconstruct full-res mask by super sampling / scaling up the starts and lengths"""
-            starts_rec, lengths_rec = task_utils.supersample_rle(
-                starts_rec, lengths_rec,
-                subsample=params.subsample,
-                shape=(n_rows, n_cols),
-                max_length=max_length,
-                flat_order=params.flat_order,
-            )
-
-        mask_rec = task_utils.rle_to_mask(
-            starts_rec, lengths_rec, class_ids_rec,
-            (n_rows_sub, n_cols_sub),
-        )
-
-        mask_vis = task_utils.mask_id_to_vis_rgb(mask_sub, class_id_to_col)
-        mask_rec_vis = task_utils.mask_id_to_vis_rgb(mask_rec, class_id_to_col)
-
-        if subsample_method == 2:
-            """reconstruct low-res mask and resize to scale it up"""
-            mask_vis = cv2.resize(mask_vis, (n_cols, n_rows))
-
-            mask_rec_vis = cv2.resize(mask_rec_vis, (n_cols, n_rows))
-            # metrics_ = eval_mask(mask_rec, mask, rle_len)
-            # vis_txt.append(append_metrics(metrics_, metrics['method_1']))
-
-        vis_imgs.append(mask_vis)
-        vis_imgs.append(mask_rec_vis)
-
-        import eval_utils
-
-        vis_imgs = np.concatenate(vis_imgs, axis=1)
-        # vis_txt = ' '.join(vis_txt)
-        vis_imgs = eval_utils.annotate(vis_imgs, f'{image_id}')
-        # cv2.imshow('mask_vis', mask_vis)
-        # cv2.imshow('mask_rec_vis', mask_rec_vis)
-        cv2.imshow('vis_imgs', vis_imgs)
-        k = cv2.waitKey(0)
-        if k == 27:
-            exit()
 
     if not params.stats_only:
         return example, 0
