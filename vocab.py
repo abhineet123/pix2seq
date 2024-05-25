@@ -32,6 +32,7 @@ TASK_PAN_SEG = 16
 TASK_VID_PAN_SEG = 18
 TASK_VID_DET = 20
 TASK_SEM_SEG = 21
+TASK_VID_SEG = 22
 
 FAKE_CLASS_TOKEN = 30
 FAKE_TEXT_TOKEN = 30  # Same token to represent fake class and fake text.

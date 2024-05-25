@@ -205,8 +205,9 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         orig_image_size = tf.shape(images)[1:3]
 
         new_example = {
-            'images': images,
+            'video': images,
             'rle': rle,
+            'vid_size': (h, w),
             'orig_image_size': orig_image_size,
             'filenames': filenames,
             'image_ids': image_ids,

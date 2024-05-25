@@ -40,7 +40,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
         return dataset
 
-    def check_rle(self, batched_examples, show):
+    def check_video_rle(self, batched_examples, show):
         mask_vid_paths = batched_examples['mask_vid_path'].numpy()
         images = batched_examples['image'].numpy()
         img_ids = batched_examples['image/id'].numpy()
@@ -94,37 +94,18 @@ class TaskVideoSegmentation(task_lib.Task):
         token_weights = tf.ones_like(response_seq, dtype=tf.float32)
 
         if self.config.debug:
-            self.check_rle(batched_examples, show=1)
-
-        # response_seq, token_weights = build_response_seq_from_rle(
-        #     batched_examples['rle'],
-        #     config.starts_bins,
-        #     config.lengths_bins,
-        #     mconfig.coord_vocab_shift,
-        # )
+            self.check_video_rle(batched_examples, show=1)
 
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             task_vocab_id=self.task_vocab_id,
-            response_seq=response_seq)  # (bsz, 1)
+            response_seq=response_seq)
         input_seq = tf.concat([prompt_seq, response_seq], -1)
         target_seq = tf.concat([prompt_seq, response_seq], -1)
-
-        """rle seq is already padded"""
-        # input_seq = utils.pad_to_max_len(input_seq, config.max_seq_len + 1,
-        #                                  dim=-1, padding_token=vocab.PADDING_TOKEN)
-        # target_seq = utils.pad_to_max_len(target_seq, config.max_seq_len + 1,
-        #                                   dim=-1, padding_token=vocab.PADDING_TOKEN)
 
         """
         right shift the target_seq and left-shift the input_seq
         """
         input_seq, target_seq = input_seq[..., :-1], target_seq[..., 1:]
-
-        """
-        token_weights should already be config.max_seq_len since it is created from response_seq
-        """
-        # token_weights = utils.pad_to_max_len(token_weights, config.max_seq_len,
-        #                                      dim=-1, padding_token=vocab.PADDING_TOKEN)
 
         """
         Assign lower weights for ending/padding tokens.
@@ -135,15 +116,15 @@ class TaskVideoSegmentation(task_lib.Task):
             tf.zeros_like(token_weights) + config.eos_token_weight,
             token_weights)
 
+        """goes into video_ar_model.compute_loss"""
         return batched_examples, input_seq, target_seq, token_weights
 
     def infer(self, model, preprocessed_outputs):
-        """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
         mconfig = self.config.model
         examples, input_seq, target_seq, token_weights = preprocessed_outputs
-        image = examples["image"]
-        bsz = tf.shape(image)[0]
+        video = examples["video"]
+        bsz = tf.shape(video)[0]
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id, prompt_shape=(bsz, 1))
         pred_seq, logits, _ = model.infer(
@@ -249,50 +230,3 @@ class TaskVideoSegmentation(task_lib.Task):
 
     def reset_metrics(self):
         raise AssertionError('not implemented')
-
-
-def build_response_seq_from_rle(
-        rle_norm,
-        starts_bins,
-        lengths_bins,
-        coord_vocab_shift
-):
-    batch_size, seq_len = rle_norm.shape
-    n_elem = batch_size * seq_len
-    is_padding = tf.equal(rle_norm, 0)
-
-    rle_norm_flat = tf.reshape(rle_norm, [-1])
-    starts = rle_norm_flat[::2]
-    lengths = rle_norm_flat[1::2]
-    quantized_starts = utils.quantize(starts, starts_bins)
-    quantized_lengths = utils.quantize(lengths, lengths_bins)
-
-    quantized_starts = quantized_starts + coord_vocab_shift
-    quantized_lengths = quantized_lengths + vocab.BASE_VOCAB_SHIFT
-
-    even_indices = [[k, ] for k in range(0, n_elem, 2)]
-    odd_indices = [[k, ] for k in range(1, n_elem, 2)]
-
-    even_indices_tf = tf.constant(even_indices)
-    odd_indices_tf = tf.constant(odd_indices)
-
-    # even_indices_tf = tf.reshape(even_indices_tf, [1, -1])
-    # odd_indices_tf = tf.reshape(odd_indices_tf, [1, -1])
-
-    quantized_rle_flat = tf.zeros_like(rle_norm_flat, dtype=tf.int64)
-    quantized_rle_flat = tf.tensor_scatter_nd_update(quantized_rle_flat, even_indices_tf, quantized_starts)
-    quantized_rle_flat = tf.tensor_scatter_nd_update(quantized_rle_flat, odd_indices_tf, quantized_lengths)
-
-    # is_even = np.zeros((n_elem,), dtype=bool)
-    # is_even[even_indices] = True
-    # is_even_tf = tf.constant(is_even)
-    # quantized_rle_flat = tf.where(is_even_tf, quantized_starts, quantized_starts)
-
-    quantized_rle = tf.reshape(quantized_rle_flat, rle_norm.shape)
-
-    quantized_rle = tf.where(is_padding,
-                             tf.zeros_like(quantized_rle), quantized_rle)
-
-    token_weights = tf.ones_like(quantized_rle)
-
-    return quantized_rle, token_weights

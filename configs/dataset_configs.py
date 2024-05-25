@@ -17,7 +17,7 @@
 from configs.config_base import D
 
 
-def get_shared_data():
+def get_shared_det_data():
     _transforms_config = D(
         scale_jitter=1,
         fixed_crop=1,
@@ -66,7 +66,7 @@ def get_ipsc_data():
         root_dir=root_dir,
         label_shift=0,
         compressed=0,
-        **get_shared_data()
+        **get_shared_det_data()
     )
 
 
@@ -80,7 +80,7 @@ def get_ipsc_video_data():
         compressed=1,
         max_disp=0.01,
         length=2,
-        **get_shared_data()
+        **get_shared_det_data()
     )
 
     for mode in ['train', 'eval']:
@@ -91,11 +91,10 @@ def get_ipsc_video_data():
     return data
 
 
-def get_sem_seg_data():
+def get_shared_seg_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
 
     data = D(
-        name='ipsc_semantic_segmentation',
         root_dir=root_dir,
         label_shift=0,
         compressed=0,
@@ -146,6 +145,22 @@ def get_sem_seg_data():
         mode_data[f'max_length'] = 0
 
         data[f'{mode}'] = mode_data
+    return data
+
+
+def get_sem_seg_data():
+    data = D(
+        name='ipsc_semantic_segmentation',
+        **get_shared_seg_data()
+    )
+    return data
+
+
+def get_vid_seg_data():
+    data = D(
+        name='ipsc_video_segmentation',
+        **get_shared_seg_data()
+    )
     return data
 
 
@@ -324,7 +339,6 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
 
             if length_as_class:
                 name = f'{name}-lac'
-
             elif multi_class:
                 name = f'{name}-mc'
 
@@ -357,4 +371,5 @@ dataset_configs = {
     'ipsc_object_detection': get_ipsc_data(),
     'ipsc_video_detection': get_ipsc_video_data(),
     'ipsc_semantic_segmentation': get_sem_seg_data(),
+    'ipsc_video_segmentation': get_vid_seg_data(),
 }
