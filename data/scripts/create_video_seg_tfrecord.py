@@ -706,14 +706,18 @@ def main():
     image_infos = load_img_info_from_json(img_json_path)
 
     vid_json_name = img_json_suffix
+
     """video-specific stuff"""
     vid_suffix = get_vid_suffix(params.vid)
+
     vid_json_name = f'{vid_json_name}-{vid_suffix}'
     vid_json_path = os.path.join(params.db_path, f'{vid_json_name}.{params.ann_ext}')
 
-    """RLE-specific stuff that doesn't go into output json since that doesn't contain RLE"""
     tfrecord_name = vid_json_name
+
+    """RLE-specific stuff that doesn't go into output json since that doesn't contain RLE"""
     rle_suffix = get_rle_suffix(params, multi_class)
+
     if rle_suffix:
         tfrecord_name = f'{tfrecord_name}-{rle_suffix}'
 
