@@ -42,14 +42,23 @@ class TaskVideoSegmentation(task_lib.Task):
 
     def check_video_rle(self, batched_examples, show):
         mask_vid_paths = batched_examples['mask_vid_path'].numpy()
-        images = batched_examples['image'].numpy()
-        img_ids = batched_examples['image/id'].numpy()
-        frame_ids = batched_examples['frame_id'].numpy()
+        videos = batched_examples['video'].numpy()
+        img_ids_all = batched_examples['image_ids'].numpy()
+        frame_ids_all = batched_examples['frame_ids'].numpy()
         rles = batched_examples['rle'].numpy()
-        batch_size = frame_ids.shape[0]
+        rle_lens = batched_examples['rle_len'].numpy()
+
+        batch_size = frame_ids_all.shape[0]
         max_length = self.config.dataset.train.max_length
         subsample = self.config.dataset.train.subsample
         multi_class = self.config.dataset.multi_class
+        time_as_class = self.config.dataset.time_as_class
+        length_as_class = self.config.dataset.length_as_class
+
+        starts_offset = self.config.model.coord_vocab_shift
+        lengths_offset = self.config.model.len_vocab_shift
+        class_offset = self.config.model.class_vocab_shift
+
         class_id_to_col = self.class_id_to_col
 
         n_classes = len(self.class_id_to_col)
@@ -57,17 +66,22 @@ class TaskVideoSegmentation(task_lib.Task):
         for batch_id in range(batch_size):
             mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
             rle = rles[batch_id]
-            img_id = img_ids[batch_id]
-            image = images[batch_id]
-            frame_id = frame_ids[batch_id]
+            rle_len = rle_lens[batch_id]
+            img_ids = img_ids_all[batch_id]
+            video = videos[batch_id]
+            frame_ids = frame_ids_all[batch_id]
             vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(mask_vid_path)
-            mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
-            rle_stripped = rle[rle != vocab.PADDING_TOKEN]
-            if rle_stripped.size == 0:
-                print(f'\n{img_id}: mask is empty\n')
+            vid_mask = []
+            for frame_id in frame_ids:
+                mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
+                vid_mask.append(mask)
+            vid_mask = np.stack(vid_mask, axis=0)
 
-            task_utils.check_rle_tokens(
-                image, mask, rle_stripped,
+            rle_stripped = rle[rle != vocab.PADDING_TOKEN]
+            assert rle_stripped.size == rle_len, "rle_len mismatch"
+
+            task_utils.check_video_rle_tokens(
+                video, vid_mask, rle_stripped,
                 n_classes=n_classes,
                 starts_offset=self.config.model.coord_vocab_shift,
                 lengths_offset=self.config.model.len_vocab_shift,

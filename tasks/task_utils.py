@@ -210,6 +210,102 @@ def check_rle_tokens(
 
     # print('masks match !')
 
+def check_video_rle_tokens(
+        video, vid_mask, rle_tokens, n_classes,
+        length_as_class,
+        starts_offset, lengths_offset, class_offset,
+        max_length, subsample, multi_class,
+        flat_order,
+        class_to_col, is_vis):
+    if len(mask.shape) == 3:
+        mask_b = mask[..., 0].squeeze()
+        mask_g = mask[..., 1].squeeze()
+        mask_r = mask[..., 2].squeeze()
+
+        assert np.array_equal(mask_b, mask_g), "mask_b and mask_g mismatch"
+        assert np.array_equal(mask_b, mask_r), "mask_b and mask_r mismatch"
+
+        mask_gt = mask_b
+    else:
+        mask_gt = np.copy(mask)
+
+    if len(rle_tokens) == 0:
+        assert np.all(mask_gt == 0), "non-zero mask found for empty rle_tokens"
+        return
+
+    if not is_vis:
+        mask_vis_to_id(mask_gt, n_classes)
+
+    n_rows, n_cols = mask_gt.shape
+
+    if subsample > 1:
+        max_length = int(max_length / subsample)
+        n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
+
+    # rle_len = len(rle_tokens)
+
+    mask_rec, rle_rec_cmp = mask_from_tokens(
+        rle_tokens,
+        (n_rows, n_cols),
+        length_as_class=length_as_class,
+        max_length=max_length,
+        starts_offset=starts_offset,
+        lengths_offset=lengths_offset,
+        class_offset=class_offset,
+        starts_2d=False,
+        multi_class=multi_class,
+        flat_order=flat_order,
+    )
+    if subsample > 1:
+        mask_gt_sub = resize_mask_coord(mask_gt, mask_rec.shape, n_classes, is_vis=0)
+        # mask_rec_ = mask_id_to_vis(mask_rec, n_classes, copy=True)
+        # mask_gt_ = mask_id_to_vis(mask_gt, n_classes, copy=True)
+        # cv2.imshow('mask_rec', mask_rec_)
+        # cv2.imshow('mask_gt', mask_gt_)
+    else:
+        mask_gt_sub = mask_gt
+
+
+    starts, lengths = rle_rec_cmp[:2]
+    assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
+    assert np.all(lengths > 0), "run length cannot be 0"
+
+    n_rows, n_cols = mask_gt_sub.shape
+    n_pix = n_rows * n_cols
+    assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
+
+    if multi_class:
+        class_ids = rle_rec_cmp[2]
+        assert 0 not in class_ids, "class_ids must be non-zero"
+        assert np.all(np.asarray(class_ids) <= n_classes), "class_ids must be <= n_classes"
+
+    if not np.array_equal(mask_gt_sub, mask_rec):
+        print("mask_rec mismatch")
+
+        # if subsample > 1:
+        #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
+
+        # import eval_utils
+        mask_gt_vis = mask_id_to_vis_rgb(mask_gt, class_to_col)
+        mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_to_col)
+
+        cv2.imshow('mask_rec_vis', mask_rec_vis)
+
+        mask_gt_vis = resize_mask(mask_gt_vis, image.shape, n_classes, is_vis=1)
+        mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
+
+        masks_all = np.concatenate([image, mask_gt_vis, mask_rec_vis], axis=1)
+        # vis_txt = ' '.join(vis_txt)
+        # masks_all = eval_utils.annotate(masks_all, vis_txt)
+        # cv2.imshow('mask_gt_vis', mask_gt_vis)
+        # cv2.imshow('mask_rec_vis', mask_rec_vis)
+        cv2.imshow('masks_all', masks_all)
+        k = cv2.waitKey(0)
+        if k == 27:
+            exit()
+
+    # print('masks match !')
+
 
 def interleave_rle(rle_cmps):
     rle = [int(item) for sublist in zip(*rle_cmps) for item in sublist]

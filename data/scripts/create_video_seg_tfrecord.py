@@ -100,7 +100,10 @@ class Params(paramparse.CFG):
             self.max_stride = self.min_stride
 
         if self.max_length <= 0:
-            self.max_length = self.patch_width * self.vid.length
+            if self.time_as_class:
+                self.max_length = self.patch_width
+            else:
+                self.max_length = self.patch_width * self.vid.length
 
         if self.seq_id >= 0:
             self.seq_start_id = self.seq_end_id = self.seq_id
@@ -560,6 +563,7 @@ def create_tf_example(
             # 'video/frame_ids': tfrecord_lib.convert_to_feature(frame_ids, value_type='int64_list'),
             # 'video/image_ids': tfrecord_lib.convert_to_feature(image_ids, value_type='bytes_list'),
             'video/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
+            'video/rle_len': tfrecord_lib.convert_to_feature(len(rle_tokens)),
         }
         video_feature_dict.update(seg_feature_dict)
         example = tf.train.Example(features=tf.train.Features(feature=video_feature_dict))
@@ -715,11 +719,28 @@ def main():
 
     if not params.output_dir:
         params.output_dir = linux_path(params.db_path, 'tfrecord')
-
     os.makedirs(params.output_dir, exist_ok=True)
-
     tfrecord_path = linux_path(params.output_dir, tfrecord_name)
     os.makedirs(tfrecord_path, exist_ok=True)
+
+    if params.length_as_class or params.time_as_class:
+        params.lengths_offset = params.class_offset
+        n_classes_ = n_classes
+        if params.time_as_class:
+            n_classes_ = n_classes_ ** params.vid.length
+        if params.length_as_class:
+            max_length = params.max_length
+            if params.subsample > 1:
+                max_length /= params.subsample
+            n_total_classes = max_length * (n_classes_  - 1)
+        else:
+            n_total_classes = n_classes_
+
+        min_starts_offset = n_total_classes + params.class_offset
+
+        if params.starts_offset < min_starts_offset:
+            print(f'setting starts_offset to {min_starts_offset}')
+            params.starts_offset = min_starts_offset
 
     print(f'tfrecord_path: {tfrecord_path}')
 

@@ -201,8 +201,9 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         images = tf.stack(images, axis=0)
 
         rle = example['video/rle']
+        rle_len = example['video/rle_len']
         vid_path = example['video/path']
-        mask_vid_path = example['video/mask_vid_path']
+        mask_vid_path = example['video/mask_path']
         seq = example['video/seq']
 
         orig_image_size = tf.shape(images)[1:3]
@@ -210,6 +211,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         new_example = {
             'video': images,
             'rle': rle,
+            'rle_len': rle_len,
             'vid_size': (h, w),
             'orig_image_size': orig_image_size,
             'filenames': filenames,

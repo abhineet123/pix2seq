@@ -483,9 +483,11 @@ def main():
         out_name = f'{out_name}-lac'
 
         n_lac_classes = int(params.max_length / params.subsample) * (n_classes - 1)
-        if params.starts_offset < n_lac_classes:
-            print(f'setting starts_offset to {n_lac_classes}')
-            params.starts_offset = n_lac_classes
+        min_starts_offset = n_lac_classes + params.class_offset
+
+        if params.starts_offset < min_starts_offset:
+            print(f'setting starts_offset to {min_starts_offset}')
+            params.starts_offset = min_starts_offset
 
     elif multi_class:
         out_name = f'{out_name}-mc'
