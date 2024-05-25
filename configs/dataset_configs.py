@@ -159,8 +159,14 @@ def get_sem_seg_data():
 def get_vid_seg_data():
     data = D(
         name='ipsc_video_segmentation',
+        time_as_class=0,
+        length=2,
         **get_shared_seg_data()
     )
+    for mode in ['train', 'eval']:
+        data[f'{mode}_stride'] = 1
+        data[f'{mode}_sample'] = 0
+        data[f'{mode}_frame_gap'] = []
     return data
 
 
@@ -337,15 +343,28 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
             if subsample > 1:
                 name = f'{name}-sub_{subsample}'
 
-            if length_as_class:
-                name = f'{name}-lac'
-            elif multi_class:
-                name = f'{name}-mc'
+            if is_video:
+                time_as_class = ds_cfg[f'time_as_class']
+                if time_as_class:
+                    if length_as_class:
+                        name = f'{name}-ltac'
+                    else:
+                        name = f'{name}-tac'
+                elif length_as_class:
+                    name = f'{name}-lac'
+
+                if multi_class:
+                    name = f'{name}-mc'
+            else:
+                if length_as_class:
+                    name = f'{name}-lac'
+                elif multi_class:
+                    name = f'{name}-mc'
 
             if flat_order != 'C':
                 name = f'{name}-flat_{flat_order}'
 
-        if is_video:
+        if is_video and not is_seg:
             try:
                 frame_gaps = ds_cfg[f'{mode}_frame_gaps']
             except KeyError:
