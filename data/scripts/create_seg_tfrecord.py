@@ -357,7 +357,7 @@ def create_tf_example(
             params.flat_order,
         )
         if params.length_as_class:
-            task_utils.rle_from_length_as_class(rle_rec_cmp, max_length_sub)
+            task_utils.rle_from_lac(rle_rec_cmp, max_length_sub)
 
         starts_rec, lengths_rec = rle_rec_cmp[:2]
         if multi_class:

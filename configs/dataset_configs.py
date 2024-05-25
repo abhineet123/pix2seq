@@ -250,6 +250,10 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
 
                 if mode_cfg[f'max_length'] <= 0:
                     mode_cfg[f'max_length'] = patch_width
+                    if is_video:
+                        time_as_class = ds_cfg[f'time_as_class']
+                        if not time_as_class:
+                            mode_cfg[f'max_length'] *= ds_cfg.length
 
                 db_suffixes = []
                 if resize:

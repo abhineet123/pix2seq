@@ -54,6 +54,7 @@ class TaskVideoSegmentation(task_lib.Task):
         multi_class = self.config.dataset.multi_class
         time_as_class = self.config.dataset.time_as_class
         length_as_class = self.config.dataset.length_as_class
+        flat_order = self.config.dataset.flat_order
 
         starts_offset = self.config.model.coord_vocab_shift
         lengths_offset = self.config.model.len_vocab_shift
@@ -83,13 +84,16 @@ class TaskVideoSegmentation(task_lib.Task):
             task_utils.check_video_rle_tokens(
                 video, vid_mask, rle_stripped,
                 n_classes=n_classes,
-                starts_offset=self.config.model.coord_vocab_shift,
-                lengths_offset=self.config.model.len_vocab_shift,
-                class_offset=self.config.model.class_vocab_shift,
+                length_as_class=length_as_class,
+                starts_offset=starts_offset,
+                time_as_class=time_as_class,
+                lengths_offset=lengths_offset,
+                class_offset=class_offset,
                 max_length=max_length,
                 subsample=subsample,
                 class_to_col=class_id_to_col,
                 multi_class=multi_class,
+                flat_order=flat_order,
                 is_vis=1,
             )
 
