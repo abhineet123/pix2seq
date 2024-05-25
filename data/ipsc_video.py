@@ -128,7 +128,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         probabilistically filter out examples with no foreground
         """
         if training:
-            if tf.shape(example['image/rle'])[0] > 0:
+            if tf.shape(example['video/rle'])[0] > 0:
                 return True
             rand_num = tf.random.uniform(shape=[1])
             if rand_num[0] < self.config.empty_seg_prob:
@@ -172,9 +172,12 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
 
     def extract(self, example, training):
         h, w = int(example['video/height']), int(example['video/width'])
-        num_frames = int(example['video/num_frames'])
+        # num_frames = int(example['video/num_frames'])
 
-        assert num_frames == self.config.length, "num_frames mismatch"
+        # print(f'num_frames: {num_frames}')
+        # print(f'self.config.length: {self.config.length}')
+
+        # assert num_frames == self.config.length, "num_frames mismatch"
 
         # frame_ids = example['video/frame_ids']
         # image_ids = example['video/image_ids']
@@ -183,7 +186,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         filenames = []
         frame_ids = []
         image_ids = []
-        for _id in range(num_frames):
+        for _id in range(self.config.length):
             image = decode_utils.decode_image(
                 example, f'video/frame-{_id}/encoded')
             images.append(image)
