@@ -126,7 +126,24 @@ def eval_mask(pred_mask, gt_mask, rle_len):
     )
 
 
-def load_seg_annotations(annotation_path):
+def save_vid_info_to_json(json_dict, out_path):
+    n_vids = len(json_dict['videos'])
+    print(f'saving json for {n_vids} videos to: {out_path}')
+    json_kwargs = dict(
+        indent=4
+    )
+    if out_path.endswith('.json'):
+        import json
+        output_json = json.dumps(json_dict, **json_kwargs)
+        with open(out_path, 'w') as f:
+            f.write(output_json)
+    elif out_path.endswith('.json.gz'):
+        import compress_json
+        compress_json.dump(json_dict, out_path, json_kwargs=json_kwargs)
+    else:
+        raise AssertionError(f'Invalid out_path: {out_path}')
+
+def load_img_info_from_json(annotation_path):
     print(f'Reading annotations from {annotation_path}')
     if annotation_path.endswith('.json'):
         import json
@@ -458,6 +475,37 @@ def create_tf_example(
         return example, 0
 
 
+def get_vid_infos(image_infos, db_path):
+    vid_infos = {}
+    for image_info in image_infos:
+        seq = image_info['seq']
+        mask_filename = image_info['mask_file_name']
+        vid_path = linux_path(db_path, f'{seq}.mp4')
+        mask_dir = os.path.dirname(mask_filename)
+        mask_vid_path = linux_path(db_path, f'{mask_dir}.mp4')
+
+        try:
+            vid_info = vid_infos[seq]
+        except KeyError:
+            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(vid_path)
+            mask_reader, mask_width, mask_height, mask_num_frames = task_utils.load_video(mask_vid_path)
+
+            assert num_frames == mask_num_frames, "num_frames mismatch"
+            assert vid_width == mask_width, "vid_width mismatch"
+            assert vid_height == mask_height, "vid_height mismatch"
+
+            vid_infos[seq] = vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height
+        else:
+            vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
+
+        frame_id = int(image_info['frame_id'])
+        img_id = image_info['img_id']
+
+        assert frame_id <= num_frames, (f"frame_id {frame_id} for image {img_id} exceeds num_frames {num_frames} for "
+                                        f"seq {seq}")
+    return vid_infos
+
+
 def main():
     params: Params = paramparse.process(Params)
 
@@ -490,124 +538,91 @@ def main():
     if params.max_stride <= params.min_stride:
         params.max_stride = params.min_stride
 
-    if not params.db_suffix:
-        db_suffixes = []
-        if params.resize:
-            db_suffixes.append(f'resize_{params.resize}')
-
-        db_suffixes += [f'{params.start_id:d}_{params.end_id:d}',
-                        f'{params.patch_height:d}_{params.patch_width:d}',
-                        f'{params.min_stride:d}_{params.max_stride:d}',
-                        ]
-        if params.n_rot > 0:
-            db_suffixes.append(f'rot_{params.min_rot:d}_{params.max_rot:d}_{params.n_rot:d}')
-
-        if params.enable_flip:
-            db_suffixes.append('flip')
-
-        params.db_suffix = '-'.join(db_suffixes)
-
-    params.db_path = f'{params.db_path}-{params.db_suffix}'
-
-    json_suffix = params.db_suffix
+    if params.max_length <= 0:
+        params.max_length = params.patch_width * params.vid.length
 
     if params.seq_id >= 0:
         params.seq_start_id = params.seq_end_id = params.seq_id
 
+    get_db_suffix(params)
+
+    params.db_path = f'{params.db_path}-{params.db_suffix}'
+
+    img_json_suffix = params.db_suffix
     if params.seq_start_id > 0 or params.seq_end_id >= 0:
         assert params.seq_end_id >= params.seq_start_id, "end_seq_id must to be >= start_seq_id"
         seq_suffix = f'seq_{params.seq_start_id}_{params.seq_end_id}'
-        json_suffix = f'{json_suffix}-{seq_suffix}'
+        img_json_suffix = f'{img_json_suffix}-{seq_suffix}'
 
-    output_json_fname = f'{json_suffix}.{params.ann_ext}'
-    json_path = linux_path(params.db_path, output_json_fname)
+    img_json_fname = f'{img_json_suffix}.{params.ann_ext}'
+    img_json_path = linux_path(params.db_path, img_json_fname)
+    image_infos = load_img_info_from_json(img_json_path)
 
-    out_name = json_suffix
-    if params.subsample > 1:
-        out_name = f'{out_name}-sub_{params.subsample}'
+    vid_json_name = img_json_suffix
+    """video-specific stuff"""
+    vid_suffix = get_vid_suffix(params.vid)
+    vid_json_name = f'{vid_json_name}-{vid_suffix}'
 
-    vid_suffixes = []
-    if params.vid.length:
-        vid_suffixes.append(f'len_{params.vid.length}')
+    vid_json_name = f'{vid_json_name}.{params.ann_ext}'
+    vid_json_path = os.path.join(params.db_path, vid_json_name)
 
-    if params.vid.stride:
-        vid_suffixes.append(f'strd_{params.vid.stride}')
-
-    if params.vid.sample:
-        vid_suffixes.append(f'smp_{params.vid.sample}')
-
-    if params.vid.frame_gap:
-        vid_suffixes.append(f'fg_{params.vid.frame_gap}')
-
-    if vid_suffixes:
-        vid_suffix = '-'.join(vid_suffixes)
-        out_name = f'{out_name}-{vid_suffix}'
-
-    if params.time_as_class:
-        if params.length_as_class:
-            out_name = f'{out_name}-ltac'
-        else:
-            out_name = f'{out_name}-tac'
-    elif params.length_as_class:
-        out_name = f'{out_name}-lac'
-
-    if multi_class:
-        out_name = f'{out_name}-mc'
-
-    if params.flat_order != 'C':
-        out_name = f'{out_name}-flat_{params.flat_order}'
-
-    image_infos = load_seg_annotations(json_path)
+    """RLE-specific stuff that doesn't go into output json since that doesn't contain RLE"""
+    tfrecord_name = vid_json_name
+    rle_suffix =  get_rle_suffix(params, multi_class)
+    if rle_suffix:
+        tfrecord_name = f'{tfrecord_name}-{rle_suffix}'
 
     if not params.output_dir:
         params.output_dir = linux_path(params.db_path, 'tfrecord')
 
     os.makedirs(params.output_dir, exist_ok=True)
 
-    output_path = linux_path(params.output_dir, out_name)
-    os.makedirs(output_path, exist_ok=True)
+    tfrecord_path = linux_path(params.output_dir, tfrecord_name)
+    os.makedirs(tfrecord_path, exist_ok=True)
 
-    print(f'output_path: {output_path}')
+    print(f'tfrecord_path: {tfrecord_path}')
 
-    if params.max_length <= 0:
-        params.max_length = params.patch_width * params.vid.length
+    vid_infos = get_vid_infos(image_infos, params.db_path)
 
-    vid_infos = {}
-
-    # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
-
-    for image_info in image_infos:
-        seq = image_info['seq']
-        mask_filename = image_info['mask_file_name']
-        vid_path = linux_path(params.db_path, f'{seq}.mp4')
-        mask_dir = os.path.dirname(mask_filename)
-        mask_vid_path = linux_path(params.db_path, f'{mask_dir}.mp4')
-
-        try:
-            vid_info = vid_infos[seq]
-        except KeyError:
-            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(vid_path)
-            mask_reader, mask_width, mask_height, mask_num_frames = task_utils.load_video(mask_vid_path)
-
-            assert num_frames == mask_num_frames, "num_frames mismatch"
-            assert vid_width == mask_width, "vid_width mismatch"
-            assert vid_height == mask_height, "vid_height mismatch"
-
-            vid_infos[seq] = vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height
-        else:
-            vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
-
-        frame_id = int(image_info['frame_id'])
-        img_id = image_info['img_id']
-
-        assert frame_id <= num_frames, (f"frame_id {frame_id} for image {img_id} exceeds num_frames {num_frames} for "
-                                        f"seq {seq}")
-
-    all_subseq_img_infos = generate_patch_vid_infos(
+    all_subseq_img_infos, videos_dict = generate_patch_vid_infos(
         params,
         image_infos,
         vid_infos,
     )
+
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
+    info = {
+        "version": "1.0",
+        "year": datetime.now().strftime("%y"),
+        "contributor": "asingh1",
+        "date_created": time_stamp
+    }
+    licenses = [
+        {
+            "url": "https://creativecommons.org/licenses/by/4.0/",
+            "id": 1,
+            "name": "Creative Commons Attribution 4.0 License"
+        }
+    ]
+    categories = []
+    for label_id, label in class_id_to_name.items():
+        if label_id == 0:
+            continue
+        category_info = {
+            'supercategory': 'object',
+            'id': label_id,
+            'name': label
+        }
+        categories.append(category_info)
+    annotations = []
+    json_dict = {
+        "info": info,
+        "licenses": licenses,
+        "videos": videos_dict,
+        "categories": categories,
+        "annotations": annotations,
+    }
+    save_vid_info_to_json(json_dict, vid_json_path)
 
     metrics = dict(
         method_0={},
@@ -629,7 +644,7 @@ def main():
     # for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
     #     create_tf_example(*annotations_iter_)
 
-    tfrecord_pattern = linux_path(output_path, 'shard')
+    tfrecord_pattern = linux_path(tfrecord_path, 'shard')
     tfrecord_lib.write_tf_record_dataset(
         output_path=tfrecord_pattern,
         annotation_iterator=annotations_iter,
@@ -639,13 +654,72 @@ def main():
         iter_len=len(image_infos),
     )
 
-    print(f'output_path: {output_path}')
+    print(f'tfrecord_path: {tfrecord_path}')
 
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
-            metrics_path = linux_path(output_path, f'{method}_{metric_}.txt')
+            metrics_path = linux_path(tfrecord_path, f'{method}_{metric_}.txt')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
+
+def get_db_suffix(params:Params):
+    if not params.db_suffix:
+        db_suffixes = []
+        if params.resize:
+            db_suffixes.append(f'resize_{params.resize}')
+
+        db_suffixes += [f'{params.start_id:d}_{params.end_id:d}',
+                        f'{params.patch_height:d}_{params.patch_width:d}',
+                        f'{params.min_stride:d}_{params.max_stride:d}',
+                        ]
+        if params.n_rot > 0:
+            db_suffixes.append(f'rot_{params.min_rot:d}_{params.max_rot:d}_{params.n_rot:d}')
+
+        if params.enable_flip:
+            db_suffixes.append('flip')
+
+        params.db_suffix = '-'.join(db_suffixes)
+
+def get_vid_suffix(vid_params:Params.Video):
+
+    vid_suffixes = []
+    assert vid_params.length > 1, "video length must be > 1"
+
+    vid_suffixes.append(f'length-{vid_params.length}')
+
+    if vid_params.stride:
+        vid_suffixes.append(f'stride-{vid_params.stride}')
+
+    if vid_params.sample:
+        vid_suffixes.append(f'sample-{vid_params.sample}')
+
+    if vid_params.frame_gap:
+        vid_suffixes.append(f'fg_{vid_params.frame_gap}')
+
+    vid_suffix = '-'.join(vid_suffixes)
+    return vid_suffix
+
+def get_rle_suffix(params, multi_class):
+    rle_suffixes = []
+    if params.subsample > 1:
+        rle_suffixes.append(f'sub_{params.subsample}')
+
+    if params.time_as_class:
+        if params.length_as_class:
+            rle_suffixes.append('ltac')
+        else:
+            rle_suffixes.append('tac')
+    elif params.length_as_class:
+        rle_suffixes.append('lac')
+
+    if multi_class:
+        rle_suffixes.append('mc')
+
+    if params.flat_order != 'C':
+        rle_suffixes.append(f'flat_{params.flat_order}')
+
+    rle_suffix = '-'.join(rle_suffixes)
+    return rle_suffix
 
 
 if __name__ == '__main__':

@@ -185,12 +185,13 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
     root_dir = ds_cfg.root_dir
     ds_cfg.image_dir = root_dir
 
+    db_root_dir = root_dir
+    db_type = 'images'
+
     if is_video:
-        db_root_dir = os.path.join(root_dir, 'ytvis19')
+        if not is_seg:
+            db_root_dir = os.path.join(root_dir, 'ytvis19')
         db_type = 'videos'
-    else:
-        db_root_dir = root_dir
-        db_type = 'images'
 
     ds_cfg.db_root_dir = db_root_dir
 
@@ -264,9 +265,9 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 if enable_flip:
                     db_suffixes.append('flip')
 
-                suffix = '-'.join(db_suffixes)
-                db_root_dir = f'{db_root_dir}-{suffix}'
-                name = f'{suffix}'
+                db_suffix = '-'.join(db_suffixes)
+                db_root_dir = f'{db_root_dir}-{db_suffix}'
+                name = f'{db_suffix}'
 
                 if seq_id >= 0:
                     seq_start_id = seq_end_id = seq_id
@@ -275,69 +276,54 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                     assert seq_end_id >= seq_start_id, "end_seq_id must to be >= start_seq_id"
                     seq_suffix = f'seq_{seq_start_id}_{seq_end_id}'
                     name = f'{name}-{seq_suffix}'
-        else:
-            if is_video:
-                if ds_cfg.length:
-                    length_suffix = f'length-{ds_cfg.length}'
-                    if length_suffix not in name:
-                        name = f'{name}-{length_suffix}'
-                try:
-                    stride = ds_cfg[f'{mode}_stride']
-                except KeyError:
-                    stride = ds_cfg[f'{mode}_stride'] = ds_cfg[f'stride']
+        if is_video:
+            assert ds_cfg.length > 1, "video length must be > 1"
 
-                if stride:
-                    stride_suffix = f'stride-{stride}'
-                    if stride_suffix not in name:
-                        name = f'{name}-{stride_suffix}'
-                try:
-                    sample = ds_cfg[f'{mode}_sample']
-                except KeyError:
-                    sample = ds_cfg[f'{mode}_sample'] = ds_cfg[f'sample']
+            length_suffix = f'length-{ds_cfg.length}'
+            if length_suffix not in name:
+                name = f'{name}-{length_suffix}'
+            try:
+                stride = ds_cfg[f'{mode}_stride']
+            except KeyError:
+                stride = ds_cfg[f'{mode}_stride'] = ds_cfg[f'stride']
 
-                if sample:
-                    sample_suffix = f'sample-{sample}'
-                    if sample_suffix not in name:
-                        name = f'{name}-{sample_suffix}'
+            if stride:
+                stride_suffix = f'stride-{stride}'
+                if stride_suffix not in name:
+                    name = f'{name}-{stride_suffix}'
+            try:
+                sample = ds_cfg[f'{mode}_sample']
+            except KeyError:
+                sample = ds_cfg[f'{mode}_sample'] = ds_cfg[f'sample']
+
+            if sample:
+                sample_suffix = f'sample-{sample}'
+                if sample_suffix not in name:
+                    name = f'{name}-{sample_suffix}'
 
             suffix = ds_cfg[f'{mode}_suffix']
             """suffix is already in name when the latter is loaded from a trained model config.json"""
             if suffix and not name.endswith(suffix):
                 name = f'{name}-{suffix}'
 
-            start_seq_id = ds_cfg[f'{mode}_start_seq_id']
-            end_seq_id = ds_cfg[f'{mode}_end_seq_id']
-            if start_seq_id > 0 or end_seq_id >= 0:
-                assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
-                seq_suffix = f'seq-{start_seq_id}_{end_seq_id}'
-                name = f'{name}-{seq_suffix}'
+            if not is_seg:
+                start_seq_id = ds_cfg[f'{mode}_start_seq_id']
+                end_seq_id = ds_cfg[f'{mode}_end_seq_id']
+                if start_seq_id > 0 or end_seq_id >= 0:
+                    assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
+                    seq_suffix = f'seq-{start_seq_id}_{end_seq_id}'
+                    name = f'{name}-{seq_suffix}'
 
-            start_frame_id = ds_cfg[f'{mode}_start_frame_id']
-            end_frame_id = ds_cfg[f'{mode}_end_frame_id']
-            if start_frame_id > 0 or end_frame_id >= 0:
-                frame_suffix = f'{start_frame_id}_{end_frame_id}'
-                name = f'{name}-{frame_suffix}'
-
+                start_frame_id = ds_cfg[f'{mode}_start_frame_id']
+                end_frame_id = ds_cfg[f'{mode}_end_frame_id']
+                if start_frame_id > 0 or end_frame_id >= 0:
+                    frame_suffix = f'{start_frame_id}_{end_frame_id}'
+                    name = f'{name}-{frame_suffix}'
         json_name = f'{name}.json'
         if ds_cfg.compressed:
             json_name += '.gz'
 
         json_path = os.path.join(db_root_dir, json_name)
-
-        if ds_cfg.compressed:
-            import compress_json
-            json_dict = compress_json.load(json_path)
-        else:
-            import json
-            with open(json_path, 'r') as fid:
-                json_dict = json.load(fid)
-
-        num_examples = len(json_dict[db_type])
-        ds_cfg[f'{mode}_db_root_dir'] = db_root_dir
-        # cfg[f'{mode}_json_name'] = json_name
-        # cfg[f'{mode}_json_path'] = json_path
-        ds_cfg[f'{mode}_num_examples'] = num_examples
-        ds_cfg[f'{mode}_filename_for_metrics'] = json_name
 
         if is_seg:
             if subsample > 1:
@@ -364,6 +350,20 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
             if flat_order != 'C':
                 name = f'{name}-flat_{flat_order}'
 
+        if ds_cfg.compressed:
+            import compress_json
+            json_dict = compress_json.load(json_path)
+        else:
+            import json
+            with open(json_path, 'r') as fid:
+                json_dict = json.load(fid)
+
+        num_examples = len(json_dict[db_type])
+        ds_cfg[f'{mode}_db_root_dir'] = db_root_dir
+        # cfg[f'{mode}_json_name'] = json_name
+        # cfg[f'{mode}_json_path'] = json_path
+        ds_cfg[f'{mode}_num_examples'] = num_examples
+        ds_cfg[f'{mode}_filename_for_metrics'] = json_name
         if is_video and not is_seg:
             try:
                 frame_gaps = ds_cfg[f'{mode}_frame_gaps']
