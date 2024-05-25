@@ -89,6 +89,26 @@ class Params(paramparse.CFG):
         self.show = 0
         self.vid = Params.Video()
 
+    def process(self):
+        if self.patch_width <= 0:
+            self.patch_width = self.patch_height
+
+        if self.min_stride <= 0:
+            self.min_stride = self.patch_height
+
+        if self.max_stride <= self.min_stride:
+            self.max_stride = self.min_stride
+
+        if self.max_length <= 0:
+            self.max_length = self.patch_width * self.vid.length
+
+        if self.seq_id >= 0:
+            self.seq_start_id = self.seq_end_id = self.seq_id
+
+        get_db_suffix(self)
+
+        self.db_path = f'{self.db_path}-{self.db_suffix}'
+
     class Video:
         def __init__(self):
             self.frame_gap = 1
@@ -241,6 +261,7 @@ def generate_patch_vid_infos(
     all_subseq_img_infos = []
     videos = []
     vid_id = 0
+    skipped = 0
     for patch_seq_id, patch_infos in patch_vids.items():
         sorted(patch_infos, key=lambda x: int(x['frame_id']))
 
@@ -259,12 +280,14 @@ def generate_patch_vid_infos(
 
             if any(src_ids_subset in params.excluded_src_ids for src_ids_subset in src_ids_subsets):
                 # print(f'Skipping excluded src_ids: {src_ids}')
+                skipped += 1
                 continue
 
             n_subseq_files = len(subseq_img_infos)
 
             if n_subseq_files < params.vid.length:
                 # print(f'skipping subseq {subseq_id + 1} - with length {n_subseq_files}')
+                skipped += 1
                 continue
             all_subseq_img_infos.append(subseq_img_infos)
 
@@ -294,6 +317,10 @@ def generate_patch_vid_infos(
             videos.append(video_dict)
             vid_id += 1
 
+
+    if skipped > 0:
+        print(f'skipped {skipped} videos')
+        
     return all_subseq_img_infos, videos
 
 
@@ -606,8 +633,8 @@ def get_vid_suffix(vid_params: Params.Video):
     if vid_params.sample:
         vid_suffixes.append(f'sample-{vid_params.sample}')
 
-    if vid_params.frame_gap:
-        vid_suffixes.append(f'fg_{vid_params.frame_gap}')
+    if vid_params.frame_gap > 1:
+        vid_suffixes.append(f'fg-{vid_params.frame_gap}')
 
     vid_suffix = '-'.join(vid_suffixes)
     return vid_suffix
@@ -635,6 +662,7 @@ def get_rle_suffix(params, multi_class):
     rle_suffix = '-'.join(rle_suffixes)
     return rle_suffix
 
+
 def main():
     params: Params = paramparse.process(Params)
 
@@ -658,24 +686,7 @@ def main():
         assert params.class_offset > 0, "class_offset must be > 0 for multi_class mode"
         multi_class = True
 
-    if params.patch_width <= 0:
-        params.patch_width = params.patch_height
-
-    if params.min_stride <= 0:
-        params.min_stride = params.patch_height
-
-    if params.max_stride <= params.min_stride:
-        params.max_stride = params.min_stride
-
-    if params.max_length <= 0:
-        params.max_length = params.patch_width * params.vid.length
-
-    if params.seq_id >= 0:
-        params.seq_start_id = params.seq_end_id = params.seq_id
-
-    get_db_suffix(params)
-
-    params.db_path = f'{params.db_path}-{params.db_suffix}'
+    params.process()
 
     img_json_suffix = params.db_suffix
     if params.seq_start_id > 0 or params.seq_end_id >= 0:
@@ -720,6 +731,8 @@ def main():
         vid_infos,
     )
 
+    assert len(all_subseq_img_infos) == len(videos), "all_subseq_img_infos length mismatch"
+
     save_vid_info_to_json(videos, class_id_to_name, vid_json_path)
 
     metrics = dict(
@@ -759,6 +772,7 @@ def main():
             metrics_path = linux_path(tfrecord_path, f'{method}_{metric_}.txt')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
+
 
 if __name__ == '__main__':
     main()

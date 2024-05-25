@@ -47,7 +47,7 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:88_100:p-1280:sub-8:r
 
 <a id="p_640_sub_8___r_2560_16_53_"></a>
 ### p-640-sub-8       @ r-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:p-640:sub-8:r-2560:gz:proc-1:seq-0:frame-0_1
 
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:ord
 
