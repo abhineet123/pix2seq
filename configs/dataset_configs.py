@@ -116,7 +116,7 @@ def get_shared_seg_data():
         eval_cfg='',
 
         category_names_path='',
-        class_info_path='lists/classes/ipsc_2_class.txt',
+        class_info_path='',
 
         transforms=D(),
 
@@ -341,12 +341,14 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                     else:
                         name = f'{name}-tac'
                 elif length_as_class:
+                    assert multi_class, "multi_class must be enabled for length_as_class"
                     name = f'{name}-lac'
 
                 if multi_class:
                     name = f'{name}-mc'
             else:
                 if length_as_class:
+                    assert multi_class, "multi_class must be enabled for length_as_class"
                     name = f'{name}-lac'
                 elif multi_class:
                     name = f'{name}-mc'

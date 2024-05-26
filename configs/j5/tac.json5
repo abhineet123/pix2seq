@@ -5,6 +5,5 @@
   },
   "dataset": {
     time_as_class: 1,
-    multi_class: 1,
   }
 }
