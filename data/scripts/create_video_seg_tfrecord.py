@@ -510,10 +510,14 @@ def create_tf_example(
         multi_class = True
 
         assert params.class_offset > 0, "class_offset must be > 0"
-        class_ids = task_utils.get_rle_class_ids(vid_mask_sub, starts, lengths, rle_id_to_col, order=params.flat_order)
+
+        class_ids = task_utils.get_rle_class_ids(
+            vid_mask_sub, starts, lengths, rle_id_to_col,
+            order=params.flat_order)
+
         rle_cmp.append(class_ids)
         if params.length_as_class:
-            task_utils.rle_to_length_as_class(rle_cmp, max_length)
+            task_utils.rle_to_lac(rle_cmp, max_length)
 
     if params.vis:
         task_utils.vis_video_rle(
