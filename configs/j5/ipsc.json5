@@ -1,7 +1,7 @@
 {
   "dataset": {
     "%mode%_name": "ext_reorg_roi_g2-%0%",
-	class_info_path: "lists/classes/ipsc_1_class.txt",
+	class_info_path: "lists/classes/ipsc_2_class.txt",
     target_size: [],
 	transforms:{
 		scale_jitter: 0,

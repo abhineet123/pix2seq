@@ -75,6 +75,9 @@ class TaskVideoSegmentation(task_lib.Task):
             vid_mask = []
             for frame_id in frame_ids:
                 mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
+                if not multi_class:
+                    mask[mask > 0] = 255
+
                 vid_mask.append(mask)
             vid_mask = np.stack(vid_mask, axis=0)
 
