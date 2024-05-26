@@ -281,6 +281,21 @@ def check_video_rle_tokens(
     if not np.array_equal(vid_mask_gt_sub, vid_mask_rec):
         print("vid_mask_rec mismatch")
 
+        for vid_id, (image, mask_gt_sub, mask_rec) in enumerate(zip(video, vid_mask_gt_sub, vid_mask_rec)):
+            if not np.array_equal(mask_gt_sub, mask_rec):
+                print(f"mask {vid_id} mismatch")
+
+                mask_gt_sub_vis = mask_id_to_vis_rgb(mask_gt_sub, class_to_col)
+                mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_to_col)
+
+                mask_gt_sub_vis = resize_mask(mask_gt_sub_vis, image.shape, n_classes, is_vis=1)
+                mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
+
+                masks_all = np.concatenate([image, mask_gt_sub_vis, mask_rec_vis], axis=1)
+                masks_all = cv2.resize(masks_all, (960, 540))
+
+                cv2.imshow(f'masks {vid_id}', masks_all)
+
         # if subsample > 1:
         #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
 
@@ -299,6 +314,8 @@ def check_video_rle_tokens(
         vid_vis = concat_vid(video, axis=0, border=1)
 
         vid_masks_all = np.concatenate([vid_vis, vid_mask_gt_vis, vid_mask_rec_vis], axis=1)
+
+        vid_masks_all = cv2.resize(vid_masks_all, (960, 540))
         cv2.imshow('vid_masks_all', vid_masks_all)
         k = cv2.waitKey(0)
         if k == 27:
@@ -318,7 +335,7 @@ def remove_duplicates(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
-def resize_vid_mask_coord(vid_mask, shape, n_classes, is_vis=1):
+def resize_vid_mask_coord(vid_mask, shape, n_classes, is_vis):
     masks = [resize_mask_coord(mask, shape, n_classes, is_vis) for mask in vid_mask]
     masks = np.stack(masks, axis=0)
     return masks
@@ -1762,7 +1779,7 @@ def rle_to_vid_mask(starts, lengths, class_ids, shape,
 
     ends = starts + lengths
     if time_as_class:
-        mask_flat = np.zeros(n_rows * n_cols, dtype=np.uint8)
+        mask_flat = np.zeros(n_rows * n_cols, dtype=np.int64)
     else:
         mask_flat = np.zeros(n_rows * n_cols * vid_len, dtype=np.uint8)
 
