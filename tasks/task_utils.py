@@ -137,7 +137,7 @@ def check_rle_tokens(
         assert np.all(mask_gt == 0), "non-zero mask found for empty rle_tokens"
         return
 
-    if not is_vis:
+    if is_vis:
         mask_vis_to_id(mask_gt, n_classes)
 
     n_rows, n_cols = mask_gt.shape
@@ -234,7 +234,7 @@ def check_video_rle_tokens(
         assert np.all(vid_mask_gt == 0), "non-zero mask found for empty rle_tokens"
         return
 
-    if not is_vis:
+    if is_vis:
         mask_vis_to_id(vid_mask_gt, n_classes)
 
     vid_len, n_rows, n_cols = vid_mask_gt.shape
@@ -285,8 +285,8 @@ def check_video_rle_tokens(
         #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
 
         # import eval_utils
-        vid_mask_gt_vis = mask_id_to_vis_rgb(vid_mask_gt, class_to_col)
-        vid_mask_rec_vis = mask_id_to_vis_rgb(vid_mask_rec, class_to_col)
+        vid_mask_gt_vis = vid_mask_id_to_vis_rgb(vid_mask_gt, class_to_col)
+        vid_mask_rec_vis = vid_mask_id_to_vis_rgb(vid_mask_rec, class_to_col)
 
         vid_mask_rec_vis_ = concat_vid(vid_mask_rec_vis, axis=0, border=1)
         cv2.imshow('vid_mask_rec_vis', vid_mask_rec_vis_)
@@ -294,12 +294,12 @@ def check_video_rle_tokens(
         vid_mask_gt_vis = resize_vid(vid_mask_gt_vis, video.shape[1:3])
         vid_mask_rec_vis = resize_vid(vid_mask_rec_vis, video.shape[1:3])
 
-        vid_mask_gt_vis = concat_vid(vid_mask_rec_vis, axis=0, border=1)
+        vid_mask_gt_vis = concat_vid(vid_mask_gt_vis, axis=0, border=1)
         vid_mask_rec_vis = concat_vid(vid_mask_rec_vis, axis=0, border=1)
         vid_vis = concat_vid(video, axis=0, border=1)
 
-        masks_all = np.concatenate([vid_vis, vid_mask_gt_vis, vid_mask_rec_vis], axis=1)
-        cv2.imshow('masks_all', masks_all)
+        vid_masks_all = np.concatenate([vid_vis, vid_mask_gt_vis, vid_mask_rec_vis], axis=1)
+        cv2.imshow('vid_masks_all', vid_masks_all)
         k = cv2.waitKey(0)
         if k == 27:
             exit()
@@ -398,6 +398,11 @@ def blend_mask(mask, image, class_to_col, alpha=0.5):
         vis_image[class_mask_binary] = vis_image[class_mask_binary] * (1 - alpha) + np.asarray(class_col) * alpha
     return vis_image
 
+
+def vid_mask_id_to_vis_rgb(vid_mask, class_to_col):
+    masks = [mask_id_to_vis_rgb(mask, class_to_col) for mask in vid_mask]
+    vid_mask_rgb = np.stack(masks, axis=0)
+    return vid_mask_rgb
 
 def mask_id_to_vis_rgb(mask, class_to_col):
     mask_rgb = np.stack((mask,) * 3, axis=2)
