@@ -217,6 +217,8 @@ def check_video_rle_tokens(
         flat_order,
         class_to_col,
         is_vis,
+        tac_mask_sub,
+        tac_id_to_col,
 ):
     if len(vid_mask.shape) == 4:
         vid_mask_b = vid_mask[..., 0].squeeze()
@@ -263,6 +265,8 @@ def check_video_rle_tokens(
         flat_order=flat_order,
         time_as_class=time_as_class,
         n_classes=n_classes,
+        tac_mask_sub=tac_mask_sub,
+        tac_id_to_col=tac_id_to_col,
     )
 
     starts, lengths = rle_rec_cmp[:2]
@@ -270,13 +274,23 @@ def check_video_rle_tokens(
     assert np.all(lengths > 0), "run length cannot be 0"
 
     n_rows, n_cols = vid_mask_gt_sub.shape[1:]
-    n_pix = n_rows * n_cols
+    if time_as_class:
+        n_pix = n_rows * n_cols
+    else:
+        n_pix = vid_len * n_rows * n_cols
+
     assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
 
-    if multi_class:
+    if (multi_class or time_as_class) and not length_as_class:
         class_ids = rle_rec_cmp[2]
         assert 0 not in class_ids, "class_ids must be non-zero"
-        assert np.all(np.asarray(class_ids) <= n_classes), "class_ids must be <= n_classes"
+
+        if time_as_class:
+            n_classes_ = int(n_classes**vid_len)
+        else:
+            n_classes_ = n_classes
+
+        assert np.all(np.asarray(class_ids) <= n_classes_), f"class_ids must be <= {n_classes_}"
 
     if not np.array_equal(vid_mask_gt_sub, vid_mask_rec):
         print("vid_mask_rec mismatch")
@@ -420,6 +434,7 @@ def vid_mask_id_to_vis_rgb(vid_mask, class_to_col):
     masks = [mask_id_to_vis_rgb(mask, class_to_col) for mask in vid_mask]
     vid_mask_rgb = np.stack(masks, axis=0)
     return vid_mask_rgb
+
 
 def mask_id_to_vis_rgb(mask, class_to_col):
     mask_rgb = np.stack((mask,) * 3, axis=2)
@@ -1425,7 +1440,12 @@ def vid_mask_from_tokens(
         length_as_class,
         max_length,
         starts_offset, lengths_offset, class_offset,
-        starts_2d, multi_class, flat_order):
+        starts_2d, 
+        multi_class, 
+        flat_order,
+        tac_mask_sub,
+        tac_id_to_col,
+):
     if len(rle_tokens) == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
         rle_cmp = [[], []]
@@ -1461,7 +1481,7 @@ def vid_mask_from_tokens(
     mask = rle_to_vid_mask(
         starts, lengths, class_ids,
         shape, vid_len, time_as_class,
-        n_classes
+        n_classes, tac_mask_sub, tac_id_to_col
     )
 
     return mask, rle_cmp
@@ -1771,7 +1791,10 @@ def rle_to_mask(starts, lengths, class_ids, shape):
 
 
 def rle_to_vid_mask(starts, lengths, class_ids, shape,
-                    vid_len, time_as_class, n_classes):
+                    vid_len, time_as_class, n_classes,
+                    tac_mask_sub,
+                    tac_id_to_col,
+                    ):
     n_rows, n_cols = shape
     if len(starts) == 0:
         mask = np.zeros((vid_len, n_rows, n_cols), dtype=np.uint8)
@@ -1787,11 +1810,33 @@ def rle_to_vid_mask(starts, lengths, class_ids, shape,
         mask_flat[lo:hi] = label
 
     if time_as_class:
-        tac_mask = mask_flat.reshape((n_rows, n_cols))
-        mask = vid_mask_from_tac(tac_mask, vid_len, n_classes)
+        tac_mask_rec = mask_flat.reshape((n_rows, n_cols))
+        if tac_mask_sub is not None:
+            if not np.array_equal(tac_mask_sub, tac_mask_rec):
+                print("tac_mask_rec mismatch")
+                tac_mask_sub_vis = mask_id_to_vis_rgb(tac_mask_sub, tac_id_to_col)
+                tac_mask_rec_vis = mask_id_to_vis_rgb(tac_mask_rec, tac_id_to_col)
+                tac_mask_sub_vis = resize_mask(tac_mask_sub_vis, (640, 640), n_classes, is_vis=1)
+                tac_mask_rec_vis = resize_mask(tac_mask_rec_vis, (640, 640), n_classes, is_vis=1)
+
+                masks_all = np.concatenate([tac_mask_sub_vis, tac_mask_rec_vis], axis=1)
+                masks_all = cv2.resize(masks_all, (960, 540))
+                cv2.imshow(f'tac_mask', masks_all)
+            else:
+                print("tac_mask_rec matches")
+
+
+        mask = vid_mask_from_tac(tac_mask_rec, vid_len, n_classes)
     else:
         mask = mask_flat.reshape((vid_len, n_rows, n_cols))
     return mask
+
+
+def get_class_info(category_info):
+    class_id_to_name = {i: x['name'] for i, x in category_info.items()}
+    class_id_to_col = {i: x['col'] for i, x in category_info.items()}
+
+    return class_id_to_col, class_id_to_name
 
 
 def read_class_info(class_names_path):
@@ -1806,21 +1851,21 @@ def read_class_info(class_names_path):
     class_id_to_col = {i: x for (i, x) in enumerate(class_cols)}
     class_id_to_name = {i: x for (i, x) in enumerate(class_names)}
 
-    n_classes = len(class_cols)
-    palette = []
-    for class_id in range(n_classes):
-        col = class_cols[class_id]
-        if isinstance(col, str):
-            col = col_bgr[col]
-        col_rgb = col[::-1]
+    # n_classes = len(class_cols)
+    # palette = []
+    # for class_id in range(n_classes):
+    #     col = class_cols[class_id]
+    #     if isinstance(col, str):
+    #         col = col_bgr[col]
+    #     col_rgb = col[::-1]
+    #
+    #     palette.append(col_rgb)
+    #
+    # palette_flat = [value for color in palette for value in color]
+    #
+    # class_name_to_id = {x: i for (i, x) in enumerate(class_names)}
 
-        palette.append(col_rgb)
-
-    palette_flat = [value for color in palette for value in color]
-
-    class_name_to_id = {x: i for (i, x) in enumerate(class_names)}
-
-    return class_names, class_id_to_col, class_id_to_name, class_name_to_id, palette_flat
+    return class_id_to_col, class_id_to_name
 
 
 def get_category_names(
@@ -1844,18 +1889,23 @@ def get_category_names(
     else:
         with open(category_names_path, 'r') as f:
             annotations = json.load(f)
-    category_names = {c['id']: c for c in annotations['categories']}
+    category_info = {c['id']: c for c in annotations['categories']}
 
-    # assert 0 not in category_names.keys(), "class IDs must to be > 0"
+    # assert 0 not in category_info.keys(), "class IDs must to be > 0"
 
     try:
-        bkg_class = category_names[0]['name']
+        bkg_class = category_info[0]['name']
     except KeyError:
-        pass
+        category_info[0] = dict(
+            name='background',
+            col='black',
+            supercategory='none',
+            id=0,
+        )
     else:
         assert bkg_class == 'background', "class id 0 must be used only for background"
 
-    return category_names
+    return category_info
 
 
 def build_instance_prompt_seq(task_vocab_id: int, bbox, label,

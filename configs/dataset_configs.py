@@ -40,7 +40,6 @@ def get_shared_det_data():
         eval_cfg='',
 
         category_names_path='',
-        class_info_path='lists/classes/ipsc_2_class.txt',
 
         transforms=_transforms_config
     )
@@ -116,7 +115,6 @@ def get_shared_seg_data():
         eval_cfg='',
 
         category_names_path='',
-        class_info_path='',
 
         transforms=D(),
 
@@ -323,11 +321,6 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 if start_frame_id > 0 or end_frame_id >= 0:
                     frame_suffix = f'{start_frame_id}_{end_frame_id}'
                     name = f'{name}-{frame_suffix}'
-        json_name = f'{name}.json'
-        if ds_cfg.compressed:
-            json_name += '.gz'
-
-        json_path = os.path.join(db_root_dir, json_name)
 
         if is_seg:
             if subsample > 1:
@@ -355,6 +348,12 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
 
             if flat_order != 'C':
                 name = f'{name}-flat_{flat_order}'
+
+        json_name = f'{name}.json'
+        if ds_cfg.compressed:
+            json_name += '.gz'
+
+        json_path = os.path.join(db_root_dir, json_name)
 
         if ds_cfg.compressed:
             import compress_json

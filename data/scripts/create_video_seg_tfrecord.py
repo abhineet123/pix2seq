@@ -19,13 +19,8 @@ import numpy as np
 import tensorflow as tf
 import paramparse
 
-import vocab
 from data.scripts import tfrecord_lib
-from tasks.visualization import vis_utils
 from tasks import task_utils
-
-from eval_utils import add_suffix
-
 
 class Params(paramparse.CFG):
     """
@@ -42,6 +37,7 @@ class Params(paramparse.CFG):
         self.vis = 0
         self.stats_only = 0
         self.json_only = 0
+        self.check = 1
 
         self.excluded_src_ids = []
 
@@ -469,12 +465,13 @@ def create_tf_example(
     if not params.stats_only:
         vid = np.stack(subseq_imgs, axis=0)
 
-    vid_mask = np.stack(subseq_masks, axis=0)
-    vid_mask_sub = np.stack(subseq_masks_sub, axis=0)
+    vid_mask_orig = np.stack(subseq_masks, axis=0)
+    vid_mask_sub_orig = np.stack(subseq_masks_sub, axis=0)
+    tac_mask = tac_mask_sub = None
 
     if params.time_as_class:
-        tac_mask = task_utils.vid_mask_to_tac(vid_mask, n_classes)
-        tac_mask_sub = task_utils.vid_mask_to_tac(vid_mask_sub, n_classes)
+        tac_mask = task_utils.vid_mask_to_tac(vid_mask_orig, n_classes)
+        tac_mask_sub = task_utils.vid_mask_to_tac(vid_mask_sub_orig, n_classes)
 
         # vid_mask_rec = task_utils.vid_mask_from_tac(tac_mask, vid_len, n_classes)
         # vid_mask_sub_rec = task_utils.vid_mask_from_tac(tac_mask_sub, vid_len, n_classes)
@@ -488,6 +485,8 @@ def create_tf_example(
         # return
     else:
         rle_id_to_col, rle_id_to_name = class_id_to_col, class_id_to_name
+        vid_mask = vid_mask_orig
+        vid_mask_sub = vid_mask_sub_orig
 
     n_rle_classes = len(rle_id_to_col)
 
@@ -547,6 +546,26 @@ def create_tf_example(
         params.starts_2d,
         params.flat_order,
     )
+
+    if params.check:
+        task_utils.check_video_rle_tokens(
+            vid, vid_mask_orig, rle_tokens,
+            n_classes=n_classes,
+            length_as_class=params.length_as_class,
+            starts_offset=params.starts_offset,
+            time_as_class=params.time_as_class,
+            lengths_offset=params.lengths_offset,
+            class_offset=params.class_offset,
+            max_length=max_length,
+            subsample=params.subsample,
+            class_to_col=class_id_to_col,
+            multi_class=multi_class,
+            flat_order=params.flat_order,
+            tac_mask_sub=tac_mask_sub,
+            tac_id_to_col=rle_id_to_col,
+            is_vis=0,
+        )
+
     rle_len = len(rle_tokens)
 
     if multi_class:
@@ -684,8 +703,7 @@ def main():
         print('running in stats only mode')
         # params.vis = params.show = False
 
-    class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)[:3]
-    n_classes = len(class_names)
+    class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)
     vid_len = params.vid.length
     # n_tac_classes = int(n_classes ** vid_len)
     tac_id_to_col, tac_id_to_name = task_utils.time_as_class_info(vid_len, class_id_to_name)

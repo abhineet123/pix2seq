@@ -17,11 +17,12 @@ class TaskSemanticSegmentation(task_lib.Task):
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
 
-        class_info_path = config.dataset.get('class_info_path')
-        assert class_info_path, "class_info_path must be provided"
+        class_id_to_col, class_id_to_name = task_utils.get_class_info(self._category_names)
 
-        class_names, class_id_to_col, class_id_to_name, class_name_to_id, _ = task_utils.read_class_info(
-            class_info_path)
+        # class_info_path = config.dataset.get('class_info_path')
+        # assert class_info_path, "class_info_path must be provided"
+        # class_id_to_col, class_id_to_name = task_utils.read_class_info(
+        #     class_info_path)
 
         # n_classes = len(self._category_names)
         # class_names_from_json = tuple(self._category_names[i]['name'] for i in range(n_classes))

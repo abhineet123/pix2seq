@@ -1,6 +1,7 @@
 import collections
 import json
 import os
+import shutil
 import sys
 import cv2
 from tqdm import tqdm
@@ -38,6 +39,7 @@ class Params(paramparse.CFG):
         self.db_suffix = ''
         self.vis = 0
         self.stats_only = 0
+        self.json_only = 0
         self.check = 1
 
         self.flat_order = 'C'
@@ -419,7 +421,7 @@ def main():
 
     assert params.end_id >= params.start_id, f"invalid end_id: {params.end_id}"
 
-    class_names, class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)[:3]
+    class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)
 
     if params.stats_only:
         print('running in stats only mode')
@@ -462,7 +464,11 @@ def main():
 
     params.db_path = f'{params.db_path}-{params.db_suffix}'
 
-    json_suffix = params.db_suffix
+    out_name = in_json_name = params.db_suffix
+
+    in_json_fname = f'{in_json_name}.{params.ann_ext}'
+    in_json_path = os.path.join(params.db_path, in_json_fname)
+    image_infos = load_seg_annotations(in_json_path)
 
     if params.seq_id >= 0:
         params.seq_start_id = params.seq_end_id = params.seq_id
@@ -470,12 +476,8 @@ def main():
     if params.seq_start_id > 0 or params.seq_end_id >= 0:
         assert params.seq_end_id >= params.seq_start_id, "end_seq_id must to be >= start_seq_id"
         seq_suffix = f'seq_{params.seq_start_id}_{params.seq_end_id}'
-        json_suffix = f'{json_suffix}-{seq_suffix}'
+        out_name = f'{out_name}-{seq_suffix}'
 
-    output_json_fname = f'{json_suffix}.{params.ann_ext}'
-    json_path = os.path.join(params.db_path, output_json_fname)
-
-    out_name = json_suffix
     if params.subsample > 1:
         out_name = f'{out_name}-sub_{params.subsample}'
 
@@ -497,7 +499,13 @@ def main():
     if params.flat_order != 'C':
         out_name = f'{out_name}-flat_{params.flat_order}'
 
-    image_infos = load_seg_annotations(json_path)
+    out_json_fname = f'{out_name}.{params.ann_ext}'
+    out_json_path = os.path.join(params.db_path, out_json_fname)
+
+    shutil.copy(in_json_path, out_json_path)
+
+    if params.json_only:
+        return
 
     if not params.output_dir:
         params.output_dir = os.path.join(params.db_path, 'tfrecord')
