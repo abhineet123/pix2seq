@@ -220,7 +220,6 @@ def check_video_rle_tokens(
         is_vis,
         tac_mask_sub,
         tac_id_to_col,
-        vocab_size,
 ):
     if len(vid_mask.shape) == 4:
         vid_mask_b = vid_mask[..., 0].squeeze()
@@ -273,7 +272,6 @@ def check_video_rle_tokens(
         n_classes=n_classes,
         tac_mask_sub=tac_mask_sub,
         tac_id_to_col=tac_id_to_col,
-        vocab_size=vocab_size,
     )
 
     starts, lengths = rle_rec_cmp[:2]
@@ -1454,7 +1452,6 @@ def vid_mask_from_tokens(
         flat_order,
         tac_mask_sub,
         tac_id_to_col,
-        vocab_size,
 ):
     if len(rle_tokens) == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
@@ -1474,7 +1471,6 @@ def vid_mask_from_tokens(
         starts_2d=starts_2d,
         multi_class=multi_class,
         flat_order=flat_order,
-        vocab_size=vocab_size,
     )
     if length_as_class:
         assert len(rle_cmp) == 2, "rle_cmp len must be 2 for length_as_class"
@@ -1559,7 +1555,6 @@ def vid_rle_from_tokens(
         starts_2d,
         multi_class,
         flat_order,
-        vocab_size,
 ):
     if length_as_class:
         assert lengths_offset == class_offset, "lengths_offset and class_offset must be same for length_as_class"
@@ -1591,8 +1586,6 @@ def vid_rle_from_tokens(
         starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
     else:
         starts = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
-        max_starts = np.amax(starts)
-        assert max_starts <= vocab_size, "max_starts exceeds vocab_size"
         starts -= (starts_offset + 1)
 
         len_id = 1
