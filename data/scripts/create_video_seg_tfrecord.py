@@ -41,6 +41,7 @@ class Params(paramparse.CFG):
         self.db_suffix = ''
         self.vis = 0
         self.stats_only = 0
+        self.json_only = 0
 
         self.excluded_src_ids = []
 
@@ -149,7 +150,7 @@ def eval_mask(pred_mask, gt_mask, rle_len):
     )
 
 
-def save_vid_info_to_json(videos, class_id_to_name, out_path):
+def save_vid_info_to_json(videos, class_id_to_name, class_id_to_col, out_path):
     from datetime import datetime
 
     annotations = []
@@ -175,10 +176,12 @@ def save_vid_info_to_json(videos, class_id_to_name, out_path):
     for label_id, label in class_id_to_name.items():
         if label_id == 0:
             continue
+        col = class_id_to_col[label_id]
         category_info = {
             'supercategory': 'object',
             'id': label_id,
-            'name': label
+            'name': label,
+            'col': col,
         }
         categories.append(category_info)
     annotations = []
@@ -649,7 +652,7 @@ def get_vid_suffix(vid_params: Params.Video):
     return vid_suffix
 
 
-def get_rle_suffix(params:Params, multi_class):
+def get_rle_suffix(params:Params):
     rle_suffixes = []
 
     if params.subsample > 1:
@@ -662,9 +665,6 @@ def get_rle_suffix(params:Params, multi_class):
             rle_suffixes.append('tac')
     elif params.length_as_class:
         rle_suffixes.append('lac')
-
-    if multi_class:
-        rle_suffixes.append('mc')
 
     if params.flat_order != 'C':
         rle_suffixes.append(f'flat_{params.flat_order}')
@@ -709,27 +709,29 @@ def main():
 
     image_infos = load_img_info_from_json(img_json_path)
 
-    vid_json_name = img_json_suffix
+    out_name = img_json_suffix
 
     """video-specific stuff"""
     vid_suffix = get_vid_suffix(params.vid)
 
-    vid_json_name = f'{vid_json_name}-{vid_suffix}'
-    vid_json_path = os.path.join(params.db_path, f'{vid_json_name}.{params.ann_ext}')
-
-    tfrecord_name = vid_json_name
+    out_name = f'{out_name}-{vid_suffix}'
+    """class info depends on multi_class so this suffix goes into json name too"""
+    if multi_class:
+        out_name = f'{out_name}-mc'
 
     """RLE-specific stuff that doesn't go into output json since that doesn't contain RLE"""
-    rle_suffix = get_rle_suffix(params, multi_class)
+    rle_suffix = get_rle_suffix(params)
 
     if rle_suffix:
-        tfrecord_name = f'{tfrecord_name}-{rle_suffix}'
+        out_name = f'{out_name}-{rle_suffix}'
 
     if not params.output_dir:
         params.output_dir = linux_path(params.db_path, 'tfrecord')
     os.makedirs(params.output_dir, exist_ok=True)
-    tfrecord_path = linux_path(params.output_dir, tfrecord_name)
+    tfrecord_path = linux_path(params.output_dir, out_name)
     os.makedirs(tfrecord_path, exist_ok=True)
+
+    vid_json_path = os.path.join(params.db_path, f'{out_name}.{params.ann_ext}')
 
     if params.length_as_class or params.time_as_class:
         params.lengths_offset = params.class_offset
@@ -762,7 +764,10 @@ def main():
 
     assert len(all_subseq_img_infos) == len(videos), "all_subseq_img_infos length mismatch"
 
-    save_vid_info_to_json(videos, class_id_to_name, vid_json_path)
+    save_vid_info_to_json(videos, class_id_to_name, class_id_to_col, vid_json_path)
+
+    if params.json_only:
+        return
 
     metrics = dict(
         method_0={},
