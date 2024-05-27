@@ -1,11 +1,6 @@
 {
-  "task": {
-	starts_bins: 12800,
-	lengths_bins: 160,
-  },
   "model": {
 	defer_vocab: 1,
 	vocab_size: 15000,
-	max_seq_len: 512,
   },
 }

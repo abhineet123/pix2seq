@@ -22,6 +22,7 @@ import paramparse
 from data.scripts import tfrecord_lib
 from tasks import task_utils
 
+
 class Params(paramparse.CFG):
     """
     :ivar subsample_method:
@@ -86,7 +87,7 @@ class Params(paramparse.CFG):
         self.show = 0
         self.vid = Params.Video()
 
-    def process(self):
+    def process(self, n_classes):
         if self.patch_width <= 0:
             self.patch_width = self.patch_height
 
@@ -97,10 +98,12 @@ class Params(paramparse.CFG):
             self.max_stride = self.min_stride
 
         if self.max_length <= 0:
-            if self.time_as_class:
+            if self.flat_order == 'C':
                 self.max_length = self.patch_width
             else:
-                self.max_length = self.patch_width * self.vid.length
+                self.max_length = self.patch_height
+                if not self.time_as_class:
+                    self.max_length *= self.vid.length
 
         if self.seq_id >= 0:
             self.seq_start_id = self.seq_end_id = self.seq_id
@@ -108,6 +111,28 @@ class Params(paramparse.CFG):
         get_db_suffix(self)
 
         self.db_path = f'{self.db_path}-{self.db_suffix}'
+
+        if self.length_as_class:
+            self.lengths_offset = self.class_offset
+
+        n_classes_ = n_classes
+        if self.time_as_class:
+            n_classes_ = n_classes_ ** self.vid.length
+        if self.length_as_class:
+            max_length = self.max_length
+            if self.subsample > 1:
+                max_length /= self.subsample
+            n_total_classes = max_length * (n_classes_ - 1)
+        else:
+            n_total_classes = n_classes_
+
+        min_starts_offset = n_total_classes + self.class_offset
+
+        if self.starts_offset < min_starts_offset:
+            import math
+            min_starts_offset = int(math.ceil(min_starts_offset / 100) * 100)
+            print(f'setting starts_offset to {min_starts_offset}')
+            self.starts_offset = min_starts_offset
 
     class Video:
         def __init__(self):
@@ -146,11 +171,17 @@ def eval_mask(pred_mask, gt_mask, rle_len):
     )
 
 
-def save_vid_info_to_json(videos, class_id_to_name, class_id_to_col, out_path):
+def save_vid_info_to_json(
+        params: Params,
+        videos: list,
+        class_id_to_name: dict,
+        class_id_to_col: dict,
+        out_path: str):
     from datetime import datetime
 
     annotations = []
     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
+    params_dict = paramparse.to_dict(params)
     info = {
         "version": "1.0",
         "year": datetime.now().strftime("%y"),
@@ -160,6 +191,7 @@ def save_vid_info_to_json(videos, class_id_to_name, class_id_to_col, out_path):
             videos=len(videos),
             annotations=len(annotations),
         ),
+        "params": params_dict,
     }
     licenses = [
         {
@@ -319,7 +351,6 @@ def generate_patch_vid_infos(
             }
             videos.append(video_dict)
             vid_id += 1
-
 
     if skipped > 0:
         print(f'skipped {skipped} videos')
@@ -672,7 +703,7 @@ def get_vid_suffix(vid_params: Params.Video):
     return vid_suffix
 
 
-def get_rle_suffix(params:Params, multi_class):
+def get_rle_suffix(params: Params, multi_class):
     rle_suffixes = []
 
     if params.subsample > 1:
@@ -718,7 +749,7 @@ def main():
         assert params.class_offset > 0, "class_offset must be > 0 for multi_class mode"
         multi_class = True
 
-    params.process()
+    params.process(n_classes)
 
     img_json_suffix = params.db_suffix
     if params.seq_start_id > 0 or params.seq_end_id >= 0:
@@ -747,30 +778,10 @@ def main():
         params.output_dir = linux_path(params.db_path, 'tfrecord')
     os.makedirs(params.output_dir, exist_ok=True)
     tfrecord_path = linux_path(params.output_dir, out_name)
+    print(f'tfrecord_path: {tfrecord_path}')
     os.makedirs(tfrecord_path, exist_ok=True)
 
     vid_json_path = os.path.join(params.db_path, f'{out_name}.{params.ann_ext}')
-
-    if params.length_as_class or params.time_as_class:
-        params.lengths_offset = params.class_offset
-        n_classes_ = n_classes
-        if params.time_as_class:
-            n_classes_ = n_classes_ ** params.vid.length
-        if params.length_as_class:
-            max_length = params.max_length
-            if params.subsample > 1:
-                max_length /= params.subsample
-            n_total_classes = max_length * (n_classes_  - 1)
-        else:
-            n_total_classes = n_classes_
-
-        min_starts_offset = n_total_classes + params.class_offset
-
-        if params.starts_offset < min_starts_offset:
-            print(f'setting starts_offset to {min_starts_offset}')
-            params.starts_offset = min_starts_offset
-
-    print(f'tfrecord_path: {tfrecord_path}')
 
     vid_infos = get_vid_infos(image_infos, params.db_path)
 
@@ -782,7 +793,7 @@ def main():
 
     assert len(all_subseq_img_infos) == len(videos), "all_subseq_img_infos length mismatch"
 
-    save_vid_info_to_json(videos, class_id_to_name, class_id_to_col, vid_json_path)
+    save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path)
 
     if params.json_only:
         return

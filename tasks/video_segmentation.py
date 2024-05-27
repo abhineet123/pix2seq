@@ -61,8 +61,8 @@ class TaskVideoSegmentation(task_lib.Task):
         lengths_offset = self.config.model.len_vocab_shift
         class_offset = self.config.model.class_vocab_shift
 
-        starts_bins = self.config.task.starts_bins
-        lengths_bins = self.config.task.lengths_bins
+        # starts_bins = self.config.task.starts_bins
+        # lengths_bins = self.config.task.lengths_bins
 
         class_id_to_col = self.class_id_to_col
         class_id_to_name = self.class_id_to_name
@@ -91,27 +91,34 @@ class TaskVideoSegmentation(task_lib.Task):
             rle_tokens = rle[rle != vocab.PADDING_TOKEN]
             assert rle_tokens.size == rle_len, "rle_len mismatch"
 
-            # if rle_len:
-            #     n_run_tokens = 2
-            #     if (multi_class or time_as_class) and not length_as_class:
-            #         n_run_tokens += 1
-            #     assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
-            #     starts = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
-            #     max_starts = np.amax(starts)
-            #     assert max_starts < vocab_size, "max_starts exceeds vocab_size"
-            #     assert max_starts < starts_bins + starts_offset, "max_starts exceeds starts_bins + starts_offset"
-            #
-            #     lengths = np.asarray(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
-            #     max_lengths = np.amax(lengths)
-            #     assert max_lengths < starts_offset, "max_lengths exceeds starts_offset"
-            #     assert max_lengths < lengths_bins + lengths_offset, "max_lengths exceeds lengths_bins + lengths_offset"
-            #
-            #     if (multi_class or time_as_class) and not length_as_class:
-            #         class_ids = np.asarray(rle_tokens[2:][::n_run_tokens], dtype=np.int64)
-            #         max_class_ids = np.amax(class_ids)
-            #         assert max_class_ids < starts_offset, "max_class_ids exceeds starts_offset"
-            #         if not time_as_class:
-            #             assert max_class_ids < lengths_offset, "max_class_ids exceeds lengths_offset"
+            if rle_len:
+                n_run_tokens = 2
+                if (multi_class or time_as_class) and not length_as_class:
+                    n_run_tokens += 1
+                assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
+                starts_tokens = np.array(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
+                max_starts = np.amax(starts_tokens)
+                min_starts = np.amin(starts_tokens)
+                assert max_starts < vocab_size, "max_starts exceeds vocab_size"
+                assert min_starts > starts_offset, "starts_offset exceeds min_starts"
+                # assert max_starts < starts_bins + starts_offset, "max_starts exceeds starts_bins + starts_offset"
+
+                lengths_tokens = np.array(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
+                max_lengths_tokens = np.amax(lengths_tokens)
+                min_lengths_tokens = np.amin(lengths_tokens)
+                assert max_lengths_tokens < starts_offset, "max_lengths_tokens exceeds starts_offset"
+                assert min_lengths_tokens > lengths_offset, "lengths_offset exceeds min_lengths_tokens"
+                # assert max_lengths_tokens < lengths_bins + lengths_offset, "max_lengths_tokens exceeds lengths_bins + lengths_offset"
+
+                if (multi_class or time_as_class) and not length_as_class:
+                    class_tokens = np.array(rle_tokens[2:][::n_run_tokens], dtype=np.int64)
+                    max_class_tokens = np.amax(class_tokens)
+                    min_class_tokens = np.amin(class_tokens)
+                    assert max_class_tokens < starts_offset, "max_class_tokens exceeds starts_offset"
+                    assert min_class_tokens > class_offset, "class_offset exceeds min_class_tokens"
+
+                    if not time_as_class:
+                        assert max_class_tokens < lengths_offset, "max_class_tokens exceeds lengths_offset"
 
             task_utils.check_video_rle_tokens(
                 video, vid_mask, rle_tokens,

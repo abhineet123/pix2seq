@@ -1575,8 +1575,8 @@ def vid_rle_from_tokens(
     assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
 
     if starts_2d:
-        starts_rows = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
-        starts_cols = np.asarray(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
+        starts_rows = np.array(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
+        starts_cols = np.array(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
 
         starts_rows -= (starts_offset + 1)
         starts_cols -= (starts_offset + 1)
@@ -1585,18 +1585,18 @@ def vid_rle_from_tokens(
 
         starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
     else:
-        starts = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
+        starts = np.array(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
         starts -= (starts_offset + 1)
 
         len_id = 1
 
-    lengths = np.asarray(rle_tokens[len_id:][::n_run_tokens], dtype=np.int64)
+    lengths = np.array(rle_tokens[len_id:][::n_run_tokens], dtype=np.int64)
     lengths -= lengths_offset
 
     rle_cmp = [starts, lengths]
 
     if (multi_class or time_as_class) and not length_as_class:
-        class_ids = np.asarray(rle_tokens[len_id + 1:][::n_run_tokens], dtype=np.int64)
+        class_ids = np.array(rle_tokens[len_id + 1:][::n_run_tokens], dtype=np.int64)
         class_ids -= class_offset
         rle_cmp.append(class_ids)
 

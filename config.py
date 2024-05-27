@@ -293,7 +293,7 @@ def load(FLAGS):
 
     if cfg.dataset.name.startswith('ipsc'):
         from configs.dataset_configs import ipsc_post_process
-        ipsc_post_process(cfg.dataset, cfg.task, cfg.training)
+        ipsc_post_process(cfg.dataset, cfg.task,  cfg.model, cfg.training)
 
     if not cfg.model_dir:
         """construct model_dir name from params"""

@@ -267,49 +267,49 @@ class TaskSemanticSegmentation(task_lib.Task):
     def reset_metrics(self):
         raise AssertionError('not implemented')
 
-
-def build_response_seq_from_rle(
-        rle_norm,
-        starts_bins,
-        lengths_bins,
-        coord_vocab_shift
-):
-    batch_size, seq_len = rle_norm.shape
-    n_elem = batch_size * seq_len
-    is_padding = tf.equal(rle_norm, 0)
-
-    rle_norm_flat = tf.reshape(rle_norm, [-1])
-    starts = rle_norm_flat[::2]
-    lengths = rle_norm_flat[1::2]
-    quantized_starts = utils.quantize(starts, starts_bins)
-    quantized_lengths = utils.quantize(lengths, lengths_bins)
-
-    quantized_starts = quantized_starts + coord_vocab_shift
-    quantized_lengths = quantized_lengths + vocab.BASE_VOCAB_SHIFT
-
-    even_indices = [[k, ] for k in range(0, n_elem, 2)]
-    odd_indices = [[k, ] for k in range(1, n_elem, 2)]
-
-    even_indices_tf = tf.constant(even_indices)
-    odd_indices_tf = tf.constant(odd_indices)
-
-    # even_indices_tf = tf.reshape(even_indices_tf, [1, -1])
-    # odd_indices_tf = tf.reshape(odd_indices_tf, [1, -1])
-
-    quantized_rle_flat = tf.zeros_like(rle_norm_flat, dtype=tf.int64)
-    quantized_rle_flat = tf.tensor_scatter_nd_update(quantized_rle_flat, even_indices_tf, quantized_starts)
-    quantized_rle_flat = tf.tensor_scatter_nd_update(quantized_rle_flat, odd_indices_tf, quantized_lengths)
-
-    # is_even = np.zeros((n_elem,), dtype=bool)
-    # is_even[even_indices] = True
-    # is_even_tf = tf.constant(is_even)
-    # quantized_rle_flat = tf.where(is_even_tf, quantized_starts, quantized_starts)
-
-    quantized_rle = tf.reshape(quantized_rle_flat, rle_norm.shape)
-
-    quantized_rle = tf.where(is_padding,
-                             tf.zeros_like(quantized_rle), quantized_rle)
-
-    token_weights = tf.ones_like(quantized_rle)
-
-    return quantized_rle, token_weights
+#
+# def build_response_seq_from_rle(
+#         rle_norm,
+#         starts_bins,
+#         lengths_bins,
+#         coord_vocab_shift
+# ):
+#     batch_size, seq_len = rle_norm.shape
+#     n_elem = batch_size * seq_len
+#     is_padding = tf.equal(rle_norm, 0)
+#
+#     rle_norm_flat = tf.reshape(rle_norm, [-1])
+#     starts = rle_norm_flat[::2]
+#     lengths = rle_norm_flat[1::2]
+#     quantized_starts = utils.quantize(starts, starts_bins)
+#     quantized_lengths = utils.quantize(lengths, lengths_bins)
+#
+#     quantized_starts = quantized_starts + coord_vocab_shift
+#     quantized_lengths = quantized_lengths + vocab.BASE_VOCAB_SHIFT
+#
+#     even_indices = [[k, ] for k in range(0, n_elem, 2)]
+#     odd_indices = [[k, ] for k in range(1, n_elem, 2)]
+#
+#     even_indices_tf = tf.constant(even_indices)
+#     odd_indices_tf = tf.constant(odd_indices)
+#
+#     # even_indices_tf = tf.reshape(even_indices_tf, [1, -1])
+#     # odd_indices_tf = tf.reshape(odd_indices_tf, [1, -1])
+#
+#     quantized_rle_flat = tf.zeros_like(rle_norm_flat, dtype=tf.int64)
+#     quantized_rle_flat = tf.tensor_scatter_nd_update(quantized_rle_flat, even_indices_tf, quantized_starts)
+#     quantized_rle_flat = tf.tensor_scatter_nd_update(quantized_rle_flat, odd_indices_tf, quantized_lengths)
+#
+#     # is_even = np.zeros((n_elem,), dtype=bool)
+#     # is_even[even_indices] = True
+#     # is_even_tf = tf.constant(is_even)
+#     # quantized_rle_flat = tf.where(is_even_tf, quantized_starts, quantized_starts)
+#
+#     quantized_rle = tf.reshape(quantized_rle_flat, rle_norm.shape)
+#
+#     quantized_rle = tf.where(is_padding,
+#                              tf.zeros_like(quantized_rle), quantized_rle)
+#
+#     token_weights = tf.ones_like(quantized_rle)
+#
+#     return quantized_rle, token_weights

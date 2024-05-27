@@ -168,7 +168,7 @@ def get_vid_seg_data():
     return data
 
 
-def ipsc_post_process(ds_cfg, task_cfg, training):
+def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
     import os
 
     if ds_cfg.target_size is not None and not ds_cfg.target_size:
@@ -245,13 +245,6 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
 
                 if max_stride <= min_stride:
                     mode_cfg[f'max_stride'] = max_stride = min_stride
-
-                if mode_cfg[f'max_length'] <= 0:
-                    mode_cfg[f'max_length'] = patch_width
-                    if is_video:
-                        time_as_class = ds_cfg[f'time_as_class']
-                        if not time_as_class:
-                            mode_cfg[f'max_length'] *= ds_cfg.length
 
                 db_suffixes = []
                 if resize:
@@ -368,7 +361,15 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
         # cfg[f'{mode}_json_path'] = json_path
         ds_cfg[f'{mode}_num_examples'] = num_examples
         ds_cfg[f'{mode}_filename_for_metrics'] = json_name
-        if is_video and not is_seg:
+
+        if is_seg:
+            params_from_json = json_dict['info']['params']
+            model_cfg.coord_vocab_shift = params_from_json['starts_offset']
+            model_cfg.len_vocab_shift = params_from_json['lengths_offset']
+            model_cfg.class_vocab_shift = params_from_json['class_offset']
+            mode_cfg[f'max_length'] = params_from_json['max_length']
+
+        elif is_video:
             try:
                 frame_gaps = ds_cfg[f'{mode}_frame_gaps']
             except KeyError:

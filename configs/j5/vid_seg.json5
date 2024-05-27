@@ -1,12 +1,10 @@
 {
   "task": {
     "name": "video_segmentation",
-	starts_bins: 6400,
-	lengths_bins: 80,
   },
   "tasks": [
     {
-      "name": "video_detection",
+      "name": "video_segmentation",
     }
   ],
   "model": {
