@@ -121,7 +121,7 @@ class Model(tf.keras.models.Model):
                                     self.config.drop_units, name='proj/mlp')
 
         self.decoder = AutoregressiveDecoder(
-            defer_vocab=config.defer_vocab,
+            defer_vocab=self.config.defer_vocab,
             vocab_size=self.config.vocab_size,
             max_seq_len=self.config.max_seq_len,
             num_layers=self.config.num_decoder_layers,

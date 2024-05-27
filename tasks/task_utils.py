@@ -215,10 +215,12 @@ def check_video_rle_tokens(
         starts_offset, lengths_offset, class_offset,
         max_length, subsample, multi_class,
         flat_order,
-        class_to_col,
+        class_id_to_name,
+        class_id_to_col,
         is_vis,
         tac_mask_sub,
         tac_id_to_col,
+        vocab_size,
 ):
     if len(vid_mask.shape) == 4:
         vid_mask_b = vid_mask[..., 0].squeeze()
@@ -249,6 +251,10 @@ def check_video_rle_tokens(
     else:
         vid_mask_gt_sub = vid_mask_gt
 
+    if time_as_class and tac_mask_sub is None:
+        tac_mask_sub = vid_mask_to_tac(vid_mask_gt_sub, n_classes)
+        tac_id_to_col, tac_id_to_name = get_tac_info(vid_len, class_id_to_name)
+
     # rle_len = len(rle_tokens)
 
     vid_mask_rec, rle_rec_cmp = vid_mask_from_tokens(
@@ -267,6 +273,7 @@ def check_video_rle_tokens(
         n_classes=n_classes,
         tac_mask_sub=tac_mask_sub,
         tac_id_to_col=tac_id_to_col,
+        vocab_size=vocab_size,
     )
 
     starts, lengths = rle_rec_cmp[:2]
@@ -286,7 +293,7 @@ def check_video_rle_tokens(
         assert 0 not in class_ids, "class_ids must be non-zero"
 
         if time_as_class:
-            n_classes_ = int(n_classes**vid_len)
+            n_classes_ = int(n_classes ** vid_len)
         else:
             n_classes_ = n_classes
 
@@ -299,8 +306,8 @@ def check_video_rle_tokens(
             if not np.array_equal(mask_gt_sub, mask_rec):
                 print(f"mask {vid_id} mismatch")
 
-                mask_gt_sub_vis = mask_id_to_vis_rgb(mask_gt_sub, class_to_col)
-                mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_to_col)
+                mask_gt_sub_vis = mask_id_to_vis_rgb(mask_gt_sub, class_id_to_col)
+                mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_id_to_col)
 
                 mask_gt_sub_vis = resize_mask(mask_gt_sub_vis, image.shape, n_classes, is_vis=1)
                 mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
@@ -309,13 +316,15 @@ def check_video_rle_tokens(
                 masks_all = cv2.resize(masks_all, (960, 540))
 
                 cv2.imshow(f'masks {vid_id}', masks_all)
+            else:
+                print(f"mask {vid_id} matches")
 
         # if subsample > 1:
         #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
 
         # import eval_utils
-        vid_mask_gt_vis = vid_mask_id_to_vis_rgb(vid_mask_gt, class_to_col)
-        vid_mask_rec_vis = vid_mask_id_to_vis_rgb(vid_mask_rec, class_to_col)
+        vid_mask_gt_vis = vid_mask_id_to_vis_rgb(vid_mask_gt, class_id_to_col)
+        vid_mask_rec_vis = vid_mask_id_to_vis_rgb(vid_mask_rec, class_id_to_col)
 
         vid_mask_rec_vis_ = concat_vid(vid_mask_rec_vis, axis=0, border=1)
         cv2.imshow('vid_mask_rec_vis', vid_mask_rec_vis_)
@@ -331,11 +340,11 @@ def check_video_rle_tokens(
 
         vid_masks_all = cv2.resize(vid_masks_all, (960, 540))
         cv2.imshow('vid_masks_all', vid_masks_all)
-        k = cv2.waitKey(0)
+        k = cv2.waitKey(1)
         if k == 27:
             exit()
-
-    # print('masks match !')
+    else:
+        print('\nvid masks match !\n')
 
 
 def interleave_rle(rle_cmps):
@@ -437,7 +446,7 @@ def vid_mask_id_to_vis_rgb(vid_mask, class_to_col):
 
 
 def mask_id_to_vis_rgb(mask, class_to_col):
-    mask_rgb = np.stack((mask,) * 3, axis=2)
+    mask_rgb = np.stack((mask,) * 3, axis=2).astype(np.uint8)
 
     n_classes = len(class_to_col)
     for class_id in range(n_classes):
@@ -508,8 +517,9 @@ def concat_vid(vid, axis, border):
     return vid_out
 
 
-def time_as_class_info(vid_len, class_id_to_name):
+def get_tac_info(vid_len, class_id_to_name):
     n_classes = len(class_id_to_name)
+
     cols = (
         'black',
         'deep_sky_blue', 'yellow', 'forest_green', 'cyan', 'magenta',
@@ -1030,8 +1040,7 @@ def vis_video_rle(rle_cmp, class_id_to_col, class_id_to_name, image_ids,
 
 
 def rle_to_lac(rle_cmp, max_length):
-    class_ids = rle_cmp.pop(-1)
-    lengths = rle_cmp.pop(-1)
+    starts, lengths, class_ids = rle_cmp
 
     lac = np.asarray([max_length * (class_id - 1) + length
                       for class_id, length in zip(class_ids, lengths)], dtype=np.int64)
@@ -1042,8 +1051,8 @@ def rle_to_lac(rle_cmp, max_length):
     assert np.array_equal(lengths_rec, lengths), "lengths_rec mismatch"
     assert np.array_equal(class_ids_rec, class_ids), "class_ids_rec mismatch"
 
-    rle_cmp.append(lac)
-    return lac
+    rle_cmp = [starts, lac]
+    return rle_cmp
 
 
 def lengths_from_lac(lac, max_length):
@@ -1440,11 +1449,12 @@ def vid_mask_from_tokens(
         length_as_class,
         max_length,
         starts_offset, lengths_offset, class_offset,
-        starts_2d, 
-        multi_class, 
+        starts_2d,
+        multi_class,
         flat_order,
         tac_mask_sub,
         tac_id_to_col,
+        vocab_size,
 ):
     if len(rle_tokens) == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
@@ -1464,6 +1474,7 @@ def vid_mask_from_tokens(
         starts_2d=starts_2d,
         multi_class=multi_class,
         flat_order=flat_order,
+        vocab_size=vocab_size,
     )
     if length_as_class:
         assert len(rle_cmp) == 2, "rle_cmp len must be 2 for length_as_class"
@@ -1473,7 +1484,7 @@ def vid_mask_from_tokens(
         rle_cmp = [starts, lengths, class_ids]
 
     starts, lengths = rle_cmp[:2]
-    if multi_class:
+    if len(rle_cmp) == 3:
         class_ids = rle_cmp[2]
     else:
         class_ids = [1, ] * len(starts)
@@ -1545,7 +1556,10 @@ def vid_rle_from_tokens(
         time_as_class,
         length_as_class,
         starts_offset, lengths_offset, class_offset,
-        starts_2d, multi_class, flat_order
+        starts_2d,
+        multi_class,
+        flat_order,
+        vocab_size,
 ):
     if length_as_class:
         assert lengths_offset == class_offset, "lengths_offset and class_offset must be same for length_as_class"
@@ -1566,8 +1580,8 @@ def vid_rle_from_tokens(
     assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
 
     if starts_2d:
-        starts_rows = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=int)
-        starts_cols = np.asarray(rle_tokens[1:][::n_run_tokens], dtype=int)
+        starts_rows = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
+        starts_cols = np.asarray(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
 
         starts_rows -= (starts_offset + 1)
         starts_cols -= (starts_offset + 1)
@@ -1576,18 +1590,20 @@ def vid_rle_from_tokens(
 
         starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
     else:
-        starts = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=int)
+        starts = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
+        max_starts = np.amax(starts)
+        assert max_starts <= vocab_size, "max_starts exceeds vocab_size"
         starts -= (starts_offset + 1)
 
         len_id = 1
 
-    lengths = np.asarray(rle_tokens[len_id:][::n_run_tokens], dtype=int)
+    lengths = np.asarray(rle_tokens[len_id:][::n_run_tokens], dtype=np.int64)
     lengths -= lengths_offset
 
     rle_cmp = [starts, lengths]
 
     if (multi_class or time_as_class) and not length_as_class:
-        class_ids = np.asarray(rle_tokens[len_id + 1:][::n_run_tokens], dtype=int)
+        class_ids = np.asarray(rle_tokens[len_id + 1:][::n_run_tokens], dtype=np.int64)
         class_ids -= class_offset
         rle_cmp.append(class_ids)
 
@@ -1790,11 +1806,12 @@ def rle_to_mask(starts, lengths, class_ids, shape):
     return mask
 
 
-def rle_to_vid_mask(starts, lengths, class_ids, shape,
-                    vid_len, time_as_class, n_classes,
-                    tac_mask_sub,
-                    tac_id_to_col,
-                    ):
+def rle_to_vid_mask(
+        starts, lengths, class_ids, shape,
+        vid_len, time_as_class, n_classes,
+        tac_mask_sub,
+        tac_id_to_col,
+):
     n_rows, n_cols = shape
     if len(starts) == 0:
         mask = np.zeros((vid_len, n_rows, n_cols), dtype=np.uint8)
@@ -1813,7 +1830,7 @@ def rle_to_vid_mask(starts, lengths, class_ids, shape,
         tac_mask_rec = mask_flat.reshape((n_rows, n_cols))
         if tac_mask_sub is not None:
             if not np.array_equal(tac_mask_sub, tac_mask_rec):
-                print("tac_mask_rec mismatch")
+                print("tac_masks mismatch")
                 tac_mask_sub_vis = mask_id_to_vis_rgb(tac_mask_sub, tac_id_to_col)
                 tac_mask_rec_vis = mask_id_to_vis_rgb(tac_mask_rec, tac_id_to_col)
                 tac_mask_sub_vis = resize_mask(tac_mask_sub_vis, (640, 640), n_classes, is_vis=1)
@@ -1822,9 +1839,11 @@ def rle_to_vid_mask(starts, lengths, class_ids, shape,
                 masks_all = np.concatenate([tac_mask_sub_vis, tac_mask_rec_vis], axis=1)
                 masks_all = cv2.resize(masks_all, (960, 540))
                 cv2.imshow(f'tac_mask', masks_all)
+                k = cv2.waitKey(1)
+                if k == 27:
+                    exit()
             else:
-                print("tac_mask_rec matches")
-
+                print("\ntac_masks match !\n")
 
         mask = vid_mask_from_tac(tac_mask_rec, vid_len, n_classes)
     else:

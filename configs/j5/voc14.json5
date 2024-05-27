@@ -1,0 +1,10 @@
+{
+  "task": {
+	starts_bins: 12800,
+  },
+  "model": {
+	defer_vocab: 1,
+	vocab_size: 14000,
+	max_seq_len: 512,
+  },
+}

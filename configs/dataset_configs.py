@@ -336,7 +336,6 @@ def ipsc_post_process(ds_cfg, task_cfg, training):
                 elif length_as_class:
                     assert multi_class, "multi_class must be enabled for length_as_class"
                     name = f'{name}-lac'
-
                 if multi_class:
                     name = f'{name}-mc'
             else:

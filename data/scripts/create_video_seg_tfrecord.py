@@ -519,7 +519,7 @@ def create_tf_example(
 
         rle_cmp.append(class_ids)
         if params.length_as_class:
-            task_utils.rle_to_lac(rle_cmp, max_length)
+            rle_cmp = task_utils.rle_to_lac(rle_cmp, max_length_sub)
 
     if params.vis:
         task_utils.vis_video_rle(
@@ -529,7 +529,7 @@ def create_tf_example(
             vid, vid_mask, vid_mask_sub,
             params.time_as_class,
             params.length_as_class,
-            max_length,
+            max_length_sub,
             params.flat_order,
             rle_id_to_name,
             rle_id_to_col,
@@ -558,7 +558,8 @@ def create_tf_example(
             class_offset=params.class_offset,
             max_length=max_length,
             subsample=params.subsample,
-            class_to_col=class_id_to_col,
+            class_id_to_name=class_id_to_name,
+            class_id_to_col=class_id_to_col,
             multi_class=multi_class,
             flat_order=params.flat_order,
             tac_mask_sub=tac_mask_sub,
@@ -671,7 +672,7 @@ def get_vid_suffix(vid_params: Params.Video):
     return vid_suffix
 
 
-def get_rle_suffix(params:Params):
+def get_rle_suffix(params:Params, multi_class):
     rle_suffixes = []
 
     if params.subsample > 1:
@@ -684,6 +685,9 @@ def get_rle_suffix(params:Params):
             rle_suffixes.append('tac')
     elif params.length_as_class:
         rle_suffixes.append('lac')
+
+    if multi_class:
+        rle_suffixes.append('mc')
 
     if params.flat_order != 'C':
         rle_suffixes.append(f'flat_{params.flat_order}')
@@ -706,7 +710,7 @@ def main():
     class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)
     vid_len = params.vid.length
     # n_tac_classes = int(n_classes ** vid_len)
-    tac_id_to_col, tac_id_to_name = task_utils.time_as_class_info(vid_len, class_id_to_name)
+    tac_id_to_col, tac_id_to_name = task_utils.get_tac_info(vid_len, class_id_to_name)
 
     n_classes = len(class_id_to_col)
     multi_class = False
@@ -733,12 +737,8 @@ def main():
     vid_suffix = get_vid_suffix(params.vid)
 
     out_name = f'{out_name}-{vid_suffix}'
-    """class info depends on multi_class so this suffix goes into json name too"""
-    if multi_class:
-        out_name = f'{out_name}-mc'
-
     """RLE-specific stuff that doesn't go into output json since that doesn't contain RLE"""
-    rle_suffix = get_rle_suffix(params)
+    rle_suffix = get_rle_suffix(params, multi_class)
 
     if rle_suffix:
         out_name = f'{out_name}-{rle_suffix}'

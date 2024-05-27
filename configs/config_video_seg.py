@@ -78,7 +78,7 @@ def get_config(config_str=None):
         tasks=task_d_list,
 
         model=D(
-            name='encoder_ar_decoder',
+            name='video_encoder_ar_decoder',
             image_size=image_size,
             max_seq_len=512,
             defer_vocab=1,
@@ -90,6 +90,7 @@ def get_config(config_str=None):
             use_cls_token=False,
             shared_decoder_embedding=True,
             decoder_output_bias=True,
+            late_fusion=0,
             patch_size=16,
             drop_path=0.1,
             drop_units=0.1,

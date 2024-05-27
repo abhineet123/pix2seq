@@ -293,7 +293,7 @@ def create_tf_example(
         rle_cmp.append(class_ids)
 
         if params.length_as_class:
-            task_utils.rle_to_lac(rle_cmp, max_length_sub)
+            rle_cmp = task_utils.rle_to_lac(rle_cmp, max_length_sub)
 
     if params.vis and n_runs > 0:
         task_utils.vis_rle(

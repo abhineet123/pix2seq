@@ -61,9 +61,15 @@ class TaskVideoSegmentation(task_lib.Task):
         lengths_offset = self.config.model.len_vocab_shift
         class_offset = self.config.model.class_vocab_shift
 
+        starts_bins = self.config.task.starts_bins
+        lengths_bins = self.config.task.lengths_bins
+
         class_id_to_col = self.class_id_to_col
+        class_id_to_name = self.class_id_to_name
 
         n_classes = len(self.class_id_to_col)
+
+        vocab_size = self.config.model.vocab_size
 
         for batch_id in range(batch_size):
             mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
@@ -82,11 +88,33 @@ class TaskVideoSegmentation(task_lib.Task):
                 vid_mask.append(mask)
             vid_mask = np.stack(vid_mask, axis=0)
 
-            rle_stripped = rle[rle != vocab.PADDING_TOKEN]
-            assert rle_stripped.size == rle_len, "rle_len mismatch"
+            rle_tokens = rle[rle != vocab.PADDING_TOKEN]
+            assert rle_tokens.size == rle_len, "rle_len mismatch"
+
+            if rle_len:
+                n_run_tokens = 2
+                if (multi_class or time_as_class) and not length_as_class:
+                    n_run_tokens += 1
+                assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
+                starts = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
+                max_starts = np.amax(starts)
+                assert max_starts < vocab_size, "max_starts exceeds vocab_size"
+                assert max_starts < starts_bins + starts_offset, "max_starts exceeds starts_bins + starts_offset"
+
+                lengths = np.asarray(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
+                max_lengths = np.amax(lengths)
+                assert max_lengths <= starts_offset, "max_lengths exceeds starts_offset"
+                assert max_lengths < lengths_bins + lengths_offset, "max_lengths exceeds lengths_bins + lengths_offset"
+
+                if (multi_class or time_as_class) and not length_as_class:
+                    class_ids = np.asarray(rle_tokens[2:][::n_run_tokens], dtype=np.int64)
+                    max_class_ids = np.amax(class_ids)
+                    assert max_class_ids <= starts_offset, "max_class_ids exceeds starts_offset"
+                    if not time_as_class:
+                        assert max_class_ids < lengths_offset, "max_class_ids exceeds lengths_offset"
 
             task_utils.check_video_rle_tokens(
-                video, vid_mask, rle_stripped,
+                video, vid_mask, rle_tokens,
                 n_classes=n_classes,
                 length_as_class=length_as_class,
                 starts_offset=starts_offset,
@@ -95,10 +123,14 @@ class TaskVideoSegmentation(task_lib.Task):
                 class_offset=class_offset,
                 max_length=max_length,
                 subsample=subsample,
-                class_to_col=class_id_to_col,
+                class_id_to_name=class_id_to_name,
+                class_id_to_col=class_id_to_col,
                 multi_class=multi_class,
                 flat_order=flat_order,
                 is_vis=1,
+                tac_mask_sub=None,
+                tac_id_to_col=None,
+                vocab_size=vocab_size,
             )
 
     def preprocess_batched(self, batched_examples, training):
