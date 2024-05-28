@@ -89,7 +89,8 @@ class TaskVideoSegmentation(task_lib.Task):
             vid_mask = np.stack(vid_mask, axis=0)
 
             rle_tokens = rle[rle != vocab.PADDING_TOKEN]
-            assert rle_tokens.size == rle_len, "rle_len mismatch"
+
+            assert rle_len > self.config.model.max_seq_len or rle_tokens.size == rle_len, "rle_len mismatch"
 
             if rle_len:
                 n_run_tokens = 2
