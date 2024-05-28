@@ -67,14 +67,22 @@ class TaskVideoSegmentation(task_lib.Task):
         class_id_to_col = self.class_id_to_col
         class_id_to_name = self.class_id_to_name
 
+        max_seq_len = self.config.model.max_seq_len
+
         n_classes = len(self.class_id_to_col)
 
         vocab_size = self.config.model.vocab_size
 
         for batch_id in range(batch_size):
-            mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
-            rle = rles[batch_id]
             rle_len = rle_lens[batch_id]
+            rle = rles[batch_id]
+            rle_tokens = rle[rle != vocab.PADDING_TOKEN]
+            if rle_len > max_seq_len:
+                assert rle_tokens.size == max_seq_len, "curtailed RLE length mismatch"
+                print(f'skipping curtailed rle with original length {rle_len}')
+                continue
+
+            mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
             img_ids = img_ids_all[batch_id]
             video = videos[batch_id]
             frame_ids = frame_ids_all[batch_id]
@@ -88,9 +96,8 @@ class TaskVideoSegmentation(task_lib.Task):
                 vid_mask.append(mask)
             vid_mask = np.stack(vid_mask, axis=0)
 
-            rle_tokens = rle[rle != vocab.PADDING_TOKEN]
 
-            assert rle_len > self.config.model.max_seq_len or rle_tokens.size == rle_len, "rle_len mismatch"
+            assert rle_tokens.size == rle_len, "rle_len mismatch"
 
             if rle_len:
                 n_run_tokens = 2
