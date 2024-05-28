@@ -189,7 +189,7 @@ class TaskVideoSegmentation(task_lib.Task):
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id, prompt_shape=(bsz, 1))
         pred_seq, logits, _ = model.infer(
-            image, prompt_seq, encoded=None,
+            video, prompt_seq, encoded=None,
             max_seq_len=mconfig.max_seq_len + 1,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 

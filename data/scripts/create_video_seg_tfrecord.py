@@ -815,18 +815,19 @@ def main():
         vid_infos=vid_infos,
     )
 
-    # for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
-    #     create_tf_example(*annotations_iter_)
-
-    tfrecord_pattern = linux_path(tfrecord_path, 'shard')
-    tfrecord_lib.write_tf_record_dataset(
-        output_path=tfrecord_pattern,
-        annotation_iterator=annotations_iter,
-        process_func=create_tf_example,
-        num_shards=params.num_shards,
-        multiple_processes=params.n_proc,
-        iter_len=len(image_infos),
-    )
+    if params.stats_only or params.vis:
+        for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
+            create_tf_example(*annotations_iter_)
+    else:
+        tfrecord_pattern = linux_path(tfrecord_path, 'shard')
+        tfrecord_lib.write_tf_record_dataset(
+            output_path=tfrecord_pattern,
+            annotation_iterator=annotations_iter,
+            process_func=create_tf_example,
+            num_shards=params.num_shards,
+            multiple_processes=params.n_proc,
+            iter_len=len(image_infos),
+        )
 
     print(f'tfrecord_path: {tfrecord_path}')
 
