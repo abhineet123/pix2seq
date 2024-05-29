@@ -98,6 +98,7 @@ def get_config(config_str=None):
             name='encoder_ar_decoder',
             image_size=image_size,
             max_seq_len=512,
+            defer_seq=0,
             defer_vocab=1,
             vocab_size=8000,
             coord_vocab_shift=1000,

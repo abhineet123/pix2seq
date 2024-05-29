@@ -161,20 +161,37 @@ def get_variable_initializer(name=None):
 
 
 def add_seq_pos_emb(self, pos_encoding, max_seq_len, dim,
-                    name_prefix=None, initializer=None):
+                    name_prefix=None, initializer=None, suffix=''):
     """Add seq_pos_emb variable/tensor to model instance referenced by `self`."""
+    attr_name = 'seq_pos_emb'
+    name = 'seq_pos_embedding'
+    if suffix:
+        attr_name = f'{attr_name}_{suffix}'
     if name_prefix is None:
         name_prefix = self.name
     if initializer is None:
         initializer = get_variable_initializer()
     if pos_encoding == 'learned':
-        self.seq_pos_emb = self.add_weight(
-            shape=(max_seq_len, dim), initializer=initializer,
-            name='%s/seq_pos_embedding' % name_prefix)
+        if suffix:
+            name = f'{name}_{suffix}'
+        name = f'{name_prefix}/{name}'
+
+        setattr(
+            self,
+            attr_name,
+            self.add_weight(
+                shape=(max_seq_len, dim), initializer=initializer,
+                name=name)
+        )
+
     elif pos_encoding == 'sin_cos':
         sin_cos = get_1d_position_codes(
             max_seq_len, dim, normalization_max=6.2831852)
-        self.seq_pos_emb = tf.reshape(sin_cos, [max_seq_len, dim])
+        setattr(
+            self,
+            attr_name,
+            tf.reshape(sin_cos, [max_seq_len, dim])
+        )
     else:
         raise ValueError('Unknown pos encoding %s' % pos_encoding)
 
@@ -862,6 +879,7 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
 
     def __init__(self,
                  defer_vocab,
+                 defer_seq,
                  vocab_size,
                  max_seq_len,
                  num_layers,
@@ -878,13 +896,17 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
                  **kwargs):
         super(AutoregressiveDecoder, self).__init__(**kwargs)
         self.defer_vocab = defer_vocab
+        self.defer_seq = defer_seq
         self.vocab_size = vocab_size
         self.max_seq_len = max_seq_len
         self.num_layers = num_layers
         self.dim = dim
         self.shared_embedding = shared_embedding
         self.output_bias = output_bias
-        add_seq_pos_emb(self, pos_encoding, max_seq_len, dim)
+        if self.defer_seq:
+            add_seq_pos_emb(self, pos_encoding, max_seq_len, dim, suffix='deferred')
+        else:
+            add_seq_pos_emb(self, pos_encoding, max_seq_len, dim)
 
         if self.defer_vocab:
             add_vocab_token_emb(
@@ -914,6 +936,13 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
         self.output_ln = tf.keras.layers.LayerNormalization(
             epsilon=1e-6, name='ouput_ln')
 
+    def get_seq_pos_emb(self):
+        if self.defer_seq:
+            seq_pos_emb = self.seq_pos_emb_deferred
+        else:
+            seq_pos_emb = self.seq_pos_emb
+        return seq_pos_emb
+
     def get_token_emb(self):
         if self.defer_vocab:
             if self.shared_embedding:
@@ -934,7 +963,8 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
 
     def call(self, tokens, encoded, training):
         _, seqlen = get_shape(tokens)
-        seq_pos_emb = tf.expand_dims(self.seq_pos_emb[:seqlen], 0)
+        seq_pos_emb_ = self.get_seq_pos_emb()
+        seq_pos_emb = tf.expand_dims(seq_pos_emb_[:seqlen], 0)
 
         inp_embedding, outp_embedding, outp_bias = self.get_token_emb()
 
@@ -956,10 +986,11 @@ class AutoregressiveDecoder(tf.keras.layers.Layer):  # pylint: disable=missing-d
               sampling_callback=None, training=False):
         bsz, prompt_len = get_shape(prompt)
         seq_len = self.max_seq_len if max_seq_len is None else max_seq_len
-        seq_pos_emb = tf.expand_dims(self.seq_pos_emb, 0)
+
+        seq_pos_emb_ = self.get_seq_pos_emb()
+        seq_pos_emb = tf.expand_dims(seq_pos_emb_, 0)
 
         inp_embedding, outp_embedding, outp_bias = self.get_token_emb()
-
 
         # Each step reads caches[:step] and tokens[step:next_step] and updates
         # tokens[next_step], logits[next_step] and caches[step:next_step].

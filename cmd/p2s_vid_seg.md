@@ -9,6 +9,7 @@
         - [p-640-sub-8-mc-lac       @ r-2560/resnet-640-16_53](#p_640_sub_8_mc_lac___r_2560_resnet_640_16_5_3_)
         - [p-640-sub-8-mc-tac       @ r-2560/resnet-640-16_53](#p_640_sub_8_mc_tac___r_2560_resnet_640_16_5_3_)
         - [p-640-sub-8-mc-ltac       @ r-2560/resnet-640-16_53](#p_640_sub_8_mc_ltac___r_2560_resnet_640_16_5_3_)
+        - [p-640-sub-8-mc-ltac-seq1k       @ r-2560/resnet-640-16_53](#p_640_sub_8_mc_ltac_seq1k___r_2560_resnet_640_16_5_3_)
         - [p-640-aug-sub-8       @ r-2560/resnet-640-16_53](#p_640_aug_sub_8___r_2560_resnet_640_16_5_3_)
         - [p-640-aug-sub-4       @ r-2560/resnet-640-16_53](#p_640_aug_sub_4___r_2560_resnet_640_16_5_3_)
 
@@ -33,7 +34,7 @@ python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-
 `dbg`
 python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-16_53:p-640:r-2560:sub-8,batch-2,dbg-1,dyn-1,dist-0,ep-10000,gz,pt-1,ltac
 
-python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-0_1:p-640:r-2560:sub-8:seq-0,batch-3,dbg-1,dyn-1,dist-0,ep-10000,gz,pt-1,ltac
+python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg_160-0_1:p-640:r-2560:sub-8:seq-0,batch-3,dbg-1,dyn-1,dist-0,ep-10000,gz,pt-1,ltac
 
 <a id="p_640_sub_8_mc___r_2560_resnet_640_16_5_3_"></a>
 ### p-640-sub-8-mc       @ r-2560/resnet-640-16_53-->p2s_vid_seg
@@ -58,6 +59,10 @@ python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-16_53:p-640:r-2560:sub-8,batch-1,dbg-1,dyn-1,dist-0,ep-10000,gz,pt-1,mc,ltac
 
 python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-0_1:p-640:r-2560:sub-8:seq-0,batch-3,dbg-1,dyn-1,dist-0,ep-10000,gz,pt-1,mc,ltac
+
+<a id="p_640_sub_8_mc_ltac_seq1k___r_2560_resnet_640_16_5_3_"></a>
+### p-640-sub-8-mc-ltac-seq1k       @ r-2560/resnet-640-16_53-->p2s_vid_seg
+python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-16_53:p-640:r-2560:sub-8,batch-8,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1,mc,ltac,seq1k
 
 <a id="p_640_aug_sub_8___r_2560_resnet_640_16_5_3_"></a>
 ### p-640-aug-sub-8       @ r-2560/resnet-640-16_53-->p2s_vid_seg

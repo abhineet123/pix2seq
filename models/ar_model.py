@@ -75,6 +75,7 @@ class Model(tf.keras.models.Model):
 
         self.decoder = AutoregressiveDecoder(
             defer_vocab=config.defer_vocab,
+            defer_seq=self.config.defer_seq,
             vocab_size=config.vocab_size,
             max_seq_len=config.max_seq_len,
             num_layers=config.num_decoder_layers,
@@ -303,6 +304,7 @@ class ModelT(Model):
         mlp_ratio_dec = config.dim_mlp_dec // config.dim_att_dec
         self.decoder = AutoregressiveDecoder(
             defer_vocab=config.defer_vocab,
+            defer_seq=self.config.defer_seq,
             vocab_size=config.vocab_size,
             max_seq_len=config.max_seq_len,
             num_layers=config.num_decoder_layers,

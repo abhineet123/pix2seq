@@ -1,5 +1,9 @@
 <!-- MarkdownTOC -->
 
+- [0_126      @ ipsc](#0_126___ipsc_)
+    - [r-2560       @ 0_126](#r_2560___0_12_6_)
+        - [p-640-sub-8       @ r-2560/0_126](#p_640_sub_8___r_2560_0_126_)
+        - [p-640-sub-8-mc       @ r-2560/0_126](#p_640_sub_8_mc___r_2560_0_126_)
 - [16_53       @ ipsc](#16_53___ipsc_)
     - [r-2560       @ 16_53](#r_2560___16_5_3_)
         - [p-1280-sub-8       @ r-2560/16_53](#p_1280_sub_8___r_2560_16_53_)
@@ -17,6 +21,7 @@
         - [p-640-sub-8-mc-len-3       @ r-2560/16_53](#p_640_sub_8_mc_len_3___r_2560_16_53_)
         - [p-640-sub-8-len-4       @ r-2560/16_53](#p_640_sub_8_len_4___r_2560_16_53_)
         - [p-640-sub-8-mc-len-4       @ r-2560/16_53](#p_640_sub_8_mc_len_4___r_2560_16_53_)
+        - [p-640-sub-8-mc-len-6       @ r-2560/16_53](#p_640_sub_8_mc_len_6___r_2560_16_53_)
         - [p-640-sub-4       @ r-2560/16_53](#p_640_sub_4___r_2560_16_53_)
         - [p-640-sub-4-mc       @ r-2560/16_53](#p_640_sub_4_mc___r_2560_16_53_)
             - [len-3       @ p-640-sub-4-mc/r-2560/16_53](#len_3___p_640_sub_4_mc_r_2560_16_5_3_)
@@ -41,6 +46,22 @@
         - [sz-160       @ res-320/54_126](#sz_160___res_320_54_126_)
 
 <!-- /MarkdownTOC -->
+<a id="0_126___ipsc_"></a>
+# 0_126      @ ipsc-->p2s_seg_tfrecord
+<a id="r_2560___0_12_6_"></a>
+## r-2560       @ 0_126-->p2s_vid_seg_tf
+<a id="p_640_sub_8___r_2560_0_126_"></a>
+### p-640-sub-8       @ r-2560/0_126-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_126:p-640:sub-8:r-2560:gz:proc-1:stats-2
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_126:p-640:sub-8:r-2560:gz:proc-1:tac:stats-2
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_126:p-640:sub-8:r-2560:gz:proc-1:ltac:stats-2
+<a id="p_640_sub_8_mc___r_2560_0_126_"></a>
+### p-640-sub-8-mc       @ r-2560/0_126-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_126:p-640:sub-8:r-2560:gz:proc-1:mc:stats-2
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_126:p-640:sub-8:r-2560:gz:proc-1:mc:lac:stats-2
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_126:p-640:sub-8:r-2560:gz:proc-1:mc:tac:stats-2
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_126:p-640:sub-8:r-2560:gz:proc-1:mc:ltac:stats-2
+
 <a id="16_53___ipsc_"></a>
 # 16_53       @ ipsc-->p2s_seg_tfrecord
 <a id="r_2560___16_5_3_"></a>
@@ -76,7 +97,7 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 
 <a id="p_640_sub_8_mc___r_2560_16_53_"></a>
 ### p-640-sub-8-mc       @ r-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:stats
 `dbg`
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:p-640:sub-8:r-2560:gz:proc-1:seq-0:frame-0_1:mc
 <a id="lac___p_640_sub_8_mc_r_2560_16_5_3_"></a>
@@ -119,10 +140,13 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 
 <a id="p_640_sub_8_mc_len_4___r_2560_16_53_"></a>
 ### p-640-sub-8-mc-len-4       @ r-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-4:stats
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-4:lac:stats 
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-4:tac:stats
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-4:ltac:stats
+
+<a id="p_640_sub_8_mc_len_6___r_2560_16_53_"></a>
+### p-640-sub-8-mc-len-6       @ r-2560/16_53-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-6:lac:stats:chk-0
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-6:ltac:stats:chk-0
 
 <a id="p_640_sub_4___r_2560_16_53_"></a>
 ### p-640-sub-4       @ r-2560/16_53-->p2s_vid_seg_tf

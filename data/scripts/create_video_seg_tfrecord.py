@@ -734,9 +734,15 @@ def main():
 
     assert params.end_id >= params.start_id, f"invalid end_id: {params.end_id}"
 
+    if params.stats_only==2:
+        params.check=0
+
     if params.stats_only:
         print('running in stats only mode')
         # params.vis = params.show = False
+
+    if not params.check:
+        print('RLE reconstruction check is disabled')
 
     class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)
     vid_len = params.vid.length

@@ -122,6 +122,7 @@ class Model(tf.keras.models.Model):
 
         self.decoder = AutoregressiveDecoder(
             defer_vocab=self.config.defer_vocab,
+            defer_seq=self.config.defer_seq,
             vocab_size=self.config.vocab_size,
             max_seq_len=self.config.max_seq_len,
             num_layers=self.config.num_decoder_layers,
