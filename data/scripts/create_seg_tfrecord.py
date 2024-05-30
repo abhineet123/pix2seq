@@ -423,6 +423,9 @@ def main():
 
     class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)
 
+    if params.stats_only == 2 or params.vis == 2:
+        params.check = 0
+
     if params.stats_only:
         print('running in stats only mode')
         params.vis = params.show = False

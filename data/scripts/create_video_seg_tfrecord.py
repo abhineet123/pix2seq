@@ -492,7 +492,6 @@ def create_tf_example(
         subseq_masks.append(mask)
         subseq_masks_sub.append(mask_sub)
     # return
-
     if not params.stats_only:
         vid = np.stack(subseq_imgs, axis=0)
 
