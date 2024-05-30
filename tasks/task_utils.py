@@ -695,6 +695,63 @@ def get_mean_col_diff(cols, _col2):
     return mean_col_diff
 
 
+def vis_run(start, length, class_id, run_txt,
+            mask_sub_vis, mask_bool,
+            class_id_to_col,
+            text_img, text_x, text_y, font_size,
+            vis_size, vis_image,
+            n_rows, n_cols,
+            resize_x, resize_y,
+            flat_order, eos, arrow,
+            frg_col,
+            col):
+
+
+    if col is None:
+        col = class_id_to_col[class_id]
+
+    if isinstance(col, str):
+        col = col_bgr[col]
+
+    # col_id = run_id % len(cols)
+    # col = cols[col_id]
+    mask_sub_vis = np.copy(mask_sub_vis)
+    mask_sub_vis[mask_bool] = col
+
+    text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
+                                                             wait=100, bb=1, show=0, font_size=font_size)
+
+    if eos:
+        text_img, _, _ = vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col,
+                                              show=0, font_size=font_size)
+
+    vis_mask_ = cv2.resize(mask_sub_vis, (vis_size, vis_size))
+    vis_image_ = cv2.resize(vis_image, (vis_size, vis_size))
+
+    # vis_mask_, text_bb = vis_utils.write_text(vis_mask_, run_txt, 5, 5, col, font_size=24, show=0, bb=1)
+
+    run_center = int(start + length / 2)
+    run_y, run_x = np.unravel_index([run_center, ], (n_rows, n_cols), order=flat_order)
+    run_y, run_x = int(run_y[0]), int(run_x[0])
+
+    run_x, run_y = int(run_x * resize_x), int(run_y * resize_y)
+    """vis_mask_ to the right of vis_image_"""
+    run_x += vis_size
+    seg_rle_vis = np.concatenate((vis_image_, vis_mask_), axis=1)
+
+    left, top, right, bottom = text_bb
+    text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
+    """text_img is to the right of vis_mask_"""
+    text_bb_x += int(vis_size * 2)
+    text_bb_y += 10
+    seg_rle_vis = np.concatenate((seg_rle_vis, text_img), axis=1)
+
+    if arrow:
+        seg_rle_vis = cv2.arrowedLine(seg_rle_vis, (run_x, run_y), (text_bb_x, text_bb_y), col,
+                                      2, tipLength=0.01)
+    return seg_rle_vis, mask_sub_vis, (text_img, text_x, text_y)
+
+
 def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
                       text_info, font_size, vis_size,
                       time_as_class, tac_mask_sub, tac_mask,
@@ -953,6 +1010,9 @@ def vis_video_rle(rle_cmp, class_id_to_col, class_id_to_name, image_ids,
     else:
         fmt = f'd'
 
+    win_name = 'vid_rle_vis'
+    # cv2.namedWindow(win_name, cv2.WND_PROP_FULLSCREEN)
+
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
         text_info = (text_img, text_x, text_y)
         run_txt = f'{int(start):{fmt}}, {int(length):{fmt}}, '
@@ -970,6 +1030,12 @@ def vis_video_rle(rle_cmp, class_id_to_col, class_id_to_name, image_ids,
         if length_as_class:
             class_id = (length - 1) // max_length + 1
             length = (length - 1) % max_length + 1
+            if time_as_class:
+                class_name = tac_id_to_name[class_id]
+                run_txt = f'{int(start)}, {class_name}-{length}, '
+            else:
+                class_name = class_id_to_name[class_id]
+                run_txt = f'{int(start)}, {class_name}{length}, '
 
         if time_as_class:
             vid_mask_sub_binary_vis, img_to_run_pixs = vis_tac_run_pix(
@@ -985,7 +1051,7 @@ def vis_video_rle(rle_cmp, class_id_to_col, class_id_to_name, image_ids,
             )
         eos = run_id == n_runs - 1
 
-        vis_image_cat, _, _ = vis_video_run_txt(
+        vid_rle_vis, _, _ = vis_video_run_txt(
             img_to_run_pixs, run_txt, vid_mask_sub_binary_vis,
             vid_vis, text_info, font_size, vis_size,
             time_as_class, tac_mask_sub, tac_mask,
@@ -993,8 +1059,8 @@ def vis_video_rle(rle_cmp, class_id_to_col, class_id_to_name, image_ids,
             class_id_to_name, class_id_to_col,
             temp_col, eos, frg_col, arrow=1)
 
-        vis_image_cat = resize_ar(vis_image_cat, int(1920 / 1.25), int(1080 / 1.25))
-        cv2.imshow('vis_image_cat', vis_image_cat)
+        vid_rle_vis = resize_ar(vid_rle_vis, int(1920 / 1.25), int(1080 / 1.25))
+        cv2.imshow(win_name, vid_rle_vis)
         # cv2.imshow('tac_mask_cat', tac_mask_cat)
         k = cv2.waitKey(0 if _pause else 10)
         if k == 27:
@@ -1020,7 +1086,7 @@ def vis_video_rle(rle_cmp, class_id_to_col, class_id_to_name, image_ids,
         if isinstance(col, str):
             col = col_bgr[col]
 
-        vis_image_cat, vid_mask_sub_binary_vis, text_info = vis_video_run_txt(
+        vid_rle_vis, vid_mask_sub_binary_vis, text_info = vis_video_run_txt(
             img_to_run_pixs, run_txt, vid_mask_sub_binary_vis,
             vid_vis, text_info, font_size, vis_size,
             time_as_class, tac_mask_sub, tac_mask,
@@ -1030,8 +1096,8 @@ def vis_video_rle(rle_cmp, class_id_to_col, class_id_to_name, image_ids,
         text_img, text_x, text_y = text_info
 
     if n_runs > 0:
-        vis_image_cat = resize_ar(vis_image_cat, int(1920 / 1.25), int(1080 / 1.25))
-        cv2.imshow('vis_image_cat', vis_image_cat)
+        vid_rle_vis = resize_ar(vid_rle_vis, int(1920 / 1.25), int(1080 / 1.25))
+        cv2.imshow('vid_rle_vis', vid_rle_vis)
         k = cv2.waitKey(0)
         if k == 27:
             return
@@ -1083,8 +1149,16 @@ def rle_from_lac(lac, max_length):
     return lengths, class_ids
 
 
-def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
+def vis_rle(rle_cmp,  length_as_class, max_length,
+            class_id_to_col, class_id_to_name,
             image, mask, mask_sub, flat_order):
+
+    starts, lengths = rle_cmp[:2]
+    class_ids = None
+
+    if len(rle_cmp) == 3:
+        class_ids = rle_cmp[2]
+
     n_runs = len(starts)
     n_classes = len(class_id_to_col)
     # cols = get_cols(n_runs)
@@ -1101,9 +1175,10 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     # col = (0, 255, 0)
     bkg_col = (0, 0, 0)
     frg_col = (255, 255, 255)
+    temp_col = col_bgr['medium_purple']
     # mask_col = (0, 255, 0)
     vis_size = 640
-    font_size = 16
+    font_size = 24
     n_rows, n_cols = mask_sub.shape
     resize_y, resize_x = float(vis_size) / n_rows, float(vis_size) / n_cols
 
@@ -1120,12 +1195,17 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
     mask_flat = mask_sub.flatten(order=flat_order)
     _pause = 1
 
+    # from datetime import datetime
+    # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
+    # out_vis_path = f'vis_rle_{time_stamp}.mp4'
+    # vid_writer = vis_utils.get_video_writer(out_vis_path)
+
     for run_id, (start, length) in enumerate(zip(starts, lengths)):
-        mask_bool_flat = np.zeros_like(mask_flat, dtype=bool)
-        mask_bool_flat[start:start + length] = True
-        mask_bool = np.reshape(mask_bool_flat, (n_rows, n_cols))
         # run_y, run_x = np.unravel_index([start, start + length], (n_rows, n_cols), order=flat_order)
         # mask_sub_rgb[run_y[0]:run_y[1], run_x[0]:run_x[1], :] = col
+
+        # seg_rle_vis = resize_ar(seg_rle_vis, int(1920/1.25), int(1050/1.25))
+        # vis_utils.write_frames_to_videos(vid_writer, seg_rle_vis)
 
         run_txt = f'{int(start)}, {int(length)}, '
         if class_ids is not None:
@@ -1135,51 +1215,56 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         else:
             class_id = 1
 
-        col = class_id_to_col[class_id]
-        if isinstance(col, str):
-            col = col_bgr[col]
+        if length_as_class:
+            class_id = (length - 1) // max_length + 1
+            length = (length - 1) % max_length + 1
+            class_name = class_id_to_name[class_id]
+            run_txt = f'{int(start)}, {class_name}{length}, '
 
-        # col_id = run_id % len(cols)
-        # col = cols[col_id]
-        mask_sub_vis[mask_bool] = col
+        mask_bool_flat = np.zeros_like(mask_flat, dtype=bool)
+        mask_bool_flat[start:start + length] = True
+        mask_bool = np.reshape(mask_bool_flat, (n_rows, n_cols), order=flat_order)
 
-        text_img, text_x, text_y, text_bb = vis_utils.write_text(text_img, run_txt, text_x, text_y, col,
-                                                                 wait=100, bb=1, show=0, font_size=font_size)
-        if run_id == n_runs - 1:
-            text_img, _, _ = vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col,
-                                                  show=0, font_size=font_size)
+        eos = run_id == n_runs - 1
 
-        vis_mask_ = cv2.resize(mask_sub_vis, (vis_size, vis_size))
-        vis_image_ = cv2.resize(vis_image, (vis_size, vis_size))
+        seg_rle_vis, _, _ = vis_run(
+            start, length, class_id, run_txt,
+            mask_sub_vis, mask_bool,
+            class_id_to_col,
+            text_img, text_x, text_y, font_size,
+            vis_size, vis_image,
+            n_rows, n_cols,
+            resize_x, resize_y,
+            flat_order,
+            arrow=True,
+            eos=eos,
+            frg_col=frg_col,
+            col=temp_col)
 
-        # vis_mask_, text_bb = vis_utils.write_text(vis_mask_, run_txt, 5, 5, col, font_size=24, show=0, bb=1)
-
-        run_center = int(start + length / 2)
-        run_y, run_x = np.unravel_index([run_center, ], (n_rows, n_cols), order=flat_order)
-        run_y, run_x = int(run_y[0]), int(run_x[0])
-
-        run_x, run_y = int(run_x * resize_x), int(run_y * resize_y)
-        """vis_mask_ to the right of vis_image_"""
-        run_x += vis_size
-        vis_image_cat = np.concatenate((vis_image_, vis_mask_), axis=1)
-
-        left, top, right, bottom = text_bb
-        text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
-        """text_img is to the right of vis_mask_"""
-        text_bb_x += int(vis_size * 2)
-        text_bb_y += 10
-        vis_image_cat = np.concatenate((vis_image_cat, text_img), axis=1)
-
-        vis_image_cat = cv2.arrowedLine(vis_image_cat, (run_x, run_y), (text_bb_x, text_bb_y), col, 1, tipLength=0.01)
-        vis_image_cat = resize_ar(vis_image_cat, int(1920/1.25), int(1050/1.25))
-        cv2.imshow('vis_image_cat', vis_image_cat)
+        cv2.imshow('seg_rle_vis', seg_rle_vis)
         k = cv2.waitKey(0 if _pause else 100)
         if k == 27:
             exit()
         elif k == 32:
             _pause = 1 - _pause
 
+        seg_rle_vis, mask_sub_vis, text_info = vis_run(
+            start, length, class_id, run_txt,
+            mask_sub_vis, mask_bool,
+            class_id_to_col,
+            text_img, text_x, text_y, font_size,
+            vis_size, vis_image,
+            n_rows, n_cols,
+            resize_x, resize_y,
+            flat_order,
+            arrow=False,
+            eos=eos,
+            frg_col=frg_col,
+            col=None)
+        text_img, text_x, text_y = text_info
+
     cv2.waitKey(0)
+    # vis_utils.close_video_writers(vid_writer)
 
 
 def construct_rle(starts_rows, starts_cols, lengths, shape, starts_2d,

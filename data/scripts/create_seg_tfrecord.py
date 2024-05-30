@@ -53,6 +53,9 @@ class Params(paramparse.CFG):
         self.seq_start_id = 0
         self.seq_end_id = -1
 
+        self.patch_start_id = 0
+        self.patch_end_id = -1
+
         self.n_rot = 0
         self.max_rot = 0
         self.min_rot = 0
@@ -148,6 +151,21 @@ def generate_annotations(
 ):
     for image_info in image_infos:
         seq = image_info['seq']
+        seq_id = image_info['seq']
+        img_id = image_info['img_id']
+
+        src_id, patch_id = img_id.split('_')
+
+        patch_id = int(patch_id)
+
+        image_info['src_id'] = src_id
+        image_info['patch_id'] = patch_id
+
+        if patch_id < params.patch_start_id > 0:
+            continue
+
+        if patch_id > params.patch_end_id > 0:
+            continue
 
         yield (
             params,
@@ -297,7 +315,9 @@ def create_tf_example(
 
     if params.vis and n_runs > 0:
         task_utils.vis_rle(
-            starts, lengths, class_ids,
+            rle_cmp,
+            params.length_as_class,
+            max_length_sub,
             class_id_to_col, class_id_to_name,
             image, mask, mask_sub,
             flat_order=params.flat_order)
