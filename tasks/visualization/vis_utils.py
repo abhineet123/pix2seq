@@ -62,7 +62,7 @@ STANDARD_COLORS = [
 from PIL import Image, ImageDraw, ImageFont
 
 
-def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, bb=0, sep=', '):
+def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, bb=0, sep=', ', win_name='text img'):
     image = Image.fromarray(img_np)
     width, height = image.size
     draw = ImageDraw.Draw(image)
@@ -107,7 +107,7 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
         img_np = np.array(image)
 
         if show:
-            cv2.imshow('Output Sequence', img_np)
+            cv2.imshow(win_name, img_np)
             cv2.waitKey(wait)
         # out_x, out_y = x + textwidth, y + textheight
 

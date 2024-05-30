@@ -1171,6 +1171,7 @@ def vis_rle(starts, lengths, class_ids, class_id_to_col, class_id_to_name,
         vis_image_cat = np.concatenate((vis_image_cat, text_img), axis=1)
 
         vis_image_cat = cv2.arrowedLine(vis_image_cat, (run_x, run_y), (text_bb_x, text_bb_y), col, 1, tipLength=0.01)
+        vis_image_cat = resize_ar(vis_image_cat, int(1920/1.25), int(1050/1.25))
         cv2.imshow('vis_image_cat', vis_image_cat)
         k = cv2.waitKey(0 if _pause else 250)
         if k == 27:

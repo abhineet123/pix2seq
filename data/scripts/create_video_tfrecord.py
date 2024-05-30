@@ -1,6 +1,7 @@
 import collections
 import os
 import sys
+import pickle
 
 import cv2
 import numpy as np
@@ -158,7 +159,11 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
 
     file_names = [os.path.splitext(os.path.basename(file_path))[0] for file_path in file_paths]
 
-    z_gap = 500
+    # z_gap = 500
+    # title_font_size=48
+
+    z_gap = 2000
+    title_font_size = 64
 
     cols = (
         'green', 'red', 'deep_sky_blue',
@@ -171,6 +176,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     bkg_col = 'black'
     # bkg_col = 'white'
     frg_col = 'white' if bkg_col == 'black' else 'black'
+    token_win_name = 'Token Sequence'
 
     bkg_col = col_bgr[bkg_col]
     frg_col = col_bgr[frg_col]
@@ -181,8 +187,6 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     frames = [cv2.imread(file_path) for file_path in file_paths]
     h, w = frames[0].shape[:2]
 
-    view_params = None
-
     if fig is None:
         fig = mlab.figure(
             'Video Clip',
@@ -190,10 +194,16 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
             bgcolor=bkg_col_rgb
         )
         first_fig = True
+        try:
+            with open('view_params.pkl', 'rb') as f:
+                view_params = pickle.load(f)
+        except FileNotFoundError:
+            view_params = None
+        else:
+            set_camera_view(mlab, view_params)
     else:
         mlab.clf(figure=fig)
         first_fig = False
-
         view_params = get_camera_view(mlab)
 
     # vid_len = len(file_paths)
@@ -219,7 +229,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
         # mlab.text(w/2, 0, file_name, z=cu_z, figure=fig, color=frg_col_rgb, line_width=1.0)
         file_txt = f'image {file_id + 1}'
 
-        frame, _, _ = vis_utils.write_text(frame, file_txt, 5, 5, frg_col, font_size=48)
+        frame, _, _ = vis_utils.write_text(frame, file_txt, 5, 5, frg_col, font_size=title_font_size)
 
         show_img_rgb(frame, cu_z, mlab)
 
@@ -235,13 +245,16 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     # mlab.show()
 
     if first_fig:
-        cv2.imshow('Output Sequence', text_img)
+        cv2.imshow(token_win_name, text_img)
         k = cv2.waitKey(0)
         if k == 27:
             exit()
         view_params = get_camera_view(mlab)
+        with open('view_params.pkl', 'wb') as f:
+            pickle.dump(view_params, f, pickle.HIGHEST_PROTOCOL)
     else:
-        set_camera_view(mlab, view_params)
+        if view_params is not None:
+            set_camera_view(mlab, view_params)
 
     text_x = text_y = 5
 
@@ -287,7 +300,8 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
                 prev_bbox = None
                 bbox_txt = f'NA, NA, NA, NA, '
 
-            text_img, text_x, text_y = vis_utils.write_text(text_img, bbox_txt, text_x, text_y, col)
+            text_img, text_x, text_y = vis_utils.write_text(
+                text_img, bbox_txt, text_x, text_y, col, show=1, win_name=token_win_name)
 
             k = cv2.waitKey(100)
             if k == 27:
@@ -296,13 +310,15 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
         class_id = int(ann['category_id'])
         class_name = id_to_name_map[class_id]
 
-        text_img, text_x, text_y = vis_utils.write_text(text_img, f'{class_name}, ', text_x, text_y, col)
+        text_img, text_x, text_y = vis_utils.write_text(text_img, f'{class_name}, ', text_x, text_y, col,
+                                                        show=1, win_name=token_win_name)
 
         k = cv2.waitKey(500)
         if k == 27:
             sys.exit()
 
-    text_img, text_x, text_y = vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col)
+    text_img, text_x, text_y = vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col,
+                                                    show=1, win_name=token_win_name)
 
     k = cv2.waitKey(0)
     if k == 27:
@@ -417,29 +433,29 @@ def obj_annotations_to_feature_dict(obj_annotations, id_to_name_map, vid_len):
 
 
 def generate_video_annotations(
+        params: Params,
         videos,
         category_id_to_name_map,
         vid_to_obj_ann,
         image_dir,
-        vis,
 
 ):
     fig = None
     for video in videos:
         object_anns = vid_to_obj_ann.get(video['id'], {})
-
-        fig = show_vid_objs(video, image_dir, object_anns, category_id_to_name_map, fig)
-
-        if vis:
+        if params.vis == 1:
             from tasks.visualization import vis_utils
             vis_utils.vis_json_ann(video, object_anns, category_id_to_name_map, image_dir)
 
-        # yield (
-        #     video,
-        #     category_id_to_name_map,
-        #     object_anns,
-        #     image_dir,
-        # )
+        if params.vis == 2:
+            fig = show_vid_objs(video, image_dir, object_anns, category_id_to_name_map, fig)
+        else:
+            yield (
+                video,
+                category_id_to_name_map,
+                object_anns,
+                image_dir,
+            )
 
 
 def create_video_tf_example(
@@ -602,11 +618,11 @@ def main():
             save_ytvis_annotations(annotations_all, out_json_path)
 
     annotations_iter = generate_video_annotations(
+        params=params,
         videos=video_info,
         category_id_to_name_map=category_id_to_name_map,
         vid_to_obj_ann=vid_to_obj_ann,
         image_dir=params.image_dir,
-        vis=params.vis,
     )
     output_path = os.path.join(params.output_dir, out_name)
     os.makedirs(output_path, exist_ok=True)

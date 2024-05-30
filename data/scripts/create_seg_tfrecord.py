@@ -466,10 +466,6 @@ def main():
 
     out_name = in_json_name = params.db_suffix
 
-    in_json_fname = f'{in_json_name}.{params.ann_ext}'
-    in_json_path = os.path.join(params.db_path, in_json_fname)
-    image_infos = load_seg_annotations(in_json_path)
-
     if params.seq_id >= 0:
         params.seq_start_id = params.seq_end_id = params.seq_id
 
@@ -477,6 +473,11 @@ def main():
         assert params.seq_end_id >= params.seq_start_id, "end_seq_id must to be >= start_seq_id"
         seq_suffix = f'seq_{params.seq_start_id}_{params.seq_end_id}'
         out_name = f'{out_name}-{seq_suffix}'
+        in_json_name = f'{in_json_name}-{seq_suffix}'
+
+    in_json_fname = f'{in_json_name}.{params.ann_ext}'
+    in_json_path = os.path.join(params.db_path, in_json_fname)
+    image_infos = load_seg_annotations(in_json_path)
 
     if params.subsample > 1:
         out_name = f'{out_name}-sub_{params.subsample}'
