@@ -21,7 +21,10 @@
         - [p-640-sub-8-mc-len-3       @ r-2560/16_53](#p_640_sub_8_mc_len_3___r_2560_16_53_)
         - [p-640-sub-8-len-4       @ r-2560/16_53](#p_640_sub_8_len_4___r_2560_16_53_)
         - [p-640-sub-8-mc-len-4       @ r-2560/16_53](#p_640_sub_8_mc_len_4___r_2560_16_53_)
+        - [p-640-sub-8-len-6       @ r-2560/16_53](#p_640_sub_8_len_6___r_2560_16_53_)
         - [p-640-sub-8-mc-len-6       @ r-2560/16_53](#p_640_sub_8_mc_len_6___r_2560_16_53_)
+        - [p-640-sub-8-len-9       @ r-2560/16_53](#p_640_sub_8_len_9___r_2560_16_53_)
+            - [tac       @ p-640-sub-8-len-9/r-2560/16_53](#tac___p_640_sub_8_len_9_r_2560_16_53_)
         - [p-640-sub-4       @ r-2560/16_53](#p_640_sub_4___r_2560_16_53_)
         - [p-640-sub-4-mc       @ r-2560/16_53](#p_640_sub_4_mc___r_2560_16_53_)
             - [len-3       @ p-640-sub-4-mc/r-2560/16_53](#len_3___p_640_sub_4_mc_r_2560_16_5_3_)
@@ -122,14 +125,14 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 <a id="p_640_sub_8_len_3___r_2560_16_53_"></a>
 ### p-640-sub-8-len-3       @ r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:len-3:stats 
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:len-3:tac:stats
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:len-3:tac:stats-2
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:len-3:ltac:stats
 
 <a id="p_640_sub_8_mc_len_3___r_2560_16_53_"></a>
 ### p-640-sub-8-mc-len-3       @ r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-3:stats 
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-3:lac:stats 
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-3:tac:stats
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-3:tac:stats-2
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-3:ltac:stats
 
 <a id="p_640_sub_8_len_4___r_2560_16_53_"></a>
@@ -141,12 +144,26 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 <a id="p_640_sub_8_mc_len_4___r_2560_16_53_"></a>
 ### p-640-sub-8-mc-len-4       @ r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-4:lac:stats 
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-4:tac:stats
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-4:ltac:stats
+
+<a id="p_640_sub_8_len_6___r_2560_16_53_"></a>
+### p-640-sub-8-len-6       @ r-2560/16_53-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:len-6:lac:stats:chk-0
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:len-6:tac:stats:chk-0
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:len-6:ltac:stats:chk-0
 
 <a id="p_640_sub_8_mc_len_6___r_2560_16_53_"></a>
 ### p-640-sub-8-mc-len-6       @ r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-6:lac:stats:chk-0
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-6:tac:stats:chk-0
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:len-6:ltac:stats:chk-0
+
+<a id="p_640_sub_8_len_9___r_2560_16_53_"></a>
+### p-640-sub-8-len-9       @ r-2560/16_53-->p2s_vid_seg_tf
+<a id="tac___p_640_sub_8_len_9_r_2560_16_53_"></a>
+#### tac       @ p-640-sub-8-len-9/r-2560/16_53-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:tac:len-9
 
 <a id="p_640_sub_4___r_2560_16_53_"></a>
 ### p-640-sub-4       @ r-2560/16_53-->p2s_vid_seg_tf

@@ -411,7 +411,10 @@ def mask_id_to_vis(mask, n_classes, to_rgb=0, copy=False):
         return mask
 
 
-def mask_vis_to_id(mask, n_classes):
+def mask_vis_to_id(mask, n_classes, copy=False):
+    if copy:
+        mask = np.copy(mask)
+
     if n_classes == 3:
         mask[mask < 64] = 0
         mask[np.logical_and(mask >= 64, mask < 192)] = 1
@@ -421,6 +424,7 @@ def mask_vis_to_id(mask, n_classes):
         mask[mask >= 128] = 1
     else:
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
+    return mask
 
 
 def blend_mask(mask, image, class_to_col, alpha=0.5):

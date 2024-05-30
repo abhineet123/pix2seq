@@ -734,8 +734,8 @@ def main():
 
     assert params.end_id >= params.start_id, f"invalid end_id: {params.end_id}"
 
-    if params.stats_only==2:
-        params.check=0
+    if params.stats_only == 2 or params.vis == 2:
+        params.check = 0
 
     if params.stats_only:
         print('running in stats only mode')

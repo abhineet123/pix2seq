@@ -145,7 +145,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 train_step=global_step.numpy(),
                 out_mask_dir=out_mask_dir,
                 out_vis_dir=out_vis_dir,
-                show=cfg.eval.show_vis,
+                show=cfg.eval.vis,
                 vid_cap=seq_to_vid_writers,
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,
