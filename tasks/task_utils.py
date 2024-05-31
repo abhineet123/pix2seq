@@ -600,15 +600,15 @@ def get_tac_info(vid_len, class_id_to_name):
 
         assert len(all_cols) > n_cols - 1, "too few all_cols"
 
-        cols = [(0, 0, 0), (255, 255, 255)]
-        for col_id in range(n_cols - 1):
-            sorted(all_cols, key=lambda x: get_min_col_diff(cols, x))
-            new_col = all_cols.pop(-1)
-            cols.append(new_col)
+        # cols = [(0, 0, 0), (255, 255, 255)]
+        # for col_id in range(n_cols - 1):
+        #     sorted(all_cols, key=lambda x: get_min_col_diff(cols, x))
+        #     new_col = all_cols.pop(-1)
+        #     cols.append(new_col)
+        # cols.remove((255, 255, 255))
 
-        cols.remove((255, 255, 255))
-        # import random
-        # random.shuffle(cols)
+        import random
+        random.shuffle(cols)
 
         # sample = len(cols) // (n_cols - 1)
         # cols = cols[::sample]
