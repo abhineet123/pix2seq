@@ -609,10 +609,9 @@ def get_tac_info(vid_len, class_id_to_name):
 
         import random
         random.shuffle(cols)
-
-        # sample = len(cols) // (n_cols - 1)
-        # cols = cols[::sample]
-        # cols.insert(0, (0, 0, 0))
+        sample = len(cols) // (n_cols - 1)
+        cols = cols[::sample]
+        cols.insert(0, (0, 0, 0))
 
     tac_id_to_col = {
         col_id: cols[col_id] for col_id in range(n_cols)
