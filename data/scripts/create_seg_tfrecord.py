@@ -21,6 +21,7 @@ import vocab
 from data.scripts import tfrecord_lib
 from tasks.visualization import vis_utils
 from tasks import task_utils
+from tasks import quadtree
 
 from eval_utils import add_suffix
 
@@ -366,6 +367,13 @@ def create_tf_example(
         metrics_ = dict(rle_len=rle_len)
         append_metrics(metrics_, metrics[f'method_{subsample_method}'])
 
+        # quad = quadtree.dense2quad(mask_sub, num_levels=6, return_255=False)
+
+        # polygons = task_utils.polygons_from_mask(mask)
+        polygons_sub = task_utils.polygons_from_mask(mask_sub)
+        polygon_len = sum(polygon.size for polygon in polygons_sub)
+        append_metrics( dict(len=polygon_len), metrics[f'polygons'])
+
     if params.show and n_runs > 0:
         rle_rec_cmp = task_utils.rle_from_tokens(
             rle_tokens,
@@ -576,6 +584,7 @@ def main():
         method_0={},
         method_1={},
         method_2={},
+        polygons={},
 
     )
     annotations_iter = generate_annotations(

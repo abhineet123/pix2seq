@@ -2344,20 +2344,15 @@ def get_normalized_weight(id_map, total_num_ids, p=1.0):
     weight *= tf.cast(tf.math.reduce_prod(tf.shape(id_map)[1:]), weight.dtype)
     return weight
 
-def polygons_from_mask(mask_img):
+def contour_pts_from_mask(mask_img):
     # print('Getting contour pts from mask...')
     if len(mask_img.shape) == 3:
         mask_img_gs = np.squeeze(mask_img[:, :, 0]).copy()
     else:
         mask_img_gs = mask_img.copy()
 
-    ret = cv2.findContours(mask_img_gs, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    contour_pts, _ = ret
-
-    contour_pts = [np.squeeze(contour_pts_) for contour_pts_ in contour_pts]
-
-    return contour_pts
-
+    ret = cv2.findContours(mask_img_gs, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2:]
+    _contour_pts, _ = ret
     if not _contour_pts:
         return [], []
     contour_pts = list(np.squeeze(_contour_pts[0]))
