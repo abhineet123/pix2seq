@@ -635,7 +635,7 @@ def create_tf_example(
 
 def get_vid_infos(image_infos, db_path):
     vid_infos = {}
-    for image_info in image_infos:
+    for image_info in tqdm(image_infos, desc="get_vid_infos"):
         seq = image_info['seq']
         mask_filename = image_info['mask_file_name']
         vid_path = linux_path(db_path, f'{seq}.mp4')
@@ -765,6 +765,7 @@ def main():
     img_json_fname = f'{img_json_suffix}.{params.ann_ext}'
     img_json_path = linux_path(params.db_path, img_json_fname)
 
+    print("loading img_info_from_json")
     image_infos = load_img_info_from_json(img_json_path)
 
     out_name = img_json_suffix
