@@ -822,7 +822,8 @@ def main():
     )
 
     if params.stats_only or params.vis:
-        for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
+        for idx, annotations_iter_ in tqdm(enumerate(annotations_iter),
+                                           total=len(all_subseq_img_infos)):
             create_tf_example(*annotations_iter_)
     else:
         tfrecord_pattern = linux_path(tfrecord_path, 'shard')
