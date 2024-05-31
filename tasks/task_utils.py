@@ -609,6 +609,7 @@ def get_tac_info(vid_len, class_id_to_name):
 
         import random
         random.shuffle(cols)
+        cols = all_cols
         sample = len(cols) // (n_cols - 1)
         cols = cols[::sample]
         cols.insert(0, (0, 0, 0))
