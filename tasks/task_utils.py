@@ -207,11 +207,34 @@ def check_rle_tokens(
         if k == 27:
             exit()
 
-    # print('masks match !')
+        # print('masks match !')
+
+
+def check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_rec, class_id_to_col, n_classes):
+    for vid_id, (image, mask_gt_sub, mask_rec) in enumerate(zip(video, vid_mask_gt_sub, vid_mask_rec)):
+        if not np.array_equal(mask_gt_sub, mask_rec):
+            print(f"mask {vid_id} mismatch")
+
+            mask_gt_sub_vis = mask_id_to_vis_rgb(mask_gt_sub, class_id_to_col)
+            mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_id_to_col)
+
+            mask_gt_sub_vis = resize_mask(mask_gt_sub_vis, image.shape, n_classes, is_vis=1)
+            mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
+
+            masks_all = np.concatenate([image, mask_gt_sub_vis, mask_rec_vis], axis=1)
+            masks_all = cv2.resize(masks_all, (960, 540))
+
+            cv2.imshow(f'masks {vid_id}', masks_all)
+            k = cv2.waitKey(1)
+            if k == 27:
+                exit()
+        else:
+            print(f"mask {vid_id} matches")
 
 
 def check_video_rle_tokens(
-        video, vid_mask, rle_tokens, n_classes,
+        video, vid_mask, vid_mask_sub,
+        rle_tokens, n_classes,
         time_as_class,
         length_as_class,
         starts_offset, lengths_offset, class_offset,
@@ -237,6 +260,8 @@ def check_video_rle_tokens(
 
     if len(rle_tokens) == 0:
         assert np.all(vid_mask_gt == 0), "non-zero mask found for empty rle_tokens"
+
+        print('empty masks match !')
         return
 
     if is_vis:
@@ -253,12 +278,11 @@ def check_video_rle_tokens(
         vid_mask_gt_sub = vid_mask_gt
 
     if time_as_class and tac_mask_sub is None:
-        tac_mask_sub = vid_mask_to_tac(vid_mask_gt_sub, n_classes)
+        tac_mask_sub = vid_mask_to_tac(video, vid_mask_gt_sub, n_classes, class_id_to_col, check=True)
         tac_id_to_col, tac_id_to_name = get_tac_info(vid_len, class_id_to_name)
 
     # rle_len = len(rle_tokens)
-
-    vid_mask_rec, rle_rec_cmp = vid_mask_from_tokens(
+    vid_mask_rec, tac_mask_rec, rle_rec_cmp = vid_mask_from_tokens(
         rle_tokens,
         vid_len=vid_len,
         shape=(n_rows, n_cols),
@@ -272,8 +296,6 @@ def check_video_rle_tokens(
         flat_order=flat_order,
         time_as_class=time_as_class,
         n_classes=n_classes,
-        tac_mask_sub=tac_mask_sub,
-        tac_id_to_col=tac_id_to_col,
     )
 
     starts, lengths = rle_rec_cmp[:2]
@@ -301,23 +323,34 @@ def check_video_rle_tokens(
 
     if not np.array_equal(vid_mask_gt_sub, vid_mask_rec):
         print("vid_mask_rec mismatch")
+        if not np.array_equal(vid_mask_gt_sub, vid_mask_sub):
+            print('vid_mask_gt_sub mismatch')
+            check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_sub, class_id_to_col, n_classes)
+        else:
+            print('vid_mask_gt_sub matches')
 
-        for vid_id, (image, mask_gt_sub, mask_rec) in enumerate(zip(video, vid_mask_gt_sub, vid_mask_rec)):
-            if not np.array_equal(mask_gt_sub, mask_rec):
-                print(f"mask {vid_id} mismatch")
+        if time_as_class and tac_mask_sub is not None:
+            if not np.array_equal(tac_mask_sub, tac_mask_rec):
+                print("tac_masks mismatch")
+                tac_mask_sub_vis = mask_id_to_vis_rgb(tac_mask_sub, tac_id_to_col)
+                tac_mask_rec_vis = mask_id_to_vis_rgb(tac_mask_rec, tac_id_to_col)
+                tac_mask_sub_vis = resize_mask(tac_mask_sub_vis, (640, 640), n_classes, is_vis=1)
+                tac_mask_rec_vis = resize_mask(tac_mask_rec_vis, (640, 640), n_classes, is_vis=1)
 
-                mask_gt_sub_vis = mask_id_to_vis_rgb(mask_gt_sub, class_id_to_col)
-                mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_id_to_col)
-
-                mask_gt_sub_vis = resize_mask(mask_gt_sub_vis, image.shape, n_classes, is_vis=1)
-                mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
-
-                masks_all = np.concatenate([image, mask_gt_sub_vis, mask_rec_vis], axis=1)
+                masks_all = np.concatenate([tac_mask_sub_vis, tac_mask_rec_vis], axis=1)
                 masks_all = cv2.resize(masks_all, (960, 540))
-
-                cv2.imshow(f'masks {vid_id}', masks_all)
+                cv2.imshow(f'tac_mask', masks_all)
+                k = cv2.waitKey(1)
+                if k == 27:
+                    exit()
             else:
-                print(f"mask {vid_id} matches")
+                vid_mask_gt_rec = vid_mask_from_tac(tac_mask_sub, vid_len, n_classes)
+                if not np.array_equal(vid_mask_gt_rec, vid_mask_gt_sub):
+                    print("vid_mask_gt_rec mismatch")
+
+                print("\ntac_masks match !\n")
+
+        check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_rec, class_id_to_col, n_classes)
 
         # if subsample > 1:
         #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
@@ -1539,8 +1572,6 @@ def vid_mask_from_tokens(
         starts_2d,
         multi_class,
         flat_order,
-        tac_mask_sub,
-        tac_id_to_col,
 ):
     if len(rle_tokens) == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
@@ -1574,13 +1605,13 @@ def vid_mask_from_tokens(
     else:
         class_ids = [1, ] * len(starts)
 
-    mask = rle_to_vid_mask(
+    mask, tac_mask = rle_to_vid_mask(
         starts, lengths, class_ids,
         shape, vid_len, time_as_class,
-        n_classes, tac_mask_sub, tac_id_to_col
+        n_classes
     )
 
-    return mask, rle_cmp
+    return mask, tac_mask, rle_cmp
 
 
 def rle_from_tokens(
@@ -1794,28 +1825,39 @@ def vid_mask_from_tac(mask: np.ndarray, vid_len: int, n_classes: int):
     return vid_mask
 
 
-def vid_mask_to_tac(vid_mask: np.ndarray, n_classes: int):
+def vid_mask_to_tac(
+        video: np.ndarray,
+        vid_mask: np.ndarray,
+        n_classes: int,
+        class_id_to_col,
+        check):
     """
     convert video tac_mask to time-as-class tac_mask
     """
     vid_len, n_rows, n_cols = vid_mask.shape
 
     # n_pix = int(n_rows * n_cols)
-    n_time_classes = int(n_classes ** vid_len)
+    n_tac_classes = int(n_classes ** vid_len)
 
     # vid_mask_flat = vid_mask.reshape(vid_len, n_pix)
     tac_mask = np.zeros((n_rows, n_cols),
-                        dtype=np.int64 if n_time_classes > 256 else np.uint8)
+                        dtype=np.int64 if n_tac_classes > 256 else np.uint8)
 
     for vid_id in range(vid_len):
-        tac_mask += (n_classes ** vid_id) * vid_mask[vid_id, ...]
+        tac_mask += (n_classes ** vid_id) * vid_mask[vid_id, ...].astype(tac_mask.dtype)
 
     # vid_mask_flat = vid_mask.flatten(order='F')
     # nbits_arr = np.split(vid_mask_flat, n_pix)
     # decimal_arr = np.asarray([nbits_to_decimal(nbits, n_classes) for nbits in nbits_arr])
     # decimal_arr = np.reshape(decimal_arr, (n_rows, n_cols), order='F')
 
-    assert np.all(tac_mask < n_time_classes), f"tac_mask must be < {n_time_classes}"
+    assert np.all(tac_mask < n_tac_classes), f"tac_mask must be < {n_tac_classes}"
+
+    if check:
+        vid_mask_rec = vid_mask_from_tac(tac_mask, vid_len, n_classes)
+        if not np.array_equal(vid_mask, vid_mask_rec):
+            print("vid_mask_rec mismatch")
+            check_individual_vid_masks(video, vid_mask, vid_mask_rec, class_id_to_col, n_classes)
 
     return tac_mask
 
@@ -1891,8 +1933,6 @@ def rle_to_mask(starts, lengths, class_ids, shape):
 def rle_to_vid_mask(
         starts, lengths, class_ids, shape,
         vid_len, time_as_class, n_classes,
-        tac_mask_sub,
-        tac_id_to_col,
 ):
     n_rows, n_cols = shape
     if len(starts) == 0:
@@ -1910,27 +1950,11 @@ def rle_to_vid_mask(
 
     if time_as_class:
         tac_mask_rec = mask_flat.reshape((n_rows, n_cols))
-        if tac_mask_sub is not None:
-            if not np.array_equal(tac_mask_sub, tac_mask_rec):
-                print("tac_masks mismatch")
-                tac_mask_sub_vis = mask_id_to_vis_rgb(tac_mask_sub, tac_id_to_col)
-                tac_mask_rec_vis = mask_id_to_vis_rgb(tac_mask_rec, tac_id_to_col)
-                tac_mask_sub_vis = resize_mask(tac_mask_sub_vis, (640, 640), n_classes, is_vis=1)
-                tac_mask_rec_vis = resize_mask(tac_mask_rec_vis, (640, 640), n_classes, is_vis=1)
-
-                masks_all = np.concatenate([tac_mask_sub_vis, tac_mask_rec_vis], axis=1)
-                masks_all = cv2.resize(masks_all, (960, 540))
-                cv2.imshow(f'tac_mask', masks_all)
-                k = cv2.waitKey(1)
-                if k == 27:
-                    exit()
-            else:
-                print("\ntac_masks match !\n")
-
         mask = vid_mask_from_tac(tac_mask_rec, vid_len, n_classes)
     else:
         mask = mask_flat.reshape((vid_len, n_rows, n_cols))
-    return mask
+        tac_mask_rec = None
+    return mask, tac_mask_rec
 
 
 def get_class_info(category_info):
@@ -2343,6 +2367,7 @@ def get_normalized_weight(id_map, total_num_ids, p=1.0):
     weight /= tf.reduce_sum(weight, [1, 2], keepdims=True)
     weight *= tf.cast(tf.math.reduce_prod(tf.shape(id_map)[1:]), weight.dtype)
     return weight
+
 
 def polygons_from_mask(mask_img):
     # print('Getting contour pts from mask...')

@@ -500,8 +500,10 @@ def create_tf_example(
     tac_mask = tac_mask_sub = None
 
     if params.time_as_class:
-        tac_mask = task_utils.vid_mask_to_tac(vid_mask_orig, n_classes)
-        tac_mask_sub = task_utils.vid_mask_to_tac(vid_mask_sub_orig, n_classes)
+        tac_mask = task_utils.vid_mask_to_tac(
+            vid, vid_mask_orig, n_classes, class_id_to_col, params.check)
+        tac_mask_sub = task_utils.vid_mask_to_tac(
+            vid, vid_mask_sub_orig, n_classes, class_id_to_col, params.check)
 
         # vid_mask_rec = task_utils.vid_mask_from_tac(tac_mask, vid_len, n_classes)
         # vid_mask_sub_rec = task_utils.vid_mask_from_tac(tac_mask_sub, vid_len, n_classes)
@@ -579,7 +581,8 @@ def create_tf_example(
 
     if params.check:
         task_utils.check_video_rle_tokens(
-            vid, vid_mask_orig, rle_tokens,
+            vid, vid_mask_orig, vid_mask_sub_orig,
+            rle_tokens,
             n_classes=n_classes,
             length_as_class=params.length_as_class,
             starts_offset=params.starts_offset,
