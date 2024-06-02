@@ -1845,6 +1845,7 @@ def vid_mask_to_tac(
 
     for vid_id in range(vid_len):
         tac_mask += (n_classes ** vid_id) * vid_mask[vid_id, ...].astype(tac_mask.dtype)
+        # tac_mask += (n_classes ** vid_id) * vid_mask[vid_id, ...]
 
     # vid_mask_flat = vid_mask.flatten(order='F')
     # nbits_arr = np.split(vid_mask_flat, n_pix)
