@@ -19,7 +19,6 @@ class TaskVideoSegmentation(task_lib.Task):
 
         class_id_to_col, class_id_to_name = task_utils.get_class_info(self._category_names)
 
-
         # class_info_path = config.dataset.get('class_info_path')
         # assert class_info_path, "class_info_path must be provided"
         # class_id_to_col, class_id_to_name = task_utils.read_class_info(class_info_path)
@@ -87,15 +86,25 @@ class TaskVideoSegmentation(task_lib.Task):
             video = videos[batch_id]
             frame_ids = frame_ids_all[batch_id]
             vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(mask_vid_path)
+            n_rows, n_cols = vid_height, vid_width
+
             vid_mask = []
+            vid_mask_sub = []
             for frame_id in frame_ids:
                 mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
                 if not multi_class:
-                    mask[mask > 0] = 255
+                    mask = task_utils.mask_to_binary(mask)
+                mask = task_utils.mask_to_gs(mask)
 
+                if subsample > 1:
+                    n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
+                    mask_sub = task_utils.resize_mask_coord(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
+                else:
+                    mask_sub = np.copy(mask)
                 vid_mask.append(mask)
+                vid_mask_sub.append(mask_sub)
             vid_mask = np.stack(vid_mask, axis=0)
-
+            vid_mask_sub = np.stack(vid_mask_sub, axis=0)
 
             assert rle_tokens.size == rle_len, "rle_len mismatch"
 
@@ -116,7 +125,8 @@ class TaskVideoSegmentation(task_lib.Task):
                 min_lengths_tokens = np.amin(lengths_tokens)
                 assert max_lengths_tokens < starts_offset, "max_lengths_tokens exceeds starts_offset"
                 assert min_lengths_tokens > lengths_offset, "lengths_offset exceeds min_lengths_tokens"
-                # assert max_lengths_tokens < lengths_bins + lengths_offset, "max_lengths_tokens exceeds lengths_bins + lengths_offset"
+                # assert max_lengths_tokens < lengths_bins + lengths_offset, "max_lengths_tokens exceeds lengths_bins
+                # + lengths_offset"
 
                 if (multi_class or time_as_class) and not length_as_class:
                     class_tokens = np.array(rle_tokens[2:][::n_run_tokens], dtype=np.int64)
@@ -129,7 +139,8 @@ class TaskVideoSegmentation(task_lib.Task):
                         assert max_class_tokens < lengths_offset, "max_class_tokens exceeds lengths_offset"
 
             task_utils.check_video_rle_tokens(
-                video, vid_mask, rle_tokens,
+                video, vid_mask, vid_mask_sub,
+                rle_tokens,
                 n_classes=n_classes,
                 length_as_class=length_as_class,
                 starts_offset=starts_offset,
@@ -154,7 +165,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 self.dataset,
                 self.train_transforms,
                 batched_examples,
-                vis=1,
+                vis=0,
                 model_dir=self.config.model_dir,
                 training=training)
 
