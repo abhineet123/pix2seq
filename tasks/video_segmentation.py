@@ -215,12 +215,13 @@ class TaskVideoSegmentation(task_lib.Task):
 
     def postprocess_tpu(self, batched_examples, pred_rle, logits, training=False):
         example = batched_examples
-        images, image_ids = example['image'], example['image/id']
+        videos, image_ids = example['video'], example['image_ids']
         orig_image_size = example['orig_image_size']
 
         gt_rle = example['rle']
 
-        return images, image_ids, pred_rle, logits, gt_rle, orig_image_size
+        """goes to postprocess_cpu"""
+        return videos, image_ids, pred_rle, logits, gt_rle, orig_image_size
 
     def postprocess_cpu(self,
                         outputs,
@@ -241,7 +242,7 @@ class TaskVideoSegmentation(task_lib.Task):
         for i in range(len(outputs)):
             new_outputs.append(tf.identity(outputs[i]))
 
-        images, image_ids, rles, logits, gt_rles, orig_sizes = new_outputs
+        videos, image_ids, rles, logits, gt_rles, orig_sizes = new_outputs
 
         orig_sizes = orig_sizes.numpy()
         gt_rles = gt_rles.numpy()
@@ -250,10 +251,10 @@ class TaskVideoSegmentation(task_lib.Task):
 
         image_ids_ = image_ids.numpy().flatten().astype(str)
         image_ids = list(image_ids_)
-        images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
+        videos = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
         multi_class = self.config.dataset.multi_class
-        for image_id_, image_, rle_, logits_, orig_size_, gt_rle_ in zip(
-                image_ids, images, rles, logits, orig_sizes, gt_rles):
+        for image_id_, video_, rle_, logits_, orig_size_, gt_rle_ in zip(
+                image_ids, videos, rles, logits, orig_sizes, gt_rles):
             orig_size_ = tuple(orig_size_)
             n_rows, n_cols = orig_size_
 
@@ -266,7 +267,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
             rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
 
-            mask_rec, rle_rec_cmp = task_utils.mask_from_tokens(
+            mask_rec, rle_rec_cmp = task_utils.vid_mask_from_tokens(
                 rle_,
                 (n_rows, n_cols),
                 starts_offset=self.config.model.coord_vocab_shift,
@@ -276,7 +277,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 multi_class=multi_class,
             )
 
-            mask_gt, rle_gt_cmp = task_utils.mask_from_tokens(
+            mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
                 gt_rle_,
                 (n_rows, n_cols),
                 starts_offset=self.config.model.coord_vocab_shift,
