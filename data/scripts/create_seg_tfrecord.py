@@ -508,6 +508,7 @@ def main():
 
     in_json_fname = f'{in_json_name}.{params.ann_ext}'
     in_json_path = os.path.join(params.db_path, in_json_fname)
+
     image_infos = load_seg_annotations(in_json_path)
 
     if params.subsample > 1:
