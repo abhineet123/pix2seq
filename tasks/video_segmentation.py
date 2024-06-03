@@ -243,7 +243,6 @@ class TaskVideoSegmentation(task_lib.Task):
             new_outputs.append(tf.identity(outputs[i]))
 
         videos, image_ids, rles, logits, gt_rles, orig_sizes = new_outputs
-
         orig_sizes = orig_sizes.numpy()
         gt_rles = gt_rles.numpy()
         rles = rles.numpy()
@@ -253,40 +252,61 @@ class TaskVideoSegmentation(task_lib.Task):
         image_ids = list(image_ids_)
         videos = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
         multi_class = self.config.dataset.multi_class
+        length_as_class = self.config.dataset.length_as_class
+        flat_order = self.config.dataset.flat_order
+        time_as_class = self.config.dataset.time_as_class
+        starts_offset = self.config.model.coord_vocab_shift,
+        lengths_offset = self.config.model.len_vocab_shift,
+        class_offset = self.config.model.class_vocab_shift,
+        max_length = self.config.dataset.train.max_length
+        subsample = self.config.dataset.train.subsample
+        n_classes = len(self.class_id_to_col)
+
         for image_id_, video_, rle_, logits_, orig_size_, gt_rle_ in zip(
                 image_ids, videos, rles, logits, orig_sizes, gt_rles):
+            vid_len = video_.shape[0]
+
             orig_size_ = tuple(orig_size_)
             n_rows, n_cols = orig_size_
-
-            max_length = self.config.dataset.train.max_length
-            subsample = self.config.dataset.train.subsample
 
             if subsample > 1:
                 max_length = int(max_length / subsample)
                 n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
-            rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
+            rle_tokens = rle_[rle_ != vocab.PADDING_TOKEN]
+            gt_rle_tokens = gt_rle_[gt_rle_ != vocab.PADDING_TOKEN]
 
-            mask_rec, rle_rec_cmp = task_utils.vid_mask_from_tokens(
-                rle_,
-                (n_rows, n_cols),
-                starts_offset=self.config.model.coord_vocab_shift,
-                lengths_offset=self.config.model.len_vocab_shift,
-                class_offset=self.config.model.class_vocab_shift,
+            vid_mask_rec, tac_mask_rec, rle_rec_cmp = task_utils.vid_mask_from_tokens(
+                rle_tokens,
+                vid_len=vid_len,
+                shape=(n_rows, n_cols),
+                length_as_class=length_as_class,
+                max_length=max_length,
+                starts_offset=starts_offset,
+                lengths_offset=lengths_offset,
+                class_offset=class_offset,
                 starts_2d=False,
                 multi_class=multi_class,
+                flat_order=flat_order,
+                time_as_class=time_as_class,
+                n_classes=n_classes,
             )
 
-            mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
-                gt_rle_,
-                (n_rows, n_cols),
-                starts_offset=self.config.model.coord_vocab_shift,
-                lengths_offset=self.config.model.len_vocab_shift,
-                class_offset=self.config.model.class_vocab_shift,
+            vid_mask_gt, tac_mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
+                gt_rle_tokens,
+                vid_len=vid_len,
+                shape=(n_rows, n_cols),
+                length_as_class=length_as_class,
+                max_length=max_length,
+                starts_offset=starts_offset,
+                lengths_offset=lengths_offset,
+                class_offset=class_offset,
                 starts_2d=False,
                 multi_class=multi_class,
+                flat_order=flat_order,
+                time_as_class=time_as_class,
+                n_classes=n_classes,
             )
-            n_classes = len(self.class_id_to_col)
 
             if subsample > 1:
                 mask_rec = task_utils.resize_mask(mask_rec, orig_size_, n_classes)
