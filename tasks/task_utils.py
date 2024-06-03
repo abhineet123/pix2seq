@@ -422,6 +422,7 @@ def resize_video_mask(vid_mask, shape, n_classes=None, is_vis=1):
     masks = np.stack(masks, axis=0)
     return masks
 
+
 def resize_mask(mask, shape, n_classes=None, is_vis=1):
     n_rows, n_cols = shape[:2]
     if not is_vis:
@@ -1475,19 +1476,31 @@ def selective_argmax(arr, idx_range):
 def rle_from_logits(
         rle_logits,
         shape,
+        subsample,
         max_length,
-        starts_bins,
         n_classes,
         starts_offset, lengths_offset, class_offset,
-        starts_2d, multi_class):
+        time_as_class,
+        length_as_class,
+        starts_2d,
+        multi_class,
+        vid_len
+):
     assert not starts_2d, "starts_2d is not supported yet"
+
+    n_rows, n_cols = shape
+
+    if subsample > 1:
+        max_length = max_length // subsample
+        n_rows = n_rows // subsample
+        n_cols = n_cols // subsample
 
     rle_tokens_raw = np.argmax(rle_logits, axis=1).squeeze()
     n_tokens_raw = len(rle_tokens_raw)
 
     """
     index of the first non-zero (non-padding) token from end
-    EOS is the next token to this one
+    EOS is the next token to this one, i.e. the last continuous zero token from end
     """
     eos_idx = np.nonzero(rle_tokens_raw[::-1])[0]
     eos_idx = n_tokens_raw - eos_idx
@@ -1495,31 +1508,60 @@ def rle_from_logits(
     rle_logits_non_padding = rle_logits[:eos_idx, :]
     seq_len, vocab_size = rle_logits_non_padding.shape
 
+    if starts_2d:
+        assert n_rows == n_cols, "n_rows and n_cols must be same for starts_2d"
+        starts_bins = n_rows
+    else:
+        starts_bins = n_rows*n_cols
+
+    if not time_as_class:
+        starts_bins *= vid_len
+
     assert vocab_size >= starts_offset + starts_bins, "invalid vocab_size"
 
+    n_tokens_per_run = 2
+    if (time_as_class or multi_class) and not length_as_class:
+        n_tokens_per_run += 1
+
+    if seq_len % n_tokens_per_run != 0:
+        n_extra_tokens = seq_len % n_tokens_per_run
+        rle_logits_non_padding = rle_logits_non_padding[:-n_extra_tokens, :]
+
+    starts_logits = rle_logits_non_padding[0::n_tokens_per_run, :]
     coord_token_range = [starts_offset, starts_offset + starts_bins]
-    len_token_range = [lengths_offset, lengths_offset + max_length]
-    n_run_tokens = 2 if not multi_class else 3
-
-    if seq_len % n_run_tokens != 0:
-        rle_logits_non_padding = rle_logits_non_padding[:-(seq_len % n_run_tokens), :]
-
-    starts_logits = rle_logits_non_padding[0::n_run_tokens, :]
     starts_tokens = selective_argmax(starts_logits, coord_token_range)
     starts = starts_tokens - starts_offset - 1
 
-    len_logits = rle_logits_non_padding[1::n_run_tokens, :]
-    len_tokens = selective_argmax(len_logits, len_token_range)
-    lengths = len_tokens - lengths_offset
+    rle_cmp = [starts, ]
 
-    rle_cmp = [starts, lengths]
+    if not length_as_class:
+        assert starts_offset > lengths_offset + max_length, "too small starts_offset"
+        len_token_range = [lengths_offset, lengths_offset + max_length]
+        len_logits = rle_logits_non_padding[1::n_tokens_per_run, :]
+        len_tokens = selective_argmax(len_logits, len_token_range)
+        lengths = len_tokens - lengths_offset
+        rle_cmp.append(lengths)
 
-    if multi_class:
-        class_token_range = [class_offset, class_offset + n_classes]
-        class_logits = rle_logits_non_padding[2::n_run_tokens, :]
+    if multi_class or time_as_class or length_as_class:
+        n_classes_ = n_classes
+        if time_as_class:
+            n_classes_ = n_classes_ ** vid_len
+        if length_as_class:
+            n_total_classes = max_length * (n_classes_ - 1)
+        else:
+            n_total_classes = n_classes_
+
+        assert starts_offset > class_offset + n_total_classes, "too small starts_offset"
+
+        if not length_as_class:
+            assert lengths_offset > class_offset + n_total_classes, "too small lengths_offset"
+
+        class_token_range = [class_offset, class_offset + n_total_classes]
+        class_logits = rle_logits_non_padding[2::n_tokens_per_run, :]
         class_tokens = selective_argmax(class_logits, class_token_range)
         class_ids = class_tokens - class_offset
         rle_cmp.append(class_ids)
+
     return rle_cmp
 
 
@@ -1564,10 +1606,17 @@ def mask_from_tokens(
     )
     return mask, rle_cmp
 
+
 def bytes_to_str_list(image_ids):
-    image_ids_ = image_ids.flatten().astype(str)
+    batch_size, vid_len = image_ids.shape
+    image_ids_ = image_ids.astype(str)
     image_ids = list(image_ids_)
+
+    assert len(image_ids) == batch_size, "batch_size mismatch"
+    assert len(image_ids[0]) == vid_len, "vid_len mismatch"
+
     return image_ids
+
 
 def vid_mask_from_tokens(
         rle_tokens,
