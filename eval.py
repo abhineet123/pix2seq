@@ -76,6 +76,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         print(f'\nwriting vis images to: {out_vis_dir}\n')
         os.makedirs(out_vis_dir, exist_ok=True)
 
+    json_img_info = collections.defaultdict(list)
     seq_to_vid_writers = collections.defaultdict(lambda: None)
 
     def single_step(examples):
@@ -98,6 +99,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         start_time = timestamp = time.time()
         cur_step = 0
         img_id = 0
+
+        # cfg.eager = 1
 
         # print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
         while True:
@@ -145,7 +148,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 train_step=global_step.numpy(),
                 out_mask_dir=out_mask_dir,
                 out_vis_dir=out_vis_dir,
-                show=cfg.eval.vis,
+                show=cfg.eval.show_vis,
+                json_img_info=json_img_info,
                 vid_cap=seq_to_vid_writers,
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,

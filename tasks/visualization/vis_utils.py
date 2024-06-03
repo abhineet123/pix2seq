@@ -1200,6 +1200,8 @@ def visualize_mask(
         mask,
         gt_mask,
         category_index,
+        seq_id,
+        img_info,
         out_mask_dir,
         out_vis_dir,
         img_ext='.jpg',
@@ -1208,7 +1210,6 @@ def visualize_mask(
         video_id=None,
         show=False,
 ):
-    seq_id = 'generic'
     if isinstance(image_id, bytes):
         image_id_ = image_id.decode('utf-8')
     else:
@@ -1216,7 +1217,8 @@ def visualize_mask(
         image_id_ = str(image_id.item())
 
     if '/' in image_id_:
-        seq_id, image_id_ = image_id_.split('/')
+        seq_id_, image_id_ = image_id_.split('/')
+        assert seq_id_ == seq_id, "seq_id mismatch"
 
     if not image_id_.endswith(img_ext):
         image_id_ += img_ext
@@ -1249,6 +1251,10 @@ def visualize_mask(
         cv2.waitKey(100)
 
     if vid_writers is not None:
+        ext = 'mp4'
+        mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
+        vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
+
         if vid_writers[seq_id] is not None:
             mask_writer, vis_writer = vid_writers[seq_id]
         else:
@@ -1258,16 +1264,11 @@ def visualize_mask(
                 close_video_writers(writers)
                 vid_writers[seq_id_] = None
 
-            ext = 'mp4'
+            mask_writer = get_video_writer(mask_path)
+            vis_writer = get_video_writer(vis_path, crf=20)
 
-            seq_mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
-            seq_vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
-
-            mask_writer = get_video_writer(seq_mask_path)
-            vis_writer = get_video_writer(seq_vis_path, crf=20)
-
-            print(f'{seq_id} :: mask video: {seq_mask_path}')
-            print(f'{seq_id} :: vis video: {seq_vis_path}')
+            print(f'{seq_id} :: mask video: {mask_path}')
+            print(f'{seq_id} :: vis video: {vis_path}')
 
             vid_writers[seq_id] = mask_writer, vis_writer
 
@@ -1281,8 +1282,10 @@ def visualize_mask(
         seq_vis_dir = os.path.join(out_vis_dir, seq_id)
         os.makedirs(seq_vis_dir, exist_ok=True)
         vis_path = os.path.join(seq_vis_dir, vis_name)
-        cv2.imwrite(vis_path, blended_img)
+        cv2.imwrite(vis_path, vis_img)
 
+    img_info['out_path'] = mask_path
+    img_info['vis_path'] = vis_path
 
 def visualize_boxes_and_labels_on_image_array(
         image_id,

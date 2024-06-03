@@ -1559,6 +1559,10 @@ def mask_from_tokens(
     )
     return mask, rle_cmp
 
+def bytes_to_str_list(image_ids):
+    image_ids_ = image_ids.flatten().astype(str)
+    image_ids = list(image_ids_)
+    return image_ids
 
 def vid_mask_from_tokens(
         rle_tokens,
@@ -1573,12 +1577,14 @@ def vid_mask_from_tokens(
         multi_class,
         flat_order,
 ):
+    n_rows, n_cols = shape
     if len(rle_tokens) == 0:
-        mask = np.zeros(tuple(shape), dtype=np.uint8)
+        mask = np.zeros((vid_len, n_rows, n_cols), dtype=np.uint8)
+        tac_mask = np.zeros((n_rows, n_cols), dtype=np.uint8) if time_as_class else None
         rle_cmp = [[], []]
         if not length_as_class and multi_class:
             rle_cmp.append([])
-        return mask, rle_cmp
+        return mask, tac_mask, rle_cmp
 
     rle_cmp = vid_rle_from_tokens(
         rle_tokens,

@@ -215,13 +215,18 @@ class TaskVideoSegmentation(task_lib.Task):
 
     def postprocess_tpu(self, batched_examples, pred_rle, logits, training=False):
         example = batched_examples
-        videos, image_ids = example['video'], example['image_ids']
+        videos, image_ids, frame_ids = example['video'], example['image_ids'], example['frame_ids']
+        vid_paths = example['vid_path']
+        seqs = example['seq']
+        mask_vid_paths = example['mask_vid_path']
         orig_image_size = example['orig_image_size']
 
         gt_rle = example['rle']
 
         """goes to postprocess_cpu"""
-        return videos, image_ids, pred_rle, logits, gt_rle, orig_image_size
+        return videos, image_ids, frame_ids, pred_rle, logits, gt_rle, orig_image_size, seqs, vid_paths, mask_vid_paths,
+
+
 
     def postprocess_cpu(self,
                         outputs,
@@ -229,6 +234,7 @@ class TaskVideoSegmentation(task_lib.Task):
                         out_vis_dir,
                         out_mask_dir,
                         vid_cap=None,
+                        json_img_info=None,
                         eval_step=None,
                         training=False,
                         show=False,
@@ -238,18 +244,22 @@ class TaskVideoSegmentation(task_lib.Task):
                         ):
 
         # Copy outputs to cpu.
-        new_outputs = []
+        np_outputs = []
         for i in range(len(outputs)):
-            new_outputs.append(tf.identity(outputs[i]))
+            np_outputs.append(tf.identity(outputs[i]).numpy())
 
-        videos, image_ids, rles, logits, gt_rles, orig_sizes = new_outputs
-        orig_sizes = orig_sizes.numpy()
-        gt_rles = gt_rles.numpy()
-        rles = rles.numpy()
-        logits = logits.numpy()
+        videos, image_ids, frame_ids, rles, logits, gt_rles, orig_sizes, seqs, vid_paths, mask_vid_paths = np_outputs
 
-        image_ids_ = image_ids.numpy().flatten().astype(str)
-        image_ids = list(image_ids_)
+        # orig_sizes = orig_sizes.numpy()
+        # gt_rles = gt_rles.numpy()
+        # rles = rles.numpy()
+        # logits = logits.numpy()
+
+        image_ids = task_utils.bytes_to_str_list(image_ids)
+        seqs = task_utils.bytes_to_str_list(seqs)
+        vid_paths = task_utils.bytes_to_str_list(vid_paths)
+        mask_vid_paths = task_utils.bytes_to_str_list(mask_vid_paths)
+
         videos = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
         multi_class = self.config.dataset.multi_class
         length_as_class = self.config.dataset.length_as_class
@@ -262,19 +272,19 @@ class TaskVideoSegmentation(task_lib.Task):
         subsample = self.config.dataset.train.subsample
         n_classes = len(self.class_id_to_col)
 
-        for image_id_, video_, rle_, logits_, orig_size_, gt_rle_ in zip(
-                image_ids, videos, rles, logits, orig_sizes, gt_rles):
-            vid_len = video_.shape[0]
+        for image_ids_, frame_ids_, video, rle, logits_, orig_size, gt_rle, seq, vid_path, mask_vid_path in zip(
+                image_ids, frame_ids, videos, rles, logits, orig_sizes, gt_rles, seqs, vid_paths, mask_vid_paths):
+            vid_len = video.shape[0]
 
-            orig_size_ = tuple(orig_size_)
-            n_rows, n_cols = orig_size_
+            orig_size = tuple(orig_size)
+            n_rows, n_cols = orig_size
 
             if subsample > 1:
                 max_length = int(max_length / subsample)
                 n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
-            rle_tokens = rle_[rle_ != vocab.PADDING_TOKEN]
-            gt_rle_tokens = gt_rle_[gt_rle_ != vocab.PADDING_TOKEN]
+            rle_tokens = rle[rle != vocab.PADDING_TOKEN]
+            gt_rle_tokens = gt_rle[gt_rle != vocab.PADDING_TOKEN]
 
             vid_mask_rec, tac_mask_rec, rle_rec_cmp = task_utils.vid_mask_from_tokens(
                 rle_tokens,
@@ -309,21 +319,43 @@ class TaskVideoSegmentation(task_lib.Task):
             )
 
             if subsample > 1:
-                mask_rec = task_utils.resize_mask(mask_rec, orig_size_, n_classes)
-                mask_gt = task_utils.resize_mask(mask_gt, orig_size_, n_classes)
+                vid_mask_rec = task_utils.resize_mask(vid_mask_rec, orig_size, n_classes)
+                vid_mask_gt = task_utils.resize_mask(vid_mask_gt, orig_size, n_classes)
 
-            vis_utils.visualize_mask(
-                image_id_,
-                image_,
-                mask_rec,
-                mask_gt,
-                self._category_names,
-                out_mask_dir=out_mask_dir,
-                out_vis_dir=out_vis_dir,
-                vid_writers=vid_cap,
-                orig_size=orig_size_,
-                show=show,
-            )
+            seq_img_infos = json_img_info[seq]
+            if seq_img_infos:
+                out_frame_id = seq_img_infos[-1]['out_frame_id']
+            else:
+                out_frame_id = 0
+
+            for image_id_, frame_id, image_, mask_rec, mask_gt in zip(
+                    image_ids, frame_ids_, video, vid_mask_rec, vid_mask_gt):
+                img_info = dict(
+                        seq=seq,
+                        image_id=image_id_,
+                        src_frame_id=frame_id,
+                        out_frame_id=out_frame_id,
+                        vid_path=vid_path,
+                        mask_vid_path=mask_vid_path,
+                    )
+                vis_utils.visualize_mask(
+                    image_id_,
+                    image_,
+                    mask_rec,
+                    mask_gt,
+                    self._category_names,
+                    seq_id=seq,
+                    img_info=img_info,
+                    out_mask_dir=out_mask_dir,
+                    out_vis_dir=out_vis_dir,
+                    vid_writers=vid_cap,
+                    orig_size=orig_size,
+                    show=show,
+                )
+                seq_img_infos.append(
+                    img_info
+                )
+                out_frame_id += 1
 
     def compute_scalar_metrics(self, step):
         raise AssertionError('not implemented')
