@@ -417,6 +417,11 @@ def resize_mask_coord(mask, shape, n_classes, is_vis=1):
     return mask_out
 
 
+def resize_video_mask(vid_mask, shape, n_classes=None, is_vis=1):
+    masks = [resize_mask(mask, shape, n_classes, is_vis) for mask in vid_mask]
+    masks = np.stack(masks, axis=0)
+    return masks
+
 def resize_mask(mask, shape, n_classes=None, is_vis=1):
     n_rows, n_cols = shape[:2]
     if not is_vis:

@@ -269,8 +269,8 @@ def get_video_segmentation_eval_transforms(
         max_seq_len,
 ):
     return [
-        D(name='resize_image',
-          inputs=['image', ],
+        D(name='resize_video',
+          inputs=['video', ],
           antialias=[True],
           target_size=image_size),
         D(name='truncate_or_pad_to_max_instances',

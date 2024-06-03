@@ -319,8 +319,8 @@ class TaskVideoSegmentation(task_lib.Task):
             )
 
             if subsample > 1:
-                vid_mask_rec = task_utils.resize_mask(vid_mask_rec, orig_size, n_classes)
-                vid_mask_gt = task_utils.resize_mask(vid_mask_gt, orig_size, n_classes)
+                vid_mask_rec = task_utils.resize_video_mask(vid_mask_rec, orig_size, n_classes, is_vis=0)
+                vid_mask_gt = task_utils.resize_video_mask(vid_mask_gt, orig_size, n_classes, is_vis=0)
 
             seq_img_infos = json_img_info[seq]
             if seq_img_infos:
@@ -330,6 +330,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
             for image_id_, frame_id, image_, mask_rec, mask_gt in zip(
                     image_ids, frame_ids_, video, vid_mask_rec, vid_mask_gt):
+                out_frame_id += 1
                 img_info = dict(
                         seq=seq,
                         image_id=image_id_,
@@ -355,7 +356,6 @@ class TaskVideoSegmentation(task_lib.Task):
                 seq_img_infos.append(
                     img_info
                 )
-                out_frame_id += 1
 
     def compute_scalar_metrics(self, step):
         raise AssertionError('not implemented')
