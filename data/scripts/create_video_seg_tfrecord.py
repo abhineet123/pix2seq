@@ -368,7 +368,7 @@ def generate_annotations(
         all_subseq_img_infos,
         vid_infos,
 ):
-    for subseq_img_infos in all_subseq_img_infos:
+    for vid_id, subseq_img_infos in enumerate(all_subseq_img_infos):
         seq = subseq_img_infos[0]['seq']
 
         yield (
@@ -378,6 +378,7 @@ def generate_annotations(
             tac_id_to_col,
             tac_id_to_name,
             metrics,
+            vid_id,
             subseq_img_infos,
             seq,
             vid_infos[seq]
@@ -391,6 +392,7 @@ def create_tf_example(
         tac_id_to_col,
         tac_id_to_name,
         metrics,
+        vid_id,
         subseq_img_infos,
         seq,
         vid_info):
@@ -407,7 +409,7 @@ def create_tf_example(
 
     if not params.stats_only:
         video_feature_dict = tfrecord_lib.video_seg_info_to_feature_dict(
-            vid_height, vid_width, vid_path, mask_vid_path,
+            vid_id, vid_height, vid_width, vid_path, mask_vid_path,
             vid_len, seq)
 
     subsample_method = params.subsample_method

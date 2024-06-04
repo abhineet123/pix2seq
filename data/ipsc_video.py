@@ -200,6 +200,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
 
         images = tf.stack(images, axis=0)
 
+        vid_id = example['video/id']
         rle = example['video/rle']
         rle_len = example['video/rle_len']
         vid_path = example['video/path']
@@ -210,6 +211,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
 
         new_example = {
             'video': images,
+            'vid_id': vid_id,
             'rle': rle,
             'rle_len': rle_len,
             'vid_size': (h, w),

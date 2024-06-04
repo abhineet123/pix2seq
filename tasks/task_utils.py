@@ -189,8 +189,8 @@ def check_rle_tokens(
         #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
 
         # import eval_utils
-        mask_gt_vis = mask_id_to_vis_rgb(mask_gt, class_to_col)
-        mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_to_col)
+        mask_gt_vis = mask_id_to_vis_bgr(mask_gt, class_to_col)
+        mask_rec_vis = mask_id_to_vis_bgr(mask_rec, class_to_col)
 
         cv2.imshow('mask_rec_vis', mask_rec_vis)
 
@@ -215,8 +215,8 @@ def check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_rec, class_id_to
         if not np.array_equal(mask_gt_sub, mask_rec):
             print(f"mask {vid_id} mismatch")
 
-            mask_gt_sub_vis = mask_id_to_vis_rgb(mask_gt_sub, class_id_to_col)
-            mask_rec_vis = mask_id_to_vis_rgb(mask_rec, class_id_to_col)
+            mask_gt_sub_vis = mask_id_to_vis_bgr(mask_gt_sub, class_id_to_col)
+            mask_rec_vis = mask_id_to_vis_bgr(mask_rec, class_id_to_col)
 
             mask_gt_sub_vis = resize_mask(mask_gt_sub_vis, image.shape, n_classes, is_vis=1)
             mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
@@ -365,8 +365,8 @@ def check_video_rle_tokens(
         if time_as_class and tac_mask_sub is not None:
             if not np.array_equal(tac_mask_sub, tac_mask_rec):
                 print("tac_masks mismatch")
-                tac_mask_sub_vis = mask_id_to_vis_rgb(tac_mask_sub, tac_id_to_col)
-                tac_mask_rec_vis = mask_id_to_vis_rgb(tac_mask_rec, tac_id_to_col)
+                tac_mask_sub_vis = mask_id_to_vis_bgr(tac_mask_sub, tac_id_to_col)
+                tac_mask_rec_vis = mask_id_to_vis_bgr(tac_mask_rec, tac_id_to_col)
                 tac_mask_sub_vis = resize_mask(tac_mask_sub_vis, (640, 640), n_classes, is_vis=1)
                 tac_mask_rec_vis = resize_mask(tac_mask_rec_vis, (640, 640), n_classes, is_vis=1)
 
@@ -516,21 +516,21 @@ def blend_mask(mask, image, class_to_col, alpha=0.5):
 
 
 def vid_mask_id_to_vis_rgb(vid_mask, class_to_col):
-    masks = [mask_id_to_vis_rgb(mask, class_to_col) for mask in vid_mask]
+    masks = [mask_id_to_vis_bgr(mask, class_to_col) for mask in vid_mask]
     vid_mask_rgb = np.stack(masks, axis=0)
     return vid_mask_rgb
 
 
-def mask_id_to_vis_rgb(mask, class_to_col):
-    mask_rgb = np.stack((mask,) * 3, axis=2).astype(np.uint8)
+def mask_id_to_vis_bgr(mask, class_to_col):
+    mask_bgr = np.stack((mask,) * 3, axis=2).astype(np.uint8)
 
     n_classes = len(class_to_col)
     for class_id in range(n_classes):
         class_col = class_to_col[class_id]
         if isinstance(class_col, str):
             class_col = col_bgr[class_col]
-        mask_rgb[mask == class_id] = class_col
-    return mask_rgb
+        mask_bgr[mask == class_id] = class_col
+    return mask_bgr
 
 
 def get_cols(n_runs):
@@ -843,10 +843,10 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
     if time_as_class:
         vid_masks_vis_ = label_video_mask(vid_masks_vis_, class_id_to_name, class_id_to_col)
 
-        tac_mask_sub_rgb = mask_id_to_vis_rgb(tac_mask_sub, tac_id_to_col)
+        tac_mask_sub_rgb = mask_id_to_vis_bgr(tac_mask_sub, tac_id_to_col)
         tac_mask_sub_rgb = resize_mask(tac_mask_sub_rgb, (vis_size, vis_size))
         # tac_mask_cat = tac_mask_sub_rgb
-        tac_mask_rgb = mask_id_to_vis_rgb(tac_mask, tac_id_to_col)
+        tac_mask_rgb = mask_id_to_vis_bgr(tac_mask, tac_id_to_col)
         tac_mask_rgb = resize_mask(tac_mask_rgb, (vis_size, vis_size))
 
         # tac_mask_cat = concat_with_boder(tac_mask_rgb, tac_mask_sub_rgb, axis=1, border=1)
@@ -936,11 +936,11 @@ def vis_video_and_masks(vid_vis, vid_mask, vid_mask_sub, vis_size,
         mask = vid_mask[frame_id, ...]
         mask_sub = vid_mask_sub[frame_id, ...]
 
-        mask_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
-        mask_sub_rgb = mask_id_to_vis_rgb(mask_sub, class_id_to_col)
+        mask_rgb = mask_id_to_vis_bgr(mask, class_id_to_col)
+        mask_sub_rgb = mask_id_to_vis_bgr(mask_sub, class_id_to_col)
 
         if time_as_class:
-            mask_sub_binary_vis = mask_id_to_vis_rgb(mask_sub, class_id_to_col)
+            mask_sub_binary_vis = mask_id_to_vis_bgr(mask_sub, class_id_to_col)
         else:
             mask_sub_binary_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1, copy=True)
             mask_sub_binary_vis[mask_sub_binary_vis > 0] = 255
@@ -1234,8 +1234,8 @@ def vis_rle(rle_cmp, length_as_class, max_length,
     n_classes = len(class_id_to_col)
     # cols = get_cols(n_runs)
 
-    mask_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
-    mask_sub_rgb = mask_id_to_vis_rgb(mask_sub, class_id_to_col)
+    mask_rgb = mask_id_to_vis_bgr(mask, class_id_to_col)
+    mask_sub_rgb = mask_id_to_vis_bgr(mask_sub, class_id_to_col)
 
     mask_sub_vis = mask_id_to_vis(mask_sub, n_classes=n_classes, to_rgb=1, copy=True)
     mask_sub_vis[mask_sub_vis > 0] = 255
@@ -1892,7 +1892,7 @@ def get_rle_class_ids(mask, starts, lengths, class_id_to_col, order):
         print("class_ids must be non-zero")
         class_ids = np.asarray(class_ids)
         zero_idxs = np.nonzero(class_ids == 0)[0]
-        mask_vis_rgb = mask_id_to_vis_rgb(mask, class_id_to_col)
+        mask_vis_rgb = mask_id_to_vis_bgr(mask, class_id_to_col)
         mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
         mask_vis_res = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
         cv2.imshow('mask_vis', mask_vis_res)

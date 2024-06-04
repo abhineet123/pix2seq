@@ -84,6 +84,7 @@ def get_feature_map_for_video_detection(vid_len):
 
 def get_feature_map_for_video_segmentation(length):
     feat_dict =  {
+        'video/id': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),

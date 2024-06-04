@@ -412,8 +412,8 @@ def create_tf_example(
             (n_rows_sub, n_cols_sub),
         )
 
-        mask_vis = task_utils.mask_id_to_vis_rgb(mask_sub, class_id_to_col)
-        mask_rec_vis = task_utils.mask_id_to_vis_rgb(mask_rec, class_id_to_col)
+        mask_vis = task_utils.mask_id_to_vis_bgr(mask_sub, class_id_to_col)
+        mask_rec_vis = task_utils.mask_id_to_vis_bgr(mask_rec, class_id_to_col)
 
         if subsample_method == 2:
             """reconstruct low-res mask and resize to scale it up"""

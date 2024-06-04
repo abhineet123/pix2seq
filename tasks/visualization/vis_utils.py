@@ -1213,6 +1213,22 @@ def visualize_mask(
         video_id=None,
         show=False,
 ):
+    n_classes = len(class_to_col)
+
+    n_rows, n_cols = orig_size
+
+    import cv2
+    image = cv2.resize(image, (n_cols, n_rows))
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    vis_gt_mask_small = task_utils.mask_id_to_vis_bgr(gt_mask, class_to_col)
+    vis_mask_small = task_utils.mask_id_to_vis_bgr(mask, class_to_col)
+    vis_mask_logits_small = task_utils.mask_id_to_vis_bgr(mask_logits, class_to_col)
+
+    vis_gt_mask = cv2.resize(vis_gt_mask_small, (n_cols, n_rows))
+    vis_mask = cv2.resize(vis_mask_small, (n_cols, n_rows))
+    vis_mask_logits = cv2.resize(vis_mask_logits_small, (n_cols, n_rows))
+
     if isinstance(image_id, bytes):
         image_id_ = image_id.decode('utf-8')
     else:
@@ -1226,20 +1242,12 @@ def visualize_mask(
     if not image_id_.endswith(img_ext):
         image_id_ += img_ext
 
-    import cv2
     import eval_utils
     if video_id is not None:
         image_name_, image_ext_ = os.path.splitext(image_id_)
         vis_name = f'{image_name_}_{video_id}{image_ext_}'
     else:
         vis_name = image_id_
-
-    image = cv2.resize(image, orig_size)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-    vis_gt_mask = task_utils.mask_id_to_vis_rgb(gt_mask, class_to_col)
-    vis_mask = task_utils.mask_id_to_vis_rgb(mask, class_to_col)
-    vis_mask_logits = task_utils.mask_id_to_vis_rgb(mask_logits, class_to_col)
 
     gt_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_gt_mask), 0.5))
     pred_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_mask), 0.5))
@@ -1249,10 +1257,15 @@ def visualize_mask(
     vis_img = np.concatenate((vis_img, vis_mask_all), axis=0)
     vis_img = resize_ar(vis_img, 960, 540)
 
+    vis_img_small = np.concatenate(
+        (vis_gt_mask_small, vis_mask_small, vis_mask_logits_small), axis=1)
+    vis_img_small = resize_ar(vis_img_small, 960, 540)
+
     vis_img = eval_utils.annotate(vis_img, vis_name)
 
     if show:
         cv2.imshow('vis_img', vis_img)
+        cv2.imshow('vis_img_small', vis_img_small)
         cv2.waitKey(0)
 
     if vid_writers is not None:
@@ -1300,6 +1313,7 @@ def visualize_mask(
     img_info['out_path'] = mask_path
     img_info['out_logits_path'] = mask_logits_path
     img_info['vis_path'] = vis_path
+
 
 def visualize_boxes_and_labels_on_image_array(
         image_id,

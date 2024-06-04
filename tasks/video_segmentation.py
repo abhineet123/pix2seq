@@ -293,9 +293,9 @@ class TaskVideoSegmentation(task_lib.Task):
 
             assert rle_len > max_seq_len or len(gt_rle_tokens) == rle_len, "rle_len mismatch"
 
-            if rle_len == 0:
-                print('skipping empty mask')
-                continue
+            # if rle_len == 0:
+            #     print('skipping empty mask')
+            #     continue
 
             vid_masks, vid_masks_sub = self.check_video_rle(
                 mask_vid_path, video, image_ids_, frame_ids_, gt_rle_tokens, rle_len)
@@ -378,17 +378,11 @@ class TaskVideoSegmentation(task_lib.Task):
                     mask_vid_path=mask_vid_path,
                 )
                 if show:
-                    vid_mask_vis = task_utils.mask_id_to_vis_rgb(vid_mask_, self.class_id_to_col)
-                    vid_mask_sub_vis = task_utils.mask_id_to_vis_rgb(vid_mask_sub_, self.class_id_to_col)
+                    vid_mask_vis = task_utils.mask_id_to_vis_bgr(vid_mask_, self.class_id_to_col)
+                    vid_mask_sub_vis = task_utils.mask_id_to_vis_bgr(vid_mask_sub_, self.class_id_to_col)
                     vid_mask_sub_vis = task_utils.resize_mask(vid_mask_sub_vis, vid_mask_.shape)
                     vid_mask_all = np.concatenate((vid_mask_vis, vid_mask_sub_vis), axis=1)
                     cv2.imshow('vid_mask_all', vid_mask_all)
-
-
-                if subsample > 1:
-                    mask_rec = task_utils.resize_mask(mask_rec, orig_size, n_classes, is_vis=0)
-                    mask_logits = task_utils.resize_mask(mask_logits, orig_size, n_classes, is_vis=0)
-                    mask_gt = task_utils.resize_mask(mask_gt, orig_size, n_classes, is_vis=0)
 
                 vis_utils.visualize_mask(
                     image_id_,

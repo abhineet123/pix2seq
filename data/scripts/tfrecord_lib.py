@@ -145,11 +145,12 @@ def image_info_to_feature_dict(height, width, filename, image_id,
         'image/format': convert_to_feature(encoded_format.encode('utf8')),
     }
 
-def video_seg_info_to_feature_dict(height, width, vid_path, mask_vid_path,
+def video_seg_info_to_feature_dict(vid_id, height, width, vid_path, mask_vid_path,
                                    vid_len, seq):
 
 
     video_feature_dict = {
+        'video/id': convert_to_feature(vid_id),
         'video/height': convert_to_feature(height),
         'video/width': convert_to_feature(width),
         'video/path': convert_to_feature(vid_path.encode('utf8')),
