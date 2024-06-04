@@ -61,6 +61,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     out_mask_logits_dir = os.path.join(out_dir, mask_logits_dir_name)
     out_vis_dir = os.path.join(out_dir, vis_dir_name)
     out_csv_dir = os.path.join(out_dir, csv_dir_name)
+    out_json_name = f"vid_info.json.gz"
+    out_json_path = os.path.join(out_dir, out_json_name)
 
     if is_seg:
         seq_to_csv_rows = None
@@ -70,6 +72,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             os.makedirs(out_mask_dir, exist_ok=True)
             print(f'\nwriting logits masks to: {out_mask_logits_dir}\n')
             os.makedirs(out_mask_logits_dir, exist_ok=True)
+
+            print(f'\nwriting vid info json to: {out_json_path}\n')
     else:
         if cfg.eval.save_csv:
             print(f'\nwriting csv files to: {out_csv_dir}\n')
@@ -81,7 +85,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         print(f'\nwriting vis images to: {out_vis_dir}\n')
         os.makedirs(out_vis_dir, exist_ok=True)
 
-    json_img_info = collections.defaultdict(list)
+    json_vid_info = collections.defaultdict(list)
     seq_to_vid_writers = collections.defaultdict(lambda: None)
 
     def single_step(examples):
@@ -165,7 +169,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 out_mask_logits_dir=out_mask_logits_dir,
                 out_vis_dir=out_vis_dir,
                 show=cfg.eval.show_vis,
-                json_img_info=json_img_info,
+                json_vid_info=json_vid_info,
                 vid_cap=seq_to_vid_writers,
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,
@@ -176,7 +180,14 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
         logging.info('Finished eval in %.2f mins', (time.time() - start_time) / 60.)
 
-    if not is_seg and cfg.eval.save_csv:
+    if is_seg:
+        json_kwargs = dict(
+            indent=4
+        )
+        import compress_json
+        compress_json.dump(json_vid_info, out_json_path, json_kwargs=json_kwargs)
+
+    elif cfg.eval.save_csv:
         import pandas as pd
         csv_columns = [
             "ImageID", "LabelName",

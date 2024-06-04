@@ -38,7 +38,7 @@ class Params(paramparse.CFG):
         self.vis = 0
         self.stats_only = 0
         self.json_only = 0
-        self.check = 1
+        self.check = 0
 
         self.excluded_src_ids = []
 
@@ -838,7 +838,7 @@ def main():
             process_func=create_tf_example,
             num_shards=params.num_shards,
             multiple_processes=params.n_proc,
-            iter_len=len(image_infos),
+            iter_len=len(all_subseq_img_infos),
         )
 
     print(f'tfrecord_path: {tfrecord_path}')

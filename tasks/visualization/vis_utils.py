@@ -1310,9 +1310,9 @@ def visualize_mask(
         vis_path = os.path.join(seq_vis_dir, vis_name)
         cv2.imwrite(vis_path, vis_img)
 
-    img_info['out_path'] = mask_path
-    img_info['out_logits_path'] = mask_logits_path
-    img_info['vis_path'] = vis_path
+    img_info['out_path'] = str(mask_path)
+    img_info['out_logits_path'] = str(mask_logits_path)
+    img_info['vis_path'] = str(vis_path)
 
 
 def visualize_boxes_and_labels_on_image_array(

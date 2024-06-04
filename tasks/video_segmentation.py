@@ -226,7 +226,7 @@ class TaskVideoSegmentation(task_lib.Task):
                         out_mask_dir,
                         out_mask_logits_dir,
                         vid_cap=None,
-                        json_img_info=None,
+                        json_vid_info=None,
                         eval_step=None,
                         training=False,
                         show=False,
@@ -296,11 +296,10 @@ class TaskVideoSegmentation(task_lib.Task):
             #     print('skipping empty mask')
             #     continue
 
-            vid_masks, vid_masks_sub = self.check_video_rle(
-                mask_vid_path, video, image_ids_, frame_ids_, gt_rle_tokens, rle_len)
-
-            vid_mask = vid_masks[0]
-            vid_mask_sub = vid_masks_sub[0]
+            # vid_masks, vid_masks_sub = self.check_video_rle(
+            #     mask_vid_path, video, image_ids_, frame_ids_, gt_rle_tokens, rle_len)
+            # vid_mask = vid_masks[0]
+            # vid_mask_sub = vid_masks_sub[0]
 
             vid_len = video.shape[0]
 
@@ -353,35 +352,39 @@ class TaskVideoSegmentation(task_lib.Task):
                 n_classes=n_classes,
             )
 
-            vid_mask = task_utils.mask_vis_to_id(vid_mask, n_classes, copy=True)
-            vid_mask_sub = task_utils.mask_vis_to_id(vid_mask_sub, n_classes, copy=True)
-            if not np.array_equal(vid_mask_sub, vid_mask_gt):
-                print("vid_mask_gt mismatch")
-                task_utils.check_individual_vid_masks(video, vid_mask_sub, vid_mask_gt, self.class_id_to_col, n_classes)
+            # vid_mask = task_utils.mask_vis_to_id(vid_mask, n_classes, copy=True)
+            # vid_mask_sub = task_utils.mask_vis_to_id(vid_mask_sub, n_classes, copy=True)
+            # if not np.array_equal(vid_mask_sub, vid_mask_gt):
+            #     print("vid_mask_gt mismatch")
+            #     task_utils.check_individual_vid_masks(video, vid_mask_sub, vid_mask_gt, self.class_id_to_col, n_classes)
 
-            seq_img_infos = json_img_info[seq]
+            seq_img_infos = json_vid_info[seq]
             if seq_img_infos:
                 out_frame_id = seq_img_infos[-1]['out_frame_id']
             else:
                 out_frame_id = 0
 
-            for image_id_, frame_id, image_, mask_rec, mask_logits, mask_gt, vid_mask_, vid_mask_sub_ in zip(
-                    image_ids_, frame_ids_, video, vid_mask_rec, vid_mask_logits, vid_mask_gt, vid_mask, vid_mask_sub):
+            for (image_id_, frame_id, image_, mask_rec, mask_logits, mask_gt,
+                 # vid_mask_, vid_mask_sub_
+                 ) in zip(
+                    image_ids_, frame_ids_, video, vid_mask_rec, vid_mask_logits, vid_mask_gt,
+                    # vid_mask, vid_mask_sub
+            ):
                 out_frame_id += 1
                 img_info = dict(
-                    seq=seq,
-                    image_id=image_id_,
-                    src_frame_id=frame_id,
-                    out_frame_id=out_frame_id,
-                    vid_path=vid_path,
-                    mask_vid_path=mask_vid_path,
+                    seq=str(seq),
+                    image_id=str(image_id_),
+                    src_frame_id=int(frame_id),
+                    out_frame_id=int(out_frame_id),
+                    vid_path=str(vid_path),
+                    mask_vid_path=str(mask_vid_path),
                 )
-                if show:
-                    vid_mask_vis = task_utils.mask_id_to_vis_bgr(vid_mask_, self.class_id_to_col)
-                    vid_mask_sub_vis = task_utils.mask_id_to_vis_bgr(vid_mask_sub_, self.class_id_to_col)
-                    vid_mask_sub_vis = task_utils.resize_mask(vid_mask_sub_vis, vid_mask_.shape)
-                    vid_mask_all = np.concatenate((vid_mask_vis, vid_mask_sub_vis), axis=1)
-                    cv2.imshow('vid_mask_all', vid_mask_all)
+                # if show:
+                #     vid_mask_vis = task_utils.mask_id_to_vis_bgr(vid_mask_, self.class_id_to_col)
+                #     vid_mask_sub_vis = task_utils.mask_id_to_vis_bgr(vid_mask_sub_, self.class_id_to_col)
+                #     vid_mask_sub_vis = task_utils.resize_mask(vid_mask_sub_vis, vid_mask_.shape)
+                #     vid_mask_all = np.concatenate((vid_mask_vis, vid_mask_sub_vis), axis=1)
+                #     cv2.imshow('vid_mask_all', vid_mask_all)
 
                 vis_utils.visualize_mask(
                     image_id_,
