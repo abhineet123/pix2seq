@@ -206,6 +206,7 @@ class TaskVideoSegmentation(task_lib.Task):
     def postprocess_tpu(self, batched_examples, pred_rle, logits, training=False):
         example = batched_examples
         videos, image_ids, frame_ids = example['video'], example['image_ids'], example['frame_ids']
+        vid_ids = example['vid_id']
         vid_paths = example['vid_path']
         seqs = example['seq']
         mask_vid_paths = example['mask_vid_path']
@@ -215,7 +216,7 @@ class TaskVideoSegmentation(task_lib.Task):
         rle_len = example['rle_len']
 
         """goes to postprocess_cpu"""
-        return (videos, image_ids, frame_ids, pred_rle, logits, gt_rle, rle_len, orig_image_size, seqs, vid_paths,
+        return (videos, vid_ids, image_ids, frame_ids, pred_rle, logits, gt_rle, rle_len, orig_image_size, seqs, vid_paths,
                 mask_vid_paths,)
 
     def postprocess_cpu(self,
@@ -233,14 +234,12 @@ class TaskVideoSegmentation(task_lib.Task):
                         ret_results=False,
                         **kwargs
                         ):
-
-        # Copy outputs to cpu.
-        np_outputs = []
+        outputs_np = []
         for i in range(len(outputs)):
-            np_outputs.append(tf.identity(outputs[i]).numpy())
+            outputs_np.append(tf.identity(outputs[i]).numpy())
 
-        videos, image_ids, frame_ids, rles, logits, gt_rles, rle_lens, orig_sizes, seqs, vid_paths, mask_vid_paths = (
-            np_outputs)
+        videos, vid_ids, image_ids, frame_ids, rles, logits, gt_rles, rle_lens, orig_sizes, seqs, vid_paths, mask_vid_paths = (
+            outputs_np)
 
         # orig_sizes = orig_sizes.numpy()
         # gt_rles = gt_rles.numpy()

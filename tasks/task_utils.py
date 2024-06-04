@@ -177,7 +177,7 @@ def check_rle_tokens(
     n_pix = n_rows * n_cols
     assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
 
-    if multi_class:
+    if len(rle_rec_cmp) == 3:
         class_ids = rle_rec_cmp[2]
         assert 0 not in class_ids, "class_ids must be non-zero"
         assert np.all(np.asarray(class_ids) <= n_classes), "class_ids must be <= n_classes"
@@ -231,11 +231,12 @@ def check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_rec, class_id_to
         else:
             print(f"mask {vid_id} matches")
 
+
 def check_video_rle_ranges(rle_tokens, multi_class, time_as_class, length_as_class,
                            vocab_size, starts_offset, lengths_offset, class_offset):
-    n_run_tokens = 2
-    if (multi_class or time_as_class) and not length_as_class:
-        n_run_tokens += 1
+    has_class_tokens = (multi_class or time_as_class) and not length_as_class
+
+    n_run_tokens = 3 if has_class_tokens else 2
     assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
     starts_tokens = np.array(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
     max_starts = np.amax(starts_tokens)
@@ -252,7 +253,7 @@ def check_video_rle_ranges(rle_tokens, multi_class, time_as_class, length_as_cla
     # assert max_lengths_tokens < lengths_bins + lengths_offset, "max_lengths_tokens exceeds lengths_bins
     # + lengths_offset"
 
-    if (multi_class or time_as_class) and not length_as_class:
+    if has_class_tokens:
         class_tokens = np.array(rle_tokens[2:][::n_run_tokens], dtype=np.int64)
         max_class_tokens = np.amax(class_tokens)
         min_class_tokens = np.amin(class_tokens)
@@ -261,6 +262,7 @@ def check_video_rle_ranges(rle_tokens, multi_class, time_as_class, length_as_cla
 
         if not time_as_class:
             assert max_class_tokens < lengths_offset, "max_class_tokens exceeds lengths_offset"
+
 
 def check_video_rle_tokens(
         video, vid_mask, vid_mask_sub,
@@ -341,7 +343,7 @@ def check_video_rle_tokens(
 
     assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
 
-    if (multi_class or time_as_class) and not length_as_class:
+    if len(rle_rec_cmp) == 3:
         class_ids = rle_rec_cmp[2]
         assert 0 not in class_ids, "class_ids must be non-zero"
 
@@ -1585,12 +1587,15 @@ def rle_from_logits(
     EOS is the next token to this one, i.e. the last continuous zero token from end
     """
     rle_tokens_inv = rle_tokens_raw[::-1]
-    eos_idxs = np.nonzero(rle_tokens_inv)
-    eos_idx = eos_idxs[0][0]
-    eos_idx = n_tokens_raw - eos_idx
+    eos_idxs = np.nonzero(rle_tokens_inv)[0]
+    if len(eos_idxs) == 0:
+        eos_idx = 0
+    else:
+        eos_idx = eos_idxs[0]
+        eos_idx = n_tokens_raw - eos_idx
 
     rle_logits_non_padding = rle_logits[:eos_idx, :]
-    seq_len, vocab_size = rle_logits_non_padding.shape
+    seq_len = rle_logits_non_padding.shape[0]
 
     if starts_2d:
         assert n_rows == n_cols, "n_rows and n_cols must be same for starts_2d"
@@ -1603,9 +1608,13 @@ def rle_from_logits(
 
     assert vocab_size >= starts_offset + starts_bins, "invalid vocab_size"
 
-    n_tokens_per_run = 2
-    if (time_as_class or multi_class) and not length_as_class:
-        n_tokens_per_run += 1
+    has_class_tokens = (time_as_class or multi_class) and not length_as_class
+
+    n_tokens_per_run = 3 if has_class_tokens else 2
+
+    if seq_len < n_tokens_per_run:
+        rle_cmp = [[], [], []] if has_class_tokens else [[], []]
+        return rle_cmp
 
     if seq_len % n_tokens_per_run != 0:
         n_extra_tokens = seq_len % n_tokens_per_run
@@ -1730,12 +1739,12 @@ def vid_mask_from_tokens(
         flat_order,
 ):
     n_rows, n_cols = shape
+    has_class_tokens = (time_as_class or multi_class) and not length_as_class
+
     if len(rle_tokens) == 0:
         mask = np.zeros((vid_len, n_rows, n_cols), dtype=np.uint8)
         tac_mask = np.zeros((n_rows, n_cols), dtype=np.uint8) if time_as_class else None
-        rle_cmp = [[], []]
-        if not length_as_class and multi_class:
-            rle_cmp.append([])
+        rle_cmp = [[], [], []] if has_class_tokens else [[], []]
         return mask, tac_mask, rle_cmp
 
     rle_cmp = vid_rle_from_tokens(
@@ -1778,20 +1787,17 @@ def rle_from_tokens(
         starts_offset, lengths_offset, class_offset,
         starts_2d, multi_class, flat_order
 ):
+    has_class_tokens = multi_class and not length_as_class
+
     if length_as_class:
         assert lengths_offset == class_offset, "lengths_offset and class_offset must be same for length_as_class"
 
     if len(rle_tokens) == 0:
-        rle_cmp = [[], []]
-        if multi_class and not length_as_class:
-            rle_cmp.append([])
+        rle_cmp = [[], [], []] if has_class_tokens else [[], []]
         return rle_cmp
 
-    n_run_tokens = 2
+    n_run_tokens = 3 if has_class_tokens else 2
     if starts_2d:
-        n_run_tokens += 1
-
-    if multi_class and not length_as_class:
         n_run_tokens += 1
 
     assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
@@ -1817,7 +1823,7 @@ def rle_from_tokens(
 
     rle_cmp = [starts, lengths]
 
-    if multi_class and not length_as_class:
+    if has_class_tokens:
         class_ids = np.asarray(rle_tokens[len_id + 1:][::n_run_tokens], dtype=int)
         class_ids -= class_offset
         rle_cmp.append(class_ids)
@@ -1837,17 +1843,17 @@ def vid_rle_from_tokens(
     if length_as_class:
         assert lengths_offset == class_offset, "lengths_offset and class_offset must be same for length_as_class"
 
+    has_class_tokens = (multi_class or time_as_class) and not length_as_class
     if len(rle_tokens) == 0:
         rle_cmp = [[], []]
-        if (multi_class or time_as_class) and not length_as_class:
+        if has_class_tokens:
             rle_cmp.append([])
         return rle_cmp
 
     n_run_tokens = 2
     if starts_2d:
         n_run_tokens += 1
-
-    if (multi_class or time_as_class) and not length_as_class:
+    if has_class_tokens:
         n_run_tokens += 1
 
     assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
@@ -1873,7 +1879,7 @@ def vid_rle_from_tokens(
 
     rle_cmp = [starts, lengths]
 
-    if (multi_class or time_as_class) and not length_as_class:
+    if has_class_tokens:
         class_ids = np.array(rle_tokens[len_id + 1:][::n_run_tokens], dtype=np.int64)
         class_ids -= class_offset
         rle_cmp.append(class_ids)
@@ -2094,9 +2100,13 @@ def rle_to_vid_mask(
         vid_len, time_as_class, n_classes,
 ):
     n_rows, n_cols = shape
+    tac_mask_rec = None
+
     if len(starts) == 0:
         mask = np.zeros((vid_len, n_rows, n_cols), dtype=np.uint8)
-        return mask
+        if time_as_class:
+            tac_mask_rec = np.zeros((n_rows, n_cols), dtype=np.uint8)
+        return mask, tac_mask_rec
 
     ends = starts + lengths
     if time_as_class:
@@ -2112,7 +2122,6 @@ def rle_to_vid_mask(
         mask = vid_mask_from_tac(tac_mask_rec, vid_len, n_classes)
     else:
         mask = mask_flat.reshape((vid_len, n_rows, n_cols))
-        tac_mask_rec = None
     return mask, tac_mask_rec
 
 
