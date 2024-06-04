@@ -49,13 +49,16 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     csv_dir_name = f'csv'
     vis_dir_name = f'vis'
     mask_dir_name = 'masks'
+    mask_logits_dir_name = 'masks_logits'
 
     if save_suffix:
         csv_dir_name = f'{csv_dir_name:s}-{save_suffix:s}'
         vis_dir_name = f'{vis_dir_name:s}-{save_suffix:s}'
         mask_dir_name = f'{mask_dir_name:s}-{save_suffix:s}'
+        mask_logits_dir_name = f'{mask_logits_dir_name:s}-{save_suffix:s}'
 
     out_mask_dir = os.path.join(out_dir, mask_dir_name)
+    out_mask_logits_dir = os.path.join(out_dir, mask_logits_dir_name)
     out_vis_dir = os.path.join(out_dir, vis_dir_name)
     out_csv_dir = os.path.join(out_dir, csv_dir_name)
 
@@ -65,6 +68,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         if cfg.eval.save_mask:
             print(f'\nwriting masks to: {out_mask_dir}\n')
             os.makedirs(out_mask_dir, exist_ok=True)
+            print(f'\nwriting logits masks to: {out_mask_logits_dir}\n')
+            os.makedirs(out_mask_logits_dir, exist_ok=True)
     else:
         if cfg.eval.save_csv:
             print(f'\nwriting csv files to: {out_csv_dir}\n')
@@ -147,6 +152,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 outputs=per_step_outputs,
                 train_step=global_step.numpy(),
                 out_mask_dir=out_mask_dir,
+                out_mask_logits_dir=out_mask_logits_dir,
                 out_vis_dir=out_vis_dir,
                 show=cfg.eval.show_vis,
                 json_img_info=json_img_info,

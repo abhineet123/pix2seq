@@ -20,6 +20,7 @@ import utils
 import vocab
 from tasks.visualization import shape_utils
 from tasks.visualization import standard_fields as fields
+from tasks import task_utils
 
 import six
 from six.moves import range
@@ -1198,11 +1199,13 @@ def visualize_mask(
         image_id,
         image,
         mask,
+        mask_logits,
         gt_mask,
-        category_index,
+        class_to_col,
         seq_id,
         img_info,
         out_mask_dir,
+        out_mask_logits_dir,
         out_vis_dir,
         img_ext='.jpg',
         vid_writers=None,
@@ -1234,29 +1237,32 @@ def visualize_mask(
     image = cv2.resize(image, orig_size)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-    vis_mask = cv2.cvtColor(mask * 255, cv2.COLOR_GRAY2BGR)
-    vis_gt_mask = cv2.cvtColor(gt_mask * 255, cv2.COLOR_GRAY2BGR)
+    vis_gt_mask = task_utils.mask_id_to_vis_rgb(gt_mask, class_to_col)
+    vis_mask = task_utils.mask_id_to_vis_rgb(mask, class_to_col)
+    vis_mask_logits = task_utils.mask_id_to_vis_rgb(mask_logits, class_to_col)
 
-    pred_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_mask), 0.5))
     gt_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_gt_mask), 0.5))
-    vis_img = np.concatenate((gt_img, pred_img), axis=1)
-    vis_mask_all = np.concatenate((vis_gt_mask, vis_mask), axis=1)
+    pred_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_mask), 0.5))
+    pred_logits_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_mask_logits), 0.5))
+    vis_img = np.concatenate((gt_img, pred_img, pred_logits_img), axis=1)
+    vis_mask_all = np.concatenate((vis_gt_mask, vis_mask, vis_mask_logits), axis=1)
     vis_img = np.concatenate((vis_img, vis_mask_all), axis=0)
-    vis_img = cv2.resize(vis_img, (800, 800))
+    vis_img = resize_ar(vis_img, 960, 540)
 
     vis_img = eval_utils.annotate(vis_img, vis_name)
 
     if show:
         cv2.imshow('vis_img', vis_img)
-        cv2.waitKey(100)
+        cv2.waitKey(0)
 
     if vid_writers is not None:
         ext = 'mp4'
         mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
+        mask_logits_path = os.path.join(out_mask_logits_dir, f'{seq_id}.{ext}')
         vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
 
         if vid_writers[seq_id] is not None:
-            mask_writer, vis_writer = vid_writers[seq_id]
+            mask_writer, mask_logits_writer, vis_writer = vid_writers[seq_id]
         else:
             """close video writers for all other sequences assuming that images are 
             arranged sequence by sequence"""
@@ -1265,19 +1271,26 @@ def visualize_mask(
                 vid_writers[seq_id_] = None
 
             mask_writer = get_video_writer(mask_path)
+            mask_logits_writer = get_video_writer(mask_logits_path)
             vis_writer = get_video_writer(vis_path, crf=20)
 
             print(f'{seq_id} :: mask video: {mask_path}')
+            print(f'{seq_id} :: mask logits video: {mask_logits_path}')
             print(f'{seq_id} :: vis video: {vis_path}')
 
             vid_writers[seq_id] = mask_writer, vis_writer
 
-        write_frames_to_videos([mask_writer, vis_writer], (mask, vis_img))
+        write_frames_to_videos([mask_writer, mask_logits_writer, vis_writer], (mask, mask_logits, vis_img))
     else:
         seq_mask_dir = os.path.join(out_mask_dir, seq_id)
         os.makedirs(seq_mask_dir, exist_ok=True)
         mask_path = os.path.join(seq_mask_dir, vis_name)
         cv2.imwrite(mask_path, mask)
+
+        seq_mask_logits_dir = os.path.join(out_mask_logits_dir, seq_id)
+        os.makedirs(seq_mask_logits_dir, exist_ok=True)
+        mask_logits_path = os.path.join(seq_mask_logits_dir, vis_name)
+        cv2.imwrite(mask_logits_path, mask_logits)
 
         seq_vis_dir = os.path.join(out_vis_dir, seq_id)
         os.makedirs(seq_vis_dir, exist_ok=True)
@@ -1285,6 +1298,7 @@ def visualize_mask(
         cv2.imwrite(vis_path, vis_img)
 
     img_info['out_path'] = mask_path
+    img_info['out_logits_path'] = mask_logits_path
     img_info['vis_path'] = vis_path
 
 def visualize_boxes_and_labels_on_image_array(
