@@ -148,6 +148,16 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                     loose_verifiers=[verify_restored, verify_existing],
                 )
 
+            cur_step += 1
+            if eval_steps:
+                steps_per_sec = 1. / (time.time() - timestamp)
+                timestamp = time.time()
+                progress = cur_step / float(eval_steps) * 100
+                eta = (eval_steps - cur_step) / steps_per_sec / 60.
+                logging.info(f'Completed: {cur_step} / {eval_steps} steps ({progress:.2f}%), ETA {eta:.2f} mins')
+            else:
+                logging.info(f'Completed: {cur_step:d} steps')
+
             task.postprocess_cpu(
                 outputs=per_step_outputs,
                 train_step=global_step.numpy(),
@@ -164,19 +174,6 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 ret_results=False,
             )
 
-            cur_step += 1
-            if eval_steps:
-                steps_per_sec = 1. / (time.time() - timestamp)
-                timestamp = time.time()
-                progress = cur_step / float(eval_steps) * 100
-                eta = (eval_steps - cur_step) / steps_per_sec / 60.
-                logging.info('Completed: {} / {} steps ({:.2f}%), ETA {:.2f} mins'
-                             ''.format(cur_step, eval_steps, progress, eta))
-            else:
-                logging.info('Completed: %d steps', cur_step)
-            # except tf.errors.OutOfRangeError:
-            #     logging.info('Break due to OutOfRangeError exception')
-            #     break
         logging.info('Finished eval in %.2f mins', (time.time() - start_time) / 60.)
 
     if not is_seg and cfg.eval.save_csv:

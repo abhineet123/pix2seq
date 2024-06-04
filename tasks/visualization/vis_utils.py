@@ -1278,7 +1278,7 @@ def visualize_mask(
             print(f'{seq_id} :: mask logits video: {mask_logits_path}')
             print(f'{seq_id} :: vis video: {vis_path}')
 
-            vid_writers[seq_id] = mask_writer, vis_writer
+            vid_writers[seq_id] = mask_writer, mask_logits_writer, vis_writer
 
         write_frames_to_videos([mask_writer, mask_logits_writer, vis_writer], (mask, mask_logits, vis_img))
     else:

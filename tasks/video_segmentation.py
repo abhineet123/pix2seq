@@ -1,3 +1,4 @@
+import cv2
 import ml_collections
 import numpy as np
 import utils
@@ -51,6 +52,7 @@ class TaskVideoSegmentation(task_lib.Task):
             rles = np.expand_dims(rles, axis=0)
 
         batch_size = frame_ids_all.shape[0]
+
         max_length = self.config.dataset.train.max_length
         subsample = self.config.dataset.train.subsample
         multi_class = self.config.dataset.multi_class
@@ -62,17 +64,15 @@ class TaskVideoSegmentation(task_lib.Task):
         lengths_offset = self.config.model.len_vocab_shift
         class_offset = self.config.model.class_vocab_shift
 
-        # starts_bins = self.config.task.starts_bins
-        # lengths_bins = self.config.task.lengths_bins
+        n_classes = len(self.class_id_to_col)
+        max_seq_len = self.config.model.max_seq_len
+        vocab_size = self.config.model.vocab_size
 
         class_id_to_col = self.class_id_to_col
         class_id_to_name = self.class_id_to_name
 
-        max_seq_len = self.config.model.max_seq_len
-
-        n_classes = len(self.class_id_to_col)
-
-        vocab_size = self.config.model.vocab_size
+        vid_masks = []
+        vid_masks_sub = []
 
         for batch_id in range(batch_size):
             rle_len = rle_lens[batch_id]
@@ -114,34 +114,9 @@ class TaskVideoSegmentation(task_lib.Task):
             assert rle_tokens.size == rle_len, "rle_len mismatch"
 
             if rle_len:
-                n_run_tokens = 2
-                if (multi_class or time_as_class) and not length_as_class:
-                    n_run_tokens += 1
-                assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
-                starts_tokens = np.array(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
-                max_starts = np.amax(starts_tokens)
-                min_starts = np.amin(starts_tokens)
-                assert max_starts < vocab_size, "max_starts exceeds vocab_size"
-                assert min_starts > starts_offset, "starts_offset exceeds min_starts"
-                # assert max_starts < starts_bins + starts_offset, "max_starts exceeds starts_bins + starts_offset"
-
-                lengths_tokens = np.array(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
-                max_lengths_tokens = np.amax(lengths_tokens)
-                min_lengths_tokens = np.amin(lengths_tokens)
-                assert max_lengths_tokens < starts_offset, "max_lengths_tokens exceeds starts_offset"
-                assert min_lengths_tokens > lengths_offset, "lengths_offset exceeds min_lengths_tokens"
-                # assert max_lengths_tokens < lengths_bins + lengths_offset, "max_lengths_tokens exceeds lengths_bins
-                # + lengths_offset"
-
-                if (multi_class or time_as_class) and not length_as_class:
-                    class_tokens = np.array(rle_tokens[2:][::n_run_tokens], dtype=np.int64)
-                    max_class_tokens = np.amax(class_tokens)
-                    min_class_tokens = np.amin(class_tokens)
-                    assert max_class_tokens < starts_offset, "max_class_tokens exceeds starts_offset"
-                    assert min_class_tokens > class_offset, "class_offset exceeds min_class_tokens"
-
-                    if not time_as_class:
-                        assert max_class_tokens < lengths_offset, "max_class_tokens exceeds lengths_offset"
+                task_utils.check_video_rle_ranges(
+                    rle_tokens, multi_class, time_as_class, length_as_class,
+                    vocab_size, starts_offset, lengths_offset, class_offset)
 
             task_utils.check_video_rle_tokens(
                 video, vid_mask, vid_mask_sub,
@@ -162,6 +137,10 @@ class TaskVideoSegmentation(task_lib.Task):
                 tac_mask_sub=None,
                 tac_id_to_col=None,
             )
+            vid_masks.append(vid_mask)
+            vid_masks_sub.append(vid_mask_sub)
+
+        return vid_masks, vid_masks_sub
 
     def preprocess_batched(self, batched_examples, training):
         config = self.config.task
@@ -279,23 +258,36 @@ class TaskVideoSegmentation(task_lib.Task):
         # mask_vid_paths = task_utils.bytes_to_str_list(mask_vid_paths)
 
         videos = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
+
+        max_length = self.config.dataset.train.max_length
+        subsample = self.config.dataset.train.subsample
         multi_class = self.config.dataset.multi_class
+
+        time_as_class = self.config.dataset.time_as_class
         length_as_class = self.config.dataset.length_as_class
         flat_order = self.config.dataset.flat_order
-        time_as_class = self.config.dataset.time_as_class
+
         starts_offset = self.config.model.coord_vocab_shift
         lengths_offset = self.config.model.len_vocab_shift
         class_offset = self.config.model.class_vocab_shift
-        max_length = self.config.dataset.train.max_length
-        subsample = self.config.dataset.train.subsample
+
         n_classes = len(self.class_id_to_col)
         max_seq_len = self.config.model.max_seq_len
         vocab_size = self.config.model.vocab_size
 
+
+        if subsample > 1:
+            max_length = int(max_length / subsample)
+
         for image_ids_, frame_ids_, video, rle, logits_, orig_size, gt_rle, rle_len, seq, vid_path, mask_vid_path in (
                 zip(
-                image_ids, frame_ids, videos, rles, logits, orig_sizes, gt_rles, rle_lens, seqs, vid_paths,
-                mask_vid_paths)):
+                    image_ids, frame_ids, videos, rles, logits, orig_sizes, gt_rles, rle_lens, seqs, vid_paths,
+                    mask_vid_paths)):
+
+            orig_size = tuple(orig_size)
+            n_rows, n_cols = orig_size
+            if subsample > 1:
+                n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
             gt_rle_tokens = gt_rle[gt_rle != vocab.PADDING_TOKEN]
 
@@ -305,16 +297,13 @@ class TaskVideoSegmentation(task_lib.Task):
                 print('skipping empty mask')
                 continue
 
-            self.check_video_rle(mask_vid_path, video, image_ids_, frame_ids_, gt_rle, rle_len)
+            vid_masks, vid_masks_sub = self.check_video_rle(
+                mask_vid_path, video, image_ids_, frame_ids_, gt_rle_tokens, rle_len)
+
+            vid_mask = vid_masks[0]
+            vid_mask_sub = vid_masks_sub[0]
 
             vid_len = video.shape[0]
-
-            orig_size = tuple(orig_size)
-            n_rows, n_cols = orig_size
-
-            if subsample > 1:
-                max_length = int(max_length / subsample)
-                n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
             rle_tokens = rle[rle != vocab.PADDING_TOKEN]
 
@@ -365,10 +354,11 @@ class TaskVideoSegmentation(task_lib.Task):
                 n_classes=n_classes,
             )
 
-            if subsample > 1:
-                vid_mask_logits = task_utils.resize_video_mask(vid_mask_logits, orig_size, n_classes, is_vis=0)
-                vid_mask_rec = task_utils.resize_video_mask(vid_mask_rec, orig_size, n_classes, is_vis=0)
-                vid_mask_gt = task_utils.resize_video_mask(vid_mask_gt, orig_size, n_classes, is_vis=0)
+            vid_mask = task_utils.mask_vis_to_id(vid_mask, n_classes, copy=True)
+            vid_mask_sub = task_utils.mask_vis_to_id(vid_mask_sub, n_classes, copy=True)
+            if not np.array_equal(vid_mask_sub, vid_mask_gt):
+                print("vid_mask_gt mismatch")
+                task_utils.check_individual_vid_masks(video, vid_mask_sub, vid_mask_gt, self.class_id_to_col, n_classes)
 
             seq_img_infos = json_img_info[seq]
             if seq_img_infos:
@@ -376,8 +366,8 @@ class TaskVideoSegmentation(task_lib.Task):
             else:
                 out_frame_id = 0
 
-            for image_id_, frame_id, image_, mask_rec, mask_logits, mask_gt in zip(
-                    image_ids_, frame_ids_, video, vid_mask_rec, vid_mask_logits, vid_mask_gt):
+            for image_id_, frame_id, image_, mask_rec, mask_logits, mask_gt, vid_mask_, vid_mask_sub_ in zip(
+                    image_ids_, frame_ids_, video, vid_mask_rec, vid_mask_logits, vid_mask_gt, vid_mask, vid_mask_sub):
                 out_frame_id += 1
                 img_info = dict(
                     seq=seq,
@@ -387,6 +377,19 @@ class TaskVideoSegmentation(task_lib.Task):
                     vid_path=vid_path,
                     mask_vid_path=mask_vid_path,
                 )
+                if show:
+                    vid_mask_vis = task_utils.mask_id_to_vis_rgb(vid_mask_, self.class_id_to_col)
+                    vid_mask_sub_vis = task_utils.mask_id_to_vis_rgb(vid_mask_sub_, self.class_id_to_col)
+                    vid_mask_sub_vis = task_utils.resize_mask(vid_mask_sub_vis, vid_mask_.shape)
+                    vid_mask_all = np.concatenate((vid_mask_vis, vid_mask_sub_vis), axis=1)
+                    cv2.imshow('vid_mask_all', vid_mask_all)
+
+
+                if subsample > 1:
+                    mask_rec = task_utils.resize_mask(mask_rec, orig_size, n_classes, is_vis=0)
+                    mask_logits = task_utils.resize_mask(mask_logits, orig_size, n_classes, is_vis=0)
+                    mask_gt = task_utils.resize_mask(mask_gt, orig_size, n_classes, is_vis=0)
+
                 vis_utils.visualize_mask(
                     image_id_,
                     image_,

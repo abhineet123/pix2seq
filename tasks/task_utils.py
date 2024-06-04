@@ -225,12 +225,42 @@ def check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_rec, class_id_to
             masks_all = cv2.resize(masks_all, (960, 540))
 
             cv2.imshow(f'masks {vid_id}', masks_all)
-            k = cv2.waitKey(1)
+            k = cv2.waitKey(0)
             if k == 27:
                 exit()
         else:
             print(f"mask {vid_id} matches")
 
+def check_video_rle_ranges(rle_tokens, multi_class, time_as_class, length_as_class,
+                           vocab_size, starts_offset, lengths_offset, class_offset):
+    n_run_tokens = 2
+    if (multi_class or time_as_class) and not length_as_class:
+        n_run_tokens += 1
+    assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
+    starts_tokens = np.array(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
+    max_starts = np.amax(starts_tokens)
+    min_starts = np.amin(starts_tokens)
+    assert max_starts < vocab_size, "max_starts exceeds vocab_size"
+    assert min_starts > starts_offset, "starts_offset exceeds min_starts"
+    # assert max_starts < starts_bins + starts_offset, "max_starts exceeds starts_bins + starts_offset"
+
+    lengths_tokens = np.array(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
+    max_lengths_tokens = np.amax(lengths_tokens)
+    min_lengths_tokens = np.amin(lengths_tokens)
+    assert max_lengths_tokens < starts_offset, "max_lengths_tokens exceeds starts_offset"
+    assert min_lengths_tokens > lengths_offset, "lengths_offset exceeds min_lengths_tokens"
+    # assert max_lengths_tokens < lengths_bins + lengths_offset, "max_lengths_tokens exceeds lengths_bins
+    # + lengths_offset"
+
+    if (multi_class or time_as_class) and not length_as_class:
+        class_tokens = np.array(rle_tokens[2:][::n_run_tokens], dtype=np.int64)
+        max_class_tokens = np.amax(class_tokens)
+        min_class_tokens = np.amin(class_tokens)
+        assert max_class_tokens < starts_offset, "max_class_tokens exceeds starts_offset"
+        assert min_class_tokens > class_offset, "class_offset exceeds min_class_tokens"
+
+        if not time_as_class:
+            assert max_class_tokens < lengths_offset, "max_class_tokens exceeds lengths_offset"
 
 def check_video_rle_tokens(
         video, vid_mask, vid_mask_sub,
@@ -265,7 +295,8 @@ def check_video_rle_tokens(
         return
 
     if is_vis:
-        mask_vis_to_id(vid_mask_gt, n_classes)
+        vid_mask_gt = mask_vis_to_id(vid_mask_gt, n_classes, copy=True)
+        vid_mask_sub = mask_vis_to_id(vid_mask_sub, n_classes, copy=True)
 
     vid_len, n_rows, n_cols = vid_mask_gt.shape
 
@@ -321,14 +352,16 @@ def check_video_rle_tokens(
 
         assert np.all(np.asarray(class_ids) <= n_classes_), f"class_ids must be <= {n_classes_}"
 
+    if not np.array_equal(vid_mask_gt_sub, vid_mask_sub):
+        print('vid_mask_gt_sub mismatch')
+        check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_sub,
+                                   class_id_to_col, n_classes)
+        raise AssertionError()
+    else:
+        print('vid_mask_gt_sub matches')
+
     if not np.array_equal(vid_mask_gt_sub, vid_mask_rec):
         print("vid_mask_rec mismatch")
-        if not np.array_equal(vid_mask_gt_sub, vid_mask_sub):
-            print('vid_mask_gt_sub mismatch')
-            check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_sub, class_id_to_col, n_classes)
-        else:
-            print('vid_mask_gt_sub matches')
-
         if time_as_class and tac_mask_sub is not None:
             if not np.array_equal(tac_mask_sub, tac_mask_rec):
                 print("tac_masks mismatch")
@@ -340,7 +373,7 @@ def check_video_rle_tokens(
                 masks_all = np.concatenate([tac_mask_sub_vis, tac_mask_rec_vis], axis=1)
                 masks_all = cv2.resize(masks_all, (960, 540))
                 cv2.imshow(f'tac_mask', masks_all)
-                k = cv2.waitKey(1)
+                k = cv2.waitKey(0)
                 if k == 27:
                     exit()
             else:
