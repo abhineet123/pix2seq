@@ -398,6 +398,7 @@ class TaskVideoSegmentation(task_lib.Task):
                     mask_logits,
                     mask_gt,
                     self.class_id_to_col,
+                    video_id=vid_id,
                     seq_id=seq,
                     img_info=img_info,
                     out_mask_dir=out_mask_dir,

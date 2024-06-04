@@ -1144,6 +1144,7 @@ def write_frames_to_videos(vid_writers, frames):
         if isinstance(vid_writer, cv2.VideoWriter):
             vid_writer.write(frame)
         elif isinstance(vid_writer, skvideo.io.FFmpegWriter):
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             vid_writer.writeFrame(frame)
         else:
             raise AssertionError(f'invalid vid_writer type: {type(vid_writer)}')
@@ -1243,11 +1244,12 @@ def visualize_mask(
         image_id_ += img_ext
 
     import eval_utils
+    image_name_, image_ext_ = os.path.splitext(image_id_)
+
     if video_id is not None:
-        image_name_, image_ext_ = os.path.splitext(image_id_)
-        vis_name = f'{image_name_}_{video_id}{image_ext_}'
+        vis_name = f'{image_name_} vid {video_id}'
     else:
-        vis_name = image_id_
+        vis_name = image_name_
 
     gt_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_gt_mask), 0.5))
     pred_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_mask), 0.5))
