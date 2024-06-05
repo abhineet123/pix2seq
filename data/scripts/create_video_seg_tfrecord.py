@@ -354,7 +354,6 @@ def generate_patch_vid_infos(
 
             vid_id += 1
 
-
     if skipped > 0:
         print(f'skipped {skipped} videos')
 
@@ -549,8 +548,6 @@ def create_tf_example(
     )
     rle_cmp = [starts, lengths]
 
-    is_empty = len(starts) == 0
-
     n_runs = len(starts)
 
     multi_class = False
@@ -618,19 +615,21 @@ def create_tf_example(
 
     if multi_class:
         if params.length_as_class:
-            run_len = 2
+            tokens_per_run = 2
         else:
-            run_len = 3
+            tokens_per_run = 3
     else:
         if params.time_as_class:
             if params.length_as_class:
-                run_len = 2
+                tokens_per_run = 2
             else:
-                run_len = 3
+                tokens_per_run = 3
         else:
-            run_len = 2
+            tokens_per_run = 2
 
-    assert rle_len % run_len == 0, f"rle_len must be divisible by {run_len}"
+    assert rle_len % tokens_per_run == 0, f"rle_len must be divisible by {tokens_per_run}"
+
+    assert rle_len == n_runs * tokens_per_run, "n_runs mismatch"
 
     if params.rle_to_json:
         video['rle'] = rle_tokens
@@ -649,7 +648,7 @@ def create_tf_example(
         append_metrics(metrics_, metrics[f'method_{subsample_method}'])
 
     if not skip_tfrecord:
-        video_feature_dict['video/is_empty'] = tfrecord_lib.convert_to_feature(is_empty)
+        video_feature_dict['video/n_runs'] = tfrecord_lib.convert_to_feature(n_runs, value_type='int64')
         example = tf.train.Example(features=tf.train.Features(feature=video_feature_dict))
         return example, 0
 

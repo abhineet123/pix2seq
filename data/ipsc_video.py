@@ -165,7 +165,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         probabilistically filter out examples with no foreground
         """
         if training:
-            if example['video/is_empty'] == 1:
+            if example['video/n_runs'] == 0:
                 return True
             rand_num = tf.random.uniform(shape=[1])
             if rand_num[0] < self.config.empty_seg_prob:
@@ -238,11 +238,10 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         images = tf.stack(images, axis=0)
 
         vid_id = example['video/id']
-        is_empty = example['video/is_empty']
+        n_runs = example['video/n_runs']
 
-        tf.debugging.assert_greater_equal(is_empty, 0, "is_empty must be >=0")
-
-        # assert is_empty >=0, "is_empty must be >= 0"
+        tf.debugging.assert_greater_equal(n_runs, 0, "n_runs must be >= 0")
+        # assert n_runs >=0, "n_runs must be >= 0"
 
         if self.config.rle_from_json:
             rle_str = self.vid_id_to_rle.lookup(vid_id)

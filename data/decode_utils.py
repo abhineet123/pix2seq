@@ -96,7 +96,7 @@ def get_feature_map_for_video_segmentation(length, rle_from_json):
         'video/seq': tf.io.FixedLenFeature((), tf.string),
         # 'video/frame_ids': tf.io.FixedLenFeature((length,), tf.int64),
         # 'video/image_ids': tf.io.FixedLenFeature((length,), tf.string),
-        'video/is_empty': tf.io.FixedLenFeature((), tf.int64, -1),
+        'video/n_runs': tf.io.FixedLenFeature((), tf.int64, -1),
     }
     if not rle_from_json:
         feat_dict.update({
