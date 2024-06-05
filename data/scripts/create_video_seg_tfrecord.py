@@ -37,14 +37,11 @@ class Params(paramparse.CFG):
         self.db_suffix = ''
         self.vis = 0
         self.stats_only = 0
+        self.rle_to_json = 1
         self.json_only = 0
         self.check = 0
 
         self.excluded_src_ids = []
-
-        self.flat_order = 'C'
-        self.time_as_class = 0
-        self.length_as_class = 0
 
         self.pad_tokens = 0
 
@@ -76,6 +73,9 @@ class Params(paramparse.CFG):
 
         self.enable_flip = 0
 
+        self.flat_order = 'C'
+        self.time_as_class = 0
+        self.length_as_class = 0
         self.max_length = 0
         self.starts_2d = 0
         self.starts_offset = 1000
@@ -323,7 +323,6 @@ def generate_patch_vid_infos(
                 # print(f'skipping subseq {subseq_id + 1} - with length {n_subseq_files}')
                 skipped += 1
                 continue
-            all_subseq_img_infos.append(subseq_img_infos)
 
             img_info = subseq_img_infos[0]
 
@@ -349,8 +348,12 @@ def generate_patch_vid_infos(
                 "id": vid_id,
                 "coco_url": "",
             }
+
             videos.append(video_dict)
+            all_subseq_img_infos.append(subseq_img_infos)
+
             vid_id += 1
+
 
     if skipped > 0:
         print(f'skipped {skipped} videos')
@@ -360,19 +363,24 @@ def generate_patch_vid_infos(
 
 def generate_annotations(
         params,
+        skip_tfrecord,
         class_id_to_col,
         class_id_to_name,
         tac_id_to_col,
         tac_id_to_name,
         metrics,
         all_subseq_img_infos,
+        videos,
         vid_infos,
 ):
-    for vid_id, subseq_img_infos in enumerate(all_subseq_img_infos):
+    assert len(videos) == len(all_subseq_img_infos), "videos and all_subseq_img_infos must have the same length"
+    for video, subseq_img_infos in zip(videos, all_subseq_img_infos):
         seq = subseq_img_infos[0]['seq']
+        vid_id = video['id']
 
         yield (
             params,
+            skip_tfrecord,
             class_id_to_col,
             class_id_to_name,
             tac_id_to_col,
@@ -380,6 +388,7 @@ def generate_annotations(
             metrics,
             vid_id,
             subseq_img_infos,
+            video,
             seq,
             vid_infos[seq]
         )
@@ -387,6 +396,7 @@ def generate_annotations(
 
 def create_tf_example(
         params: Params,
+        skip_tfrecord,
         class_id_to_col,
         class_id_to_name,
         tac_id_to_col,
@@ -394,6 +404,7 @@ def create_tf_example(
         metrics,
         vid_id,
         subseq_img_infos,
+        video,
         seq,
         vid_info):
     n_classes = len(class_id_to_col)
@@ -405,9 +416,9 @@ def create_tf_example(
     subseq_masks_sub = []
 
     vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
-    video_feature_dict = dict()
+    video_feature_dict = None
 
-    if not params.stats_only:
+    if not skip_tfrecord:
         video_feature_dict = tfrecord_lib.video_seg_info_to_feature_dict(
             vid_id, vid_height, vid_width, vid_path, mask_vid_path,
             vid_len, seq)
@@ -447,7 +458,7 @@ def create_tf_example(
         if not image_id.startswith('seq'):
             image_id = f'{seq}/{image_id}'
 
-        if not params.stats_only:
+        if not skip_tfrecord:
             image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
 
             img_h, img_w = image.shape[:2]
@@ -494,7 +505,7 @@ def create_tf_example(
         subseq_masks.append(mask)
         subseq_masks_sub.append(mask_sub)
     # return
-    if not params.stats_only:
+    if not skip_tfrecord:
         vid = np.stack(subseq_imgs, axis=0)
 
     vid_mask_orig = np.stack(subseq_masks, axis=0)
@@ -620,12 +631,15 @@ def create_tf_example(
 
     assert rle_len % run_len == 0, f"rle_len must be divisible by {run_len}"
 
-    if not params.stats_only:
+    if params.rle_to_json:
+        video['rle'] = rle_tokens
+        video['rle_len'] = rle_len
+    elif not skip_tfrecord:
         seg_feature_dict = {
             # 'video/frame_ids': tfrecord_lib.convert_to_feature(frame_ids, value_type='int64_list'),
             # 'video/image_ids': tfrecord_lib.convert_to_feature(image_ids, value_type='bytes_list'),
             'video/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
-            'video/rle_len': tfrecord_lib.convert_to_feature(len(rle_tokens)),
+            'video/rle_len': tfrecord_lib.convert_to_feature(rle_len),
         }
         video_feature_dict.update(seg_feature_dict)
         example = tf.train.Example(features=tf.train.Features(feature=video_feature_dict))
@@ -634,7 +648,7 @@ def create_tf_example(
         metrics_ = dict(rle_len=rle_len)
         append_metrics(metrics_, metrics[f'method_{subsample_method}'])
 
-    if not params.stats_only:
+    if not skip_tfrecord:
         return example, 0
 
 
@@ -761,38 +775,38 @@ def main():
 
     params.process(n_classes)
 
-    img_json_suffix = params.db_suffix
+    img_json_name = params.db_suffix
     if params.seq_start_id > 0 or params.seq_end_id >= 0:
         assert params.seq_end_id >= params.seq_start_id, "end_seq_id must to be >= start_seq_id"
         seq_suffix = f'seq_{params.seq_start_id}_{params.seq_end_id}'
-        img_json_suffix = f'{img_json_suffix}-{seq_suffix}'
+        img_json_name = f'{img_json_name}-{seq_suffix}'
 
-    img_json_fname = f'{img_json_suffix}.{params.ann_ext}'
+    img_json_fname = f'{img_json_name}.{params.ann_ext}'
     img_json_path = linux_path(params.db_path, img_json_fname)
 
     print("loading img_info_from_json")
     image_infos = load_img_info_from_json(img_json_path)
 
-    out_name = img_json_suffix
-
+    vid_out_name = img_json_name
     """video-specific stuff"""
     vid_suffix = get_vid_suffix(params.vid)
-
-    out_name = f'{out_name}-{vid_suffix}'
+    vid_out_name = f'{img_json_name}-{vid_suffix}'
     """RLE-specific stuff that doesn't go into output json since that doesn't contain RLE"""
     rle_suffix = get_rle_suffix(params, multi_class)
 
+    rle_out_name = vid_out_name
     if rle_suffix:
-        out_name = f'{out_name}-{rle_suffix}'
+        rle_out_name = f'{rle_out_name}-{rle_suffix}'
 
     if not params.output_dir:
         params.output_dir = linux_path(params.db_path, 'tfrecord')
     os.makedirs(params.output_dir, exist_ok=True)
-    tfrecord_path = linux_path(params.output_dir, out_name)
+
+    tfrecord_path = linux_path(params.output_dir, vid_out_name if params.rle_to_json else rle_out_name)
     print(f'tfrecord_path: {tfrecord_path}')
     os.makedirs(tfrecord_path, exist_ok=True)
 
-    vid_json_path = os.path.join(params.db_path, f'{out_name}.{params.ann_ext}')
+    vid_json_path = os.path.join(params.db_path, f'{rle_out_name}.{params.ann_ext}')
 
     vid_infos = get_vid_infos(image_infos, params.db_path)
 
@@ -804,10 +818,8 @@ def main():
 
     assert len(all_subseq_img_infos) == len(videos), "all_subseq_img_infos length mismatch"
 
-    save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path)
-
-    if params.json_only:
-        return
+    # if params.json_only:
+    #     return
 
     metrics = dict(
         method_0={},
@@ -815,18 +827,22 @@ def main():
         method_2={},
 
     )
+    skip_tfrecord = params.stats_only or params.vis or params.rle_to_json and params.json_only
+
     annotations_iter = generate_annotations(
         params=params,
+        skip_tfrecord=skip_tfrecord,
         class_id_to_col=class_id_to_col,
         class_id_to_name=class_id_to_name,
         tac_id_to_col=tac_id_to_col,
         tac_id_to_name=tac_id_to_name,
         metrics=metrics,
         all_subseq_img_infos=all_subseq_img_infos,
+        videos=videos,
         vid_infos=vid_infos,
     )
 
-    if params.stats_only or params.vis:
+    if skip_tfrecord:
         for idx, annotations_iter_ in tqdm(enumerate(annotations_iter),
                                            total=len(all_subseq_img_infos)):
             create_tf_example(*annotations_iter_)
@@ -841,7 +857,9 @@ def main():
             iter_len=len(all_subseq_img_infos),
         )
 
-    print(f'tfrecord_path: {tfrecord_path}')
+        print(f'tfrecord_path: {tfrecord_path}')
+
+    save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path)
 
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
