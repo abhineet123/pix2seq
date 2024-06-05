@@ -187,7 +187,7 @@ def get_vid_infos(db_path, image_infos):
 
 def save_seg_annotations(
         params: Params,
-        annotations: dict,
+        img_json_dict: dict,
         class_id_to_name: dict,
         class_id_to_col: dict,
         out_path: str):
@@ -195,7 +195,7 @@ def save_seg_annotations(
 
     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
     params_dict = paramparse.to_dict(params)
-    n_imgs = len(annotations['images'])
+    n_imgs = len(img_json_dict['images'])
     info = {
         "version": "1.0",
         "year": datetime.now().strftime("%y"),
@@ -220,8 +220,8 @@ def save_seg_annotations(
         }
         categories.append(category_info)
 
-    annotations["info"] = info
-    annotations["categories"] = categories
+    img_json_dict["info"] = info
+    img_json_dict["categories"] = categories
 
     print(f'saving json for {n_imgs} images to: {out_path}')
     json_kwargs = dict(
@@ -229,12 +229,12 @@ def save_seg_annotations(
     )
     if out_path.endswith('.json'):
         import json
-        output_json = json.dumps(annotations, **json_kwargs)
+        output_json = json.dumps(img_json_dict, **json_kwargs)
         with open(out_path, 'w') as f:
             f.write(output_json)
     elif out_path.endswith('.json.gz'):
         import compress_json
-        compress_json.dump(annotations, out_path, json_kwargs=json_kwargs)
+        compress_json.dump(img_json_dict, out_path, json_kwargs=json_kwargs)
     else:
         raise AssertionError(f'Invalid out_path: {out_path}')
 
@@ -640,8 +640,8 @@ def main():
     in_json_fname = f'{in_json_name}.{params.ann_ext}'
     in_json_path = linux_path(params.db_path, in_json_fname)
 
-    annotations = load_seg_annotations(in_json_path)
-    image_infos = annotations['images']
+    img_json_dict = load_seg_annotations(in_json_path)
+    image_infos = img_json_dict['images']
 
     out_json_name = in_json_name
 
@@ -686,7 +686,7 @@ def main():
     # for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
     #     create_tf_example(*annotations_iter_)
 
-    tfrecord_path = linux_path(params.output_dir, in_json_path if params.rle_to_json else out_json_path)
+    tfrecord_path = linux_path(params.output_dir, in_json_name if params.rle_to_json else out_json_name)
     os.makedirs(tfrecord_path, exist_ok=True)
 
     if skip_tfrecord:
@@ -705,7 +705,7 @@ def main():
             iter_len=len(image_infos),
         )
 
-    save_seg_annotations(params, annotations, class_id_to_name, class_id_to_col, out_json_path)
+    save_seg_annotations(params, img_json_dict, class_id_to_name, class_id_to_col, out_json_path)
 
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
