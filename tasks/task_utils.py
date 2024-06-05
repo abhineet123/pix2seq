@@ -1862,11 +1862,11 @@ def vid_rle_from_tokens(
         n_tokens_per_run += 1
 
     seq_len = len(rle_tokens)
-    if seq_len % n_tokens_per_run != 0:
+    n_extra_tokens = seq_len % n_tokens_per_run
+    if n_extra_tokens != 0:
         if not allow_extra:
             raise AssertionError(f"rle_tokens length must be divisible by {n_tokens_per_run}")
-        n_extra_tokens = seq_len % n_tokens_per_run
-        rle_tokens = rle_tokens[:-n_extra_tokens, :]
+        rle_tokens = rle_tokens[:-n_extra_tokens]
 
     if starts_2d:
         starts_rows = np.array(rle_tokens[0:][::n_tokens_per_run], dtype=np.int64)
