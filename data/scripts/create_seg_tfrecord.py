@@ -362,7 +362,7 @@ def create_tf_example(
         if not skip_tfrecord:
             with tf.io.gfile.GFile(image_path, 'rb') as fid:
                 encoded_jpg = fid.read()
-                
+
             if read_image:
                 image = cv2.imread(image_path)
 
@@ -460,6 +460,7 @@ def create_tf_example(
 
     n_tokens_per_run = 3 if multi_class and not params.length_as_class else 2
     assert rle_len % n_tokens_per_run == 0, f"rle_len must be divisible by {n_tokens_per_run}"
+    assert n_runs * n_tokens_per_run == rle_len, f"mismatch between n_runs and rle_len"
 
     if params.check:
         task_utils.check_rle_tokens(
@@ -473,7 +474,7 @@ def create_tf_example(
             multi_class,
             params.flat_order,
             class_id_to_col,
-            is_vis=True)
+            is_vis=False)
 
     if rle_len > 0:
         metrics_ = dict(rle_len=rle_len)
@@ -564,6 +565,7 @@ def create_tf_example(
 
             'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
             'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
+            'image/n_runs': tfrecord_lib.convert_to_feature(n_runs),
         }
         if not params.rle_to_json:
             seg_feature_dict['image/rle'] = tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list')
@@ -571,7 +573,6 @@ def create_tf_example(
         feature_dict.update(seg_feature_dict)
         example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
         return example, 0
-
 
 def main():
     params: Params = paramparse.process(Params)
@@ -671,8 +672,6 @@ def main():
         print(f'writing RLE to json: {out_json_path}')
 
     skip_tfrecord = params.stats_only or params.vis or params.rle_to_json and params.json_only
-    if skip_tfrecord:
-        print('skipping tfrecord creation')
 
     annotations_iter = generate_annotations(
         params=params,
