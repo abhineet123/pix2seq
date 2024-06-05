@@ -804,7 +804,6 @@ def main():
     os.makedirs(params.output_dir, exist_ok=True)
 
     tfrecord_path = linux_path(params.output_dir, vid_out_name if params.rle_to_json else rle_out_name)
-    print(f'tfrecord_path: {tfrecord_path}')
     os.makedirs(tfrecord_path, exist_ok=True)
 
     vid_json_path = os.path.join(params.db_path, f'{rle_out_name}.{params.ann_ext}')
@@ -829,7 +828,7 @@ def main():
 
     )
     if params.rle_to_json:
-        print('writing RLE to json')
+        print(f'writing RLE to json: {vid_json_path}')
 
     skip_tfrecord = params.stats_only or params.vis or params.rle_to_json and params.json_only
     if skip_tfrecord:
@@ -853,6 +852,7 @@ def main():
                                            total=len(all_subseq_img_infos)):
             create_tf_example(*annotations_iter_)
     else:
+        print(f'tfrecord_path: {tfrecord_path}')
         tfrecord_pattern = linux_path(tfrecord_path, 'shard')
         tfrecord_lib.write_tf_record_dataset(
             output_path=tfrecord_pattern,
@@ -863,7 +863,6 @@ def main():
             iter_len=len(all_subseq_img_infos),
         )
 
-        print(f'tfrecord_path: {tfrecord_path}')
 
     save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path)
 
