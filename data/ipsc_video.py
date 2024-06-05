@@ -240,7 +240,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         vid_id = example['video/id']
         n_runs = example['video/n_runs']
 
-        tf.debugging.assert_greater_equal(n_runs, 0, "n_runs must be >= 0")
+        # tf.debugging.assert_greater_equal(n_runs, tf.cast(0, tf.int64), "n_runs must be >= 0")
         # assert n_runs >=0, "n_runs must be >= 0"
 
         if self.config.rle_from_json:
@@ -264,6 +264,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         new_example = {
             'video': images,
             'vid_id': vid_id,
+            'n_runs': n_runs,
             'rle': rle,
             'rle_len': rle_len,
             'vid_size': (h, w),

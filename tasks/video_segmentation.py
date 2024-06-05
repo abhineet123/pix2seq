@@ -15,11 +15,13 @@ class TaskVideoSegmentation(task_lib.Task):
                  config: ml_collections.ConfigDict):
         super().__init__(config)
 
-        json_path = config.dataset.get('category_names_path')
-        self._category_names, self.json_data = task_utils.get_category_names(
-            json_path, return_json_data=True)
+        json_dict = self.config.dataset.json_dict
 
+        self._category_names = task_utils.get_category_names(json_dict)
 
+        self.vid_id_to_info = {
+            vid['id']: vid for vid in json_dict['videos']
+        }
         class_id_to_col, class_id_to_name = task_utils.get_class_info(self._category_names)
 
         # class_info_path = config.dataset.get('class_info_path')
@@ -43,15 +45,18 @@ class TaskVideoSegmentation(task_lib.Task):
 
         return dataset
 
-    def check_video_rle(self, mask_vid_paths, videos, img_ids_all, frame_ids_all, rles, rle_lens):
+    def check_video_rle(self, mask_vid_paths, videos, vid_ids, img_ids_all, frame_ids_all, rles, rle_lens, n_runs):
 
         if isinstance(mask_vid_paths, str):
-            mask_vid_paths = [mask_vid_paths, ]
-            rle_lens = [rle_lens, ]
             videos = np.expand_dims(videos, axis=0)
             img_ids_all = np.expand_dims(img_ids_all, axis=0)
             frame_ids_all = np.expand_dims(frame_ids_all, axis=0)
             rles = np.expand_dims(rles, axis=0)
+
+            mask_vid_paths = [mask_vid_paths, ]
+            rle_lens = [rle_lens, ]
+            vid_ids = [vid_ids, ]
+            n_runs = [n_runs, ]
 
         batch_size = frame_ids_all.shape[0]
 
@@ -77,6 +82,7 @@ class TaskVideoSegmentation(task_lib.Task):
         vid_masks_sub = []
 
         for batch_id in range(batch_size):
+            n_runs_ = n_runs[batch_id]
             rle_len = rle_lens[batch_id]
             rle = rles[batch_id]
             rle_tokens = rle[rle != vocab.PADDING_TOKEN]
@@ -89,9 +95,20 @@ class TaskVideoSegmentation(task_lib.Task):
             if not isinstance(mask_vid_path, str):
                 mask_vid_path = mask_vid_path.decode('utf-8')
 
-            img_ids = img_ids_all[batch_id]
+            vid_id = vid_ids[batch_id]
             video = videos[batch_id]
-            frame_ids = frame_ids_all[batch_id]
+
+            vid_info = self.vid_id_to_info[vid_id]
+            seq = vid_info['seq']
+            file_ids_from_json = vid_info['file_ids']
+            img_ids_from_json = [f'{seq}/{file_id}' for file_id in file_ids_from_json]
+            img_ids = list(img_ids_all[batch_id])
+            assert img_ids == img_ids_from_json, "img_ids_from_json mismatch"
+
+            frame_ids_from_json = list(map(int, vid_info['frame_ids']))
+            frame_ids = list(frame_ids_all[batch_id])
+            assert frame_ids == frame_ids_from_json, "frame_ids_from_json mismatch"
+
             vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(mask_vid_path)
             n_rows, n_cols = vid_height, vid_width
 
@@ -117,7 +134,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
             if rle_len:
                 task_utils.check_video_rle_ranges(
-                    rle_tokens, multi_class, time_as_class, length_as_class,
+                    rle_tokens, n_runs_, multi_class, time_as_class, length_as_class,
                     vocab_size, starts_offset, lengths_offset, class_offset)
 
             task_utils.check_video_rle_tokens(
@@ -159,13 +176,19 @@ class TaskVideoSegmentation(task_lib.Task):
         token_weights = tf.ones_like(response_seq, dtype=tf.float32)
 
         if self.config.debug:
-            mask_vid_paths = batched_examples['mask_vid_path'].numpy()
+            mask_vid_paths = batched_examples['mask_vid_path'].numpy().astype(str)
             videos = batched_examples['video'].numpy()
-            img_ids_all = batched_examples['image_ids'].numpy()
+
+            img_ids_all = batched_examples['image_ids'].numpy().astype(str)
             frame_ids_all = batched_examples['frame_ids'].numpy()
             rles = batched_examples['rle'].numpy()
             rle_lens = batched_examples['rle_len'].numpy()
-            self.check_video_rle(mask_vid_paths, videos, img_ids_all, frame_ids_all, rles, rle_lens)
+            n_runs = batched_examples['n_runs'].numpy()
+
+            vid_ids = batched_examples['vid_id'].numpy()
+
+            self.check_video_rle(mask_vid_paths, videos, vid_ids, img_ids_all, frame_ids_all,
+                                 rles, rle_lens, n_runs)
 
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             task_vocab_id=self.task_vocab_id,
@@ -216,11 +239,14 @@ class TaskVideoSegmentation(task_lib.Task):
 
         gt_rle = example['rle']
         rle_len = example['rle_len']
+        n_runs = example['n_runs']
 
         """goes to postprocess_cpu"""
         return (
-            videos, vid_ids, image_ids, frame_ids, pred_rle, logits, gt_rle, rle_len, orig_image_size, seqs, vid_paths,
-            mask_vid_paths,)
+            videos, vid_ids, image_ids, frame_ids, pred_rle, logits,
+            gt_rle, rle_len, n_runs, orig_image_size, seqs,
+            vid_paths, mask_vid_paths,
+        )
 
     def postprocess_cpu(self,
                         outputs,
@@ -242,7 +268,7 @@ class TaskVideoSegmentation(task_lib.Task):
             outputs_np.append(tf.identity(outputs[i]).numpy())
 
         (videos, vid_ids, image_ids, frame_ids, rles, logits,
-         gt_rles, rle_lens, orig_sizes, seqs,
+         gt_rles, rle_lens, n_runs, orig_sizes, seqs,
          vid_paths, mask_vid_paths) = outputs_np
 
         # orig_sizes = orig_sizes.numpy()
@@ -282,10 +308,10 @@ class TaskVideoSegmentation(task_lib.Task):
             max_length = int(max_length / subsample)
 
         for (image_ids_, frame_ids_, video, vid_id, rle, logits_,
-             orig_size, gt_rle, rle_len, seq,
+             orig_size, gt_rle, rle_len, n_runs_, seq,
              vid_path, mask_vid_path) in (
                 zip(image_ids, frame_ids, videos, vid_ids, rles, logits,
-                    orig_sizes, gt_rles, rle_lens, seqs,
+                    orig_sizes, gt_rles, rle_lens, n_runs, seqs,
                     vid_paths, mask_vid_paths)):
 
             orig_size = tuple(orig_size)
@@ -301,10 +327,12 @@ class TaskVideoSegmentation(task_lib.Task):
             #     print('skipping empty mask')
             #     continue
 
-            # vid_masks, vid_masks_sub = self.check_video_rle(
-            #     mask_vid_path, video, image_ids_, frame_ids_, gt_rle_tokens, rle_len)
-            # vid_mask = vid_masks[0]
-            # vid_mask_sub = vid_masks_sub[0]
+            if self.config.debug:
+                vid_masks, vid_masks_sub = self.check_video_rle(
+                    mask_vid_path, video, image_ids_, frame_ids_, gt_rle_tokens,
+                    rle_len, n_runs_)
+                vid_mask = vid_masks[0]
+                vid_mask_sub = vid_masks_sub[0]
 
             vid_len = video.shape[0]
 
@@ -359,12 +387,13 @@ class TaskVideoSegmentation(task_lib.Task):
                 n_classes=n_classes,
             )
 
-            # vid_mask = task_utils.mask_vis_to_id(vid_mask, n_classes, copy=True)
-            # vid_mask_sub = task_utils.mask_vis_to_id(vid_mask_sub, n_classes, copy=True)
-            # if not np.array_equal(vid_mask_sub, vid_mask_gt):
-            #     print("vid_mask_gt mismatch")
-            #     task_utils.check_individual_vid_masks(video, vid_mask_sub, vid_mask_gt, self.class_id_to_col,
-            #     n_classes)
+            if self.config.debug:
+                vid_mask = task_utils.mask_vis_to_id(vid_mask, n_classes, copy=True)
+                vid_mask_sub = task_utils.mask_vis_to_id(vid_mask_sub, n_classes, copy=True)
+                if not np.array_equal(vid_mask_sub, vid_mask_gt):
+                    print("vid_mask_gt mismatch")
+                    task_utils.check_individual_vid_masks(
+                        video, vid_mask_sub, vid_mask_gt, self.class_id_to_col, n_classes)
 
             seq_img_infos = json_vid_info[seq]
             if seq_img_infos:
@@ -372,12 +401,8 @@ class TaskVideoSegmentation(task_lib.Task):
             else:
                 out_frame_id = 0
 
-            for (image_id_, frame_id, image_, mask_rec, mask_logits, mask_gt,
-                    # vid_mask_, vid_mask_sub_
-                 ) in zip(
-                image_ids_, frame_ids_, video, vid_mask_rec, vid_mask_logits, vid_mask_gt,
-                # vid_mask, vid_mask_sub
-            ):
+            for image_id_, frame_id, image_, mask_rec, mask_logits, mask_gt in zip(
+                    image_ids_, frame_ids_, video, vid_mask_rec, vid_mask_logits, vid_mask_gt):
                 out_frame_id += 1
                 img_info = dict(
                     seq=str(seq),

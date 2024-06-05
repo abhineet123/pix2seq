@@ -405,7 +405,7 @@ def create_tf_example(
         subseq_img_infos,
         video,
         seq,
-        vid_info):
+        video_file_info):
     n_classes = len(class_id_to_col)
     vid_len = len(subseq_img_infos)
     frame_ids = []
@@ -414,7 +414,7 @@ def create_tf_example(
     subseq_masks = []
     subseq_masks_sub = []
 
-    vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
+    vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = video_file_info
     video_feature_dict = None
 
     if not skip_tfrecord:
@@ -634,6 +634,8 @@ def create_tf_example(
     if params.rle_to_json:
         video['rle'] = rle_tokens
         video['rle_len'] = rle_len
+        video['n_runs'] = n_runs
+
     elif not skip_tfrecord:
         seg_feature_dict = {
             # 'video/frame_ids': tfrecord_lib.convert_to_feature(frame_ids, value_type='int64_list'),

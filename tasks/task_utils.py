@@ -232,20 +232,25 @@ def check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_rec, class_id_to
             print(f"mask {vid_id} matches")
 
 
-def check_video_rle_ranges(rle_tokens, multi_class, time_as_class, length_as_class,
+def check_video_rle_ranges(rle_tokens, n_runs, multi_class, time_as_class, length_as_class,
                            vocab_size, starts_offset, lengths_offset, class_offset):
     has_class_tokens = (multi_class or time_as_class) and not length_as_class
 
-    n_run_tokens = 3 if has_class_tokens else 2
-    assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
-    starts_tokens = np.array(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
+    n_rle_tokens = len(rle_tokens)
+    n_tokens_per_run = 3 if has_class_tokens else 2
+    assert n_rle_tokens % n_tokens_per_run == 0, f"rle_tokens length must be divisible by {n_tokens_per_run}"
+
+    assert (n_runs == 0 and n_rle_tokens == 0) or (n_runs > 0 and n_rle_tokens > 0), \
+        "n_runs and n_rle_tokens must both either be zero or non-zero"
+
+    starts_tokens = np.array(rle_tokens[0:][::n_tokens_per_run], dtype=np.int64)
     max_starts = np.amax(starts_tokens)
     min_starts = np.amin(starts_tokens)
     assert max_starts < vocab_size, "max_starts exceeds vocab_size"
     assert min_starts > starts_offset, "starts_offset exceeds min_starts"
     # assert max_starts < starts_bins + starts_offset, "max_starts exceeds starts_bins + starts_offset"
 
-    lengths_tokens = np.array(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
+    lengths_tokens = np.array(rle_tokens[1:][::n_tokens_per_run], dtype=np.int64)
     max_lengths_tokens = np.amax(lengths_tokens)
     min_lengths_tokens = np.amin(lengths_tokens)
     assert max_lengths_tokens < starts_offset, "max_lengths_tokens exceeds starts_offset"
@@ -254,7 +259,7 @@ def check_video_rle_ranges(rle_tokens, multi_class, time_as_class, length_as_cla
     # + lengths_offset"
 
     if has_class_tokens:
-        class_tokens = np.array(rle_tokens[2:][::n_run_tokens], dtype=np.int64)
+        class_tokens = np.array(rle_tokens[2:][::n_tokens_per_run], dtype=np.int64)
         max_class_tokens = np.amax(class_tokens)
         min_class_tokens = np.amin(class_tokens)
         assert max_class_tokens < starts_offset, "max_class_tokens exceeds starts_offset"
@@ -2171,30 +2176,18 @@ def read_class_info(class_names_path):
     return class_id_to_col, class_id_to_name
 
 
-def get_category_names(
-        category_names_path: Optional[str],
-        return_json_data=False,
-
-) -> Dict[int, Dict[str, Any]]:
-    """Returns dictionary of category names.
-
-    Args:
-      category_names_path: Path to category names json. Expected to be a json file
-        with the format {"categories": [{"id": 1, "name": "Person"}, ...]}. If not
-        specified, the category id is used as the name.
-
-    Returns:
-      Dictionary with the format {1: {"name": "Person"}, ...}
-    """
-    assert category_names_path, "category_names_path must be provided"
-
-    print(f'Loading category names from {category_names_path}')
-    if category_names_path.endswith('.json.gz'):
-        import compress_json
-        annotations = compress_json.load(category_names_path)
+def get_category_names(json_path):
+    if isinstance(json_path, str):
+        print(f'Loading category names from {json_path}')
+        if json_path.endswith('.json.gz'):
+            import compress_json
+            annotations = compress_json.load(json_path)
+        else:
+            with open(json_path, 'r') as f:
+                annotations = json.load(f)
     else:
-        with open(category_names_path, 'r') as f:
-            annotations = json.load(f)
+        annotations = json_path
+
     category_info = {c['id']: c for c in annotations['categories']}
 
     # assert 0 not in category_info.keys(), "class IDs must to be > 0"
@@ -2210,9 +2203,6 @@ def get_category_names(
         )
     else:
         assert bkg_class == 'background', "class id 0 must be used only for background"
-
-    if return_json_data:
-        return category_info, annotations
 
     return category_info
 

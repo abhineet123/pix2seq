@@ -352,6 +352,8 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
 
         json_path = os.path.join(db_root_dir, json_name_with_ext)
 
+
+        print(f'reading {mode} json: {json_path}')
         if ds_cfg.compressed:
             import compress_json
             json_dict = compress_json.load(json_path)
@@ -361,6 +363,7 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
                 json_dict = json.load(fid)
 
         num_examples = len(json_dict[db_type])
+        print(f'num_examples: {num_examples}')
 
         ds_cfg[f'{mode}_json_dict'] = json_dict
 
@@ -397,8 +400,10 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
 
     if training:
         ds_cfg.category_names_path = os.path.join(ds_cfg.train_db_root_dir, ds_cfg.train_filename_for_metrics)
+        ds_cfg.json_dict = ds_cfg.train_json_dict
     else:
         ds_cfg.category_names_path = os.path.join(ds_cfg.eval_db_root_dir, ds_cfg.eval_filename_for_metrics)
+        ds_cfg.json_dict = ds_cfg.eval_json_dict
 
     ds_cfg.coco_annotations_dir_for_metrics = db_root_dir
 
