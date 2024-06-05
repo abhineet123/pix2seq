@@ -6,8 +6,16 @@ import sys
 import cv2
 from tqdm import tqdm
 
-dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
-seg_path = os.path.join(os.path.expanduser("~"), "617")
+
+def linux_path(*args, **kwargs):
+    """
+    :rtype: str
+    """
+    return os.path.join(*args, **kwargs).replace(os.sep, '/')
+
+
+dproc_path = linux_path(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
+seg_path = linux_path(os.path.expanduser("~"), "617")
 
 sys.path.append(os.getcwd())
 sys.path.append(dproc_path)
@@ -40,6 +48,7 @@ class Params(paramparse.CFG):
         self.db_suffix = ''
         self.vis = 0
         self.stats_only = 0
+        self.rle_to_json = 1
         self.json_only = 0
         self.check = 1
 
@@ -86,6 +95,32 @@ class Params(paramparse.CFG):
         self.show = 0
 
 
+def get_rle_suffix(params: Params, n_classes, multi_class):
+    rle_suffixes = []
+
+    if params.subsample > 1:
+        rle_suffixes.append(f'sub_{params.subsample}')
+
+    if params.length_as_class:
+        assert multi_class, "length_as_class can be enabled only in multi_class mode"
+        params.lengths_offset = params.class_offset
+        rle_suffixes.append(f'lac')
+        n_lac_classes = int(params.max_length / params.subsample) * (n_classes - 1)
+        min_starts_offset = n_lac_classes + params.class_offset
+
+        if params.starts_offset < min_starts_offset:
+            print(f'setting starts_offset to {min_starts_offset}')
+            params.starts_offset = min_starts_offset
+
+    elif multi_class:
+        rle_suffixes.append(f'mc')
+    if params.flat_order != 'C':
+        rle_suffixes.append(f'flat_{params.flat_order}')
+
+    rle_suffix = '-'.join(rle_suffixes) if rle_suffixes else ''
+    return rle_suffix
+
+
 def append_metrics(metrics, out):
     for metric, val in metrics.items():
         try:
@@ -127,8 +162,6 @@ def load_seg_annotations(annotation_path):
     else:
         raise AssertionError(f'Invalid annotation_path: {annotation_path}')
 
-    image_info = annotations['images']
-
     class_id_to_name = dict(
         (element['id'], element['name']) for element in annotations['categories'])
 
@@ -139,7 +172,7 @@ def load_seg_annotations(annotation_path):
     else:
         assert bkg_class == 'background', "class id 0 must be used only for background"
 
-    return image_info
+    return annotations
 
 
 def generate_annotations(
@@ -149,6 +182,7 @@ def generate_annotations(
         metrics,
         image_infos,
         vid_infos,
+        skip_tfrecord,
 ):
     for image_info in image_infos:
         seq = image_info['seq']
@@ -174,7 +208,8 @@ def generate_annotations(
             class_id_to_name,
             metrics,
             image_info,
-            vid_infos[seq]
+            vid_infos[seq],
+            skip_tfrecord,
         )
 
 
@@ -184,7 +219,8 @@ def create_tf_example(
         class_id_to_name: dict,
         metrics: dict,
         image_info: dict,
-        vid_info: dict
+        vid_info: dict,
+        skip_tfrecord: dict,
 ):
     n_classes = len(class_id_to_col)
     multi_class = n_classes > 2
@@ -201,25 +237,25 @@ def create_tf_example(
     if params.subsample <= 1:
         subsample_method = 0
 
-    image_path = os.path.join(params.db_path, filename)
-    mask_image_path = os.path.join(params.db_path, mask_filename)
+    image_path = linux_path(params.db_path, filename)
+    mask_image_path = linux_path(params.db_path, mask_filename)
 
     if not image_id.startswith('seq'):
         image_id = f'{seq}/{image_id}'
 
-    feature_dict = {}
-
-    image = encoded_jpg = None
+    image = encoded_jpg = feature_dict = None
 
     if vid_info is not None:
         vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
-        vid_feature_dict = {
-            'image/vid_path': tfrecord_lib.convert_to_feature(vid_path.encode('utf8')),
-            'image/mask_vid_path': tfrecord_lib.convert_to_feature(mask_vid_path.encode('utf8')),
-        }
-        feature_dict.update(vid_feature_dict)
+        if not skip_tfrecord:
+            feature_dict = {}
 
-        if not params.stats_only:
+            vid_feature_dict = {
+                'image/vid_path': tfrecord_lib.convert_to_feature(vid_path.encode('utf8')),
+                'image/mask_vid_path': tfrecord_lib.convert_to_feature(mask_vid_path.encode('utf8')),
+            }
+            feature_dict.update(vid_feature_dict)
+
             image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
             # from PIL import Image
             # from io import BytesIO
@@ -232,20 +268,19 @@ def create_tf_example(
 
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
     else:
-        if not params.stats_only:
+        if not skip_tfrecord:
             with tf.io.gfile.GFile(image_path, 'rb') as fid:
                 encoded_jpg = fid.read()
-
             image = cv2.imread(image_path)
+
         mask = cv2.imread(mask_image_path)
 
     vis_imgs = []
 
-    if not params.stats_only:
+    if not skip_tfrecord:
         vis_imgs.append(image)
         image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
             image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
-
         feature_dict.update(image_feature_dict)
 
     if not multi_class:
@@ -290,7 +325,6 @@ def create_tf_example(
         n_classes=n_classes,
         order=params.flat_order,
     )
-
     if subsample_method == 1:
         """subsample RLE of high-res mask"""
         starts, lengths = task_utils.subsample_rle(
@@ -334,10 +368,8 @@ def create_tf_example(
     )
     rle_len = len(rle_tokens)
 
-    if multi_class and not params.length_as_class:
-        assert rle_len % 3 == 0, "rle_len must be divisible by 3"
-    else:
-        assert rle_len % 2 == 0, "rle_len must be divisible by 2"
+    n_tokens_per_run = 3 if multi_class and not params.length_as_class else 2
+    assert rle_len % n_tokens_per_run == 0, f"rle_len must be divisible by {n_tokens_per_run}"
 
     if params.check:
         task_utils.check_rle_tokens(
@@ -353,16 +385,6 @@ def create_tf_example(
             class_id_to_col,
             is_vis=True)
 
-    example = None
-    if not params.stats_only:
-        seg_feature_dict = {
-            'image/rle': tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list'),
-            'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
-            'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
-        }
-        feature_dict.update(seg_feature_dict)
-        example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
-
     if rle_len > 0:
         metrics_ = dict(rle_len=rle_len)
         append_metrics(metrics_, metrics[f'method_{subsample_method}'])
@@ -372,7 +394,7 @@ def create_tf_example(
         # polygons = task_utils.polygons_from_mask(mask)
         polygons_sub = task_utils.polygons_from_mask(mask_sub)
         polygon_len = sum(polygon.size for polygon in polygons_sub)
-        append_metrics( dict(len=polygon_len), metrics[f'polygons'])
+        append_metrics(dict(len=polygon_len), metrics[f'polygons'])
 
     if params.show and n_runs > 0:
         rle_rec_cmp = task_utils.rle_from_tokens(
@@ -438,7 +460,22 @@ def create_tf_example(
         if k == 27:
             exit()
 
-    if not params.stats_only:
+    if params.rle_to_json:
+        image_info['rle'] = rle_tokens
+        image_info['rle_len'] = rle_len
+        image_info['n_runs'] = n_runs
+
+    if not skip_tfrecord:
+        seg_feature_dict = {
+
+            'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
+            'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
+        }
+        if not params.rle_to_json:
+            seg_feature_dict['image/rle'] = tfrecord_lib.convert_to_feature(rle_tokens, value_type='int64_list')
+
+        feature_dict.update(seg_feature_dict)
+        example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
         return example, 0
 
 
@@ -495,7 +532,7 @@ def main():
 
     params.db_path = f'{params.db_path}-{params.db_suffix}'
 
-    out_name = in_json_name = params.db_suffix
+    in_json_name = params.db_suffix
 
     if params.seq_id >= 0:
         params.seq_start_id = params.seq_end_id = params.seq_id
@@ -503,52 +540,32 @@ def main():
     if params.seq_start_id > 0 or params.seq_end_id >= 0:
         assert params.seq_end_id >= params.seq_start_id, "end_seq_id must to be >= start_seq_id"
         seq_suffix = f'seq_{params.seq_start_id}_{params.seq_end_id}'
-        out_name = f'{out_name}-{seq_suffix}'
         in_json_name = f'{in_json_name}-{seq_suffix}'
 
     in_json_fname = f'{in_json_name}.{params.ann_ext}'
-    in_json_path = os.path.join(params.db_path, in_json_fname)
+    in_json_path = linux_path(params.db_path, in_json_fname)
 
-    image_infos = load_seg_annotations(in_json_path)
+    annotations = load_seg_annotations(in_json_path)
+    image_infos = annotations['images']
 
-    if params.subsample > 1:
-        out_name = f'{out_name}-sub_{params.subsample}'
+    out_json_name = in_json_name
 
-    if params.length_as_class:
-        assert multi_class, "length_as_class can be enabled only in multi_class mode"
-        params.lengths_offset = params.class_offset
-        out_name = f'{out_name}-lac'
+    rle_suffix = get_rle_suffix(params, n_classes, multi_class)
+    if rle_suffix:
+        out_json_name = f'{out_json_name}-{rle_suffix}'
 
-        n_lac_classes = int(params.max_length / params.subsample) * (n_classes - 1)
-        min_starts_offset = n_lac_classes + params.class_offset
+    out_json_fname = f'{out_json_name}.{params.ann_ext}'
+    out_json_path = linux_path(params.db_path, out_json_fname)
 
-        if params.starts_offset < min_starts_offset:
-            print(f'setting starts_offset to {min_starts_offset}')
-            params.starts_offset = min_starts_offset
-
-    elif multi_class:
-        out_name = f'{out_name}-mc'
-
-    if params.flat_order != 'C':
-        out_name = f'{out_name}-flat_{params.flat_order}'
-
-    out_json_fname = f'{out_name}.{params.ann_ext}'
-    out_json_path = os.path.join(params.db_path, out_json_fname)
-
-    shutil.copy(in_json_path, out_json_path)
+    # shutil.copy(in_json_path, out_json_path)
 
     if params.json_only:
         return
 
     if not params.output_dir:
-        params.output_dir = os.path.join(params.db_path, 'tfrecord')
+        params.output_dir = linux_path(params.db_path, 'tfrecord')
 
     os.makedirs(params.output_dir, exist_ok=True)
-
-    output_path = os.path.join(params.output_dir, out_name)
-    os.makedirs(output_path, exist_ok=True)
-
-    print(f'output_path: {output_path}')
 
     vid_infos = {}
 
@@ -557,9 +574,9 @@ def main():
     for image_info in image_infos:
         seq = image_info['seq']
         mask_filename = image_info['mask_file_name']
-        vid_path = os.path.join(params.db_path, f'{seq}.mp4')
+        vid_path = linux_path(params.db_path, f'{seq}.mp4')
         mask_dir = os.path.dirname(mask_filename)
-        mask_vid_path = os.path.join(params.db_path, f'{mask_dir}.mp4')
+        mask_vid_path = linux_path(params.db_path, f'{mask_dir}.mp4')
 
         try:
             vid_info = vid_infos[seq]
@@ -586,8 +603,15 @@ def main():
         method_1={},
         method_2={},
         polygons={},
-
     )
+
+    if params.rle_to_json:
+        print(f'writing RLE to json: {out_json_path}')
+
+    skip_tfrecord = params.stats_only or params.vis or params.rle_to_json and params.json_only
+    if skip_tfrecord:
+        print('skipping tfrecord creation')
+
     annotations_iter = generate_annotations(
         params=params,
         class_id_to_col=class_id_to_col,
@@ -595,16 +619,21 @@ def main():
         metrics=metrics,
         image_infos=image_infos,
         vid_infos=vid_infos,
+        skip_tfrecord=skip_tfrecord,
     )
 
     # for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
     #     create_tf_example(*annotations_iter_)
 
+    tfrecord_path = linux_path(params.output_dir, in_json_path if params.rle_to_json else out_json_path)
+    os.makedirs(tfrecord_path, exist_ok=True)
+
     if params.stats_only:
         for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
             create_tf_example(*annotations_iter_)
     else:
-        tfrecord_pattern = os.path.join(output_path, 'shard')
+        print(f'tfrecord_path: {tfrecord_path}')
+        tfrecord_pattern = linux_path(tfrecord_path, 'shard')
         tfrecord_lib.write_tf_record_dataset(
             output_path=tfrecord_pattern,
             annotation_iterator=annotations_iter,
@@ -613,13 +642,68 @@ def main():
             multiple_processes=params.n_proc,
             iter_len=len(image_infos),
         )
-    print(f'output_path: {output_path}')
+
+    save_img_info_to_json(params, image_infos, class_id_to_name, class_id_to_col, out_json_path)
 
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
-            metrics_path = os.path.join(output_path, f'{method}_{metric_}.txt')
+            metrics_path = linux_path(tfrecord_path, f'{method}_{metric_}.txt')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
+
+
+def save_img_info_to_json(
+        params: Params,
+        annotations: dict,
+        class_id_to_name: dict,
+        class_id_to_col: dict,
+        out_path: str):
+    from datetime import datetime
+
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
+    params_dict = paramparse.to_dict(params)
+    n_imgs = len(annotations['images'])
+    info = {
+        "version": "1.0",
+        "year": datetime.now().strftime("%y"),
+        "contributor": "asingh1",
+        "date_created": time_stamp,
+        "counts": dict(
+            images=n_imgs,
+            annotations=0,
+        ),
+        "params": params_dict,
+    }
+    categories = []
+    for label_id, label in class_id_to_name.items():
+        if label_id == 0:
+            continue
+        col = class_id_to_col[label_id]
+        category_info = {
+            'supercategory': 'object',
+            'id': label_id,
+            'name': label,
+            'col': col,
+        }
+        categories.append(category_info)
+
+    annotations["info"] = info
+    annotations["categories"] = categories
+
+    print(f'saving json for {n_imgs} images to: {out_path}')
+    json_kwargs = dict(
+        indent=4
+    )
+    if out_path.endswith('.json'):
+        import json
+        output_json = json.dumps(annotations, **json_kwargs)
+        with open(out_path, 'w') as f:
+            f.write(output_json)
+    elif out_path.endswith('.json.gz'):
+        import compress_json
+        compress_json.dump(annotations, out_path, json_kwargs=json_kwargs)
+    else:
+        raise AssertionError(f'Invalid out_path: {out_path}')
 
 
 if __name__ == '__main__':

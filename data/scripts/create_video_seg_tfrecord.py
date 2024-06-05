@@ -805,9 +805,6 @@ def main():
         params.output_dir = linux_path(params.db_path, 'tfrecord')
     os.makedirs(params.output_dir, exist_ok=True)
 
-    tfrecord_path = linux_path(params.output_dir, vid_out_name if params.rle_to_json else rle_out_name)
-    os.makedirs(tfrecord_path, exist_ok=True)
-
     vid_json_path = os.path.join(params.db_path, f'{rle_out_name}.{params.ann_ext}')
 
     vid_infos = get_vid_infos(image_infos, params.db_path)
@@ -833,8 +830,6 @@ def main():
         print(f'writing RLE to json: {vid_json_path}')
 
     skip_tfrecord = params.stats_only or params.vis or params.rle_to_json and params.json_only
-    if skip_tfrecord:
-        print('skipping tfrecord creation')
 
     annotations_iter = generate_annotations(
         params=params,
@@ -849,7 +844,11 @@ def main():
         vid_infos=vid_infos,
     )
 
+    tfrecord_path = linux_path(params.output_dir, vid_out_name if params.rle_to_json else rle_out_name)
+    os.makedirs(tfrecord_path, exist_ok=True)
+
     if skip_tfrecord:
+        print('skipping tfrecord creation')
         for idx, annotations_iter_ in tqdm(enumerate(annotations_iter),
                                            total=len(all_subseq_img_infos)):
             create_tf_example(*annotations_iter_)
@@ -864,7 +863,6 @@ def main():
             multiple_processes=params.n_proc,
             iter_len=len(all_subseq_img_infos),
         )
-
 
     save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path)
 

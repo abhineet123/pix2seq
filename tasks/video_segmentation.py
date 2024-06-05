@@ -329,7 +329,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
             if self.config.debug:
                 vid_masks, vid_masks_sub = self.check_video_rle(
-                    mask_vid_path, video, image_ids_, frame_ids_, gt_rle_tokens,
+                    mask_vid_path, video, vid_id, image_ids_, frame_ids_, gt_rle_tokens,
                     rle_len, n_runs_)
                 vid_mask = vid_masks[0]
                 vid_mask_sub = vid_masks_sub[0]
