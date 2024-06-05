@@ -251,13 +251,6 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
                 lambda: tf.strings.to_number(tf.strings.split(rle_str, sep=' '),
                                              out_type=tf.int64)
             )
-            # if is_empty == 1:
-            #     rle = tf.convert_to_tensor([], dtype=tf.int64)
-            # else:
-            #     rle_str = self.vid_id_to_rle.lookup(vid_id)
-            #     rle_str_list = tf.strings.split(rle_str, sep=' ')
-            #     rle = tf.strings.to_number(rle_str_list, out_type=tf.int64)
-            # rle = self.vid_id_to_rle.lookup(vid_id)
             rle_len = self.vid_id_to_rle_len.lookup(vid_id)
         else:
             rle = example['video/rle']
