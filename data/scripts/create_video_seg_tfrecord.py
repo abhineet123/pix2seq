@@ -428,7 +428,6 @@ def create_tf_example(
     n_rows, n_cols = vid_height, vid_width
 
     vid = None
-    example = None
 
     multi_class = n_classes > 2
 
@@ -550,6 +549,8 @@ def create_tf_example(
     )
     rle_cmp = [starts, lengths]
 
+    is_empty = len(starts) == 0
+
     n_runs = len(starts)
 
     multi_class = False
@@ -642,13 +643,14 @@ def create_tf_example(
             'video/rle_len': tfrecord_lib.convert_to_feature(rle_len),
         }
         video_feature_dict.update(seg_feature_dict)
-        example = tf.train.Example(features=tf.train.Features(feature=video_feature_dict))
 
     if rle_len > 0:
         metrics_ = dict(rle_len=rle_len)
         append_metrics(metrics_, metrics[f'method_{subsample_method}'])
 
     if not skip_tfrecord:
+        video_feature_dict['video/is_empty'] = tfrecord_lib.convert_to_feature(is_empty)
+        example = tf.train.Example(features=tf.train.Features(feature=video_feature_dict))
         return example, 0
 
 
@@ -827,7 +829,12 @@ def main():
         method_2={},
 
     )
+    if params.rle_to_json:
+        print('writing RLE to json')
+
     skip_tfrecord = params.stats_only or params.vis or params.rle_to_json and params.json_only
+    if skip_tfrecord:
+        print('skipping tfrecord creation')
 
     annotations_iter = generate_annotations(
         params=params,

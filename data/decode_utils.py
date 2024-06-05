@@ -40,6 +40,7 @@ def get_feature_map_for_object_detection():
         'image/object/score': tf.io.VarLenFeature(tf.float32),
     }
 
+
 def get_feature_map_for_semantic_segmentation():
     return {
         'image/rle': tf.io.VarLenFeature(tf.int64),
@@ -48,6 +49,8 @@ def get_feature_map_for_semantic_segmentation():
         'image/mask_vid_path': tf.io.FixedLenFeature((), tf.string, ''),
         'image/frame_id': tf.io.FixedLenFeature((), tf.int64, -1),
     }
+
+
 def get_feature_map_for_video(length):
     return {
         'video/source_id': tf.io.FixedLenFeature((), tf.int64, -1),
@@ -82,20 +85,25 @@ def get_feature_map_for_video_detection(vid_len):
     return feat_dict
 
 
-def get_feature_map_for_video_segmentation(length):
-    feat_dict =  {
+def get_feature_map_for_video_segmentation(length, rle_from_json):
+    feat_dict = {
         'video/id': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),
-        'video/rle_len': tf.io.FixedLenFeature((), tf.int64, -1),
         'video/path': tf.io.FixedLenFeature((), tf.string),
         'video/mask_path': tf.io.FixedLenFeature((), tf.string),
         'video/seq': tf.io.FixedLenFeature((), tf.string),
         # 'video/frame_ids': tf.io.FixedLenFeature((length,), tf.int64),
         # 'video/image_ids': tf.io.FixedLenFeature((length,), tf.string),
-        'video/rle': tf.io.VarLenFeature(tf.int64),
+        'video/is_empty': tf.io.FixedLenFeature((), tf.int64, -1),
     }
+    if not rle_from_json:
+        feat_dict.update({
+            'video/rle_len': tf.io.FixedLenFeature((), tf.int64, -1),
+            'video/rle': tf.io.VarLenFeature(tf.int64),
+        }
+        )
 
     for _id in range(length):
         frame_feat_dict = {
@@ -109,6 +117,7 @@ def get_feature_map_for_video_segmentation(length):
         feat_dict.update(frame_feat_dict)
 
     return feat_dict
+
 
 def get_feature_map_for_instance_segmentation():
     return {

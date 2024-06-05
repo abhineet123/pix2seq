@@ -95,6 +95,7 @@ def get_shared_seg_data():
 
     data = D(
         root_dir=root_dir,
+        rle_from_json=1,
         label_shift=0,
         compressed=0,
         empty_seg_prob=0.1,
@@ -271,12 +272,14 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
                     assert seq_end_id >= seq_start_id, "end_seq_id must to be >= start_seq_id"
                     seq_suffix = f'seq_{seq_start_id}_{seq_end_id}'
                     name = f'{name}-{seq_suffix}'
+        db_name = name
         if is_video:
+            """video specific suffixes"""
             assert ds_cfg.length > 1, "video length must be > 1"
 
             length_suffix = f'length-{ds_cfg.length}'
-            if length_suffix not in name:
-                name = f'{name}-{length_suffix}'
+            if length_suffix not in db_name:
+                db_name = f'{db_name}-{length_suffix}'
             try:
                 stride = ds_cfg[f'{mode}_stride']
             except KeyError:
@@ -284,8 +287,8 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
 
             if stride:
                 stride_suffix = f'stride-{stride}'
-                if stride_suffix not in name:
-                    name = f'{name}-{stride_suffix}'
+                if stride_suffix not in db_name:
+                    db_name = f'{db_name}-{stride_suffix}'
             try:
                 sample = ds_cfg[f'{mode}_sample']
             except KeyError:
@@ -293,59 +296,61 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
 
             if sample:
                 sample_suffix = f'sample-{sample}'
-                if sample_suffix not in name:
-                    name = f'{name}-{sample_suffix}'
+                if sample_suffix not in db_name:
+                    db_name = f'{db_name}-{sample_suffix}'
 
             if not is_seg:
                 suffix = ds_cfg[f'{mode}_suffix']
                 """suffix is already in name when the latter is loaded from a trained model config.json"""
                 if suffix and not name.endswith(suffix):
-                    name = f'{name}-{suffix}'
+                    db_name = f'{db_name}-{suffix}'
 
                 start_seq_id = ds_cfg[f'{mode}_start_seq_id']
                 end_seq_id = ds_cfg[f'{mode}_end_seq_id']
                 if start_seq_id > 0 or end_seq_id >= 0:
                     assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
                     seq_suffix = f'seq-{start_seq_id}_{end_seq_id}'
-                    name = f'{name}-{seq_suffix}'
+                    db_name = f'{db_name}-{seq_suffix}'
 
                 start_frame_id = ds_cfg[f'{mode}_start_frame_id']
                 end_frame_id = ds_cfg[f'{mode}_end_frame_id']
                 if start_frame_id > 0 or end_frame_id >= 0:
                     frame_suffix = f'{start_frame_id}_{end_frame_id}'
-                    name = f'{name}-{frame_suffix}'
+                    db_name = f'{db_name}-{frame_suffix}'
 
+        json_name = db_name
         if is_seg:
+            """RLE specific suffixes"""
             if subsample > 1:
-                name = f'{name}-sub_{subsample}'
+                json_name = f'{json_name}-sub_{subsample}'
 
             if is_video:
                 time_as_class = ds_cfg[f'time_as_class']
                 if time_as_class:
                     if length_as_class:
-                        name = f'{name}-ltac'
+                        json_name = f'{json_name}-ltac'
                     else:
-                        name = f'{name}-tac'
+                        json_name = f'{json_name}-tac'
                 elif length_as_class:
                     assert multi_class, "multi_class must be enabled for length_as_class"
-                    name = f'{name}-lac'
+                    json_name = f'{json_name}-lac'
                 if multi_class:
-                    name = f'{name}-mc'
+                    json_name = f'{json_name}-mc'
             else:
                 if length_as_class:
                     assert multi_class, "multi_class must be enabled for length_as_class"
-                    name = f'{name}-lac'
+                    json_name = f'{json_name}-lac'
                 elif multi_class:
-                    name = f'{name}-mc'
+                    json_name = f'{json_name}-mc'
 
             if flat_order != 'C':
-                name = f'{name}-flat_{flat_order}'
+                json_name = f'{json_name}-flat_{flat_order}'
 
-        json_name = f'{name}.json'
+        json_name_with_ext = f'{json_name}.json'
         if ds_cfg.compressed:
-            json_name += '.gz'
+            json_name_with_ext += '.gz'
 
-        json_path = os.path.join(db_root_dir, json_name)
+        json_path = os.path.join(db_root_dir, json_name_with_ext)
 
         if ds_cfg.compressed:
             import compress_json
@@ -356,18 +361,25 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
                 json_dict = json.load(fid)
 
         num_examples = len(json_dict[db_type])
+
+        ds_cfg[f'{mode}_json_dict'] = json_dict
+
         ds_cfg[f'{mode}_db_root_dir'] = db_root_dir
         # cfg[f'{mode}_json_name'] = json_name
         # cfg[f'{mode}_json_path'] = json_path
         ds_cfg[f'{mode}_num_examples'] = num_examples
-        ds_cfg[f'{mode}_filename_for_metrics'] = json_name
+        ds_cfg[f'{mode}_filename_for_metrics'] = json_name_with_ext
 
+        tf_name = json_name
         if is_seg:
             params_from_json = json_dict['info']['params']
             model_cfg.coord_vocab_shift = params_from_json['starts_offset']
             model_cfg.len_vocab_shift = params_from_json['lengths_offset']
             model_cfg.class_vocab_shift = params_from_json['class_offset']
             mode_cfg[f'max_length'] = params_from_json['max_length']
+
+            rle_from_json = ds_cfg.rle_from_json
+            tf_name = db_name if rle_from_json else json_name
 
         elif is_video:
             try:
@@ -381,7 +393,7 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
                     name = f'{name}-{frame_gaps_suffix}'
 
         ds_cfg[f'{mode}_name'] = name
-        ds_cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', name, 'shard*')
+        ds_cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', tf_name, 'shard*')
 
     if training:
         ds_cfg.category_names_path = os.path.join(ds_cfg.train_db_root_dir, ds_cfg.train_filename_for_metrics)

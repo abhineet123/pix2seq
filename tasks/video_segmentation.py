@@ -15,8 +15,10 @@ class TaskVideoSegmentation(task_lib.Task):
                  config: ml_collections.ConfigDict):
         super().__init__(config)
 
-        self._category_names = task_utils.get_category_names(
-            config.dataset.get('category_names_path'))
+        json_path = config.dataset.get('category_names_path')
+        self._category_names, self.json_data = task_utils.get_category_names(
+            json_path, return_json_data=True)
+
 
         class_id_to_col, class_id_to_name = task_utils.get_class_info(self._category_names)
 
@@ -217,8 +219,8 @@ class TaskVideoSegmentation(task_lib.Task):
 
         """goes to postprocess_cpu"""
         return (
-        videos, vid_ids, image_ids, frame_ids, pred_rle, logits, gt_rle, rle_len, orig_image_size, seqs, vid_paths,
-        mask_vid_paths,)
+            videos, vid_ids, image_ids, frame_ids, pred_rle, logits, gt_rle, rle_len, orig_image_size, seqs, vid_paths,
+            mask_vid_paths,)
 
     def postprocess_cpu(self,
                         outputs,

@@ -2172,7 +2172,10 @@ def read_class_info(class_names_path):
 
 
 def get_category_names(
-        category_names_path: Optional[str]) -> Dict[int, Dict[str, Any]]:
+        category_names_path: Optional[str],
+        return_json_data=False,
+
+) -> Dict[int, Dict[str, Any]]:
     """Returns dictionary of category names.
 
     Args:
@@ -2207,6 +2210,9 @@ def get_category_names(
         )
     else:
         assert bkg_class == 'background', "class id 0 must be used only for background"
+
+    if return_json_data:
+        return category_info, annotations
 
     return category_info
 

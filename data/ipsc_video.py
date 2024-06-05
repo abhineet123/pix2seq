@@ -122,13 +122,50 @@ class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
 
 @dataset_lib.DatasetRegistry.register('ipsc_video_segmentation')
 class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
+    def __init__(self, config):
+        super().__init__(config)
+        self.vid_id_to_rle = None
+        self.vid_id_to_rle_len = None
+
+    def load_dataset(self, input_context, training):
+
+        if self.config.rle_from_json:
+            if training or self.config.eval_split == 'train':
+                json_dict = self.config.train_json_dict
+            else:
+                json_dict = self.config.eval_json_dict
+
+            keys = [video['id'] for video in json_dict['videos']]
+            keys_tensor = tf.constant(keys, dtype=tf.int64)
+
+            rles = [' '.join(map(str, video['rle'])) for video in json_dict['videos']]
+            rles_tensor = tf.constant(rles, dtype=tf.string)
+            # rles = [video['rle'] for video in json_dict['videos']]
+            # rles_tensor = tf.constant(rles)
+
+            rle_lens = [video['rle_len'] for video in json_dict['videos']]
+            rle_lens_tensor = tf.constant(rle_lens, dtype=tf.int64)
+
+            init_rle = tf.lookup.KeyValueTensorInitializer(
+                keys_tensor, rles_tensor)
+            self.vid_id_to_rle = tf.lookup.StaticHashTable(init_rle, default_value='')
+
+            init_rle_len = tf.lookup.KeyValueTensorInitializer(
+                keys_tensor, rle_lens_tensor)
+            self.vid_id_to_rle_len = tf.lookup.StaticHashTable(init_rle_len, default_value=-1)
+
+            # self.vid_id_to_rle = {
+            #     video['id']: video['rle'] for video in json_dict['videos']
+            # }
+
+        return super().load_dataset(input_context, training)
 
     def filter_example(self, example, training):
         """
         probabilistically filter out examples with no foreground
         """
         if training:
-            if tf.shape(example['video/rle'])[0] > 0:
+            if example['video/is_empty'] == 1:
                 return True
             rand_num = tf.random.uniform(shape=[1])
             if rand_num[0] < self.config.empty_seg_prob:
@@ -167,7 +204,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
 
     def get_feature_map(self, training):
         vid_seg_feature_map = decode_utils.get_feature_map_for_video_segmentation(
-            self.config.length)
+            self.config.length, self.config.rle_from_json)
         return vid_seg_feature_map
 
     def extract(self, example, training):
@@ -201,8 +238,28 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         images = tf.stack(images, axis=0)
 
         vid_id = example['video/id']
-        rle = example['video/rle']
-        rle_len = example['video/rle_len']
+        is_empty = example['video/is_empty']
+
+        # assert is_empty >=0, "is_empty must be >= 0"
+
+        if self.config.rle_from_json:
+            rle = tf.cond(
+                is_empty==1,
+                lambda: tf.convert_to_tensor([], dtype=tf.int64),
+                lambda: tf.strings.to_number(tf.strings.split(self.vid_id_to_rle.lookup(vid_id), sep=' '),
+                                             out_type=tf.int64)
+            )
+            # if is_empty == 1:
+            #     rle = tf.convert_to_tensor([], dtype=tf.int64)
+            # else:
+            #     rle_str = self.vid_id_to_rle.lookup(vid_id)
+            #     rle_str_list = tf.strings.split(rle_str, sep=' ')
+            #     rle = tf.strings.to_number(rle_str_list, out_type=tf.int64)
+                # rle = self.vid_id_to_rle.lookup(vid_id)
+            rle_len = self.vid_id_to_rle_len.lookup(vid_id)
+        else:
+            rle = example['video/rle']
+            rle_len = example['video/rle_len']
         vid_path = example['video/path']
         mask_vid_path = example['video/mask_path']
         seq = example['video/seq']
