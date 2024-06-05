@@ -317,6 +317,7 @@ def check_video_rle_tokens(
     # rle_len = len(rle_tokens)
     vid_mask_rec, tac_mask_rec, rle_rec_cmp = vid_mask_from_tokens(
         rle_tokens,
+        allow_extra=False,
         vid_len=vid_len,
         shape=(n_rows, n_cols),
         length_as_class=length_as_class,
@@ -1727,6 +1728,7 @@ def bytes_to_str_list(image_ids):
 
 def vid_mask_from_tokens(
         rle_tokens,
+        allow_extra,
         vid_len,
         shape,
         n_classes,
@@ -1749,7 +1751,8 @@ def vid_mask_from_tokens(
 
     rle_cmp = vid_rle_from_tokens(
         rle_tokens,
-        shape,
+        allow_extra=allow_extra,
+        shape=shape,
         time_as_class=time_as_class,
         length_as_class=length_as_class,
         starts_offset=starts_offset,
@@ -1832,7 +1835,9 @@ def rle_from_tokens(
 
 
 def vid_rle_from_tokens(
-        rle_tokens, shape,
+        rle_tokens,
+        allow_extra,
+        shape,
         time_as_class,
         length_as_class,
         starts_offset, lengths_offset, class_offset,
@@ -1850,17 +1855,22 @@ def vid_rle_from_tokens(
             rle_cmp.append([])
         return rle_cmp
 
-    n_run_tokens = 2
+    n_tokens_per_run = 2
     if starts_2d:
-        n_run_tokens += 1
+        n_tokens_per_run += 1
     if has_class_tokens:
-        n_run_tokens += 1
+        n_tokens_per_run += 1
 
-    assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
+    seq_len = len(rle_tokens)
+    if seq_len % n_tokens_per_run != 0:
+        if not allow_extra:
+            raise AssertionError(f"rle_tokens length must be divisible by {n_tokens_per_run}")
+        n_extra_tokens = seq_len % n_tokens_per_run
+        rle_tokens = rle_tokens[:-n_extra_tokens, :]
 
     if starts_2d:
-        starts_rows = np.array(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
-        starts_cols = np.array(rle_tokens[1:][::n_run_tokens], dtype=np.int64)
+        starts_rows = np.array(rle_tokens[0:][::n_tokens_per_run], dtype=np.int64)
+        starts_cols = np.array(rle_tokens[1:][::n_tokens_per_run], dtype=np.int64)
 
         starts_rows -= (starts_offset + 1)
         starts_cols -= (starts_offset + 1)
@@ -1869,18 +1879,18 @@ def vid_rle_from_tokens(
 
         starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
     else:
-        starts = np.array(rle_tokens[0:][::n_run_tokens], dtype=np.int64)
+        starts = np.array(rle_tokens[0:][::n_tokens_per_run], dtype=np.int64)
         starts -= (starts_offset + 1)
 
         len_id = 1
 
-    lengths = np.array(rle_tokens[len_id:][::n_run_tokens], dtype=np.int64)
+    lengths = np.array(rle_tokens[len_id:][::n_tokens_per_run], dtype=np.int64)
     lengths -= lengths_offset
 
     rle_cmp = [starts, lengths]
 
     if has_class_tokens:
-        class_ids = np.array(rle_tokens[len_id + 1:][::n_run_tokens], dtype=np.int64)
+        class_ids = np.array(rle_tokens[len_id + 1:][::n_tokens_per_run], dtype=np.int64)
         class_ids -= class_offset
         rle_cmp.append(class_ids)
 

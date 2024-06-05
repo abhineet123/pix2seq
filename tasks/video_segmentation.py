@@ -325,6 +325,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
             vid_mask_rec, tac_mask_rec, rle_rec_cmp = task_utils.vid_mask_from_tokens(
                 rle_tokens,
+                allow_extra=True,
                 vid_len=vid_len,
                 shape=(n_rows, n_cols),
                 length_as_class=length_as_class,
@@ -341,6 +342,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
             vid_mask_gt, tac_mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
                 gt_rle_tokens,
+                allow_extra=False,
                 vid_len=vid_len,
                 shape=(n_rows, n_cols),
                 length_as_class=length_as_class,
