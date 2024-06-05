@@ -149,8 +149,8 @@ def eval_mask(pred_mask, gt_mask, rle_len):
         fw_IU=fw_IU,
     )
 
-def get_vid_infos(db_path, image_infos):
 
+def get_vid_infos(db_path, image_infos):
     vid_infos = {}
 
     # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
@@ -183,6 +183,7 @@ def get_vid_infos(db_path, image_infos):
                                         f"seq {seq}")
 
     return vid_infos
+
 
 def save_seg_annotations(
         params: Params,
@@ -236,6 +237,7 @@ def save_seg_annotations(
         compress_json.dump(annotations, out_path, json_kwargs=json_kwargs)
     else:
         raise AssertionError(f'Invalid out_path: {out_path}')
+
 
 def load_seg_annotations(annotation_path):
     print(f'Reading annotations from {annotation_path}')
@@ -332,8 +334,13 @@ def create_tf_example(
 
     image = encoded_jpg = feature_dict = None
 
+    read_image = params.show or params.check or not skip_tfrecord
+
     if vid_info is not None:
         vid_reader, mask_vid_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
+        if read_image:
+            image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
+
         if not skip_tfrecord:
             feature_dict = {}
 
@@ -342,14 +349,11 @@ def create_tf_example(
                 'image/mask_vid_path': tfrecord_lib.convert_to_feature(mask_vid_path.encode('utf8')),
             }
             feature_dict.update(vid_feature_dict)
-
-            image = task_utils.read_frame(vid_reader, frame_id - 1, vid_path)
             # from PIL import Image
             # from io import BytesIO
             # buffer = BytesIO()
             # Image.fromarray(image).save(buffer, format="JPEG")
             # encoded_jpg = buffer.getvalue()
-
             encoded_jpg = cv2.imencode('.jpg', image)[1].tobytes()
             # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
 
@@ -358,14 +362,13 @@ def create_tf_example(
         if not skip_tfrecord:
             with tf.io.gfile.GFile(image_path, 'rb') as fid:
                 encoded_jpg = fid.read()
-            image = cv2.imread(image_path)
+                
+            if read_image:
+                image = cv2.imread(image_path)
 
         mask = cv2.imread(mask_image_path)
 
-    vis_imgs = []
-
     if not skip_tfrecord:
-        vis_imgs.append(image)
         image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
             image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
         feature_dict.update(image_feature_dict)
@@ -484,6 +487,10 @@ def create_tf_example(
         append_metrics(dict(len=polygon_len), metrics[f'polygons'])
 
     if params.show and n_runs > 0:
+        vis_imgs = []
+
+        vis_imgs.append(image)
+
         rle_rec_cmp = task_utils.rle_from_tokens(
             rle_tokens,
             mask_sub.shape,
@@ -683,7 +690,8 @@ def main():
     tfrecord_path = linux_path(params.output_dir, in_json_path if params.rle_to_json else out_json_path)
     os.makedirs(tfrecord_path, exist_ok=True)
 
-    if params.stats_only:
+    if skip_tfrecord:
+        print('skipping tfrecord creation')
         for idx, annotations_iter_ in tqdm(enumerate(annotations_iter), total=len(image_infos)):
             create_tf_example(*annotations_iter_)
     else:
