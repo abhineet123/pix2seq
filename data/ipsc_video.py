@@ -238,15 +238,16 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         images = tf.stack(images, axis=0)
 
         vid_id = example['video/id']
-        is_empty = example['video/is_empty']
+        # is_empty = example['video/is_empty']
 
         # assert is_empty >=0, "is_empty must be >= 0"
 
         if self.config.rle_from_json:
+            rle_str = self.vid_id_to_rle.lookup(vid_id)
             rle = tf.cond(
-                is_empty==1,
+                tf.strings.length(rle_str) == 0,
                 lambda: tf.convert_to_tensor([], dtype=tf.int64),
-                lambda: tf.strings.to_number(tf.strings.split(self.vid_id_to_rle.lookup(vid_id), sep=' '),
+                lambda: tf.strings.to_number(tf.strings.split(rle_str, sep=' '),
                                              out_type=tf.int64)
             )
             # if is_empty == 1:
@@ -255,7 +256,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
             #     rle_str = self.vid_id_to_rle.lookup(vid_id)
             #     rle_str_list = tf.strings.split(rle_str, sep=' ')
             #     rle = tf.strings.to_number(rle_str_list, out_type=tf.int64)
-                # rle = self.vid_id_to_rle.lookup(vid_id)
+            # rle = self.vid_id_to_rle.lookup(vid_id)
             rle_len = self.vid_id_to_rle_len.lookup(vid_id)
         else:
             rle = example['video/rle']
