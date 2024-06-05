@@ -238,7 +238,9 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         images = tf.stack(images, axis=0)
 
         vid_id = example['video/id']
-        # is_empty = example['video/is_empty']
+        is_empty = example['video/is_empty']
+
+        tf.debugging.assert_greater_equal(is_empty, 0, "is_empty must be >=0")
 
         # assert is_empty >=0, "is_empty must be >= 0"
 
