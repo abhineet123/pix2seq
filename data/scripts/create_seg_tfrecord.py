@@ -149,6 +149,93 @@ def eval_mask(pred_mask, gt_mask, rle_len):
         fw_IU=fw_IU,
     )
 
+def get_vid_infos(db_path, image_infos):
+
+    vid_infos = {}
+
+    # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
+
+    for image_info in image_infos:
+        seq = image_info['seq']
+        mask_filename = image_info['mask_file_name']
+        vid_path = linux_path(db_path, f'{seq}.mp4')
+        mask_dir = os.path.dirname(mask_filename)
+        mask_vid_path = linux_path(db_path, f'{mask_dir}.mp4')
+
+        try:
+            vid_info = vid_infos[seq]
+        except KeyError:
+            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(vid_path)
+            mask_reader, mask_width, mask_height, mask_num_frames = task_utils.load_video(mask_vid_path)
+
+            assert num_frames == mask_num_frames, "num_frames mismatch"
+            assert vid_width == mask_width, "vid_width mismatch"
+            assert vid_height == mask_height, "vid_height mismatch"
+
+            vid_infos[seq] = vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height
+        else:
+            vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
+
+        frame_id = int(image_info['frame_id'])
+        img_id = image_info['img_id']
+
+        assert frame_id <= num_frames, (f"frame_id {frame_id} for image {img_id} exceeds num_frames {num_frames} for "
+                                        f"seq {seq}")
+
+    return vid_infos
+
+def save_seg_annotations(
+        params: Params,
+        annotations: dict,
+        class_id_to_name: dict,
+        class_id_to_col: dict,
+        out_path: str):
+    from datetime import datetime
+
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
+    params_dict = paramparse.to_dict(params)
+    n_imgs = len(annotations['images'])
+    info = {
+        "version": "1.0",
+        "year": datetime.now().strftime("%y"),
+        "contributor": "asingh1",
+        "date_created": time_stamp,
+        "counts": dict(
+            images=n_imgs,
+            annotations=0,
+        ),
+        "params": params_dict,
+    }
+    categories = []
+    for label_id, label in class_id_to_name.items():
+        if label_id == 0:
+            continue
+        col = class_id_to_col[label_id]
+        category_info = {
+            'supercategory': 'object',
+            'id': label_id,
+            'name': label,
+            'col': col,
+        }
+        categories.append(category_info)
+
+    annotations["info"] = info
+    annotations["categories"] = categories
+
+    print(f'saving json for {n_imgs} images to: {out_path}')
+    json_kwargs = dict(
+        indent=4
+    )
+    if out_path.endswith('.json'):
+        import json
+        output_json = json.dumps(annotations, **json_kwargs)
+        with open(out_path, 'w') as f:
+            f.write(output_json)
+    elif out_path.endswith('.json.gz'):
+        import compress_json
+        compress_json.dump(annotations, out_path, json_kwargs=json_kwargs)
+    else:
+        raise AssertionError(f'Invalid out_path: {out_path}')
 
 def load_seg_annotations(annotation_path):
     print(f'Reading annotations from {annotation_path}')
@@ -559,44 +646,12 @@ def main():
 
     # shutil.copy(in_json_path, out_json_path)
 
-    if params.json_only:
-        return
-
     if not params.output_dir:
         params.output_dir = linux_path(params.db_path, 'tfrecord')
 
     os.makedirs(params.output_dir, exist_ok=True)
 
-    vid_infos = {}
-
-    # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
-
-    for image_info in image_infos:
-        seq = image_info['seq']
-        mask_filename = image_info['mask_file_name']
-        vid_path = linux_path(params.db_path, f'{seq}.mp4')
-        mask_dir = os.path.dirname(mask_filename)
-        mask_vid_path = linux_path(params.db_path, f'{mask_dir}.mp4')
-
-        try:
-            vid_info = vid_infos[seq]
-        except KeyError:
-            vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(vid_path)
-            mask_reader, mask_width, mask_height, mask_num_frames = task_utils.load_video(mask_vid_path)
-
-            assert num_frames == mask_num_frames, "num_frames mismatch"
-            assert vid_width == mask_width, "vid_width mismatch"
-            assert vid_height == mask_height, "vid_height mismatch"
-
-            vid_infos[seq] = vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height
-        else:
-            vid_reader, mask_reader, vid_path, mask_vid_path, num_frames, vid_width, vid_height = vid_info
-
-        frame_id = int(image_info['frame_id'])
-        img_id = image_info['img_id']
-
-        assert frame_id <= num_frames, (f"frame_id {frame_id} for image {img_id} exceeds num_frames {num_frames} for "
-                                        f"seq {seq}")
+    vid_infos = get_vid_infos(params.db_path, image_infos)
 
     metrics = dict(
         method_0={},
@@ -643,67 +698,13 @@ def main():
             iter_len=len(image_infos),
         )
 
-    save_img_info_to_json(params, image_infos, class_id_to_name, class_id_to_col, out_json_path)
+    save_seg_annotations(params, annotations, class_id_to_name, class_id_to_col, out_json_path)
 
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
             metrics_path = linux_path(tfrecord_path, f'{method}_{metric_}.txt')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
-
-
-def save_img_info_to_json(
-        params: Params,
-        annotations: dict,
-        class_id_to_name: dict,
-        class_id_to_col: dict,
-        out_path: str):
-    from datetime import datetime
-
-    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
-    params_dict = paramparse.to_dict(params)
-    n_imgs = len(annotations['images'])
-    info = {
-        "version": "1.0",
-        "year": datetime.now().strftime("%y"),
-        "contributor": "asingh1",
-        "date_created": time_stamp,
-        "counts": dict(
-            images=n_imgs,
-            annotations=0,
-        ),
-        "params": params_dict,
-    }
-    categories = []
-    for label_id, label in class_id_to_name.items():
-        if label_id == 0:
-            continue
-        col = class_id_to_col[label_id]
-        category_info = {
-            'supercategory': 'object',
-            'id': label_id,
-            'name': label,
-            'col': col,
-        }
-        categories.append(category_info)
-
-    annotations["info"] = info
-    annotations["categories"] = categories
-
-    print(f'saving json for {n_imgs} images to: {out_path}')
-    json_kwargs = dict(
-        indent=4
-    )
-    if out_path.endswith('.json'):
-        import json
-        output_json = json.dumps(annotations, **json_kwargs)
-        with open(out_path, 'w') as f:
-            f.write(output_json)
-    elif out_path.endswith('.json.gz'):
-        import compress_json
-        compress_json.dump(annotations, out_path, json_kwargs=json_kwargs)
-    else:
-        raise AssertionError(f'Invalid out_path: {out_path}')
 
 
 if __name__ == '__main__':
