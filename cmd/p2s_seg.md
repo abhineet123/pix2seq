@@ -2,12 +2,12 @@
 
 - [resnet-640-16_53](#resnet_640_16_5_3_)
     - [r-2560       @ resnet-640-16_53](#r_2560___resnet_640_16_53_)
-        - [s-640-sub-8       @ r-2560/resnet-640-16_53](#s_640_sub_8___r_2560_resnet_640_16_5_3_)
-        - [s-640-sub-8-mc       @ r-2560/resnet-640-16_53](#s_640_sub_8_mc___r_2560_resnet_640_16_5_3_)
-        - [s-640-sub-8-lac       @ r-2560/resnet-640-16_53](#s_640_sub_8_lac___r_2560_resnet_640_16_5_3_)
-        - [sz-640-aug-sub-8       @ r-2560/resnet-640-16_53](#sz_640_aug_sub_8___r_2560_resnet_640_16_5_3_)
-        - [sz-640-aug-sub-4       @ r-2560/resnet-640-16_53](#sz_640_aug_sub_4___r_2560_resnet_640_16_5_3_)
-        - [s-640-sub-4-lac       @ r-2560/resnet-640-16_53](#s_640_sub_4_lac___r_2560_resnet_640_16_5_3_)
+        - [p-640-sub-8       @ r-2560/resnet-640-16_53](#p_640_sub_8___r_2560_resnet_640_16_5_3_)
+        - [p-640-sub-8-mc       @ r-2560/resnet-640-16_53](#p_640_sub_8_mc___r_2560_resnet_640_16_5_3_)
+        - [p-640-sub-8-lac       @ r-2560/resnet-640-16_53](#p_640_sub_8_lac___r_2560_resnet_640_16_5_3_)
+        - [p-640-aug-sub-8       @ r-2560/resnet-640-16_53](#p_640_aug_sub_8___r_2560_resnet_640_16_5_3_)
+        - [p-640-aug-sub-4       @ r-2560/resnet-640-16_53](#p_640_aug_sub_4___r_2560_resnet_640_16_5_3_)
+        - [p-640-sub-4-lac       @ r-2560/resnet-640-16_53](#p_640_sub_4_lac___r_2560_resnet_640_16_5_3_)
     - [r-640       @ resnet-640-16_53](#r_640___resnet_640_16_53_)
         - [p-80       @ r-640/resnet-640-16_53](#p_80___r_640_resnet_640_16_53_)
             - [on-train       @ p-80/r-640/resnet-640-16_53](#on_train___p_80_r_640_resnet_640_16_5_3_)
@@ -30,32 +30,32 @@
 # resnet-640-16_53
 <a id="r_2560___resnet_640_16_53_"></a>
 ## r-2560       @ resnet-640-16_53-->p2s_seg
-<a id="s_640_sub_8___r_2560_resnet_640_16_5_3_"></a>
-### s-640-sub-8       @ r-2560/resnet-640-16_53-->p2s_seg
+<a id="p_640_sub_8___r_2560_resnet_640_16_5_3_"></a>
+### p-640-sub-8       @ r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:sub-8,batch-24,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
 `seq-0`
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:sub-8:seq-0,batch-8,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1
 
-<a id="s_640_sub_8_mc___r_2560_resnet_640_16_5_3_"></a>
-### s-640-sub-8-mc       @ r-2560/resnet-640-16_53-->p2s_seg
+<a id="p_640_sub_8_mc___r_2560_resnet_640_16_5_3_"></a>
+### p-640-sub-8-mc       @ r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:sub-8,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,mc
 
-<a id="s_640_sub_8_lac___r_2560_resnet_640_16_5_3_"></a>
-### s-640-sub-8-lac       @ r-2560/resnet-640-16_53-->p2s_seg
+<a id="p_640_sub_8_lac___r_2560_resnet_640_16_5_3_"></a>
+### p-640-sub-8-lac       @ r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:sub-8,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,lac
 
-<a id="sz_640_aug_sub_8___r_2560_resnet_640_16_5_3_"></a>
-### sz-640-aug-sub-8       @ r-2560/resnet-640-16_53-->p2s_seg
+<a id="p_640_aug_sub_8___r_2560_resnet_640_16_5_3_"></a>
+### p-640-aug-sub-8       @ r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:rot-15_345_4:sub-8,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
 `seq-0`
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:rot-15_345_4:seq-0:sub-8,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
 
-<a id="sz_640_aug_sub_4___r_2560_resnet_640_16_5_3_"></a>
-### sz-640-aug-sub-4       @ r-2560/resnet-640-16_53-->p2s_seg
+<a id="p_640_aug_sub_4___r_2560_resnet_640_16_5_3_"></a>
+### p-640-aug-sub-4       @ r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg_160-16_53:p-640:r-2560:rot-15_345_4:sub-4,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
 
-<a id="s_640_sub_4_lac___r_2560_resnet_640_16_5_3_"></a>
-### s-640-sub-4-lac       @ r-2560/resnet-640-16_53-->p2s_seg
+<a id="p_640_sub_4_lac___r_2560_resnet_640_16_5_3_"></a>
+### p-640-sub-4-lac       @ r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg_160-16_53:p-640:r-2560:sub-4,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,lac
 
 <a id="r_640___resnet_640_16_53_"></a>

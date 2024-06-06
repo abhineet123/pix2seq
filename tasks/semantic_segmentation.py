@@ -184,6 +184,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                         train_step,
                         out_vis_dir,
                         out_mask_dir,
+                        json_vid_info=None,
                         vid_cap=None,
                         eval_step=None,
                         training=False,
