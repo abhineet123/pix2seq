@@ -278,7 +278,7 @@ def generate_annotations(
         seq_id = image_info['seq']
         img_id = image_info['img_id']
 
-        src_id, patch_id = img_id.split('_')
+        src_id, patch_id = img_id.split('_')[:2]
 
         patch_id = int(patch_id)
 

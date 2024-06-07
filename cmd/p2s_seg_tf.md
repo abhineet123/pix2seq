@@ -135,7 +135,7 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-4:r-2560:gz
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-4:r-2560:gz:proc-1:lac:stats-0
 <a id="aug___p_640_sub_4_r_2560_16_53_"></a>
 #### aug       @ p-640-sub-4/r-2560/16_53-->p2s_seg_tf
-python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:rot-15_345_4:sub-4:r-2560:gz:proc-1
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:rot-15_345_4:sub-4:r-2560:gz:proc-1:json
 <a id="aug_lac___p_640_sub_4_r_2560_16_53_"></a>
 #### aug-lac       @ p-640-sub-4/r-2560/16_53-->p2s_seg_tf
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:rot-15_345_4:sub-4:r-2560:gz:proc-1:lac
