@@ -262,7 +262,16 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         max_length = self.config.dataset.train.max_length
         subsample = self.config.dataset.train.subsample
+
         multi_class = self.config.dataset.multi_class
+        n_classes = len(self.class_id_to_col)
+
+        assert max_length > 0, "max_length must be > 0"
+        assert subsample >= 1, "subsample must be >= 1"
+        if not multi_class:
+            assert n_classes == 2, "n_classes must be 2 for no multi_class"
+        else:
+            assert n_classes > 2, "n_classes must be > 2 for multi_class"
 
         length_as_class = self.config.dataset.length_as_class
         flat_order = self.config.dataset.flat_order
@@ -271,7 +280,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         lengths_offset = self.config.model.len_vocab_shift
         class_offset = self.config.model.class_vocab_shift
 
-        n_classes = len(self.class_id_to_col)
+
         max_seq_len = self.config.model.max_seq_len
         vocab_size = self.config.model.vocab_size
 
