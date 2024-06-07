@@ -1679,6 +1679,7 @@ def rle_from_logits(
 
 def mask_from_tokens(
         rle_tokens, shape,
+        allow_extra,
         length_as_class,
         max_length,
         starts_offset, lengths_offset, class_offset,
@@ -1694,6 +1695,7 @@ def mask_from_tokens(
     rle_cmp = rle_from_tokens(
         rle_tokens,
         shape,
+        allow_extra=allow_extra,
         length_as_class=length_as_class,
         starts_offset=starts_offset,
         lengths_offset=lengths_offset,
@@ -1791,6 +1793,7 @@ def vid_mask_from_tokens(
 
 def rle_from_tokens(
         rle_tokens, shape,
+        allow_extra,
         length_as_class,
         starts_offset, lengths_offset, class_offset,
         starts_2d, multi_class, flat_order
@@ -1804,15 +1807,20 @@ def rle_from_tokens(
         rle_cmp = [[], [], []] if has_class_tokens else [[], []]
         return rle_cmp
 
-    n_run_tokens = 3 if has_class_tokens else 2
+    n_tokens_per_run = 3 if has_class_tokens else 2
     if starts_2d:
-        n_run_tokens += 1
+        n_tokens_per_run += 1
 
-    assert len(rle_tokens) % n_run_tokens == 0, f"rle_tokens length must be divisible by {n_run_tokens}"
+    seq_len = len(rle_tokens)
+    n_extra_tokens = seq_len % n_tokens_per_run
+    if n_extra_tokens != 0:
+        if not allow_extra:
+            raise AssertionError(f"rle_tokens length must be divisible by {n_tokens_per_run}")
+        rle_tokens = rle_tokens[:-n_extra_tokens]
 
     if starts_2d:
-        starts_rows = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=int)
-        starts_cols = np.asarray(rle_tokens[1:][::n_run_tokens], dtype=int)
+        starts_rows = np.asarray(rle_tokens[0:][::n_tokens_per_run], dtype=int)
+        starts_cols = np.asarray(rle_tokens[1:][::n_tokens_per_run], dtype=int)
 
         starts_rows -= (starts_offset + 1)
         starts_cols -= (starts_offset + 1)
@@ -1821,18 +1829,18 @@ def rle_from_tokens(
 
         starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
     else:
-        starts = np.asarray(rle_tokens[0:][::n_run_tokens], dtype=int)
+        starts = np.asarray(rle_tokens[0:][::n_tokens_per_run], dtype=int)
         starts -= (starts_offset + 1)
 
         len_id = 1
 
-    lengths = np.asarray(rle_tokens[len_id:][::n_run_tokens], dtype=int)
+    lengths = np.asarray(rle_tokens[len_id:][::n_tokens_per_run], dtype=int)
     lengths -= lengths_offset
 
     rle_cmp = [starts, lengths]
 
     if has_class_tokens:
-        class_ids = np.asarray(rle_tokens[len_id + 1:][::n_run_tokens], dtype=int)
+        class_ids = np.asarray(rle_tokens[len_id + 1:][::n_tokens_per_run], dtype=int)
         class_ids -= class_offset
         rle_cmp.append(class_ids)
 

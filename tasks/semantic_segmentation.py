@@ -321,6 +321,7 @@ class TaskSemanticSegmentation(task_lib.Task):
             mask_rec, rle_rec_cmp = task_utils.mask_from_tokens(
                 rle_,
                 (n_rows, n_cols),
+                allow_extra=True,
                 starts_offset=starts_offset,
                 lengths_offset=lengths_offset,
                 class_offset=class_offset,
@@ -334,6 +335,7 @@ class TaskSemanticSegmentation(task_lib.Task):
             mask_gt, rle_gt_cmp = task_utils.mask_from_tokens(
                 gt_rle_,
                 (n_rows, n_cols),
+                allow_extra=True,
                 starts_offset=starts_offset,
                 lengths_offset=lengths_offset,
                 class_offset=class_offset,
