@@ -14,8 +14,13 @@ class TaskSemanticSegmentation(task_lib.Task):
                  config: ml_collections.ConfigDict):
         super().__init__(config)
 
-        self._category_names = task_utils.get_category_names(
-            config.dataset.get('category_names_path'))
+        json_dict = self.config.dataset.json_dict
+
+        self._category_names = task_utils.get_category_names(json_dict)
+
+        self.frame_id_to_img_info = {
+            img['frame_id']: img for img in json_dict['images']
+        }
 
         class_id_to_col, class_id_to_name = task_utils.get_class_info(self._category_names)
 
@@ -41,12 +46,16 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         return dataset
 
-    def check_rle(self, batched_examples, show):
-        mask_vid_paths = batched_examples['mask_vid_path'].numpy()
-        images = batched_examples['image'].numpy()
-        img_ids = batched_examples['image/id'].numpy()
-        frame_ids = batched_examples['frame_id'].numpy()
-        rles = batched_examples['rle'].numpy()
+    def check_rle(self, mask_vid_paths, images, img_ids, frame_ids, rles):
+
+        if isinstance(mask_vid_paths, str):
+            images = np.expand_dims(images, axis=0)
+            img_ids = np.expand_dims(img_ids, axis=0)
+            frame_ids = np.expand_dims(frame_ids, axis=0)
+            rles = np.expand_dims(rles, axis=0)
+
+            mask_vid_paths = [mask_vid_paths, ]
+
         batch_size = frame_ids.shape[0]
         max_length = self.config.dataset.train.max_length
         subsample = self.config.dataset.train.subsample
@@ -66,7 +75,8 @@ class TaskSemanticSegmentation(task_lib.Task):
             if starts_offset < n_lac_classes:
                 print(f'setting starts_offset to {n_lac_classes}')
                 starts_offset = n_lac_classes
-
+        masks = []
+        masks_sub = []
         for batch_id in range(batch_size):
             mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
             rle = rles[batch_id]
@@ -74,17 +84,30 @@ class TaskSemanticSegmentation(task_lib.Task):
             image = images[batch_id]
             frame_id = frame_ids[batch_id]
             vid_reader, vid_width, vid_height, num_frames = task_utils.load_video(mask_vid_path)
+
+            n_rows, n_cols = vid_height, vid_width
+
             mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
             task_utils.mask_vis_to_id(mask, n_classes=n_classes)
+
+            if subsample > 1:
+                n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
+                mask_sub = task_utils.resize_mask_coord(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
+            else:
+                mask_sub = np.copy(mask)
+
+            masks.append(mask)
+            masks_sub.append(mask_sub)
 
             rle_stripped = rle[rle != vocab.PADDING_TOKEN]
             if rle_stripped.size == 0:
                 print(f'\n{img_id}: mask is empty\n')
 
             task_utils.check_rle_tokens(
-                image, mask, rle_stripped,
+                image, mask, mask_sub,
+                rle_stripped,
                 n_classes=n_classes,
-                length_as_class=self.config.dataset.length_as_class,
+                length_as_class=length_as_class,
                 starts_offset=starts_offset,
                 lengths_offset=lengths_offset,
                 class_offset=class_offset,
@@ -93,8 +116,9 @@ class TaskSemanticSegmentation(task_lib.Task):
                 class_to_col=class_id_to_col,
                 multi_class=multi_class,
                 flat_order=flat_order,
-                is_vis=1,
+                is_vis=False,
             )
+        return masks, masks_sub
 
     def preprocess_batched(self, batched_examples, training):
         config = self.config.task
@@ -111,7 +135,13 @@ class TaskSemanticSegmentation(task_lib.Task):
         token_weights = tf.ones_like(response_seq, dtype=tf.float32)
 
         if self.config.debug:
-            self.check_rle(batched_examples, show=1)
+            mask_vid_paths = batched_examples['mask_vid_path'].numpy()
+            images = batched_examples['image'].numpy()
+            img_ids = batched_examples['image/id'].numpy()
+            frame_ids = batched_examples['frame_id'].numpy()
+            rles = batched_examples['rle'].numpy()
+
+            self.check_rle(mask_vid_paths, images, img_ids, frame_ids, rles)
 
         # response_seq, token_weights = build_response_seq_from_rle(
         #     batched_examples['rle'],
@@ -197,52 +227,100 @@ class TaskSemanticSegmentation(task_lib.Task):
         # Copy outputs to cpu.
         new_outputs = []
         for i in range(len(outputs)):
-            new_outputs.append(tf.identity(outputs[i]))
+            new_outputs.append(
+                tf.identity(outputs[i]).numpy()
+            )
 
-        images, image_ids, rles, logits, gt_rles, orig_sizes = new_outputs
+        images, image_ids, frame_ids, rles, logits, gt_rles, orig_sizes = new_outputs
 
-        orig_sizes = orig_sizes.numpy()
-        gt_rles = gt_rles.numpy()
-        rles = rles.numpy()
-        logits = logits.numpy()
-
-        image_ids_ = image_ids.numpy().flatten().astype(str)
+        image_ids_ = image_ids.flatten().astype(str)
         image_ids = list(image_ids_)
         images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
+
+        max_length = self.config.dataset.train.max_length
+        subsample = self.config.dataset.train.subsample
         multi_class = self.config.dataset.multi_class
-        for image_id_, image_, rle_, logits_, orig_size_, gt_rle_ in zip(
-                image_ids, images, rles, logits, orig_sizes, gt_rles):
+
+        length_as_class = self.config.dataset.length_as_class
+        flat_order = self.config.dataset.flat_order
+
+        starts_offset = self.config.model.coord_vocab_shift
+        lengths_offset = self.config.model.len_vocab_shift
+        class_offset = self.config.model.class_vocab_shift
+
+        n_classes = len(self.class_id_to_col)
+        max_seq_len = self.config.model.max_seq_len
+        vocab_size = self.config.model.vocab_size
+
+        if subsample > 1:
+            max_length = int(max_length / subsample)
+
+        for image_id_, image_, frame_id_, rle_, logits_, orig_size_, gt_rle_ in zip(
+                image_ids, images, frame_ids, rles, logits, orig_sizes, gt_rles):
             orig_size_ = tuple(orig_size_)
             n_rows, n_cols = orig_size_
 
-            max_length = self.config.dataset.train.max_length
-            subsample = self.config.dataset.train.subsample
-
             if subsample > 1:
-                max_length = int(max_length / subsample)
                 n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
             rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
 
+            mask_from_file = mask_from_file_sub = None
+            if self.config.debug:
+                vid_masks, vid_masks_sub = self.check_rle(
+                    mask_vid_path, image_, image_id_, frame_id_, gt_rle_,)
+                mask_from_file = vid_masks[0]
+                mask_from_file_sub = vid_masks_sub[0]
+
+            mask_logits, rle_logits_cmp = task_utils.mask_from_logits(
+                rle_logits=logits_,
+                shape=(n_rows, n_cols),
+                max_length=max_length,
+                n_classes=n_classes,
+                starts_offset=starts_offset,
+                lengths_offset=lengths_offset,
+                class_offset=class_offset,
+                length_as_class=length_as_class,
+                starts_2d=False,
+                multi_class=multi_class,
+                max_seq_len=max_seq_len,
+                vocab_size=vocab_size,
+            )
+
             mask_rec, rle_rec_cmp = task_utils.mask_from_tokens(
                 rle_,
                 (n_rows, n_cols),
-                starts_offset=self.config.model.coord_vocab_shift,
-                lengths_offset=self.config.model.len_vocab_shift,
-                class_offset=self.config.model.class_vocab_shift,
+                starts_offset=starts_offset,
+                lengths_offset=lengths_offset,
+                class_offset=class_offset,
                 starts_2d=False,
                 multi_class=multi_class,
+                max_length=max_length,
+                length_as_class=length_as_class,
+                flat_order=flat_order,
             )
 
             mask_gt, rle_gt_cmp = task_utils.mask_from_tokens(
                 gt_rle_,
                 (n_rows, n_cols),
-                starts_offset=self.config.model.coord_vocab_shift,
-                lengths_offset=self.config.model.len_vocab_shift,
-                class_offset=self.config.model.class_vocab_shift,
+                starts_offset=starts_offset,
+                lengths_offset=lengths_offset,
+                class_offset=class_offset,
                 starts_2d=False,
                 multi_class=multi_class,
+                max_length=max_length,
+                length_as_class=length_as_class,
+                flat_order=flat_order,
             )
+
+            if self.config.debug:
+                # mask_from_file = task_utils.mask_vis_to_id(mask_from_file, n_classes, copy=True)
+                mask_from_file_sub = task_utils.mask_vis_to_id(mask_from_file_sub, n_classes, copy=True)
+                if not np.array_equal(mask_from_file_sub, vid_mask_gt):
+                    print("vid_mask_gt mismatch")
+                    task_utils.check_individual_vid_masks(
+                        video, mask_from_file_sub, vid_mask_gt, self.class_id_to_col, n_classes)
+
             n_classes = len(self.class_id_to_col)
 
             if subsample > 1:

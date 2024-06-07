@@ -104,36 +104,43 @@ def mask_to_binary(mask):
     return (mask > 0).astype(np.uint8) * 255
 
 
-def mask_to_gs(mask, check=True):
+def vid_mask_to_gs(vid_mask, check=True, copy=False):
+    if len(vid_mask.shape) == 4:
+        vid_mask_b = vid_mask[..., 0].squeeze()
+        if check:
+            vid_mask_g = vid_mask[..., 1].squeeze()
+            vid_mask_r = vid_mask[..., 2].squeeze()
+
+            assert np.array_equal(vid_mask_b, vid_mask_g), "mask_b and mask_g mismatch"
+            assert np.array_equal(vid_mask_b, vid_mask_r), "mask_b and mask_r mismatch"
+
+        vid_mask_gs = np.copy(vid_mask_b) if copy else vid_mask_b
+    else:
+        vid_mask_gs = np.copy(vid_mask) if copy else vid_mask
+    return vid_mask_gs
+
+
+def mask_to_gs(mask, check=True, copy=False):
     if len(mask.shape) == 2:
-        return mask
+        return mask.copy() if copy else mask
     mask_b = mask[..., 0].squeeze()
     if check:
         mask_g = mask[..., 1].squeeze()
         mask_r = mask[..., 2].squeeze()
         assert np.array_equal(mask_b, mask_g), "mask_b and mask_g mismatch"
         assert np.array_equal(mask_b, mask_r), "mask_b and mask_r mismatch"
-    return mask_b
+    return mask_b.copy() if copy else mask
 
 
 def check_rle_tokens(
-        image, mask, rle_tokens, n_classes,
+        image, mask, mask_sub, rle_tokens, n_classes,
         length_as_class,
         starts_offset, lengths_offset, class_offset,
         max_length, subsample, multi_class,
         flat_order,
         class_to_col, is_vis):
-    if len(mask.shape) == 3:
-        mask_b = mask[..., 0].squeeze()
-        mask_g = mask[..., 1].squeeze()
-        mask_r = mask[..., 2].squeeze()
-
-        assert np.array_equal(mask_b, mask_g), "mask_b and mask_g mismatch"
-        assert np.array_equal(mask_b, mask_r), "mask_b and mask_r mismatch"
-
-        mask_gt = mask_b
-    else:
-        mask_gt = np.copy(mask)
+    mask_gt = mask_to_gs(mask, copy=True)
+    mask_gt_sub = mask_to_gs(mask_sub, copy=True)
 
     if len(rle_tokens) == 0:
         assert np.all(mask_gt == 0), "non-zero mask found for empty rle_tokens"
@@ -141,20 +148,13 @@ def check_rle_tokens(
 
     if is_vis:
         mask_vis_to_id(mask_gt, n_classes)
+        mask_vis_to_id(mask_gt_sub, n_classes)
 
     n_rows, n_cols = mask_gt.shape
 
     if subsample > 1:
         max_length = int(max_length / subsample)
         n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
-        mask_gt_sub = resize_mask_coord(mask_gt, (n_rows, n_cols), n_classes, is_vis=0)
-        # mask_rec_ = mask_id_to_vis(mask_rec, n_classes, copy=True)
-        # mask_gt_ = mask_id_to_vis(mask_gt, n_classes, copy=True)
-        # cv2.imshow('mask_rec', mask_rec_)
-        # cv2.imshow('mask_gt', mask_gt_)
-    else:
-        mask_gt_sub = mask_gt
-    # rle_len = len(rle_tokens)
 
     mask_rec, rle_rec_cmp = mask_from_tokens(
         rle_tokens,
@@ -283,17 +283,7 @@ def check_video_rle_tokens(
         tac_mask_sub,
         tac_id_to_col,
 ):
-    if len(vid_mask.shape) == 4:
-        vid_mask_b = vid_mask[..., 0].squeeze()
-        vid_mask_g = vid_mask[..., 1].squeeze()
-        vid_mask_r = vid_mask[..., 2].squeeze()
-
-        assert np.array_equal(vid_mask_b, vid_mask_g), "mask_b and mask_g mismatch"
-        assert np.array_equal(vid_mask_b, vid_mask_r), "mask_b and mask_r mismatch"
-
-        vid_mask_gt = vid_mask_b
-    else:
-        vid_mask_gt = np.copy(vid_mask)
+    vid_mask_gt = vid_mask_to_gs(vid_mask, copy=True)
 
     if len(rle_tokens) == 0:
         assert np.all(vid_mask_gt == 0), "non-zero mask found for empty rle_tokens"
@@ -1482,27 +1472,27 @@ def mask_from_logits(
         max_length,
         n_classes,
         starts_offset, lengths_offset, class_offset,
-        time_as_class,
         length_as_class,
         starts_2d,
         multi_class,
-        vid_len,
         max_seq_len,
         vocab_size,
 ):
     rle_cmp = rle_from_logits(
-        rle_logits,
-        shape,
-        max_length,
-        n_classes,
-        starts_offset, lengths_offset, class_offset,
-        time_as_class,
-        length_as_class,
-        starts_2d,
-        multi_class,
-        vid_len,
-        max_seq_len,
-        vocab_size,
+        rle_logits=rle_logits,
+        shape=shape,
+        max_length=max_length,
+        n_classes=n_classes,
+        starts_offset=starts_offset,
+        lengths_offset=lengths_offset,
+        class_offset=class_offset,
+        time_as_class=False,
+        length_as_class=length_as_class,
+        starts_2d=starts_2d,
+        multi_class=multi_class,
+        vid_len=1,
+        max_seq_len=max_seq_len,
+        vocab_size=vocab_size,
     )
     starts, lengths = rle_cmp[:2]
     if len(rle_cmp) == 3:
@@ -1577,6 +1567,8 @@ def rle_from_logits(
         max_seq_len,
         vocab_size,
 ):
+    """generate RLE for both static and video masks"""
+
     assert not starts_2d, "starts_2d is not supported yet"
 
     max_seq_len_, vocab_size_ = rle_logits.shape
@@ -1608,6 +1600,12 @@ def rle_from_logits(
         starts_bins = n_rows
     else:
         starts_bins = n_rows * n_cols
+
+    if vid_len == 1:
+        assert not time_as_class, "vid_len must be > 1 for time_as_class"
+
+    if time_as_class:
+        assert vid_len > 1, "vid_len must be > 1 for time_as_class"
 
     if vid_len > 1 and not time_as_class:
         starts_bins *= vid_len
@@ -1683,7 +1681,8 @@ def mask_from_tokens(
         length_as_class,
         max_length,
         starts_offset, lengths_offset, class_offset,
-        starts_2d, multi_class, flat_order):
+        starts_2d, multi_class, flat_order
+):
     if len(rle_tokens) == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
         rle_cmp = [[], []]
