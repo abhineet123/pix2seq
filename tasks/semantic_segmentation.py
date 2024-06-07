@@ -214,6 +214,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                         train_step,
                         out_vis_dir,
                         out_mask_dir,
+                        out_mask_logits_dir,
                         json_vid_info=None,
                         vid_cap=None,
                         eval_step=None,
@@ -231,10 +232,14 @@ class TaskSemanticSegmentation(task_lib.Task):
                 tf.identity(outputs[i]).numpy()
             )
 
-        images, image_ids, frame_ids, rles, logits, gt_rles, orig_sizes = new_outputs
+        images, image_ids, frame_ids, rles, logits, gt_rles, orig_sizes, \
+            vid_paths, mask_vid_paths, seqs = new_outputs
 
-        image_ids_ = image_ids.flatten().astype(str)
-        image_ids = list(image_ids_)
+        image_ids = image_ids.flatten().astype(str)
+        vid_paths = vid_paths.flatten().astype(str)
+        mask_vid_paths = mask_vid_paths.flatten().astype(str)
+        seqs = seqs.flatten().astype(str)
+
         images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
 
         max_length = self.config.dataset.train.max_length
@@ -255,8 +260,13 @@ class TaskSemanticSegmentation(task_lib.Task):
         if subsample > 1:
             max_length = int(max_length / subsample)
 
-        for image_id_, image_, frame_id_, rle_, logits_, orig_size_, gt_rle_ in zip(
-                image_ids, images, frame_ids, rles, logits, orig_sizes, gt_rles):
+
+
+        for (image_id_, image_, frame_id_, rle_, logits_,
+             orig_size_, gt_rle_, seq, vid_path, mask_vid_path) in zip(
+            image_ids, images, frame_ids, rles, logits,
+            orig_sizes, gt_rles, seqs, vid_paths, mask_vid_paths):
+
             orig_size_ = tuple(orig_size_)
             n_rows, n_cols = orig_size_
 
@@ -268,7 +278,7 @@ class TaskSemanticSegmentation(task_lib.Task):
             mask_from_file = mask_from_file_sub = None
             if self.config.debug:
                 vid_masks, vid_masks_sub = self.check_rle(
-                    mask_vid_path, image_, image_id_, frame_id_, gt_rle_,)
+                    mask_vid_path, image_, image_id_, frame_id_, gt_rle_, )
                 mask_from_file = vid_masks[0]
                 mask_from_file_sub = vid_masks_sub[0]
 
@@ -316,28 +326,50 @@ class TaskSemanticSegmentation(task_lib.Task):
             if self.config.debug:
                 # mask_from_file = task_utils.mask_vis_to_id(mask_from_file, n_classes, copy=True)
                 mask_from_file_sub = task_utils.mask_vis_to_id(mask_from_file_sub, n_classes, copy=True)
-                if not np.array_equal(mask_from_file_sub, vid_mask_gt):
-                    print("vid_mask_gt mismatch")
-                    task_utils.check_individual_vid_masks(
-                        video, mask_from_file_sub, vid_mask_gt, self.class_id_to_col, n_classes)
+                if not np.array_equal(mask_from_file_sub, mask_gt):
+                    raise AssertionError("vid_mask_gt mismatch")
 
             n_classes = len(self.class_id_to_col)
 
-            if subsample > 1:
-                mask_rec = task_utils.resize_mask(mask_rec, orig_size_, n_classes)
-                mask_gt = task_utils.resize_mask(mask_gt, orig_size_, n_classes)
+            seq_img_infos = json_vid_info[seq]
+            if seq_img_infos:
+                out_frame_id = seq_img_infos[-1]['out_frame_id']
+            else:
+                out_frame_id = 0
+
+            out_frame_id += 1
+            img_info = dict(
+                seq=str(seq),
+                vid_id=-1,
+                image_id=str(image_id_),
+                src_frame_id=int(frame_id_),
+                out_frame_id=int(out_frame_id),
+                vid_path=str(vid_path),
+                mask_vid_path=str(mask_vid_path),
+            )
+
+            # if subsample > 1:
+            #     mask_rec = task_utils.resize_mask(mask_rec, orig_size_, n_classes)
+            #     mask_gt = task_utils.resize_mask(mask_gt, orig_size_, n_classes)
 
             vis_utils.visualize_mask(
                 image_id_,
                 image_,
                 mask_rec,
+                mask_logits,
                 mask_gt,
-                self._category_names,
+                self.class_id_to_col,
+                seq_id=seq,
+                img_info=img_info,
                 out_mask_dir=out_mask_dir,
+                out_mask_logits_dir=out_mask_logits_dir,
                 out_vis_dir=out_vis_dir,
                 vid_writers=vid_cap,
                 orig_size=orig_size_,
                 show=show,
+            )
+            seq_img_infos.append(
+                img_info
             )
 
     def compute_scalar_metrics(self, step):
