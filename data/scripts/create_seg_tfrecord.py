@@ -50,7 +50,7 @@ class Params(paramparse.CFG):
         self.stats_only = 0
         self.rle_to_json = 1
         self.json_only = 0
-        self.check = 1
+        self.check = 0
 
         self.flat_order = 'C'
 
@@ -465,7 +465,7 @@ def create_tf_example(
 
     if params.check:
         task_utils.check_rle_tokens(
-            image, mask, rle_tokens, n_classes,
+            image, mask, mask_sub, rle_tokens, n_classes,
             params.length_as_class,
             params.starts_offset,
             params.lengths_offset,
