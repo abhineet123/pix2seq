@@ -130,7 +130,7 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
     def load_dataset(self, input_context, training):
 
         if self.config.rle_from_json:
-            json_dict = task_utils.load_json(self.config.category_names_path)
+            json_dict = task_utils.load_json(self.config.dataset.category_names_path)
 
             keys = [f"{img['seq']}/{img['img_id']}" for img in json_dict['images']]
             keys_tensor = tf.constant(keys, dtype=tf.string)
