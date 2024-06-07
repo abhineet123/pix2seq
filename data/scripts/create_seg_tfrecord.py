@@ -345,6 +345,7 @@ def create_tf_example(
             feature_dict = {}
 
             vid_feature_dict = {
+                'image/seq': tfrecord_lib.convert_to_feature(seq.encode('utf8')),
                 'image/vid_path': tfrecord_lib.convert_to_feature(vid_path.encode('utf8')),
                 'image/mask_vid_path': tfrecord_lib.convert_to_feature(mask_vid_path.encode('utf8')),
             }

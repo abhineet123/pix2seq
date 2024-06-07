@@ -254,20 +254,6 @@ class IPSCInstanceSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         return tf.shape(example['image/object/bbox/xmin'])[0] > 0
 
     def extract(self, example, training):
-        """Extracts needed features & annotations into a flat dictionary.
-
-        Note:
-          - label starts at 1 instead of 0, as 0 is reserved for special use
-            (such as padding).
-          - coordinates (e.g. bbox) are (normalized to be) in [0, 1].
-
-        Args:
-          example: `dict` of raw features.
-          training: `bool` of training vs eval mode.
-
-        Returns:
-          example: `dict` of relevant features and labels.
-        """
         assert not self.task_config.shuffle_polygon_start_point
         new_example = {
             'image': decode_utils.decode_image(example),

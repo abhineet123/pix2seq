@@ -223,8 +223,10 @@ class TaskSemanticSegmentation(task_lib.Task):
         orig_image_size = example['orig_image_size']
 
         gt_rle = example['rle']
+        vid_path = example['vid_path']
+        mask_vid_path = example['mask_vid_path']
 
-        return images, image_ids, pred_rle, logits, gt_rle, orig_image_size
+        return images, image_ids, pred_rle, logits, gt_rle, orig_image_size, vid_path, mask_vid_path
 
     def postprocess_cpu(self,
                         outputs,
@@ -250,12 +252,11 @@ class TaskSemanticSegmentation(task_lib.Task):
             )
 
         images, image_ids, frame_ids, rles, logits, gt_rles, orig_sizes, \
-            vid_paths, mask_vid_paths, seqs = new_outputs
+            vid_paths, mask_vid_paths = new_outputs
 
         image_ids = image_ids.flatten().astype(str)
         vid_paths = vid_paths.flatten().astype(str)
         mask_vid_paths = mask_vid_paths.flatten().astype(str)
-        seqs = seqs.flatten().astype(str)
 
         images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
 
@@ -278,9 +279,13 @@ class TaskSemanticSegmentation(task_lib.Task):
             max_length = int(max_length / subsample)
 
         for (image_id_, image_, frame_id_, rle_, logits_,
-             orig_size_, gt_rle_, seq, vid_path, mask_vid_path) in zip(
+             orig_size_, gt_rle_, vid_path, mask_vid_path) in zip(
             image_ids, images, frame_ids, rles, logits,
-            orig_sizes, gt_rles, seqs, vid_paths, mask_vid_paths):
+            orig_sizes, gt_rles, vid_paths, mask_vid_paths):
+
+            assert '/' in image_id_, f"invalid image_id_: {image_id_}"
+
+            seq = image_id_.split('/')[0]
 
             orig_size_ = tuple(orig_size_)
             n_rows, n_cols = orig_size_

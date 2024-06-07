@@ -40,10 +40,10 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=train,re
 
 <a id="on_train___p_640_sub_8_r_2560_resnet_640_16_5_3_"></a>
 #### on-train       @ p-640-sub-8/r-2560/resnet-640-16_53-->p2s_seg
-python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-sub_8-batch_24,_eval_,batch-18,save-vis-1,dbg-1,dyn-1,seg-16_53:p-640:r-2560:sub-8
+python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-sub_8-batch_24,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,seg-16_53:p-640:r-2560:sub-8
 <a id="on_54_126___p_640_sub_8_r_2560_resnet_640_16_5_3_"></a>
 #### on-54_126       @ p-640-sub-8/r-2560/resnet-640-16_53-->p2s_seg
-python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_320-16_53-80_80-80_80-batch_24,_eval_,batch-18,save-vis-1,dbg-0,dyn-1,seg-54_126:p-80:r-320
+python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-sub_8-batch_24,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,seg-54_126:p-640:r-2560:sub-8
 
 <a id="p_640_sub_8_mc___r_2560_resnet_640_16_5_3_"></a>
 ### p-640-sub-8-mc       @ r-2560/resnet-640-16_53-->p2s_seg
