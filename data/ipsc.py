@@ -20,6 +20,7 @@ from data import tf_record
 from data import decode_utils
 import tensorflow as tf
 
+from tasks import task_utils
 
 def _xy_to_yx(tensor):
     """Convert a tensor in xy order into yx order.
@@ -129,10 +130,7 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
     def load_dataset(self, input_context, training):
 
         if self.config.rle_from_json:
-            if training or self.config.eval_split == 'train':
-                json_dict = self.config.train_json_dict
-            else:
-                json_dict = self.config.eval_json_dict
+            json_dict = task_utils.load_json(self.config.category_names_path)
 
             keys = [f"{img['seq']}/{img['img_id']}" for img in json_dict['images']]
             keys_tensor = tf.constant(keys, dtype=tf.string)

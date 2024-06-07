@@ -15,7 +15,7 @@ class TaskVideoSegmentation(task_lib.Task):
                  config: ml_collections.ConfigDict):
         super().__init__(config)
 
-        json_dict = self.config.dataset.json_dict
+        json_dict = task_utils.load_json(self.config.category_names_path)
 
         self._category_names = task_utils.get_category_names(json_dict)
 

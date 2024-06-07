@@ -2184,6 +2184,17 @@ def read_class_info(class_names_path):
     return class_id_to_col, class_id_to_name
 
 
+def load_json(json_path):
+    print(f'loading json: {json_path}')
+    if json_path.endswsith('.json.gz'):
+        import compress_json
+        json_dict = compress_json.load(json_path)
+    else:
+        import json
+        with open(json_path, 'r') as fid:
+            json_dict = json.load(fid)
+    return json_dict
+
 def get_category_names(json_path):
     if isinstance(json_path, str):
         print(f'Loading category names from {json_path}')

@@ -7,6 +7,7 @@ from data import tf_record
 
 import tensorflow as tf
 
+from tasks import task_utils
 
 @dataset_lib.DatasetRegistry.register('ipsc_video_detection')
 class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
@@ -130,10 +131,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
     def load_dataset(self, input_context, training):
 
         if self.config.rle_from_json:
-            if training or self.config.eval_split == 'train':
-                json_dict = self.config.train_json_dict
-            else:
-                json_dict = self.config.eval_json_dict
+            json_dict = task_utils.load_json(self.config.category_names_path)
 
             keys = [video['id'] for video in json_dict['videos']]
             keys_tensor = tf.constant(keys, dtype=tf.int64)
