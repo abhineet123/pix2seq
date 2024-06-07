@@ -124,6 +124,8 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:rot-15_345_4:su
 
 <a id="p_640_sub_4___r_2560_16_53_"></a>
 ### p-640-sub-4       @ r-2560/16_53-->p2s_seg_tf
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-4:r-2560:gz:proc-1:json
+
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-4:r-2560:gz:proc-1:stats-0
 <a id="mc___p_640_sub_4_r_2560_16_53_"></a>
 #### mc       @ p-640-sub-4/r-2560/16_53-->p2s_seg_tf
