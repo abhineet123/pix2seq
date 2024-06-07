@@ -301,7 +301,7 @@ class TaskVideoSegmentation(task_lib.Task):
         n_classes = len(self.class_id_to_col)
 
         assert max_length > 0, "max_length must be > 0"
-        assert subsample >= 1, "subsample must be >= 1"
+        # assert subsample >= 1, "subsample must be >= 1"
         if not multi_class:
             assert n_classes == 2, "n_classes must be 2 for no multi_class"
         else:
