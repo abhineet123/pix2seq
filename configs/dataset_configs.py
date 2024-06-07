@@ -378,6 +378,7 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
         ds_cfg[f'{mode}_filename_for_metrics'] = json_name_with_ext
 
         tf_name = json_name
+        model_name = json_name
         if is_seg:
             params_from_json = json_dict['info']['params']
             model_cfg.coord_vocab_shift = params_from_json['starts_offset']
@@ -396,10 +397,10 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
 
             if len(frame_gaps) > 1:
                 frame_gaps_suffix = 'fg_' + '_'.join(map(str, frame_gaps))
-                if frame_gaps_suffix not in name:
-                    name = f'{name}-{frame_gaps_suffix}'
+                if frame_gaps_suffix not in model_name:
+                    model_name = f'{model_name}-{frame_gaps_suffix}'
 
-        ds_cfg[f'{mode}_name'] = name
+        ds_cfg[f'{mode}_name'] = model_name
         ds_cfg[f'{mode}_file_pattern'] = os.path.join(db_root_dir, 'tfrecord', tf_name, 'shard*')
 
     if training:
