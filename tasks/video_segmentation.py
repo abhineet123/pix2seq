@@ -45,7 +45,8 @@ class TaskVideoSegmentation(task_lib.Task):
 
         return dataset
 
-    def check_video_rle(self, mask_vid_paths, videos, vid_ids, img_ids_all, frame_ids_all, rles, rle_lens, n_runs):
+    def check_video_rle(self, mask_vid_paths, videos, vid_ids, img_ids_all, frame_ids_all,
+                        rles, rle_lens, n_runs, training):
 
         if isinstance(mask_vid_paths, str):
             videos = np.expand_dims(videos, axis=0)
@@ -60,8 +61,14 @@ class TaskVideoSegmentation(task_lib.Task):
 
         batch_size = frame_ids_all.shape[0]
 
-        max_length = self.config.dataset.train.max_length
-        subsample = self.config.dataset.train.subsample
+        if training:
+            mode_cfg = self.config.dataset.train
+        else:
+            mode_cfg = self.config.dataset.eval
+
+        max_length = mode_cfg.max_length
+        subsample = mode_cfg.subsample
+
         multi_class = self.config.dataset.multi_class
         time_as_class = self.config.dataset.time_as_class
         length_as_class = self.config.dataset.length_as_class
@@ -188,7 +195,7 @@ class TaskVideoSegmentation(task_lib.Task):
             vid_ids = batched_examples['vid_id'].numpy()
 
             self.check_video_rle(mask_vid_paths, videos, vid_ids, img_ids_all, frame_ids_all,
-                                 rles, rle_lens, n_runs)
+                                 rles, rle_lens, n_runs, training=True)
 
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             task_vocab_id=self.task_vocab_id,
@@ -331,7 +338,7 @@ class TaskVideoSegmentation(task_lib.Task):
             if self.config.debug:
                 vid_masks, vid_masks_sub = self.check_video_rle(
                     mask_vid_path, video, vid_id, image_ids_, frame_ids_, gt_rle_tokens,
-                    rle_len, n_runs_)
+                    rle_len, n_runs_, training=False)
                 mask_from_file = vid_masks[0]
                 mask_from_file_sub = vid_masks_sub[0]
 

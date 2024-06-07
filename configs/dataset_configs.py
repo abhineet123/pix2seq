@@ -184,29 +184,33 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
     root_dir = ds_cfg.root_dir
     ds_cfg.image_dir = root_dir
 
-    db_root_dir = root_dir
     db_type = 'images'
 
     if is_video:
         if not is_seg:
-            db_root_dir = os.path.join(root_dir, 'ytvis19')
+            root_dir = os.path.join(root_dir, 'ytvis19')
         db_type = 'videos'
 
-    ds_cfg.db_root_dir = db_root_dir
+    ds_cfg.db_root_dir = root_dir
 
     # if not cfg.eval_name:
     #     cfg.eval_name = cfg.train_name
 
-    if training:
-        modes = ['train', 'eval']
-    else:
-        modes = ['eval']
+    # if training:
+    #     modes = ['train', 'eval']
+    # else:
+    #     modes = ['eval']
+
+    modes = ['train', 'eval']
 
     multi_class = ds_cfg[f'multi_class']
     length_as_class = ds_cfg[f'length_as_class']
     flat_order = ds_cfg[f'flat_order']
 
     for mode in modes:
+
+        db_root_dir = ds_cfg.db_root_dir
+
         name = ds_cfg[f'{mode}_name']
         if not name:
             print(f'skipping {mode} postprocessing with no name specified')
@@ -215,6 +219,7 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
         subsample = 0
 
         if is_seg:
+
             mode_cfg = ds_cfg[f'{mode}']
 
             suffix = mode_cfg.suffix
@@ -351,7 +356,6 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
             json_name_with_ext += '.gz'
 
         json_path = os.path.join(db_root_dir, json_name_with_ext)
-
 
         print(f'reading {mode} json: {json_path}')
         if ds_cfg.compressed:

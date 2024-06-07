@@ -46,7 +46,7 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         return dataset
 
-    def check_rle(self, mask_vid_paths, images, img_ids, frame_ids, rles):
+    def check_rle(self, mask_vid_paths, images, img_ids, frame_ids, rles, training):
 
         if isinstance(mask_vid_paths, str):
             images = np.expand_dims(images, axis=0)
@@ -57,8 +57,17 @@ class TaskSemanticSegmentation(task_lib.Task):
             mask_vid_paths = [mask_vid_paths, ]
 
         batch_size = frame_ids.shape[0]
-        max_length = self.config.dataset.train.max_length
-        subsample = self.config.dataset.train.subsample
+        if training:
+            mode_cfg = self.config.dataset.train
+        else:
+            mode_cfg = self.config.dataset.eval
+
+        max_length = mode_cfg.max_length
+        subsample = mode_cfg.subsample
+
+        assert max_length > 0, "max_length must be > 0"
+        assert subsample >= 1, "subsample must be >= 1"
+
         multi_class = self.config.dataset.multi_class
         class_id_to_col = self.class_id_to_col
 
@@ -149,7 +158,7 @@ class TaskSemanticSegmentation(task_lib.Task):
             frame_ids = batched_examples['frame_id'].numpy()
             rles = batched_examples['rle'].numpy()
 
-            self.check_rle(mask_vid_paths, images, img_ids, frame_ids, rles)
+            self.check_rle(mask_vid_paths, images, img_ids, frame_ids, rles, training=True)
 
         # response_seq, token_weights = build_response_seq_from_rle(
         #     batched_examples['rle'],
@@ -284,7 +293,7 @@ class TaskSemanticSegmentation(task_lib.Task):
             mask_from_file = mask_from_file_sub = None
             if self.config.debug:
                 vid_masks, vid_masks_sub = self.check_rle(
-                    mask_vid_path, image_, image_id_, frame_id_, gt_rle_, )
+                    mask_vid_path, image_, image_id_, frame_id_, gt_rle_, training=False)
                 mask_from_file = vid_masks[0]
                 mask_from_file_sub = vid_masks_sub[0]
 

@@ -120,7 +120,7 @@ def vid_mask_to_gs(vid_mask, check=True, copy=False):
     return vid_mask_gs
 
 
-def mask_to_gs(mask, check=True, copy=False):
+def mask_to_gs(mask, check=True, copy=True):
     if len(mask.shape) == 2:
         return mask.copy() if copy else mask
     mask_b = mask[..., 0].squeeze()
@@ -129,7 +129,7 @@ def mask_to_gs(mask, check=True, copy=False):
         mask_r = mask[..., 2].squeeze()
         assert np.array_equal(mask_b, mask_g), "mask_b and mask_g mismatch"
         assert np.array_equal(mask_b, mask_r), "mask_b and mask_r mismatch"
-    return mask_b.copy() if copy else mask
+    return mask_b.copy() if copy else mask_b
 
 
 def check_rle_tokens(
@@ -429,7 +429,7 @@ def resize_vid_mask_coord(vid_mask, shape, n_classes, is_vis):
 
 
 def resize_mask_coord(mask, shape, n_classes, is_vis=1):
-    assert len(mask.shape)==2, "only grayscale masks are supported"
+    assert len(mask.shape) == 2, "only grayscale masks are supported"
     if is_vis:
         mask = np.copy(mask)
         mask_vis_to_id(mask, n_classes)
