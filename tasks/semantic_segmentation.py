@@ -92,7 +92,10 @@ class TaskSemanticSegmentation(task_lib.Task):
         masks = []
         masks_sub = []
         for batch_id in range(batch_size):
-            mask_vid_path = mask_vid_paths[batch_id].decode('utf-8')
+            mask_vid_path = mask_vid_paths[batch_id]
+            if isinstance(mask_vid_path, bytes):
+                mask_vid_path =mask_vid_path.decode('utf-8')
+
             rle = rles[batch_id]
             img_id = img_ids[batch_id]
             image = images[batch_id]
