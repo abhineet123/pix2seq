@@ -219,14 +219,15 @@ class TaskSemanticSegmentation(task_lib.Task):
 
     def postprocess_tpu(self, batched_examples, pred_rle, logits, training=False):
         example = batched_examples
-        images, image_ids = example['image'], example['image/id']
+        images, image_id = example['image'], example['image/id']
         orig_image_size = example['orig_image_size']
+        frame_id = example['frame_id']
 
         gt_rle = example['rle']
         vid_path = example['vid_path']
         mask_vid_path = example['mask_vid_path']
 
-        return images, image_ids, pred_rle, logits, gt_rle, orig_image_size, vid_path, mask_vid_path
+        return images, image_id, frame_id, pred_rle, logits, gt_rle, orig_image_size, vid_path, mask_vid_path
 
     def postprocess_cpu(self,
                         outputs,
