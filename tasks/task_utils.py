@@ -159,6 +159,7 @@ def check_rle_tokens(
     mask_rec, rle_rec_cmp = mask_from_tokens(
         rle_tokens,
         (n_rows, n_cols),
+        allow_extra=False,
         length_as_class=length_as_class,
         max_length=max_length,
         starts_offset=starts_offset,
