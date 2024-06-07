@@ -224,7 +224,7 @@ def get_semantic_segmentation_train_transforms(
 ):
     train_transforms = [
         D(name='resize_image',
-          inputs=['image', 'mask'],
+          inputs=['image',],
           antialias=[True],
           target_size=image_size),
         D(name='truncate_or_pad_to_max_instances',
@@ -239,8 +239,8 @@ def get_semantic_segmentation_eval_transforms(
         max_seq_len,
 ):
     return [
-        D(name='resize_video',
-          inputs=['video',],
+        D(name='resize_image',
+          inputs=['image',],
           antialias=[True],
           target_size=image_size),
         D(name='truncate_or_pad_to_max_instances',

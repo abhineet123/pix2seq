@@ -88,7 +88,9 @@ class TaskSemanticSegmentation(task_lib.Task):
             n_rows, n_cols = vid_height, vid_width
 
             mask = task_utils.read_frame(vid_reader, frame_id - 1, mask_vid_path)
-            task_utils.mask_vis_to_id(mask, n_classes=n_classes)
+            if not multi_class:
+                mask = task_utils.mask_to_binary(mask)
+            mask = task_utils.mask_to_gs(mask)
 
             if subsample > 1:
                 n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
@@ -116,7 +118,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 class_to_col=class_id_to_col,
                 multi_class=multi_class,
                 flat_order=flat_order,
-                is_vis=False,
+                is_vis=True,
             )
         return masks, masks_sub
 

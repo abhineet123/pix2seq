@@ -45,7 +45,6 @@ python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-
 #### on-54_126       @ p-640-sub-8/r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_320-16_53-80_80-80_80-batch_24,_eval_,batch-18,save-vis-1,dbg-0,dyn-1,seg-54_126:p-80:r-320
 
-
 <a id="p_640_sub_8_mc___r_2560_resnet_640_16_5_3_"></a>
 ### p-640-sub-8-mc       @ r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:sub-8,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,mc

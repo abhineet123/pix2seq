@@ -360,8 +360,8 @@ def load(FLAGS):
     else:
         raise AssertionError(f'unsupported task: {cfg.task.name}')
 
-    import utils
-    utils.log_cfg(cfg)
+    # import utils
+    # utils.log_cfg(cfg)
 
     # import paramparse
     # cfg_dict = to_dict(cfg)

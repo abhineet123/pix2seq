@@ -429,6 +429,7 @@ def resize_vid_mask_coord(vid_mask, shape, n_classes, is_vis):
 
 
 def resize_mask_coord(mask, shape, n_classes, is_vis=1):
+    assert len(mask.shape)==2, "only grayscale masks are supported"
     if is_vis:
         mask = np.copy(mask)
         mask_vis_to_id(mask, n_classes)
