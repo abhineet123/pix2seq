@@ -190,7 +190,7 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
     def filter_example(self, example, training):
         # probabilistically filter out examples with no foreground
         if training:
-            if tf.shape(example['image/rle'])[0] > 0:
+            if example['image/n_runs'] > 0:
                 return True
             rand_num = tf.random.uniform(shape=[1])
             if rand_num[0] < self.config.empty_seg_prob:

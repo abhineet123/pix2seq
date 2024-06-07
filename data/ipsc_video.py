@@ -204,7 +204,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         probabilistically filter out examples with no foreground
         """
         if training:
-            if example['video/n_runs'] == 0:
+            if example['video/n_runs'] > 0:
                 return True
             rand_num = tf.random.uniform(shape=[1])
             if rand_num[0] < self.config.empty_seg_prob:
