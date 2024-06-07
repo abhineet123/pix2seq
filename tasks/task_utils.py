@@ -2186,13 +2186,15 @@ def read_class_info(class_names_path):
 
 def load_json(json_path):
     print(f'loading json: {json_path}')
-    if json_path.endswsith('.json.gz'):
+    if json_path.endswith('.json.gz'):
         import compress_json
         json_dict = compress_json.load(json_path)
-    else:
+    elif json_path.endswith('.json'):
         import json
         with open(json_path, 'r') as fid:
             json_dict = json.load(fid)
+    else:
+        raise AssertionError(f'invalid json_path: {json_path}')
     return json_dict
 
 def get_category_names(json_path):
