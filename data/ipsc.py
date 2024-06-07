@@ -226,7 +226,6 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         new_example = {
             'image': image,
             'rle': rle,
-            'rle': rle,
             'orig_image_size': orig_image_size,
             'image/id': img_id,
             'frame_id': frame_id,
