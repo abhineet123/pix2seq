@@ -131,7 +131,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
     def load_dataset(self, input_context, training):
 
         if self.config.rle_from_json:
-            json_dict = task_utils.load_json(self.config.dataset.category_names_path)
+            json_dict = task_utils.load_json(self.config.category_names_path)
 
             keys = [video['id'] for video in json_dict['videos']]
             keys_tensor = tf.constant(keys, dtype=tf.int64)
