@@ -63,6 +63,12 @@ class TaskSemanticSegmentation(task_lib.Task):
         class_id_to_col = self.class_id_to_col
 
         n_classes = len(self.class_id_to_col)
+
+        if not multi_class:
+            assert n_classes == 2, "n_classes must be 2 for no multi_class"
+        else:
+            assert n_classes > 2, "n_classes must be > 2 for multi_class"
+
         flat_order = self.config.dataset.flat_order
         length_as_class = self.config.dataset.length_as_class
 
@@ -261,8 +267,6 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         if subsample > 1:
             max_length = int(max_length / subsample)
-
-
 
         for (image_id_, image_, frame_id_, rle_, logits_,
              orig_size_, gt_rle_, seq, vid_path, mask_vid_path) in zip(
