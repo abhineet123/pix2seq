@@ -121,33 +121,60 @@ class IPSCObjectDetectionTFRecordDataset(tf_record.TFRecordDataset):
 
 @dataset_lib.DatasetRegistry.register('ipsc_semantic_segmentation')
 class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
+    def __init__(self, config):
+        super().__init__(config)
+        self.img_id_to_rle = None
+        self.img_id_to_rle_len = None
 
-    def filter_example(self, example, training):
-        # probabilistically filter out examples with no foreground
-        if training:
-            if tf.shape(example['image/rle'])[0] > 0:
-                return True
-            rand_num = tf.random.uniform(shape=[1])
-            if rand_num[0] < self.config.empty_seg_prob:
-                return True
-            return False
-        else:
-            return True
+    def load_dataset(self, input_context, training):
+
+        if self.config.rle_from_json:
+            if training or self.config.eval_split == 'train':
+                json_dict = self.config.train_json_dict
+            else:
+                json_dict = self.config.eval_json_dict
+
+            keys = [f"{img['seq']}/{img['img_id']}" for img in json_dict['images']]
+            keys_tensor = tf.constant(keys, dtype=tf.string)
+
+            rles = [' '.join(map(str, img['rle'])) for img in json_dict['images']]
+            rles_tensor = tf.constant(rles, dtype=tf.string)
+
+            rle_lens = [img['rle_len'] for img in json_dict['images']]
+            rle_lens_tensor = tf.constant(rle_lens, dtype=tf.int64)
+
+            init_rle = tf.lookup.KeyValueTensorInitializer(
+                keys_tensor, rles_tensor)
+            self.img_id_to_rle = tf.lookup.StaticHashTable(init_rle, default_value='')
+
+            init_rle_len = tf.lookup.KeyValueTensorInitializer(
+                keys_tensor, rle_lens_tensor)
+            self.img_id_to_rle_len = tf.lookup.StaticHashTable(init_rle_len, default_value=-1)
+
+        return super().load_dataset(input_context, training)
+
+    def get_feature_map(self, training):
+        feature_map = {
+            'image/encoded': tf.io.FixedLenFeature((), tf.string),
+            'image/source_id': tf.io.FixedLenFeature((), tf.string, ''),
+            'image/height': tf.io.FixedLenFeature((), tf.int64, -1),
+            'image/width': tf.io.FixedLenFeature((), tf.int64, -1),
+            'image/filename': tf.io.FixedLenFeature((), tf.string, ''),
+            'image/n_runs': tf.io.FixedLenFeature((), tf.int64, -1),
+            'image/mask_file_name': tf.io.FixedLenFeature((), tf.string, ''),
+            'image/vid_path': tf.io.FixedLenFeature((), tf.string, ''),
+            'image/mask_vid_path': tf.io.FixedLenFeature((), tf.string, ''),
+            'image/frame_id': tf.io.FixedLenFeature((), tf.int64, -1),
+        }
+        if not self.config.rle_from_json:
+            feature_map.update(
+                {
+                    'image/rle': tf.io.VarLenFeature(tf.int64),
+                }
+            )
+        return feature_map
 
     def parse_example(self, example, training):
-        """Parse the serialized example into a dictionary of tensors.
-
-        Args:
-          example: the serialized tf.train.Example or tf.train.SequenceExample.
-          training: `bool` of training vs eval mode.
-
-        Returns:
-          a dictionary of feature name to tensors.
-        """
-        # print(f'example: {example}')
-
-        # raise AssertionError()
-
         feature_map = self.get_feature_map(training)
         if isinstance(feature_map, dict):
             example = tf.io.parse_single_example(example, feature_map)
@@ -162,16 +189,34 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
                     example[k] = tf.sparse.to_dense(example[k], default_value=0)
         return example
 
-    def get_feature_map(self, training):
-        img_feature_map = decode_utils.get_feature_map_for_image()
-        seg_feature_map = decode_utils.get_feature_map_for_semantic_segmentation()
-        return {**img_feature_map, **seg_feature_map}
+    def filter_example(self, example, training):
+        # probabilistically filter out examples with no foreground
+        if training:
+            if tf.shape(example['image/rle'])[0] > 0:
+                return True
+            rand_num = tf.random.uniform(shape=[1])
+            if rand_num[0] < self.config.empty_seg_prob:
+                return True
+            return False
+        else:
+            return True
 
     def extract(self, example, training):
         img_id = example['image/source_id']
         frame_id = example['image/frame_id']
         image = decode_utils.decode_image(example)
-        rle = example['image/rle']
+
+        if self.config.rle_from_json:
+            rle_str = self.img_id_to_rle.lookup(img_id)
+            rle = tf.cond(
+                tf.strings.length(rle_str) == 0,
+                lambda: tf.convert_to_tensor([], dtype=tf.int64),
+                lambda: tf.strings.to_number(tf.strings.split(rle_str, sep=' '),
+                                             out_type=tf.int64)
+            )
+        else:
+            rle = example['image/rle']
+
         vid_path = example['image/vid_path']
         mask_vid_path = example['image/mask_vid_path']
         mask_file_name = example['image/mask_file_name']
@@ -180,6 +225,7 @@ class IPSCSemanticSegmentationTFRecordDataset(tf_record.TFRecordDataset):
 
         new_example = {
             'image': image,
+            'rle': rle,
             'rle': rle,
             'orig_image_size': orig_image_size,
             'image/id': img_id,

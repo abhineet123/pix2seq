@@ -25,6 +25,7 @@ def get_feature_map_for_image():
         'image/height': tf.io.FixedLenFeature((), tf.int64, -1),
         'image/width': tf.io.FixedLenFeature((), tf.int64, -1),
         'image/filename': tf.io.FixedLenFeature((), tf.string, ''),
+        'image/n_runs': tf.io.FixedLenFeature((), tf.int64, -1),
     }
 
 
@@ -38,16 +39,6 @@ def get_feature_map_for_object_detection():
         'image/object/area': tf.io.VarLenFeature(tf.float32),
         'image/object/is_crowd': tf.io.VarLenFeature(tf.int64),
         'image/object/score': tf.io.VarLenFeature(tf.float32),
-    }
-
-
-def get_feature_map_for_semantic_segmentation():
-    return {
-        'image/rle': tf.io.VarLenFeature(tf.int64),
-        'image/mask_file_name': tf.io.FixedLenFeature((), tf.string, ''),
-        'image/vid_path': tf.io.FixedLenFeature((), tf.string, ''),
-        'image/mask_vid_path': tf.io.FixedLenFeature((), tf.string, ''),
-        'image/frame_id': tf.io.FixedLenFeature((), tf.int64, -1),
     }
 
 
@@ -84,39 +75,6 @@ def get_feature_map_for_video_detection(vid_len):
         feat_dict.update(frame_feat_dict)
     return feat_dict
 
-
-def get_feature_map_for_video_segmentation(length, rle_from_json):
-    feat_dict = {
-        'video/id': tf.io.FixedLenFeature((), tf.int64, -1),
-        'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
-        'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
-        'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),
-        'video/path': tf.io.FixedLenFeature((), tf.string),
-        'video/mask_path': tf.io.FixedLenFeature((), tf.string),
-        'video/seq': tf.io.FixedLenFeature((), tf.string),
-        # 'video/frame_ids': tf.io.FixedLenFeature((length,), tf.int64),
-        # 'video/image_ids': tf.io.FixedLenFeature((length,), tf.string),
-        'video/n_runs': tf.io.FixedLenFeature((), tf.int64, -1),
-    }
-    if not rle_from_json:
-        feat_dict.update({
-            'video/rle_len': tf.io.FixedLenFeature((), tf.int64, -1),
-            'video/rle': tf.io.VarLenFeature(tf.int64),
-        }
-        )
-
-    for _id in range(length):
-        frame_feat_dict = {
-            f'video/frame-{_id}/filename': tf.io.FixedLenFeature((), tf.string),
-            f'video/frame-{_id}/image_id': tf.io.FixedLenFeature((), tf.string),
-            f'video/frame-{_id}/frame_id': tf.io.FixedLenFeature((), tf.int64, -1),
-            f'video/frame-{_id}/key/sha256': tf.io.FixedLenFeature((), tf.string),
-            f'video/frame-{_id}/encoded': tf.io.FixedLenFeature((), tf.string),
-            f'video/frame-{_id}/format': tf.io.FixedLenFeature((), tf.string),
-        }
-        feat_dict.update(frame_feat_dict)
-
-    return feat_dict
 
 
 def get_feature_map_for_instance_segmentation():

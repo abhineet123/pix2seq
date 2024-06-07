@@ -154,11 +154,52 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
                 keys_tensor, rle_lens_tensor)
             self.vid_id_to_rle_len = tf.lookup.StaticHashTable(init_rle_len, default_value=-1)
 
-            # self.vid_id_to_rle = {
-            #     video['id']: video['rle'] for video in json_dict['videos']
-            # }
-
         return super().load_dataset(input_context, training)
+
+    def get_feature_map(self, training):
+        feat_dict = {
+            'video/id': tf.io.FixedLenFeature((), tf.int64, -1),
+            'video/height': tf.io.FixedLenFeature((), tf.int64, -1),
+            'video/width': tf.io.FixedLenFeature((), tf.int64, -1),
+            'video/num_frames': tf.io.FixedLenFeature((), tf.int64, -1),
+            'video/path': tf.io.FixedLenFeature((), tf.string),
+            'video/mask_path': tf.io.FixedLenFeature((), tf.string),
+            'video/seq': tf.io.FixedLenFeature((), tf.string),
+            'video/n_runs': tf.io.FixedLenFeature((), tf.int64, -1),
+        }
+        if not self.config.rle_from_json:
+            feat_dict.update({
+                'video/rle_len': tf.io.FixedLenFeature((), tf.int64, -1),
+                'video/rle': tf.io.VarLenFeature(tf.int64),
+            }
+            )
+
+        for _id in range(self.config.length):
+            frame_feat_dict = {
+                f'video/frame-{_id}/filename': tf.io.FixedLenFeature((), tf.string),
+                f'video/frame-{_id}/image_id': tf.io.FixedLenFeature((), tf.string),
+                f'video/frame-{_id}/frame_id': tf.io.FixedLenFeature((), tf.int64, -1),
+                f'video/frame-{_id}/key/sha256': tf.io.FixedLenFeature((), tf.string),
+                f'video/frame-{_id}/encoded': tf.io.FixedLenFeature((), tf.string),
+                f'video/frame-{_id}/format': tf.io.FixedLenFeature((), tf.string),
+            }
+            feat_dict.update(frame_feat_dict)
+        return feat_dict
+
+    def parse_example(self, example, training):
+        feature_map = self.get_feature_map(training)
+        if isinstance(feature_map, dict):
+            example = tf.io.parse_single_example(example, feature_map)
+        else:
+            raise AssertionError('unsupported type of feature_map')
+
+        for k in example:
+            if isinstance(example[k], tf.SparseTensor):
+                if example[k].dtype == tf.string:
+                    example[k] = tf.sparse.to_dense(example[k], default_value='')
+                else:
+                    example[k] = tf.sparse.to_dense(example[k], default_value=0)
+        return example
 
     def filter_example(self, example, training):
         """
@@ -174,51 +215,8 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         else:
             return True
 
-    def parse_example(self, example, training):
-        """Parse the serialized example into a dictionary of tensors.
-
-        Args:
-          example: the serialized tf.train.Example or tf.train.SequenceExample.
-          training: `bool` of training vs eval mode.
-
-        Returns:
-          a dictionary of feature name to tensors.
-        """
-        # print(f'example: {example}')
-
-        # raise AssertionError()
-
-        feature_map = self.get_feature_map(training)
-        if isinstance(feature_map, dict):
-            example = tf.io.parse_single_example(example, feature_map)
-        else:
-            raise AssertionError('unsupported type of feature_map')
-
-        for k in example:
-            if isinstance(example[k], tf.SparseTensor):
-                if example[k].dtype == tf.string:
-                    example[k] = tf.sparse.to_dense(example[k], default_value='')
-                else:
-                    example[k] = tf.sparse.to_dense(example[k], default_value=0)
-        return example
-
-    def get_feature_map(self, training):
-        vid_seg_feature_map = decode_utils.get_feature_map_for_video_segmentation(
-            self.config.length, self.config.rle_from_json)
-        return vid_seg_feature_map
-
     def extract(self, example, training):
         h, w = int(example['video/height']), int(example['video/width'])
-        # num_frames = int(example['video/num_frames'])
-
-        # print(f'num_frames: {num_frames}')
-        # print(f'self.config.length: {self.config.length}')
-
-        # assert num_frames == self.config.length, "num_frames mismatch"
-
-        # frame_ids = example['video/frame_ids']
-        # image_ids = example['video/image_ids']
-
         images = []
         filenames = []
         frame_ids = []

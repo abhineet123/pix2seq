@@ -562,7 +562,6 @@ def create_tf_example(
 
     if not skip_tfrecord:
         seg_feature_dict = {
-
             'image/mask_file_name': tfrecord_lib.convert_to_feature(mask_filename.encode('utf8')),
             'image/frame_id': tfrecord_lib.convert_to_feature(frame_id),
             'image/n_runs': tfrecord_lib.convert_to_feature(n_runs),
