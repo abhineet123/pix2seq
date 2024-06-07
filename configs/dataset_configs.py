@@ -196,12 +196,12 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
     # if not cfg.eval_name:
     #     cfg.eval_name = cfg.train_name
 
-    # if training:
-    #     modes = ['train', 'eval']
-    # else:
-    #     modes = ['eval']
+    if training:
+        modes = ['train', 'eval']
+    else:
+        modes = ['eval']
 
-    modes = ['train', 'eval']
+    # modes = ['train', 'eval']
 
     multi_class = ds_cfg[f'multi_class']
     length_as_class = ds_cfg[f'length_as_class']
