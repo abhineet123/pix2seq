@@ -2344,6 +2344,7 @@ def get_normalized_weight(id_map, total_num_ids, p=1.0):
     weight *= tf.cast(tf.math.reduce_prod(tf.shape(id_map)[1:]), weight.dtype)
     return weight
 
+
 def contour_pts_from_mask(mask_img):
     # print('Getting contour pts from mask...')
     if len(mask_img.shape) == 3:
