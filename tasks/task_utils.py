@@ -77,12 +77,15 @@ def split_runs(run_ids, starts, lengths, max_length):
     return starts, lengths
 
 
-def read_frame(vid_reader, frame_id, vid_path):
+def read_frame(vid_reader, frame_id, vid_path=None):
     vid_reader.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
     assert vid_reader.get(cv2.CAP_PROP_POS_FRAMES) == frame_id, "Failed to set frame index in video"
     ret, image = vid_reader.read()
     if not ret:
-        raise AssertionError(f'Frame {frame_id} could not be read from {vid_path}')
+        msg = f'Frame {frame_id} could not be read'
+        if vid_path is not None:
+            msg = f'{vid_path} : {msg}'
+        raise AssertionError(msg)
     return image
 
 
@@ -501,13 +504,13 @@ def mask_vis_to_id(mask, n_classes, copy=False):
     return mask
 
 
-def blend_mask(mask, image, class_to_col, alpha=0.5):
-    n_classes = len(class_to_col)
+def blend_mask(mask, image, class_id_to_col, alpha=0.5):
+    n_classes = len(class_id_to_col)
     """ignore class id 0 for background"""
     vis_image = np.copy(image)
 
     for class_id in range(1, n_classes):
-        class_col = class_to_col[class_id]
+        class_col = class_id_to_col[class_id]
         if isinstance(class_col, str):
             class_col = col_bgr[class_col]
         class_mask_binary = (mask == class_id)
@@ -515,22 +518,43 @@ def blend_mask(mask, image, class_to_col, alpha=0.5):
     return vis_image
 
 
-def vid_mask_id_to_vis_rgb(vid_mask, class_to_col):
-    masks = [mask_id_to_vis_bgr(mask, class_to_col) for mask in vid_mask]
+def vid_mask_id_to_vis_rgb(vid_mask, class_id_to_col):
+    masks = [mask_id_to_vis_bgr(mask, class_id_to_col) for mask in vid_mask]
     vid_mask_rgb = np.stack(masks, axis=0)
     return vid_mask_rgb
 
 
-def mask_id_to_vis_bgr(mask, class_to_col):
+def mask_id_to_vis_bgr(mask, class_id_to_col):
     mask_bgr = np.stack((mask,) * 3, axis=2).astype(np.uint8)
 
-    n_classes = len(class_to_col)
+    n_classes = len(class_id_to_col)
     for class_id in range(n_classes):
-        class_col = class_to_col[class_id]
+        class_col = class_id_to_col[class_id]
         if isinstance(class_col, str):
             class_col = col_bgr[class_col]
         mask_bgr[mask == class_id] = class_col
     return mask_bgr
+
+
+def mask_vis_bgr_to_id(mask, class_id_to_col):
+    mask_id = np.zeros_like(mask)
+    n_classes = len(class_id_to_col)
+    if n_classes == 2:
+        mask_id = mask_id[..., 0]
+        """deal with annoying BGR masks when MC is to be disabled"""
+        pix_mask = np.any(mask > 0, axis=2)
+        mask_id[pix_mask] = 1
+    else:
+        for class_id in range(1, n_classes):
+            class_col = class_id_to_col[class_id]
+            if isinstance(class_col, str):
+                class_col = col_bgr[class_col]
+            pix_mask = mask == class_col
+            mask_id[pix_mask] = class_id
+
+    mask_gs = mask_to_gs(mask_id)
+
+    return mask_gs
 
 
 def get_cols(n_runs):
@@ -2197,6 +2221,7 @@ def load_json(json_path):
     else:
         raise AssertionError(f'invalid json_path: {json_path}')
     return json_dict
+
 
 def get_category_names(json_path):
     if isinstance(json_path, str):
