@@ -146,7 +146,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 self.dataset,
                 self.train_transforms,
                 batched_examples,
-                vis=1,
+                vis=0,
                 model_dir=self.config.model_dir,
                 training=training)
 
@@ -306,6 +306,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
             rle_ = rle_[rle_ != vocab.PADDING_TOKEN]
+            gt_rle_ = gt_rle_[gt_rle_ != vocab.PADDING_TOKEN]
 
             mask_from_file = mask_from_file_sub = None
             if self.config.debug:
