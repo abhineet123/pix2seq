@@ -141,10 +141,10 @@ python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-16_53-8
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-80:r-640,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,mc
 <a id="on_train___p_80_mc_r_640_resnet_640_16_53_"></a>
 #### on-train       @ p-80-mc/r-640/resnet-640-16_53-->p2s_seg
-python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-16_53-80_80-80_80-mc-batch_32,_eval_,batch-16,save-vis-1,dbg-0,dyn-1,seg-16_53:p-80:r-640,mc
+python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-16_53-80_80-80_80-mc-batch_32,_eval_,batch-64,save-vis-1,dbg-0,dyn-1,seg-16_53:p-80:r-640,mc
 <a id="on_54_126___p_80_mc_r_640_resnet_640_16_53_"></a>
 #### on-54_126       @ p-80-mc/r-640/resnet-640-16_53-->p2s_seg
-python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-16_53-80_80-80_80-mc-batch_32,_eval_,batch-16,save-vis-1,dbg-0,dyn-1,seg-54_126:p-80:r-640,mc
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-16_53-80_80-80_80-mc-batch_32,_eval_,batch-64,save-vis-1,dbg-0,dyn-1,seg-54_126:p-80:r-640,mc
 
 
 <a id="r_320___resnet_640_16_53_"></a>
