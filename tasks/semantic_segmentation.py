@@ -94,7 +94,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         for batch_id in range(batch_size):
             mask_vid_path = mask_vid_paths[batch_id]
             if isinstance(mask_vid_path, bytes):
-                mask_vid_path =mask_vid_path.decode('utf-8')
+                mask_vid_path = mask_vid_path.decode('utf-8')
 
             rle = rles[batch_id]
             img_id = img_ids[batch_id]
@@ -263,8 +263,8 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
 
-        max_length = self.config.dataset.train.max_length
-        subsample = self.config.dataset.train.subsample
+        max_length = self.config.dataset.eval.max_length
+        subsample = self.config.dataset.eval.subsample
 
         multi_class = self.config.dataset.multi_class
         n_classes = len(self.class_id_to_col)
@@ -282,7 +282,6 @@ class TaskSemanticSegmentation(task_lib.Task):
         starts_offset = self.config.model.coord_vocab_shift
         lengths_offset = self.config.model.len_vocab_shift
         class_offset = self.config.model.class_vocab_shift
-
 
         max_seq_len = self.config.model.max_seq_len
         vocab_size = self.config.model.vocab_size
