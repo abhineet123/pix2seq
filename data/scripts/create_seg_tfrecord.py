@@ -156,6 +156,8 @@ def get_vid_infos(db_path, image_infos):
     # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
 
     for image_info in image_infos:
+        assert 'patch_info' in image_info, "patch_info not found in image_info"
+        
         seq = image_info['seq']
         mask_filename = image_info['mask_file_name']
         vid_path = linux_path(db_path, f'{seq}.mp4')
@@ -573,6 +575,7 @@ def create_tf_example(
         feature_dict.update(seg_feature_dict)
         example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
         return example, 0
+
 
 def main():
     params: Params = paramparse.process(Params)

@@ -545,12 +545,21 @@ def mask_vis_bgr_to_id(mask, class_id_to_col):
         pix_mask = np.any(mask > 0, axis=2)
         mask_id[pix_mask] = 1
     else:
+        mask_b = mask[..., 0].squeeze()
+        mask_g = mask[..., 1].squeeze()
+        mask_r = mask[..., 2].squeeze()
+
         for class_id in range(1, n_classes):
             class_col = class_id_to_col[class_id]
             if isinstance(class_col, str):
                 class_col = col_bgr[class_col]
-            pix_mask = mask == class_col
-            mask_id[pix_mask] = class_id
+            b, g, r = class_col
+            pix_mask = np.logical_and(
+                mask_b == b,
+                mask_g == g,
+                mask_r == r,
+            )
+            mask_id[pix_mask] = (class_id, class_id, class_id)
 
     mask_gs = mask_to_gs(mask_id)
 
