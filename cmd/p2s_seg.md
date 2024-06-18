@@ -96,7 +96,6 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet
 ### p-640-aug-sub-8-lac       @ r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:rot-15_345_4:sub-8,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,lac
 
-
 <a id="p_640_aug_sub_4___r_2560_resnet_640_16_5_3_"></a>
 ### p-640-aug-sub-4       @ r-2560/resnet-640-16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg_160-16_53:p-640:r-2560:rot-15_345_4:sub-4,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1

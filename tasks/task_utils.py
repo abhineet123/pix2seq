@@ -465,7 +465,7 @@ def subsample_mask(mask, factor: int, n_classes, is_vis=1):
 
     for class_id in range(1, n_classes):
         y, x = np.nonzero(mask == class_id)
-        out_x, out_y = (x * factor).astype(np.int64), (y * factor).astype(np.int64)
+        out_x, out_y = (x / factor).astype(np.int64), (y / factor).astype(np.int64)
         mask_out[out_y, out_x] = class_id
     if is_vis:
         mask_id_to_vis(mask_out, n_classes)
