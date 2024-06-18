@@ -110,8 +110,7 @@ class TaskSemanticSegmentation(task_lib.Task):
             mask = task_utils.mask_to_gs(mask)
 
             if subsample > 1:
-                n_rows_sub, n_cols_sub = int(n_rows / subsample), int(n_cols / subsample)
-                mask_sub = task_utils.resize_mask_coord(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
+                mask_sub = task_utils.subsample_mask(mask, subsample, n_classes, is_vis=1)
             else:
                 mask_sub = np.copy(mask)
 

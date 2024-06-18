@@ -305,7 +305,7 @@ def check_video_rle_tokens(
         max_length = int(max_length / subsample)
         n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
-        vid_mask_gt_sub = resize_vid_mask_coord(vid_mask_gt, (n_rows, n_cols), n_classes, is_vis=0)
+        vid_mask_gt_sub = subsample_vid_mask(vid_mask_gt, subsample, n_classes, is_vis=0)
     else:
         vid_mask_gt_sub = vid_mask_gt
 
@@ -426,27 +426,46 @@ def remove_duplicates(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
-def resize_vid_mask_coord(vid_mask, shape, n_classes, is_vis):
-    masks = [resize_mask_coord(mask, shape, n_classes, is_vis) for mask in vid_mask]
+def subsample_vid_mask(vid_mask, factor: int, n_classes, is_vis):
+    masks = [subsample_mask(mask, factor, n_classes, is_vis) for mask in vid_mask]
     masks = np.stack(masks, axis=0)
     return masks
 
 
-def resize_mask_coord(mask, shape, n_classes, is_vis=1):
+def supersample_mask(mask, factor, n_classes, is_vis=1):
     assert len(mask.shape) == 2, "only grayscale masks are supported"
     if is_vis:
         mask = np.copy(mask)
         mask_vis_to_id(mask, n_classes)
 
-    mask_out = np.zeros_like(mask, shape=shape)
-    mask_rows, mask_cols = mask.shape[:2]
-    out_rows, out_cols = mask_out.shape[:2]
+    n_rows, n_cols = mask.shape
+    n_rows_out, n_cols_out = int(n_rows * factor), int(n_cols * factor)
 
-    res_x, res_y = float(out_cols) / mask_cols, float(out_rows) / mask_rows
+    mask_out = np.zeros_like(mask, shape=(n_rows_out, n_cols_out))
+
+    for row_id in range(n_rows_out):
+        for col_id in range(n_cols_out):
+            mask_out[row_id, col_id] = mask[row_id // factor, col_id // factor]
+
+    if is_vis:
+        mask_id_to_vis(mask_out, n_classes)
+    return mask_out
+
+
+def subsample_mask(mask, factor: int, n_classes, is_vis=1):
+    assert len(mask.shape) == 2, "only grayscale masks are supported"
+    if is_vis:
+        mask = np.copy(mask)
+        mask_vis_to_id(mask, n_classes)
+
+    n_rows, n_cols = mask.shape
+    n_rows_out, n_cols_out = n_rows // factor, n_cols // factor
+
+    mask_out = np.zeros_like(mask, shape=(n_rows_out, n_cols_out))
 
     for class_id in range(1, n_classes):
         y, x = np.nonzero(mask == class_id)
-        out_x, out_y = (x * res_x).astype(np.int64), (y * res_y).astype(np.int64)
+        out_x, out_y = (x * factor).astype(np.int64), (y * factor).astype(np.int64)
         mask_out[out_y, out_x] = class_id
     if is_vis:
         mask_id_to_vis(mask_out, n_classes)
@@ -536,11 +555,12 @@ def mask_id_to_vis_bgr(mask, class_id_to_col):
     return mask_bgr
 
 
-def mask_vis_bgr_to_id(mask, class_id_to_col):
+def mask_vis_bgr_to_id(mask, class_id_to_col, check=0):
     mask_id = np.zeros_like(mask)
+    mask_id = mask_id[..., 0].squeeze()
+
     n_classes = len(class_id_to_col)
     if n_classes == 2:
-        mask_id = mask_id[..., 0]
         """deal with annoying BGR masks when MC is to be disabled"""
         pix_mask = np.any(mask > 0, axis=2)
         mask_id[pix_mask] = 1
@@ -549,21 +569,28 @@ def mask_vis_bgr_to_id(mask, class_id_to_col):
         mask_g = mask[..., 1].squeeze()
         mask_r = mask[..., 2].squeeze()
 
-        for class_id in range(1, n_classes):
-            class_col = class_id_to_col[class_id]
+        for class_id, class_col in class_id_to_col.items():
             if isinstance(class_col, str):
                 class_col = col_bgr[class_col]
             b, g, r = class_col
-            pix_mask = np.logical_and(
+            pix_mask = np.logical_and.reduce([
                 mask_b == b,
                 mask_g == g,
                 mask_r == r,
-            )
-            mask_id[pix_mask] = (class_id, class_id, class_id)
+            ])
+            mask_id[pix_mask] = class_id
+    if check:
+        mask_rec = mask_id_to_vis_bgr(mask_id, class_id_to_col)
+        if not np.array_equal(mask, mask_rec):
+            print("mask_vis_bgr_to_id mask_rec mismatch")
+            mask_ = cv2.resize(mask, (640, 640))
+            mask_rec_ = cv2.resize(mask_rec, (640, 640))
+            cv2.imshow('mask', mask_)
+            cv2.imshow('mask_rec', mask_rec_)
+            cv2.waitKey(0)
 
-    mask_gs = mask_to_gs(mask_id)
-
-    return mask_gs
+    # mask_gs = mask_to_gs(mask_id)
+    return mask_id
 
 
 def get_cols(n_runs):
