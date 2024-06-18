@@ -481,9 +481,7 @@ def create_tf_example(
         assert mask_w == vid_width, "mask_w mismatch"
 
         if subsample_method == 2:
-            # mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
-            n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
-            mask_sub = task_utils.resize_mask_coord(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
+            mask_sub = task_utils.subsample_mask(mask,params.subsample, n_classes, is_vis=1)
         else:
             mask_sub = np.copy(mask)
 
