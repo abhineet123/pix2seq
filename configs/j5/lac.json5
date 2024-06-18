@@ -4,6 +4,7 @@
 	class_vocab_shift: 100,
   },
   "dataset": {
+    multi_class: 1,
     length_as_class: 1,
   }
 }
