@@ -156,7 +156,7 @@ def get_vid_infos(db_path, image_infos):
     # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
 
     for image_info in image_infos:
-        assert 'patch_info' in image_info, "patch_info not found in image_info"
+        # assert 'patch_info' in image_info, "patch_info not found in image_info"
 
         seq = image_info['seq']
         mask_filename = image_info['mask_file_name']
