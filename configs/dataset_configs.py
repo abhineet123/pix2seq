@@ -172,6 +172,7 @@ def get_vid_seg_data():
 def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
     import os
 
+
     if ds_cfg.target_size is not None and not ds_cfg.target_size:
         ds_cfg.target_size = task_cfg.image_size
 
@@ -180,6 +181,10 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
 
     is_seg = 'segmentation' in ds_cfg.name
     is_video = 'video' in ds_cfg.name
+
+    if is_seg and not is_video and ds_cfg.length_as_class:
+        ds_cfg.multi_class = 1
+
 
     root_dir = ds_cfg.root_dir
     ds_cfg.image_dir = root_dir
