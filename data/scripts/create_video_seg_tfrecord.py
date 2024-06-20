@@ -112,27 +112,40 @@ class Params(paramparse.CFG):
 
         self.db_path = f'{self.db_path}-{self.db_suffix}'
 
-        if self.length_as_class:
-            self.lengths_offset = self.class_offset
+        max_length = self.max_length
+        if self.subsample > 1:
+            max_length /= self.subsample
 
         n_classes_ = n_classes
         if self.time_as_class:
             n_classes_ = n_classes_ ** self.vid.length
         if self.length_as_class:
-            max_length = self.max_length
-            if self.subsample > 1:
-                max_length /= self.subsample
             n_total_classes = max_length * (n_classes_ - 1)
         else:
             n_total_classes = n_classes_
 
-        min_starts_offset = n_total_classes + self.class_offset
+        if self.length_as_class:
+            self.lengths_offset = self.class_offset
+            min_starts_offset = n_total_classes + self.class_offset
 
-        if self.starts_offset < min_starts_offset:
-            import math
-            min_starts_offset = int(math.ceil(min_starts_offset / 100) * 100)
-            print(f'setting starts_offset to {min_starts_offset}')
-            self.starts_offset = min_starts_offset
+            if self.starts_offset < min_starts_offset:
+                import math
+                min_starts_offset = int(math.ceil(min_starts_offset / 100) * 100)
+                print(f'setting starts_offset to {min_starts_offset}')
+                self.starts_offset = min_starts_offset
+        else:
+            min_lengths_offset = self.class_offset + n_total_classes
+            if self.lengths_offset < min_lengths_offset:
+                import math
+                min_lengths_offset = int(math.ceil(min_lengths_offset / 100) * 100)
+                print(f'setting lengths_offset to {min_lengths_offset}')
+                self.lengths_offset = min_lengths_offset
+            min_starts_offset = self.lengths_offset + max_length
+            if self.starts_offset < min_starts_offset:
+                import math
+                min_starts_offset = int(math.ceil(min_starts_offset / 100) * 100)
+                print(f'setting starts_offset to {min_starts_offset}')
+                self.starts_offset = min_starts_offset
 
     class Video:
         def __init__(self):

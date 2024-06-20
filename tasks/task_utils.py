@@ -288,6 +288,28 @@ def check_video_rle_tokens(
         tac_id_to_col,
 ):
     vid_mask_gt = vid_mask_to_gs(vid_mask, copy=True)
+    vid_len, n_rows, n_cols = vid_mask_gt.shape
+
+    if subsample > 1:
+        max_length = int(max_length / subsample)
+        n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
+
+    if not length_as_class:
+        assert starts_offset > lengths_offset + max_length, "len_token_range overlaps starts_token_range"
+
+    if multi_class or time_as_class or length_as_class:
+        n_classes_ = n_classes
+        if time_as_class:
+            n_classes_ = n_classes_ ** vid_len
+        if length_as_class:
+            n_total_classes = max_length * (n_classes_ - 1)
+        else:
+            n_total_classes = n_classes_
+
+        assert starts_offset > class_offset + n_total_classes, "class_token_range overlaps starts_token_range"
+
+        if not length_as_class:
+            assert lengths_offset > class_offset + n_total_classes, "class_token_range overlaps len_token_range"
 
     if len(rle_tokens) == 0:
         assert np.all(vid_mask_gt == 0), "non-zero mask found for empty rle_tokens"
@@ -299,12 +321,8 @@ def check_video_rle_tokens(
         vid_mask_gt = mask_vis_to_id(vid_mask_gt, n_classes, copy=True)
         vid_mask_sub = mask_vis_to_id(vid_mask_sub, n_classes, copy=True)
 
-    vid_len, n_rows, n_cols = vid_mask_gt.shape
 
     if subsample > 1:
-        max_length = int(max_length / subsample)
-        n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
-
         vid_mask_gt_sub = subsample_vid_mask(vid_mask_gt, subsample, n_classes, is_vis=0)
     else:
         vid_mask_gt_sub = vid_mask_gt
@@ -1958,14 +1976,19 @@ def vid_rle_from_tokens(
 
         len_id = 1
 
+    assert np.all(starts >= 0), "starts must be >= 0"
+
     lengths = np.array(rle_tokens[len_id:][::n_tokens_per_run], dtype=np.int64)
     lengths -= lengths_offset
+    assert np.all(lengths > 0), "lengths must be > 0"
 
     rle_cmp = [starts, lengths]
 
     if has_class_tokens:
         class_ids = np.array(rle_tokens[len_id + 1:][::n_tokens_per_run], dtype=np.int64)
         class_ids -= class_offset
+
+        assert np.all(class_ids > 0), "class_ids must be > 0"
         rle_cmp.append(class_ids)
 
     return rle_cmp
