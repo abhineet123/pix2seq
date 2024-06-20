@@ -239,6 +239,8 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         # tf.debugging.assert_greater_equal(n_runs, tf.cast(0, tf.int64), "n_runs must be >= 0")
         # assert n_runs >=0, "n_runs must be >= 0"
 
+        tf.debugging.assert_greater_equal(vid_id, tf.cast(0, tf.int64), "vid_id must be >= 0")
+
         if self.config.rle_from_json:
             rle_str = self.vid_id_to_rle.lookup(vid_id)
             rle = tf.cond(
@@ -248,6 +250,7 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
                                              out_type=tf.int64)
             )
             rle_len = self.vid_id_to_rle_len.lookup(vid_id)
+            tf.debugging.assert_greater_equal(rle_len, tf.cast(0, tf.int64), "rle_len must be > 0")
         else:
             rle = example['video/rle']
             rle_len = example['video/rle_len']
