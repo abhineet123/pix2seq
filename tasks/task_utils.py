@@ -1913,14 +1913,20 @@ def rle_from_tokens(
 
         len_id = 1
 
+    assert np.all(starts >= 0), "starts must be >= 0"
+
     lengths = np.asarray(rle_tokens[len_id:][::n_tokens_per_run], dtype=int)
     lengths -= lengths_offset
+
+    assert np.all(lengths > 0), "lengths must be > 0"
 
     rle_cmp = [starts, lengths]
 
     if has_class_tokens:
         class_ids = np.asarray(rle_tokens[len_id + 1:][::n_tokens_per_run], dtype=int)
         class_ids -= class_offset
+        assert np.all(class_ids > 0), "class_ids must be > 0"
+
         rle_cmp.append(class_ids)
 
     return rle_cmp
