@@ -192,7 +192,7 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 <a id="tac___p_640_sub_8_mc_len_8_r_2560_16_5_3_"></a>
 #### tac       @ p-640-sub-8-mc-len-8/r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:proc-1:mc:tac:len-8:chk-0:json
-
+`dbg`
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:frame-0_7:seq-0_1:p-640:sub-8:r-2560:gz:proc-1:mc:tac:len-8:chk-1:json
 <a id="ltac___p_640_sub_8_mc_len_8_r_2560_16_5_3_"></a>
 #### ltac       @ p-640-sub-8-mc-len-8/r-2560/16_53-->p2s_vid_seg_tf
