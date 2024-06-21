@@ -18,6 +18,7 @@
             - [on-54_126       @ sub-8-mc-ltac-seq1k/r-2560-p-640/resnet-640-16_53](#on_54_126___sub_8_mc_ltac_seq1k_r_2560_p_640_resnet_640_16_5_3_)
         - [sub-8-aug       @ r-2560-p-640/resnet-640-16_53](#sub_8_aug___r_2560_p_640_resnet_640_16_5_3_)
         - [sub-4-aug       @ r-2560-p-640/resnet-640-16_53](#sub_4_aug___r_2560_p_640_resnet_640_16_5_3_)
+        - [sub-8-mc-ltac-len-4       @ r-2560-p-640/resnet-640-16_53](#sub_8_mc_ltac_len_4___r_2560_p_640_resnet_640_16_5_3_)
         - [sub-8-mc-tac-len-8       @ r-2560-p-640/resnet-640-16_53](#sub_8_mc_tac_len_8___r_2560_p_640_resnet_640_16_5_3_)
             - [on-train       @ sub-8-mc-tac-len-8/r-2560-p-640/resnet-640-16_53](#on_train___sub_8_mc_tac_len_8_r_2560_p_640_resnet_640_16_53_)
             - [on-54_126       @ sub-8-mc-tac-len-8/r-2560-p-640/resnet-640-16_53](#on_54_126___sub_8_mc_tac_len_8_r_2560_p_640_resnet_640_16_53_)
@@ -104,6 +105,10 @@ python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-
 <a id="sub_4_aug___r_2560_p_640_resnet_640_16_5_3_"></a>
 ### sub-4-aug       @ r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
 python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,seg_160-16_53:p-640:r-2560:rot-15_345_4:sub-4,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1
+
+<a id="sub_8_mc_ltac_len_4___r_2560_p_640_resnet_640_16_5_3_"></a>
+### sub-8-mc-ltac-len-4       @ r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
+python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-16_53:p-640:r-2560:sub-8,batch-4,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,mc,ltac,voc15,seq1k,len-4
 
 <a id="sub_8_mc_tac_len_8___r_2560_p_640_resnet_640_16_5_3_"></a>
 ### sub-8-mc-tac-len-8       @ r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
