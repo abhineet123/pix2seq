@@ -340,6 +340,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 max_length=max_length,
                 length_as_class=length_as_class,
                 flat_order=flat_order,
+                ignore_invalid=True,
             )
 
             mask_gt, rle_gt_cmp = task_utils.mask_from_tokens(

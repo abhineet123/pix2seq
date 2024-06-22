@@ -321,7 +321,6 @@ def check_video_rle_tokens(
         vid_mask_gt = mask_vis_to_id(vid_mask_gt, n_classes, copy=True)
         vid_mask_sub = mask_vis_to_id(vid_mask_sub, n_classes, copy=True)
 
-
     if subsample > 1:
         vid_mask_gt_sub = subsample_vid_mask(vid_mask_gt, subsample, n_classes, is_vis=0)
     else:
@@ -1762,7 +1761,9 @@ def mask_from_tokens(
         length_as_class,
         max_length,
         starts_offset, lengths_offset, class_offset,
-        starts_2d, multi_class, flat_order
+        starts_2d, multi_class, flat_order,
+        ignore_invalid=False,
+
 ):
     if len(rle_tokens) == 0:
         mask = np.zeros(tuple(shape), dtype=np.uint8)
@@ -1782,6 +1783,7 @@ def mask_from_tokens(
         starts_2d=starts_2d,
         multi_class=multi_class,
         flat_order=flat_order,
+        ignore_invalid=ignore_invalid,
     )
     if length_as_class:
         starts, lac = rle_cmp
@@ -1875,7 +1877,8 @@ def rle_from_tokens(
         allow_extra,
         length_as_class,
         starts_offset, lengths_offset, class_offset,
-        starts_2d, multi_class, flat_order
+        starts_2d, multi_class, flat_order,
+        ignore_invalid=False
 ):
     has_class_tokens = multi_class and not length_as_class
 
@@ -1913,21 +1916,31 @@ def rle_from_tokens(
 
         len_id = 1
 
-    assert np.all(starts >= 0), "starts must be >= 0"
+    assert ignore_invalid or np.all(starts >= 0), "starts must be >= 0"
 
     lengths = np.asarray(rle_tokens[len_id:][::n_tokens_per_run], dtype=int)
     lengths -= lengths_offset
 
-    assert np.all(lengths > 0), "lengths must be > 0"
+    assert ignore_invalid or np.all(lengths > 0), "lengths must be > 0"
+
+    valid_bool = np.logical_and(starts >= 0, lengths > 0)
+
 
     rle_cmp = [starts, lengths]
 
     if has_class_tokens:
         class_ids = np.asarray(rle_tokens[len_id + 1:][::n_tokens_per_run], dtype=int)
         class_ids -= class_offset
-        assert np.all(class_ids > 0), "class_ids must be > 0"
+        assert ignore_invalid or np.all(class_ids > 0), "class_ids must be > 0"
+
+        valid_bool = np.logical_and(valid_bool, class_ids > 0)
 
         rle_cmp.append(class_ids)
+
+    if ignore_invalid:
+        valid_ids = np.nonzero(valid_bool)
+        for rle_id, rle_arr in enumerate(rle_cmp):
+            rle_cmp[rle_id] = rle_arr[valid_ids]
 
     return rle_cmp
 
