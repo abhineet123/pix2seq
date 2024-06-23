@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import sys
+import math
 import cv2
 from tqdm import tqdm
 
@@ -103,19 +104,41 @@ def get_rle_suffix(params: Params, n_classes, multi_class):
 
     if params.starts_2d:
         rle_suffixes.append(f'2d')
+
+    max_length = params.max_length
+    if params.subsample > 1:
+        max_length /= params.subsample
+
+    n_classes_ = n_classes
+
     if params.length_as_class:
         assert multi_class, "length_as_class can be enabled only in multi_class mode"
+        
         params.lengths_offset = params.class_offset
         rle_suffixes.append(f'lac')
-        n_lac_classes = int(params.max_length / params.subsample) * (n_classes - 1)
-        min_starts_offset = n_lac_classes + params.class_offset
+        n_total_classes = max_length * (n_classes_ - 1)
+        min_starts_offset = n_total_classes + params.class_offset
 
         if params.starts_offset < min_starts_offset:
+            min_starts_offset = int(math.ceil(min_starts_offset / 100) * 100)
+            print(f'setting starts_offset to {min_starts_offset}')
+            params.starts_offset = min_starts_offset
+    else:
+        n_total_classes = n_classes_
+        min_lengths_offset = params.class_offset + n_total_classes
+        if params.lengths_offset < min_lengths_offset:
+            min_lengths_offset = int(math.ceil(min_lengths_offset / 100) * 100)
+            print(f'setting lengths_offset to {min_lengths_offset}')
+            params.lengths_offset = min_lengths_offset
+        min_starts_offset = params.lengths_offset + max_length
+        if params.starts_offset < min_starts_offset:
+            min_starts_offset = int(math.ceil(min_starts_offset / 100) * 100)
             print(f'setting starts_offset to {min_starts_offset}')
             params.starts_offset = min_starts_offset
 
-    elif multi_class:
-        rle_suffixes.append(f'mc')
+        if multi_class:
+            rle_suffixes.append(f'mc')
+
     if params.flat_order != 'C':
         rle_suffixes.append(f'flat_{params.flat_order}')
 
