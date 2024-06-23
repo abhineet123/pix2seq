@@ -55,6 +55,8 @@ class Params(paramparse.CFG):
 
         self.flat_order = 'C'
 
+        self.poly_len = 0
+        
         self.n_proc = 0
         self.ann_ext = 'json'
         self.num_shards = 32
@@ -516,10 +518,11 @@ def create_tf_example(
 
         # quad = quadtree.dense2quad(mask_sub, num_levels=6, return_255=False)
 
-        # polygons = task_utils.polygons_from_mask(mask)
-        polygons_sub = task_utils.polygons_from_mask(mask_sub)
-        polygon_len = sum(polygon.size for polygon in polygons_sub)
-        append_metrics(dict(len=polygon_len), metrics[f'polygons'])
+        if params.poly_len:
+            # polygons = task_utils.polygons_from_mask(mask)
+            polygons_sub = task_utils.polygons_from_mask(mask_sub)
+            polygon_len = sum(polygon.size for polygon in polygons_sub)
+            append_metrics(dict(len=polygon_len), metrics[f'polygons'])
 
     if params.show and n_runs > 0:
         vis_imgs = []
