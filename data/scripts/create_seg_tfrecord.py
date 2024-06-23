@@ -101,6 +101,8 @@ def get_rle_suffix(params: Params, n_classes, multi_class):
     if params.subsample > 1:
         rle_suffixes.append(f'sub_{params.subsample}')
 
+    if params.starts_2d:
+        rle_suffixes.append(f'2d')
     if params.length_as_class:
         assert multi_class, "length_as_class can be enabled only in multi_class mode"
         params.lengths_offset = params.class_offset
