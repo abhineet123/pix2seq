@@ -1517,8 +1517,6 @@ def rle_to_tokens(rle_cmp, shape, length_as_class,
     if len(starts) == 0:
         return []
 
-    starts += (starts_offset + 1)
-
     if length_as_class:
         assert len(rle_cmp) == 2, "rle must have 2 components with length_as_class enabled"
         lengths += class_offset
@@ -1531,6 +1529,7 @@ def rle_to_tokens(rle_cmp, shape, length_as_class,
         starts_cols += (starts_offset + 1)
         rle_tokens_cmp = [starts_rows, starts_cols, lengths]
     else:
+        starts += (starts_offset + 1)
         rle_tokens_cmp = [starts, lengths]
 
     if len(rle_cmp) == 3:

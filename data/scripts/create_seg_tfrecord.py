@@ -461,7 +461,12 @@ def create_tf_example(
     )
     rle_len = len(rle_tokens)
 
-    n_tokens_per_run = 3 if multi_class and not params.length_as_class else 2
+    n_tokens_per_run = 2
+    if params.starts_2d:
+        n_tokens_per_run += 1
+    if multi_class and not params.length_as_class:
+        n_tokens_per_run += 1
+
     assert rle_len % n_tokens_per_run == 0, f"rle_len must be divisible by {n_tokens_per_run}"
     assert n_runs * n_tokens_per_run == rle_len, f"mismatch between n_runs and rle_len"
 
