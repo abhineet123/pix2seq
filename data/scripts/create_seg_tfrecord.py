@@ -56,7 +56,7 @@ class Params(paramparse.CFG):
         self.flat_order = 'C'
 
         self.poly_len = 0
-        
+
         self.n_proc = 0
         self.ann_ext = 'json'
         self.num_shards = 32
@@ -707,6 +707,12 @@ def main():
 
     if params.rle_to_json:
         print(f'writing RLE to json: {out_json_path}')
+
+    if not params.check:
+        print(f'RLE check is disabled')
+    else:
+        print(f'RLE check is enabled')
+
 
     skip_tfrecord = params.stats_only or params.vis or params.rle_to_json and params.json_only
 
