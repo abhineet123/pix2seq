@@ -345,6 +345,7 @@ def load(FLAGS):
     #     k: getattr(FLAGS, k) for k in dir(FLAGS) if k.startswith('cfg.')
     # }
 
+
     if cfg.task.name == 'object_detection':
         from configs.config_det_ipsc import update_task_config
         update_task_config(cfg)

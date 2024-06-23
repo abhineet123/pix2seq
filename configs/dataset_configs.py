@@ -394,6 +394,9 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
             rle_from_json = ds_cfg.rle_from_json
             tf_name = db_name if rle_from_json else json_name
 
+            rle_lens = [str(info['rle_len']) for info in json_dict['videos' if is_video else 'images']]
+            mode_cfg.rle_lens = rle_lens
+
         elif is_video:
             try:
                 frame_gaps = ds_cfg[f'{mode}_frame_gaps']

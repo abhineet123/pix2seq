@@ -222,6 +222,8 @@ def main(unused_argv):
             train_dataset, cfg.train.steps, cfg.train.epochs,
             cfg.train.batch_size)
 
+    is_seg = 'segmentation' in cfg.task.name
+
     if cfg.training:
         checkpoint_steps = utils.get_checkpoint_steps(
             train_dataset, cfg.train.checkpoint_steps,

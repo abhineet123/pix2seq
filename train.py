@@ -103,6 +103,14 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         #     print('compiling graph...')
         # trainer.checkpoint_manager.save(cur_step)
         # ckpt_vars_0 = utils.save_ckpt_vars(cfg.model_dir)
+        is_seg = 'segmentation' in cfg.task.name
+
+        if is_seg:
+            rle_lens =  cfg.train.rle_lens
+            rle_lens_str = '\n'.join(rle_lens)
+            rle_lens_path = os.path.join(cfg.model_dir, "rle_lens.txt")
+            with open(rle_lens_path, 'w') as fid:
+                fid.write(rle_lens_str)
 
         best_val_metrics_json = os.path.join(cfg.model_dir, "best_val_metrics.json")
 
