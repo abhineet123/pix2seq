@@ -474,6 +474,7 @@ def create_tf_example(
         task_utils.check_rle_tokens(
             image, mask, mask_sub, rle_tokens, n_classes,
             params.length_as_class,
+            params.starts_2d,
             params.starts_offset,
             params.lengths_offset,
             params.class_offset,

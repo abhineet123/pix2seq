@@ -79,6 +79,7 @@ class TaskSemanticSegmentation(task_lib.Task):
 
         flat_order = self.config.dataset.flat_order
         length_as_class = self.config.dataset.length_as_class
+        starts_2d = self.config.dataset.starts_2d
 
         starts_offset = self.config.model.coord_vocab_shift
         lengths_offset = self.config.model.len_vocab_shift
@@ -126,6 +127,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 rle_stripped,
                 n_classes=n_classes,
                 length_as_class=length_as_class,
+                starts_2d=starts_2d,
                 starts_offset=starts_offset,
                 lengths_offset=lengths_offset,
                 class_offset=class_offset,

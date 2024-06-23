@@ -138,6 +138,7 @@ def mask_to_gs(mask, check=True, copy=True):
 def check_rle_tokens(
         image, mask, mask_sub, rle_tokens, n_classes,
         length_as_class,
+        starts_2d,
         starts_offset, lengths_offset, class_offset,
         max_length, subsample, multi_class,
         flat_order,
@@ -168,7 +169,7 @@ def check_rle_tokens(
         starts_offset=starts_offset,
         lengths_offset=lengths_offset,
         class_offset=class_offset,
-        starts_2d=False,
+        starts_2d=starts_2d,
         multi_class=multi_class,
         flat_order=flat_order,
     )
@@ -1923,7 +1924,6 @@ def rle_from_tokens(
     assert ignore_invalid or np.all(lengths > 0), "lengths must be > 0"
 
     valid_bool = np.logical_and(starts >= 0, lengths > 0)
-
 
     rle_cmp = [starts, lengths]
 
