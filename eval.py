@@ -43,7 +43,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     out_dir = os.path.join(cfg.model_dir, f'{ckpt_name}-{json_name}')
     os.makedirs(out_dir, exist_ok=True)
     if is_seg:
-        rle_lens = cfg.eval.rle_lens
+        rle_lens = cfg.dataset.eval.rle_lens
         rle_lens_str = '\n'.join(rle_lens)
         rle_lens_path = os.path.join(out_dir, "rle_lens.txt")
         with open(rle_lens_path, 'w') as fid:

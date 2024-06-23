@@ -106,7 +106,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         is_seg = 'segmentation' in cfg.task.name
 
         if is_seg:
-            rle_lens =  cfg.train.rle_lens
+            rle_lens =  cfg.dataset.train.rle_lens
             rle_lens_str = '\n'.join(rle_lens)
             rle_lens_path = os.path.join(cfg.model_dir, "rle_lens.txt")
             with open(rle_lens_path, 'w') as fid:
