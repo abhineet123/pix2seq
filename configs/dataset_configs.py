@@ -210,6 +210,7 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
 
     multi_class = ds_cfg[f'multi_class']
     length_as_class = ds_cfg[f'length_as_class']
+    starts_2d = ds_cfg[f'starts_2d']
     flat_order = ds_cfg[f'flat_order']
 
     for mode in modes:
@@ -333,6 +334,9 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
             """RLE specific suffixes"""
             if subsample > 1:
                 json_name = f'{json_name}-sub_{subsample}'
+
+            if starts_2d:
+                json_name = f'{json_name}-2d'
 
             if is_video:
                 time_as_class = ds_cfg[f'time_as_class']
