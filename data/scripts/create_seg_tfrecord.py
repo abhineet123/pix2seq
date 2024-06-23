@@ -113,7 +113,7 @@ def get_rle_suffix(params: Params, n_classes, multi_class):
 
     if params.length_as_class:
         assert multi_class, "length_as_class can be enabled only in multi_class mode"
-        
+
         params.lengths_offset = params.class_offset
         rle_suffixes.append(f'lac')
         n_total_classes = max_length * (n_classes_ - 1)
