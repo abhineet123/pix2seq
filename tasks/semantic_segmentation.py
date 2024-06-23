@@ -277,6 +277,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         else:
             assert n_classes > 2, "n_classes must be > 2 for multi_class"
 
+        starts_2d = self.config.dataset.starts_2d
         length_as_class = self.config.dataset.length_as_class
         flat_order = self.config.dataset.flat_order
 
@@ -324,7 +325,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 lengths_offset=lengths_offset,
                 class_offset=class_offset,
                 length_as_class=length_as_class,
-                starts_2d=False,
+                starts_2d=starts_2d,
                 multi_class=multi_class,
                 max_seq_len=max_seq_len,
                 vocab_size=vocab_size,
@@ -337,7 +338,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 starts_offset=starts_offset,
                 lengths_offset=lengths_offset,
                 class_offset=class_offset,
-                starts_2d=False,
+                starts_2d=starts_2d,
                 multi_class=multi_class,
                 max_length=max_length,
                 length_as_class=length_as_class,
@@ -352,7 +353,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 starts_offset=starts_offset,
                 lengths_offset=lengths_offset,
                 class_offset=class_offset,
-                starts_2d=False,
+                starts_2d=starts_2d,
                 multi_class=multi_class,
                 max_length=max_length,
                 length_as_class=length_as_class,

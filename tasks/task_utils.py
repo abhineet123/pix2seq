@@ -1648,7 +1648,7 @@ def rle_from_logits(
 ):
     """generate RLE for both static and video masks"""
 
-    assert not starts_2d, "starts_2d is not supported yet"
+    # assert not starts_2d, "starts_2d is not supported yet"
 
     max_seq_len_, vocab_size_ = rle_logits.shape
     assert max_seq_len_ == max_seq_len, "max_seq_len mismatch"
@@ -1694,6 +1694,8 @@ def rle_from_logits(
     has_class_tokens = (time_as_class or multi_class) and not length_as_class
 
     n_tokens_per_run = 3 if has_class_tokens else 2
+    if starts_2d:
+        n_tokens_per_run += 1
 
     if seq_len < n_tokens_per_run:
         rle_cmp = [[], [], []] if has_class_tokens else [[], []]
@@ -1704,13 +1706,27 @@ def rle_from_logits(
         rle_logits_non_padding = rle_logits_non_padding[:-n_extra_tokens, :]
 
     rle_id = 0
-    starts_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
     starts_token_range = [starts_offset, starts_offset + starts_bins]
-    starts_tokens = selective_argmax(starts_logits, starts_token_range)
-    starts = starts_tokens - starts_offset - 1
-    rle_id += 1
+    if starts_2d:
+        starts_rows_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
+        starts_rows_tokens = selective_argmax(starts_rows_logits, starts_token_range)
+        starts_rows = starts_rows_tokens - starts_offset - 1
+        rle_id += 1
 
-    rle_cmp = [starts, ]
+        starts_cols_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
+        starts_cols_tokens = selective_argmax(starts_cols_logits, starts_token_range)
+        starts_cols = starts_cols_tokens - starts_offset - 1
+        rle_id += 1
+
+        rle_cmp = [starts_rows, starts_cols]
+    else:
+        starts_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
+        starts_token_range = [starts_offset, starts_offset + starts_bins]
+        starts_tokens = selective_argmax(starts_logits, starts_token_range)
+        starts = starts_tokens - starts_offset - 1
+        rle_id += 1
+
+        rle_cmp = [starts, ]
 
     if not length_as_class:
         assert starts_offset > lengths_offset + max_length, "len_token_range overlaps starts_token_range"

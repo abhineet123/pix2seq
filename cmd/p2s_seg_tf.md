@@ -200,7 +200,7 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:p-640:r-640:rot-15
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:p-640:r-640:rot-15_345_4:flip-1:lac:json
 <a id="lac_2d___p_640_aug_r_640_16_5_3_"></a>
 #### lac-2d       @ p-640-aug/r-640/16_53-->p2s_seg_tf
-python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:p-640:r-640:rot-15_345_4:flip-1:lac:2d:json:chk
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:p-640:r-640:rot-15_345_4:flip-1:lac:2d:json
 <a id="sub_4_lac___p_640_aug_r_640_16_5_3_"></a>
 #### sub-4-lac       @ p-640-aug/r-640/16_53-->p2s_seg_tf
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:gz:p-640:r-640:sub-4:rot-15_345_4:flip-1:lac:json
