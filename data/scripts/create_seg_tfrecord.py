@@ -743,7 +743,9 @@ def main():
 
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
-            metrics_dir = linux_path(params.db_path, 'metrics')
+            metrics_dir = linux_path(params.db_path, '_metrics_')
+
+            print('metrics_dir: {metrics_dir}')
             os.makedirs(metrics_dir, exist_ok=True)
             metrics_path = linux_path(metrics_dir, f'{out_json_fname}-{method}-{metric_}.txt')
             with open(metrics_path, 'w') as f:
