@@ -747,7 +747,7 @@ def main():
 
             print(f'metrics_dir: {metrics_dir}')
             os.makedirs(metrics_dir, exist_ok=True)
-            metrics_path = linux_path(metrics_dir, f'{out_json_fname}-{method}-{metric_}.txt')
+            metrics_path = linux_path(metrics_dir, f'{out_json_name}-{method}-{metric_}.txt')
             print(f'metrics_path: {metrics_path}')
 
             with open(metrics_path, 'w') as f:
