@@ -1,0 +1,6 @@
+{
+  "model": {
+	defer_vocab: 1,
+	vocab_size: 28000,
+  },
+}
