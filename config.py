@@ -57,7 +57,7 @@ def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
 
     assert os.path.isfile(pt_cfg_filepath), f"non-existent model cfg json: {pt_cfg_filepath}"
 
-    print(f'loading6 model cfg from {pt_cfg_filepath}')
+    print(f'loading model cfg from {pt_cfg_filepath}')
     with open(pt_cfg_filepath, 'r') as f:
         cfg_from_model = json.loads(f.read())
 

@@ -121,6 +121,7 @@ def get_shared_seg_data():
 
         multi_class=0,
         length_as_class=0,
+        starts_2d=0,
         flat_order='C',
     )
     for mode in ['train', 'eval']:
