@@ -1730,7 +1730,7 @@ def rle_from_logits(
         rle_cmp = [starts, ]
 
     if not length_as_class:
-        assert starts_offset > lengths_offset + max_length, "len_token_range overlaps starts_token_range"
+        assert starts_offset >= lengths_offset + max_length, "len_token_range overlaps starts_token_range"
         len_token_range = [lengths_offset, lengths_offset + max_length]
         len_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
         len_tokens = selective_argmax(len_logits, len_token_range)
@@ -1749,10 +1749,10 @@ def rle_from_logits(
         else:
             n_total_classes = n_classes_
 
-        assert starts_offset > class_offset + n_total_classes, "class_token_range overlaps starts_token_range"
+        assert starts_offset >= class_offset + n_total_classes, "class_token_range overlaps starts_token_range"
 
         if not length_as_class:
-            assert lengths_offset > class_offset + n_total_classes, "class_token_range overlaps len_token_range"
+            assert lengths_offset >= class_offset + n_total_classes, "class_token_range overlaps len_token_range"
 
         class_token_range = [class_offset, class_offset + n_total_classes]
         class_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
