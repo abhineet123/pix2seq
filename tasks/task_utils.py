@@ -1970,6 +1970,7 @@ def vid_rle_from_tokens(
         starts_2d,
         multi_class,
         flat_order,
+        ignore_invalid
 ):
     if length_as_class:
         assert lengths_offset == class_offset, "lengths_offset and class_offset must be same for length_as_class"
@@ -2010,11 +2011,13 @@ def vid_rle_from_tokens(
 
         len_id = 1
 
-    assert np.all(starts >= 0), "starts must be >= 0"
+    assert ignore_invalid or np.all(starts >= 0), "starts must be >= 0"
 
     lengths = np.array(rle_tokens[len_id:][::n_tokens_per_run], dtype=np.int64)
     lengths -= lengths_offset
-    assert np.all(lengths > 0), "lengths must be > 0"
+    assert ignore_invalid or np.all(lengths > 0), "lengths must be > 0"
+
+    valid_bool = np.logical_and(starts >= 0, lengths > 0)
 
     rle_cmp = [starts, lengths]
 
@@ -2022,8 +2025,16 @@ def vid_rle_from_tokens(
         class_ids = np.array(rle_tokens[len_id + 1:][::n_tokens_per_run], dtype=np.int64)
         class_ids -= class_offset
 
-        assert np.all(class_ids > 0), "class_ids must be > 0"
+        assert ignore_invalid or np.all(class_ids > 0), "class_ids must be > 0"
+
+        valid_bool = np.logical_and(valid_bool, class_ids > 0)
+
         rle_cmp.append(class_ids)
+
+    if ignore_invalid:
+        valid_ids = np.nonzero(valid_bool)
+        for rle_id, rle_arr in enumerate(rle_cmp):
+            rle_cmp[rle_id] = rle_arr[valid_ids]
 
     return rle_cmp
 
