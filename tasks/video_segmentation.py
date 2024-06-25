@@ -382,6 +382,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 flat_order=flat_order,
                 time_as_class=time_as_class,
                 n_classes=n_classes,
+                ignore_invalid=True,
             )
 
             vid_mask_gt, tac_mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
@@ -399,6 +400,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 flat_order=flat_order,
                 time_as_class=time_as_class,
                 n_classes=n_classes,
+                ignore_invalid=False,
             )
 
             if self.config.debug:

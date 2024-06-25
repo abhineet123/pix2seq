@@ -347,6 +347,7 @@ def check_video_rle_tokens(
         flat_order=flat_order,
         time_as_class=time_as_class,
         n_classes=n_classes,
+        ignore_invalid=False,
     )
 
     starts, lengths = rle_rec_cmp[:2]
@@ -1843,6 +1844,7 @@ def vid_mask_from_tokens(
         starts_2d,
         multi_class,
         flat_order,
+        ignore_invalid,
 ):
     n_rows, n_cols = shape
     has_class_tokens = (time_as_class or multi_class) and not length_as_class
@@ -1865,6 +1867,7 @@ def vid_mask_from_tokens(
         starts_2d=starts_2d,
         multi_class=multi_class,
         flat_order=flat_order,
+        ignore_invalid=ignore_invalid,
     )
     if length_as_class:
         assert len(rle_cmp) == 2, "rle_cmp len must be 2 for length_as_class"
