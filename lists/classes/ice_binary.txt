@@ -1,0 +1,2 @@
+water	black
+ice	yellow
