@@ -1,2 +1,2 @@
-water	black
+background	black
 ice	yellow
