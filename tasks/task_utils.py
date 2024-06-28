@@ -545,7 +545,7 @@ def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False, max_diff_rate=0
         mask_vis_rec = mask_id_to_vis(mask_id, n_classes, copy=True)
         n_diff = np.count_nonzero(mask_vis_rec != mask_vis)
         labels_diff_rate = float(n_diff) / mask_vis.size * 100.
-        assert labels_diff_rate < max_diff_rate, "diff_rate is too high"
+        assert labels_diff_rate < max_diff_rate, f"labels_diff_rate is too high: {labels_diff_rate:.3f}"
 
         return mask_id, labels_diff_rate
 
