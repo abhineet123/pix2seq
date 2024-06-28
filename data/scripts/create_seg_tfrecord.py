@@ -58,7 +58,7 @@ class Params(paramparse.CFG):
         self.poly_len = 0
 
         self.n_proc = 0
-        self.ann_ext = 'json'
+        self.ann_ext = 'json.gz'
         self.num_shards = 32
         self.output_dir = ''
 

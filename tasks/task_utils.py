@@ -526,20 +526,30 @@ def mask_id_to_vis(mask, n_classes, to_rgb=0, copy=False):
         return mask
 
 
-def mask_vis_to_id(mask, n_classes, copy=False):
-    if copy:
-        mask = np.copy(mask)
+def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False, max_diff_rate=0.1):
+    if copy or check:
+        mask_id = np.copy(mask_vis)
+    else:
+        mask_id = mask_vis
 
     if n_classes == 3:
-        mask[mask < 64] = 0
-        mask[np.logical_and(mask >= 64, mask < 192)] = 1
-        mask[mask >= 192] = 2
+        mask_id[mask_id < 64] = 0
+        mask_id[np.logical_and(mask_id >= 64, mask_id < 192)] = 1
+        mask_id[mask_id >= 192] = 2
     elif n_classes == 2:
-        mask[mask < 128] = 0
-        mask[mask >= 128] = 1
+        mask_id[mask_id < 128] = 0
+        mask_id[mask_id >= 128] = 1
     else:
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
-    return mask
+    if check:
+        mask_vis_rec = mask_id_to_vis(mask_id, n_classes, copy=True)
+        n_diff = np.count_nonzero(mask_vis_rec != mask_vis)
+        labels_diff_rate = float(n_diff) / mask_vis.size * 100.
+        assert labels_diff_rate < max_diff_rate, "diff_rate is too high"
+
+        return mask_id, labels_diff_rate
+
+    return mask_id
 
 
 def blend_mask(mask, image, class_id_to_col, alpha=0.5):
