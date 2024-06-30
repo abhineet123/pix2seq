@@ -443,6 +443,8 @@ def create_tf_example(
 
     multi_class = n_classes > 2
 
+    start_filename = subseq_img_infos[0]['file_name']
+
     for _id, image_info in enumerate(subseq_img_infos):
 
         image_height = image_info['height']
@@ -453,7 +455,10 @@ def create_tf_example(
 
         filename = image_info['file_name']
         image_id = image_info['img_id']
-        seq = image_info['seq']
+        seq_ = image_info['seq']
+
+        assert seq == seq_, "seq mismatch"
+
         frame_id = int(image_info['frame_id'])
         mask_filename = image_info['mask_file_name']
 
@@ -657,8 +662,13 @@ def create_tf_example(
         video_feature_dict.update(seg_feature_dict)
 
     if rle_len > 0:
-        metrics_ = dict(rle_len=rle_len)
-        append_metrics(metrics_, metrics[f'method_{subsample_method}'])
+        append_metrics(
+            dict(rle_len=f'{rle_len}'), metrics[f'db'])
+        append_metrics(
+            dict(vid_to_rle_len=f'{vid_id}\t{start_filename}\t{rle_len}'), metrics[f'db'])
+    else:
+        append_metrics(
+            dict(empty_vid=f'{vid_id}\t{start_filename}'), metrics[f'db'])
 
     if not skip_tfrecord:
         video_feature_dict['video/n_runs'] = tfrecord_lib.convert_to_feature(n_runs, value_type='int64')
@@ -832,6 +842,7 @@ def main():
     #     return
 
     metrics = dict(
+        db={},
         method_0={},
         method_1={},
         method_2={},
@@ -840,7 +851,7 @@ def main():
     if params.rle_to_json:
         print(f'writing RLE to json: {vid_json_path}')
 
-    skip_tfrecord = params.stats_only or params.vis or params.rle_to_json and params.json_only
+    skip_tfrecord = params.stats_only or params.vis or (params.rle_to_json and params.json_only)
 
     annotations_iter = generate_annotations(
         params=params,
@@ -877,9 +888,15 @@ def main():
 
     save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path)
 
+    metrics_dir = linux_path(params.db_path, '_metrics_')
+
+    print(f'metrics_dir: {metrics_dir}')
+    os.makedirs(metrics_dir, exist_ok=True)
+
     for method, metrics_ in metrics.items():
+
         for metric_, val in metrics_.items():
-            metrics_path = linux_path(tfrecord_path, f'{method}_{metric_}.txt')
+            metrics_path = linux_path(metrics_dir, f'{rle_out_name}-{method}-{metric_}.txt')
             with open(metrics_path, 'w') as f:
                 f.write('\n'.join(map(str, val)))
 

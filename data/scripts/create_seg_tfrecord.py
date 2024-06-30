@@ -750,12 +750,13 @@ def main():
 
     save_seg_annotations(params, img_json_dict, class_id_to_name, class_id_to_col, out_json_path)
 
+    metrics_dir = linux_path(params.db_path, '_metrics_')
+
+    print(f'metrics_dir: {metrics_dir}')
+    os.makedirs(metrics_dir, exist_ok=True)
+
     for method, metrics_ in metrics.items():
         for metric_, val in metrics_.items():
-            metrics_dir = linux_path(params.db_path, '_metrics_')
-
-            print(f'metrics_dir: {metrics_dir}')
-            os.makedirs(metrics_dir, exist_ok=True)
             metrics_path = linux_path(metrics_dir, f'{out_json_name}-{method}-{metric_}.txt')
             print(f'metrics_path: {metrics_path}')
 
