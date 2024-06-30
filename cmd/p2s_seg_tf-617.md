@@ -3,6 +3,10 @@
 - [0_31       @ ipsc](#0_31___ipsc_)
     - [no-resize       @ 0_31](#no_resize___0_31_)
         - [p-640-sub-8       @ no-resize/0_31](#p_640_sub_8___no_resize_0_31_)
+        - [p-640-sub-8-aug       @ no-resize/0_31](#p_640_sub_8_aug___no_resize_0_31_)
+        - [bin       @ no-resize/0_31](#bin___no_resize_0_31_)
+        - [mc       @ no-resize/0_31](#mc___no_resize_0_31_)
+        - [lac       @ no-resize/0_31](#lac___no_resize_0_31_)
     - [r-2560-p-640-sub-8       @ 0_31](#r_2560_p_640_sub_8___0_31_)
         - [bin       @ r-2560-p-640-sub-8/0_31](#bin___r_2560_p_640_sub_8_0_3_1_)
         - [mc       @ r-2560-p-640-sub-8/0_31](#mc___r_2560_p_640_sub_8_0_3_1_)
@@ -57,6 +61,17 @@
 <a id="p_640_sub_8___no_resize_0_31_"></a>
 ### p-640-sub-8       @ no-resize/0_31-->p2s_seg_tf-617
 python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8
+<a id="p_640_sub_8_aug___no_resize_0_31_"></a>
+### p-640-sub-8-aug       @ no-resize/0_31-->p2s_seg_tf-617
+<a id="bin___no_resize_0_31_"></a>
+### bin       @ no-resize/0_31-->p2s_seg_tf-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:rot-15_345_8:strd-64_256:flip:json
+<a id="mc___no_resize_0_31_"></a>
+### mc       @ no-resize/0_31-->p2s_seg_tf-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:rot-15_345_8:strd-64_256:flip:mc:json
+<a id="lac___no_resize_0_31_"></a>
+### lac       @ no-resize/0_31-->p2s_seg_tf-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:rot-15_345_8:strd-64_256:flip:lac
 
 <a id="r_2560_p_640_sub_8___0_31_"></a>
 ## r-2560-p-640-sub-8       @ 0_31-->p2s_seg_tf-617
