@@ -1,5 +1,8 @@
 {
-  "dataset": {
+"dataset": {
 	root_dir: "datasets/617/images/training",
-  }
+  },
+"%mode%": {
+	"save_suffix": ["617",],
+  },
 }

@@ -247,7 +247,9 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
             seq_end_id = mode_cfg[f'seq_end_id']
             subsample = mode_cfg[f'subsample']
 
-            if not suffix:
+            if suffix:
+                name = suffix
+            else:
                 assert end_id >= start_id, f"invalid end_id: {end_id}"
 
                 if patch_width <= 0:
