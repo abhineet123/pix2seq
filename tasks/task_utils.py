@@ -526,19 +526,67 @@ def mask_id_to_vis(mask, n_classes, to_rgb=0, copy=False):
         return mask
 
 
-def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False, max_diff_rate=0.1):
-    if copy or check:
+def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
+                   max_diff_rate=0.1, precise=False, spurious_mids=False):
+    if spurious_mids or copy or check:
         mask_id = np.copy(mask_vis)
     else:
         mask_id = mask_vis
 
     if n_classes == 3:
-        mask_id[mask_id < 64] = 0
-        mask_id[np.logical_and(mask_id >= 64, mask_id < 192)] = 1
-        mask_id[mask_id >= 192] = 2
+        if precise:
+            mask_id[np.logical_and(mask_id != 128, mask_id != 255)] = 0
+            mask_id[mask_id == 128] = 1
+            mask_id[mask_id == 255] = 2
+        else:
+            mask_id[mask_id < 64] = 0
+            mask_id[np.logical_and(mask_id >= 64, mask_id < 192)] = 1
+            mask_id[mask_id >= 192] = 2
+
+        if spurious_mids:
+            from scipy.signal import convolve2d as conv2
+
+            highs_bool = mask_id == 2
+            mids_bool = mask_id == 1
+
+            highs_img = highs_bool.astype(np.uint8) * 255
+
+            sobel_y = -np.array(
+                [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
+            )
+            sobel_y_img = conv2(highs_img, sobel_y, 'same')
+            sobel_x = -np.array(
+                [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]
+            )
+            sobel_x_img = conv2(highs_img, sobel_x, 'same')
+
+            sobel_img = sobel_y_img ** 2 + sobel_x_img ** 2
+
+            edge_bool = sobel_img > 0
+
+            spurious_bool = np.logical_and(mids_bool, edge_bool)
+            mask_id[spurious_bool] = 2
+
+            # mids_img = mids_bool.astype(np.uint8) * 255
+            # edge_img = edge_bool.astype(np.uint8) * 255
+            # spurious_img = spurious_bool.astype(np.uint8) * 255
+
+            # edge_img = resize_ar(edge_img, 640)
+            # mids_img = resize_ar(mids_img, 640)
+            # spurious_img = resize_ar(spurious_img, 640)
+            #
+            # cv2.imshow('edge_img', edge_img)
+            # cv2.imshow('mids_img', mids_img)
+            # cv2.imshow('spurious_img', spurious_img)
+
+
     elif n_classes == 2:
-        mask_id[mask_id < 128] = 0
-        mask_id[mask_id >= 128] = 1
+        if precise:
+            mask_id[mask_id != 255] = 0
+            mask_id[mask_id == 255] = 1
+        else:
+            mask_id[mask_id < 128] = 0
+            mask_id[mask_id >= 128] = 1
     else:
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
     if check:
@@ -1902,7 +1950,8 @@ def vid_mask_from_tokens(
 
 
 def rle_from_tokens(
-        rle_tokens, shape,
+        rle_tokens,
+        shape,
         allow_extra,
         length_as_class,
         starts_offset, lengths_offset, class_offset,

@@ -55,6 +55,7 @@ class Params(paramparse.CFG):
 
         self.flat_order = 'C'
 
+        self.seg_metrics = 0
         self.poly_len = 0
 
         self.n_proc = 0
@@ -407,6 +408,8 @@ def create_tf_example(
         mask = task_utils.mask_to_binary(mask)
     mask = task_utils.mask_to_gs(mask)
 
+    mask_unique = np.unique(mask)
+
     n_rows, n_cols = mask.shape
     max_length = params.max_length
 
@@ -513,8 +516,10 @@ def create_tf_example(
             is_vis=False)
 
     if rle_len > 0:
-        metrics_ = dict(rle_len=rle_len)
-        append_metrics(metrics_, metrics[f'method_{subsample_method}'])
+        append_metrics(
+            dict(rle_len=f'{rle_len}'), metrics[f'db'])
+        append_metrics(
+            dict(vid_to_rle_len=f'{image_id}\t{rle_len}'), metrics[f'db'])
 
         # quad = quadtree.dense2quad(mask_sub, num_levels=6, return_255=False)
 
@@ -524,6 +529,28 @@ def create_tf_example(
             polygon_len = sum(polygon.size for polygon in polygons_sub)
             append_metrics(dict(len=polygon_len), metrics[f'polygons'])
 
+        if params.seg_metrics and params.subsample > 1:
+            from densenet.evaluation.eval_segm import Metrics
+
+            mask_sub_rec = task_utils.supersample_mask(mask_sub, params.subsample, n_classes, is_vis=0)
+
+            seg_metrics = Metrics(class_id_to_name)
+            seg_metrics.update(mask_sub_rec, mask)
+
+            seg_metrics_dict = dict()
+            for key, dice in seg_metrics.dice.items():
+                if key in ('background', 'mean'):
+                    continue
+                metric_key = f'dice_iu_acc-{key}'
+                iu = seg_metrics.iu[key]
+                acc = seg_metrics.acc[key]
+                seg_metrics_dict[metric_key] = f'{image_id}\t{dice}\t{iu}\t{acc}'
+            append_metrics(
+                seg_metrics_dict, metrics[f'method_{subsample_method}'])
+    else:
+        append_metrics(
+            dict(empty_vid=f'{image_id}'), metrics[f'db'])
+
     if params.show and n_runs > 0:
         vis_imgs = []
 
@@ -531,6 +558,7 @@ def create_tf_example(
 
         rle_rec_cmp = task_utils.rle_from_tokens(
             rle_tokens,
+            False,
             mask_sub.shape,
             params.length_as_class,
             params.starts_offset,
@@ -566,23 +594,27 @@ def create_tf_example(
             (n_rows_sub, n_cols_sub),
         )
 
-        mask_vis = task_utils.mask_id_to_vis_bgr(mask_sub, class_id_to_col)
+        mask_vis = task_utils.mask_id_to_vis_bgr(mask, class_id_to_col)
+        mask_sub_vis = task_utils.mask_id_to_vis_bgr(mask_sub, class_id_to_col)
         mask_rec_vis = task_utils.mask_id_to_vis_bgr(mask_rec, class_id_to_col)
 
         if subsample_method == 2:
             """reconstruct low-res mask and resize to scale it up"""
-            mask_vis = cv2.resize(mask_vis, (n_cols, n_rows))
-
+            mask_sub_vis = cv2.resize(mask_sub_vis, (n_cols, n_rows))
             mask_rec_vis = cv2.resize(mask_rec_vis, (n_cols, n_rows))
             # metrics_ = eval_mask(mask_rec, mask, rle_len)
             # vis_txt.append(append_metrics(metrics_, metrics['method_1']))
 
         vis_imgs.append(mask_vis)
+        vis_imgs.append(mask_sub_vis)
         vis_imgs.append(mask_rec_vis)
 
         import eval_utils
 
-        vis_imgs = np.concatenate(vis_imgs, axis=1)
+        vis_imgs_1 = np.concatenate((image, mask_vis), axis=1)
+        vis_imgs_2 = np.concatenate((mask_sub_vis, mask_rec_vis), axis=1)
+        vis_imgs = np.concatenate((vis_imgs_1, vis_imgs_2), axis=0)
+        vis_imgs = cv2.resize(vis_imgs, (960, 960))
         # vis_txt = ' '.join(vis_txt)
         vis_imgs = eval_utils.annotate(vis_imgs, f'{image_id}')
         # cv2.imshow('mask_vis', mask_vis)
@@ -699,6 +731,7 @@ def main():
     vid_infos = get_vid_infos(params.db_path, image_infos)
 
     metrics = dict(
+        db={},
         method_0={},
         method_1={},
         method_2={},
