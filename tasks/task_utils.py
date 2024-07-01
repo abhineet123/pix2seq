@@ -508,22 +508,24 @@ def resize_mask(mask, shape, n_classes=None, is_vis=1):
     return mask
 
 
-def mask_id_to_vis(mask, n_classes, to_rgb=0, copy=False):
+def mask_id_to_vis(mask_id, n_classes, to_rgb=0, copy=False):
     if to_rgb or copy:
-        mask = np.zeros_like(mask)
+        mask_vis = np.zeros_like(mask_id)
+    else:
+        mask_vis = mask_id
     if n_classes == 3:
         # labels_img[labels_img == 0] = 0
-        mask[mask == 1] = 128
-        mask[mask == 2] = 255
+        mask_vis[mask_id == 1] = 128
+        mask_vis[mask_id == 2] = 255
     elif n_classes == 2:
         # labels_img[labels_img == 0] = 0
-        mask[mask == 1] = 255
+        mask_vis[mask_id == 1] = 255
     else:
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
-    if to_rgb and len(mask.shape) == 2:
-        mask = np.stack((mask,) * 3, axis=2)
+    if to_rgb and len(mask_vis.shape) == 2:
+        mask_vis = np.stack((mask_vis,) * 3, axis=2)
     if to_rgb or copy:
-        return mask
+        return mask_vis
 
 
 def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
@@ -535,13 +537,13 @@ def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
 
     if n_classes == 3:
         if precise:
-            mask_id[np.logical_and(mask_id != 128, mask_id != 255)] = 0
-            mask_id[mask_id == 128] = 1
-            mask_id[mask_id == 255] = 2
+            mask_id[np.logical_and(mask_vis != 128, mask_vis != 255)] = 0
+            mask_id[mask_vis == 128] = 1
+            mask_id[mask_vis == 255] = 2
         else:
-            mask_id[mask_id < 64] = 0
-            mask_id[np.logical_and(mask_id >= 64, mask_id < 192)] = 1
-            mask_id[mask_id >= 192] = 2
+            mask_id[mask_vis < 64] = 0
+            mask_id[np.logical_and(mask_vis >= 64, mask_vis < 192)] = 1
+            mask_id[mask_vis >= 192] = 2
 
         if spurious_mids:
             remove_spurious_mids_with_edges(mask_id, max_iters=1)
@@ -549,10 +551,10 @@ def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
 
     elif n_classes == 2:
         if precise:
-            mask_id[mask_id != 0] = 1
+            mask_id[mask_vis != 0] = 1
         else:
-            mask_id[mask_id < 128] = 0
-            mask_id[mask_id >= 128] = 1
+            mask_id[mask_vis < 128] = 0
+            mask_id[mask_vis >= 128] = 1
     else:
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
     if check:
@@ -577,27 +579,26 @@ def remove_spurious_mids_with_cc(mask_id, min_area=5):
     mids_bool = (mask_id == 1).astype(np.uint8) * 255
     connectivity = 4
     output = cv2.connectedComponentsWithStats(mids_bool, connectivity, cv2.CV_32S)
-    num_labels = output[0]
     labels = output[1]
-
-    labels_img = labels.astype(np.float32) / (num_labels - 1)
-
-    cv2.imshow('mids_bool', mids_bool)
-    cv2.imshow('labels_img', labels_img)
-
     stats = output[2]
 
     areas = stats[:, cv2.CC_STAT_AREA]
     invalid_labels = np.where(areas < min_area)[0]
-    labels_filtered = np.copy(labels)
-    num_labels_f = num_labels - len(invalid_labels)
+    # labels_filtered = np.copy(labels)
     for invalid_label in invalid_labels:
-        labels_filtered[labels_filtered == invalid_label] = 0
-    labels_filtered_img = labels_filtered.astype(np.float32) / (num_labels_f - 1)
-    cv2.imshow('labels_filtered_img', labels_filtered_img)
-    cv2.waitKey(1)
+        spurious_bool = labels == invalid_label
+        mask_id[spurious_bool] = 0
+        # labels_filtered[spurious_bool] = 0
 
-    centroids = output[3]
+    # num_labels = output[0]
+    # num_labels_f = num_labels - len(invalid_labels)
+    # labels_filtered_img = labels_filtered.astype(np.float32) / (num_labels_f - 1)
+    # labels_img = labels.astype(np.float32) / (num_labels - 1)
+    # cv2.imshow('mids_bool', mids_bool)
+    # cv2.imshow('labels_img', labels_img)
+    # cv2.imshow('labels_filtered_img', labels_filtered_img)
+    # cv2.waitKey(1)
+    # centroids = output[3]
 
 
 def remove_spurious_mids_with_edges(mask_id, max_iters=0):
