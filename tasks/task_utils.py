@@ -510,7 +510,7 @@ def resize_mask(mask, shape, n_classes=None, is_vis=1):
 
 def mask_id_to_vis(mask, n_classes, to_rgb=0, copy=False):
     if to_rgb or copy:
-        mask = np.copy(mask)
+        mask = np.zeros_like(mask)
     if n_classes == 3:
         # labels_img[labels_img == 0] = 0
         mask[mask == 1] = 128
@@ -529,7 +529,7 @@ def mask_id_to_vis(mask, n_classes, to_rgb=0, copy=False):
 def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
                    max_diff_rate=0.1, precise=False, spurious_mids=False):
     if spurious_mids or copy or check:
-        mask_id = np.copy(mask_vis)
+        mask_id = np.zeros_like(mask_vis)
     else:
         mask_id = mask_vis
 
@@ -544,46 +544,12 @@ def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
             mask_id[mask_id >= 192] = 2
 
         if spurious_mids:
-            from scipy.signal import convolve2d as conv2
-
-            highs_bool = mask_id == 2
-            mids_bool = mask_id == 1
-
-            highs_img = highs_bool.astype(np.uint8) * 255
-
-            sobel_y = -np.array(
-                [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
-            )
-            sobel_y_img = conv2(highs_img, sobel_y, 'same')
-            sobel_x = -np.array(
-                [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]
-            )
-            sobel_x_img = conv2(highs_img, sobel_x, 'same')
-
-            sobel_img = sobel_y_img ** 2 + sobel_x_img ** 2
-
-            edge_bool = sobel_img > 0
-
-            spurious_bool = np.logical_and(mids_bool, edge_bool)
-            mask_id[spurious_bool] = 2
-
-            # mids_img = mids_bool.astype(np.uint8) * 255
-            # edge_img = edge_bool.astype(np.uint8) * 255
-            # spurious_img = spurious_bool.astype(np.uint8) * 255
-
-            # edge_img = resize_ar(edge_img, 640)
-            # mids_img = resize_ar(mids_img, 640)
-            # spurious_img = resize_ar(spurious_img, 640)
-            #
-            # cv2.imshow('edge_img', edge_img)
-            # cv2.imshow('mids_img', mids_img)
-            # cv2.imshow('spurious_img', spurious_img)
-
+            remove_spurious_mids_with_edges(mask_id, max_iters=1)
+            remove_spurious_mids_with_cc(mask_id, min_area=5)
 
     elif n_classes == 2:
         if precise:
-            mask_id[mask_id != 255] = 0
-            mask_id[mask_id == 255] = 1
+            mask_id[mask_id != 0] = 1
         else:
             mask_id[mask_id < 128] = 0
             mask_id[mask_id >= 128] = 1
@@ -591,13 +557,102 @@ def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
     if check:
         mask_vis_rec = mask_id_to_vis(mask_id, n_classes, copy=True)
-        n_diff = np.count_nonzero(mask_vis_rec != mask_vis)
+        diff_bool = mask_vis_rec != mask_vis
+        n_diff = np.count_nonzero(diff_bool)
         labels_diff_rate = float(n_diff) / mask_vis.size * 100.
-        assert labels_diff_rate < max_diff_rate, f"labels_diff_rate is too high: {labels_diff_rate:.3f}"
+        if labels_diff_rate > max_diff_rate:
+            diff_img = diff_bool.astype(np.uint8) * 255
+            cv2.imshow('mask_vis', mask_vis)
+            cv2.imshow('mask_vis_rec', mask_vis_rec)
+            cv2.imshow('diff_img', diff_img)
+            cv2.waitKey(0)
+            raise AssertionError(f"labels_diff_rate is too high: {labels_diff_rate:.3f}")
 
         return mask_id, labels_diff_rate
 
     return mask_id
+
+
+def remove_spurious_mids_with_cc(mask_id, min_area=5):
+    mids_bool = (mask_id == 1).astype(np.uint8) * 255
+    connectivity = 4
+    output = cv2.connectedComponentsWithStats(mids_bool, connectivity, cv2.CV_32S)
+    num_labels = output[0]
+    labels = output[1]
+
+    labels_img = labels.astype(np.float32) / (num_labels - 1)
+
+    cv2.imshow('mids_bool', mids_bool)
+    cv2.imshow('labels_img', labels_img)
+
+    stats = output[2]
+
+    areas = stats[:, cv2.CC_STAT_AREA]
+    invalid_labels = np.where(areas < min_area)[0]
+    labels_filtered = np.copy(labels)
+    num_labels_f = num_labels - len(invalid_labels)
+    for invalid_label in invalid_labels:
+        labels_filtered[labels_filtered == invalid_label] = 0
+    labels_filtered_img = labels_filtered.astype(np.float32) / (num_labels_f - 1)
+    cv2.imshow('labels_filtered_img', labels_filtered_img)
+    cv2.waitKey(1)
+
+    centroids = output[3]
+
+
+def remove_spurious_mids_with_edges(mask_id, max_iters=0):
+    from scipy.signal import convolve2d as conv2
+
+    iter_id = 0
+
+    highs_bool = mask_id == 2
+    mids_bool = mask_id == 1
+
+    while True:
+        iter_id += 1
+
+        highs_img = highs_bool.astype(np.uint8) * 255
+
+        sobel_y = -np.array(
+            [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
+        )
+        sobel_y_img = conv2(highs_img, sobel_y, 'same')
+        sobel_x = -np.array(
+            [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]
+        )
+        sobel_x_img = conv2(highs_img, sobel_x, 'same')
+
+        sobel_img = sobel_y_img ** 2 + sobel_x_img ** 2
+
+        edge_bool = sobel_img > 0
+
+        spurious_bool = np.logical_and(mids_bool, edge_bool)
+
+        n_spurious = np.count_nonzero(spurious_bool)
+        if n_spurious == 0:
+            break
+
+        mask_id[spurious_bool] = 2
+
+        highs_bool[spurious_bool] = True
+        mids_bool[spurious_bool] = False
+
+        if iter_id >= max_iters > 0:
+            break
+
+        # mids_img = mids_bool.astype(np.uint8) * 255
+        # edge_img = edge_bool.astype(np.uint8) * 255
+        # spurious_img = spurious_bool.astype(np.uint8) * 255
+        # edge_img = resize_ar(edge_img, 640)
+        # mids_img = resize_ar(mids_img, 640)
+        # highs_img = resize_ar(highs_img, 640)
+        # spurious_img = resize_ar(spurious_img, 640)
+        # spurious_img = vis_utils.annotate(spurious_img, f"iter {iter_id}: {n_spurious}")
+        # cv2.imshow('edge_img', edge_img)
+        # cv2.imshow('mids_img', mids_img)
+        # cv2.imshow('highs_img', highs_img)
+        # cv2.imshow('spurious_img', spurious_img)
+        # cv2.waitKey(0)
 
 
 def blend_mask(mask, image, class_id_to_col, alpha=0.5):
