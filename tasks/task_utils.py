@@ -451,43 +451,80 @@ def subsample_vid_mask(vid_mask, factor: int, n_classes, is_vis):
     return masks
 
 
-def supersample_mask(mask, factor, n_classes, is_vis=1):
+def supersample_mask(mask, factor, n_classes, is_vis=1, shape=None,
+                     check=False, max_diff_rate=5):
     assert len(mask.shape) == 2, "only grayscale masks are supported"
     if is_vis:
         mask = np.copy(mask)
         mask_vis_to_id(mask, n_classes)
 
     n_rows, n_cols = mask.shape
-    n_rows_out, n_cols_out = int(n_rows * factor), int(n_cols * factor)
+    if shape is not None:
+        assert factor is None, "factor must be None for custom shape"
+        n_rows_out, n_cols_out = shape
+        assert n_rows_out >= n_rows and n_cols_out >= n_cols, \
+            "target size must be larger than source size for super sampling"
+        factor_x, factor_y = n_cols_out / n_rows, n_rows_out / n_cols
+    else:
+        if isinstance(factor, (tuple, list)):
+            factor_x, factor_y = factor
+        else:
+            factor_x = factor_y = factor
+        n_rows_out, n_cols_out = int(n_rows * factor_y), int(n_cols * factor_x)
 
     mask_out = np.zeros_like(mask, shape=(n_rows_out, n_cols_out))
 
     for row_id in range(n_rows_out):
         for col_id in range(n_cols_out):
-            mask_out[row_id, col_id] = mask[row_id // factor, col_id // factor]
+            mask_out[row_id, col_id] = mask[int(row_id / factor_y), int(col_id / factor_x)]
 
     if is_vis:
         mask_id_to_vis(mask_out, n_classes)
+
+    if check:
+        mask_rec = supersample_mask(
+            mask_out, n_classes=n_classes, factor=None, shape=mask.shape, is_vis=is_vis)
+        labels_diff_rate = check_mask_diff(mask_rec, mask, max_diff_rate)
+        return mask_out, labels_diff_rate
     return mask_out
 
 
-def subsample_mask(mask, factor: int, n_classes, is_vis=1):
+def subsample_mask(mask, factor, n_classes, is_vis=1, shape=None,
+                   check=False, max_diff_rate=5):
     assert len(mask.shape) == 2, "only grayscale masks are supported"
     if is_vis:
-        mask = np.copy(mask)
-        mask_vis_to_id(mask, n_classes)
+        mask = mask_vis_to_id(mask, n_classes, copy=True)
 
     n_rows, n_cols = mask.shape
-    n_rows_out, n_cols_out = n_rows // factor, n_cols // factor
+
+    if shape is not None:
+        assert factor is None, "factor must be None for custom shape"
+        n_rows_out, n_cols_out = shape
+        assert n_rows_out <= n_rows and n_cols_out <= n_cols, \
+            "target size must be smaller than source size for subsampling"
+
+        factor_x, factor_y = n_cols / n_cols_out, n_rows / n_rows_out
+    else:
+        if isinstance(factor, (tuple, list)):
+            factor_x, factor_y = factor
+        else:
+            factor_x = factor_y = factor
+        n_rows_out, n_cols_out = int(n_rows / factor_y), int(n_cols / factor_x)
 
     mask_out = np.zeros_like(mask, shape=(n_rows_out, n_cols_out))
 
     for class_id in range(1, n_classes):
         y, x = np.nonzero(mask == class_id)
-        out_x, out_y = (x / factor).astype(np.int64), (y / factor).astype(np.int64)
+        out_x, out_y = (x // factor_x).astype(np.int64), (y // factor_y).astype(np.int64)
         mask_out[out_y, out_x] = class_id
     if is_vis:
         mask_id_to_vis(mask_out, n_classes)
+    if check:
+        mask_rec = supersample_mask(
+            mask_out, n_classes=n_classes, factor=None, shape=mask.shape, is_vis=is_vis)
+        labels_diff_rate = check_mask_diff(mask_rec, mask, max_diff_rate)
+        return mask_out, labels_diff_rate
+
     return mask_out
 
 
@@ -497,15 +534,26 @@ def resize_video_mask(vid_mask, shape, n_classes=None, is_vis=1):
     return masks
 
 
-def resize_mask(mask, shape, n_classes=None, is_vis=1):
+def resize_mask(mask, shape, n_classes=None, is_vis=1, check=False, max_diff_rate=5):
     n_rows, n_cols = shape[:2]
     if not is_vis:
         assert n_classes is not None, "n_classes must be provided if mask is not vis"
-        mask = mask_id_to_vis(mask, n_classes, copy=True)
-    mask = cv2.resize(mask, (n_cols, n_rows))
+        mask_out = mask_id_to_vis(mask, n_classes, copy=True)
+    else:
+        mask_out = mask
+
+    mask_out = cv2.resize(mask_out, (n_cols, n_rows))
+
     if not is_vis:
-        mask_vis_to_id(mask, n_classes)
-    return mask
+        mask_vis_to_id(mask_out, n_classes)
+
+    if check:
+        mask_rec = resize_mask(
+            mask_out, n_classes=n_classes, shape=mask.shape, is_vis=is_vis)
+        labels_diff_rate = check_mask_diff(mask_rec, mask, max_diff_rate)
+        return mask_out, labels_diff_rate
+
+    return mask_out
 
 
 def mask_id_to_vis(mask_id, n_classes, to_rgb=0, copy=False):
@@ -559,20 +607,24 @@ def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
         raise AssertionError('unsupported number of classes: {}'.format(n_classes))
     if check:
         mask_vis_rec = mask_id_to_vis(mask_id, n_classes, copy=True)
-        diff_bool = mask_vis_rec != mask_vis
-        n_diff = np.count_nonzero(diff_bool)
-        labels_diff_rate = float(n_diff) / mask_vis.size * 100.
-        if labels_diff_rate > max_diff_rate:
-            diff_img = diff_bool.astype(np.uint8) * 255
-            cv2.imshow('mask_vis', mask_vis)
-            cv2.imshow('mask_vis_rec', mask_vis_rec)
-            cv2.imshow('diff_img', diff_img)
-            cv2.waitKey(0)
-            raise AssertionError(f"labels_diff_rate is too high: {labels_diff_rate:.3f}")
-
+        labels_diff_rate = check_mask_diff(mask_vis_rec, mask_vis, max_diff_rate)
         return mask_id, labels_diff_rate
 
     return mask_id
+
+
+def check_mask_diff(mask_vis_rec, mask_vis, max_diff_rate):
+    diff_bool = mask_vis_rec != mask_vis
+    n_diff = np.count_nonzero(diff_bool)
+    labels_diff_rate = float(n_diff) / mask_vis.size * 100.
+    if labels_diff_rate > max_diff_rate:
+        diff_img = diff_bool.astype(np.uint8) * 255
+        cv2.imshow('mask_vis', mask_vis)
+        cv2.imshow('mask_vis_rec', mask_vis_rec)
+        cv2.imshow('diff_img', diff_img)
+        cv2.waitKey(0)
+        raise AssertionError(f"labels_diff_rate is too high: {labels_diff_rate:.3f}")
+    return labels_diff_rate
 
 
 def remove_spurious_mids_with_cc(mask_id, min_area=5):
