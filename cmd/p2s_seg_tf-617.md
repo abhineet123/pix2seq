@@ -21,6 +21,7 @@
             - [mc       @ sub-8-aug/r-640/0_31](#mc___sub_8_aug_r_640_0_31_)
             - [lac       @ sub-8-aug/r-640/0_31](#lac___sub_8_aug_r_640_0_31_)
         - [sub-4-aug       @ r-640/0_31](#sub_4_aug___r_640_0_31_)
+                - [lac       @ sub-4-aug/r-640/0_31](#lac___sub_4_aug_r_640_0_31_)
                 - [lac-2d       @ sub-4-aug/r-640/0_31](#lac_2d___sub_4_aug_r_640_0_31_)
 - [0_49       @ ipsc](#0_49___ipsc_)
     - [orig       @ 0_49](#orig___0_49_)
@@ -132,10 +133,13 @@ python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:r-640:rot-1
 python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:r-640:rot-15_345_16:strd-64_256:flip:mc:json
 <a id="lac___sub_8_aug_r_640_0_31_"></a>
 #### lac       @ sub-8-aug/r-640/0_31-->p2s_seg_tf-617
-python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:r-640:rot-15_345_16:strd-64_256:flip:lac:json
+python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:r-640:rot-15_345_16:strd-64_256:flip:lac:json:segm
 
 <a id="sub_4_aug___r_640_0_31_"></a>
 ### sub-4-aug       @ r-640/0_31-->p2s_seg_tf-617
+<a id="lac___sub_4_aug_r_640_0_31_"></a>
+##### lac       @ sub-4-aug/r-640/0_31-->p2s_seg_tf-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-4:r-640:rot-15_345_16:strd-64_256:flip:lac:segm:json
 <a id="lac_2d___sub_4_aug_r_640_0_31_"></a>
 ##### lac-2d       @ sub-4-aug/r-640/0_31-->p2s_seg_tf-617
 python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-4:r-640:rot-15_345_16:strd-64_256:flip:lac:2d:segm
