@@ -143,7 +143,7 @@ def get_shared_seg_data():
         mode_data[f'seq_end_id'] = -1
         mode_data[f'subsample'] = 1
         mode_data[f'max_length'] = 0
-        mode_data[f'params_from_json'] = 1
+        mode_data[f'offsets_from_json'] = 1
         mode_data[f'allow_overlap'] = 0
 
         data[f'{mode}'] = mode_data
@@ -395,19 +395,19 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
         tf_name = json_name
         model_name = json_name
         if is_seg:
-            if mode_cfg.params_from_json:
-                params_from_json = json_dict['info']['params']
+            params_from_json = json_dict['info']['params']
+            mode_cfg.max_length = params_from_json['max_length']
+
+            if mode_cfg.offsets_from_json:
                 if not training:
                     assert model_cfg.coord_vocab_shift == params_from_json['starts_offset'], "starts_offset mismatch"
                     assert model_cfg.len_vocab_shift == params_from_json['lengths_offset'], "lengths_offset mismatch"
                     assert model_cfg.class_vocab_shift == params_from_json['class_offset'], "class_offset mismatch"
-                    assert mode_cfg.max_length == params_from_json['max_length'], "max_length mismatch"
                 model_cfg.coord_vocab_shift = params_from_json['starts_offset']
                 model_cfg.len_vocab_shift = params_from_json['lengths_offset']
                 model_cfg.class_vocab_shift = params_from_json['class_offset']
-                mode_cfg.max_length = params_from_json['max_length']
             else:
-                print('\noverriding dataset params from json is disabled\n')
+                print('\noverriding RLE offsets from json is disabled\n')
 
             rle_from_json = ds_cfg.rle_from_json
             tf_name = db_name if rle_from_json else json_name
