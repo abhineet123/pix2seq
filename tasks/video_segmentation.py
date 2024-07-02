@@ -274,7 +274,7 @@ class TaskVideoSegmentation(task_lib.Task):
             outputs_np.append(tf.identity(outputs[i]).numpy())
 
         (videos, vid_ids, image_ids, frame_ids, rles, logits,
-         gt_rles, rle_lens, n_runs, orig_sizes, seqs,
+         gt_rles, gt_rle_lens, n_runs, orig_sizes, seqs,
          vid_paths, mask_vid_paths) = outputs_np
 
         # orig_sizes = orig_sizes.numpy()
@@ -321,10 +321,10 @@ class TaskVideoSegmentation(task_lib.Task):
             max_length = int(max_length / subsample)
 
         for (image_ids_, frame_ids_, video, vid_id, rle, logits_,
-             orig_size, gt_rle, rle_len, n_runs_, seq,
+             orig_size, gt_rle, gt_rle_len, n_runs_, seq,
              vid_path, mask_vid_path) in (
                 zip(image_ids, frame_ids, videos, vid_ids, rles, logits,
-                    orig_sizes, gt_rles, rle_lens, n_runs, seqs,
+                    orig_sizes, gt_rles, gt_rle_lens, n_runs, seqs,
                     vid_paths, mask_vid_paths)):
 
             orig_size = tuple(orig_size)
@@ -334,9 +334,9 @@ class TaskVideoSegmentation(task_lib.Task):
 
             gt_rle_tokens = gt_rle[gt_rle != vocab.PADDING_TOKEN]
 
-            assert rle_len > max_seq_len or len(gt_rle_tokens) == rle_len, "rle_len mismatch"
+            assert gt_rle_len > max_seq_len or len(gt_rle_tokens) == gt_rle_len, "gt_rle_len mismatch"
 
-            # if rle_len == 0:
+            # if gt_rle_len == 0:
             #     print('skipping empty mask')
             #     continue
 
@@ -344,7 +344,7 @@ class TaskVideoSegmentation(task_lib.Task):
             if self.config.debug:
                 vid_masks, vid_masks_sub = self.check_video_rle(
                     mask_vid_path, video, vid_id, image_ids_, frame_ids_, gt_rle_tokens,
-                    rle_len, n_runs_, training=False)
+                    gt_rle_len, n_runs_, training=False)
                 mask_from_file = vid_masks[0]
                 mask_from_file_sub = vid_masks_sub[0]
 
@@ -367,6 +367,8 @@ class TaskVideoSegmentation(task_lib.Task):
                 vocab_size,
             )
 
+            rle_logits_len = len(rle_cmp_logits[0])
+
             vid_mask_rec, tac_mask_rec, rle_rec_cmp = task_utils.vid_mask_from_tokens(
                 rle_tokens,
                 allow_extra=True,
@@ -384,6 +386,14 @@ class TaskVideoSegmentation(task_lib.Task):
                 n_classes=n_classes,
                 ignore_invalid=True,
             )
+            rle_rec_len = len(rle_rec_cmp[0])
+
+            if gt_rle_len == 0 and rle_rec_len == 0 and rle_logits_len == 0:
+                continue
+
+            if gt_rle_len > 0 and rle_rec_len == 0:
+                print('empty pred rle')
+
 
             vid_mask_gt, tac_mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
                 gt_rle_tokens,

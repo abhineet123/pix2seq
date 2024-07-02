@@ -120,7 +120,7 @@ python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-
 python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-16_53:p-640:r-2560:sub-8,batch-4,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,mc,tac,voc15,seq3k,len-8
 <a id="on_train___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
 #### on-train       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
-python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-4,save-vis-1,dbg-0,dyn-1,vid_seg-16_53:p-640:r-2560:sub-8,mc,tac,voc15,seq3k,len-8
+python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-4,save-vis-1,dbg-0,dyn-1,vid_seg-16_53:p-640:r-2560:sub-8:pfj-0,mc,tac,voc15,seq3k,len-8,vis
 `dbg`
 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,vid_seg-frame-0_7::seq-0_1:p-640:r-2560:sub-8,mc,tac,voc15,seq3k,len-8
 <a id="on_54_126___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
