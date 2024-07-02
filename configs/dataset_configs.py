@@ -144,6 +144,7 @@ def get_shared_seg_data():
         mode_data[f'subsample'] = 1
         mode_data[f'max_length'] = 0
         mode_data[f'params_from_json'] = 1
+        mode_data[f'allow_overlap'] = 0
 
         data[f'{mode}'] = mode_data
     return data

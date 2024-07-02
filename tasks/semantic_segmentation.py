@@ -267,6 +267,11 @@ class TaskSemanticSegmentation(task_lib.Task):
         max_length = self.config.dataset.eval.max_length
         subsample = self.config.dataset.eval.subsample
 
+        assert self.config.dataset.train.max_length == max_length, "max_length mismatch"
+        assert self.config.dataset.train.subsample == subsample, "subsample mismatch"
+
+        allow_overlap = self.config.dataset.eval.allow_overlap
+
         multi_class = self.config.dataset.multi_class
         n_classes = len(self.class_id_to_col)
 
@@ -329,6 +334,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 multi_class=multi_class,
                 max_seq_len=max_seq_len,
                 vocab_size=vocab_size,
+                allow_overlap=allow_overlap,
             )
 
             mask_rec, rle_rec_cmp = task_utils.mask_from_tokens(

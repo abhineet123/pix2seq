@@ -294,8 +294,14 @@ class TaskVideoSegmentation(task_lib.Task):
 
         videos = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
 
-        max_length = self.config.dataset.train.max_length
-        subsample = self.config.dataset.train.subsample
+        max_length = self.config.dataset.eval.max_length
+        subsample = self.config.dataset.eval.subsample
+
+        assert self.config.dataset.train.max_length == max_length, "max_length mismatch"
+        assert self.config.dataset.train.subsample == subsample, "subsample mismatch"
+
+        allow_overlap = self.config.dataset.eval.allow_overlap
+
         multi_class = self.config.dataset.multi_class
         n_classes = len(self.class_id_to_col)
 
@@ -365,6 +371,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 vid_len,
                 max_seq_len,
                 vocab_size,
+                allow_overlap,
             )
 
             rle_logits_len = len(rle_cmp_logits[0])
@@ -393,7 +400,6 @@ class TaskVideoSegmentation(task_lib.Task):
 
             if gt_rle_len > 0 and rle_rec_len == 0:
                 print('empty pred rle')
-
 
             vid_mask_gt, tac_mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
                 gt_rle_tokens,
