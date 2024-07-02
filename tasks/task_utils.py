@@ -1902,6 +1902,7 @@ def rle_from_logits(
 
     if not length_as_class:
         assert allow_overlap or starts_offset >= lengths_offset + max_length, "len_token_range overlaps starts_token_range"
+
         len_token_range = [lengths_offset, lengths_offset + max_length]
         len_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
         len_tokens = selective_argmax(len_logits, len_token_range)

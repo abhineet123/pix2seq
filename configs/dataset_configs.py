@@ -210,11 +210,13 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
         modes = ['eval']
 
     # modes = ['train', 'eval']
-
-    multi_class = ds_cfg[f'multi_class']
-    length_as_class = ds_cfg[f'length_as_class']
-    starts_2d = ds_cfg[f'starts_2d']
-    flat_order = ds_cfg[f'flat_order']
+    length_as_class = time_as_class = starts_2d = flat_order = multi_class = None
+    if is_seg:
+        multi_class = ds_cfg[f'multi_class']
+        time_as_class = ds_cfg[f'time_as_class'] if is_video else 0
+        length_as_class = ds_cfg[f'length_as_class']
+        starts_2d = ds_cfg[f'starts_2d']
+        flat_order = ds_cfg[f'flat_order']
 
     for mode in modes:
 
@@ -408,6 +410,31 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
                 model_cfg.class_vocab_shift = params_from_json['class_offset']
             else:
                 print('\noverriding RLE offsets from json is disabled\n')
+
+            if not mode_cfg.allow_overlap:
+                starts_offset = model_cfg.coord_vocab_shift
+                lengths_offset = model_cfg.len_vocab_shift
+                class_offset = model_cfg.class_vocab_shift
+                max_length = mode_cfg.max_length
+                n_classes = 3 if ds_cfg.multi_class else 2
+
+                if not length_as_class:
+                    assert starts_offset >= lengths_offset + max_length, "len_token_range overlaps starts_token_range"
+
+                if multi_class or time_as_class or length_as_class:
+                    n_classes_ = n_classes
+                    if time_as_class:
+                        vid_len = ds_cfg.length
+                        n_classes_ = n_classes_ ** vid_len
+                    if length_as_class:
+                        n_total_classes = max_length * (n_classes_ - 1)
+                    else:
+                        n_total_classes = n_classes_
+
+                    assert starts_offset >= class_offset + n_total_classes, "class_token_range overlaps starts_token_range"
+
+                    if not length_as_class:
+                        assert lengths_offset >= class_offset + n_total_classes, "class_token_range overlaps len_token_range"
 
             rle_from_json = ds_cfg.rle_from_json
             tf_name = db_name if rle_from_json else json_name
