@@ -395,7 +395,7 @@ class TaskVideoSegmentation(task_lib.Task):
             )
             rle_rec_len = len(rle_rec_cmp[0])
 
-            if gt_rle_len == 0 and rle_rec_len == 0 and rle_logits_len == 0:
+            if show and gt_rle_len == 0 and rle_rec_len == 0 and rle_logits_len == 0:
                 continue
 
             if gt_rle_len > 0 and rle_rec_len == 0:
