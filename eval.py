@@ -94,7 +94,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         os.makedirs(out_vis_dir, exist_ok=True)
 
     json_vid_info = collections.defaultdict(list)
-    seq_to_vid_writers = collections.defaultdict(lambda: None)
+    seq_to_vid_writers = None
+    if cfg.eval.write_to_video:
+        seq_to_vid_writers = collections.defaultdict(lambda: None)
 
     def single_step(examples):
         preprocessed_outputs = task.preprocess_batched(examples, training=False)
@@ -178,7 +180,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 out_vis_dir=out_vis_dir,
                 show=cfg.eval.show_vis,
                 json_vid_info=json_vid_info,
-                vid_cap=seq_to_vid_writers,
+                vid_writers=seq_to_vid_writers,
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,
                 summary_tag=eval_tag,

@@ -1287,7 +1287,6 @@ def visualize_mask(
     if vid_writers is not None:
         ext = 'mp4'
         mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
-        mask_logits_path = os.path.join(out_mask_logits_dir, f'{seq_id}.{ext}')
         vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
 
         if vid_writers[seq_id] is not None:
@@ -1302,6 +1301,7 @@ def visualize_mask(
             mask_writer = get_video_writer(mask_path)
             mask_logits_writer = None
             if mask_logits is not None:
+                mask_logits_path = os.path.join(out_mask_logits_dir, f'{seq_id}.{ext}')
                 mask_logits_writer = get_video_writer(mask_logits_path)
                 print(f'{seq_id} :: mask logits video: {mask_logits_path}')
 

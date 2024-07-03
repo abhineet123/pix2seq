@@ -263,7 +263,7 @@ class TaskVideoSegmentation(task_lib.Task):
                         out_vis_dir,
                         out_mask_dir,
                         out_mask_logits_dir,
-                        vid_cap=None,
+                        vid_writers=None,
                         json_vid_info=None,
                         eval_step=None,
                         training=False,
@@ -473,7 +473,7 @@ class TaskVideoSegmentation(task_lib.Task):
                     out_mask_dir=out_mask_dir,
                     out_mask_logits_dir=out_mask_logits_dir,
                     out_vis_dir=out_vis_dir,
-                    vid_writers=vid_cap,
+                    vid_writers=vid_writers,
                     orig_size=orig_size,
                     show=show,
                 )
