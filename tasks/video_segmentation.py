@@ -361,23 +361,26 @@ class TaskVideoSegmentation(task_lib.Task):
 
             rle_tokens = rle[rle != vocab.PADDING_TOKEN]
 
-            vid_mask_logits, tac_mask_logits, rle_cmp_logits = task_utils.vid_mask_from_logits(
-                logits_,
-                (n_rows, n_cols),
-                max_length,
-                n_classes,
-                starts_offset, lengths_offset, class_offset,
-                time_as_class,
-                length_as_class,
-                False,
-                multi_class,
-                vid_len,
-                max_seq_len,
-                vocab_size,
-                allow_overlap,
-            )
+            vid_mask_logits = [None, ] * self.config.eval.batch_size
+            rle_logits_len = 0
 
-            rle_logits_len = len(rle_cmp_logits[0])
+            if self.config.eval.mask_from_logits:
+                vid_mask_logits, tac_mask_logits, rle_cmp_logits = task_utils.vid_mask_from_logits(
+                    logits_,
+                    (n_rows, n_cols),
+                    max_length,
+                    n_classes,
+                    starts_offset, lengths_offset, class_offset,
+                    time_as_class,
+                    length_as_class,
+                    False,
+                    multi_class,
+                    vid_len,
+                    max_seq_len,
+                    vocab_size,
+                    allow_overlap,
+                )
+                rle_logits_len = len(rle_cmp_logits[0])
 
             vid_mask_rec, tac_mask_rec, rle_rec_cmp = task_utils.vid_mask_from_tokens(
                 rle_tokens,
@@ -404,37 +407,40 @@ class TaskVideoSegmentation(task_lib.Task):
             if gt_rle_len > 0 and rle_rec_len == 0:
                 print('empty pred rle')
 
-            vid_mask_gt, tac_mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
-                gt_rle_tokens,
-                allow_extra=False,
-                vid_len=vid_len,
-                shape=(n_rows, n_cols),
-                length_as_class=length_as_class,
-                max_length=max_length,
-                starts_offset=starts_offset,
-                lengths_offset=lengths_offset,
-                class_offset=class_offset,
-                starts_2d=False,
-                multi_class=multi_class,
-                flat_order=flat_order,
-                time_as_class=time_as_class,
-                n_classes=n_classes,
-                ignore_invalid=False,
-            )
+            vid_mask_gt = [None, ] * self.config.eval.batch_size
 
-            if self.config.debug:
-                # mask_from_file = task_utils.mask_vis_to_id(mask_from_file, n_classes, copy=True)
-                mask_from_file_sub = task_utils.mask_vis_to_id(mask_from_file_sub, n_classes, copy=True)
-                if not np.array_equal(mask_from_file_sub, vid_mask_gt):
-                    print("vid_mask_gt mismatch")
-                    task_utils.check_individual_vid_masks(
-                        video, mask_from_file_sub, vid_mask_gt, self.class_id_to_col, n_classes)
-                # if show:
-                #     vid_mask_vis = task_utils.mask_id_to_vis_bgr(vid_mask_, self.class_id_to_col)
-                #     vid_mask_sub_vis = task_utils.mask_id_to_vis_bgr(vid_mask_sub_, self.class_id_to_col)
-                #     vid_mask_sub_vis = task_utils.resize_mask(vid_mask_sub_vis, vid_mask_.shape)
-                #     vid_mask_all = np.concatenate((vid_mask_vis, vid_mask_sub_vis), axis=1)
-                #     cv2.imshow('vid_mask_all', vid_mask_all)
+            if self.config.eval.mask_from_gt:
+                vid_mask_gt, tac_mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
+                    gt_rle_tokens,
+                    allow_extra=False,
+                    vid_len=vid_len,
+                    shape=(n_rows, n_cols),
+                    length_as_class=length_as_class,
+                    max_length=max_length,
+                    starts_offset=starts_offset,
+                    lengths_offset=lengths_offset,
+                    class_offset=class_offset,
+                    starts_2d=False,
+                    multi_class=multi_class,
+                    flat_order=flat_order,
+                    time_as_class=time_as_class,
+                    n_classes=n_classes,
+                    ignore_invalid=False,
+                )
+
+                if self.config.debug:
+                    # mask_from_file = task_utils.mask_vis_to_id(mask_from_file, n_classes, copy=True)
+                    mask_from_file_sub = task_utils.mask_vis_to_id(mask_from_file_sub, n_classes, copy=True)
+                    if not np.array_equal(mask_from_file_sub, vid_mask_gt):
+                        print("vid_mask_gt mismatch")
+                        task_utils.check_individual_vid_masks(
+                            video, mask_from_file_sub, vid_mask_gt, self.class_id_to_col, n_classes)
+                    # if show:
+                    #     vid_mask_vis = task_utils.mask_id_to_vis_bgr(vid_mask_, self.class_id_to_col)
+                    #     vid_mask_sub_vis = task_utils.mask_id_to_vis_bgr(vid_mask_sub_, self.class_id_to_col)
+                    #     vid_mask_sub_vis = task_utils.resize_mask(vid_mask_sub_vis, vid_mask_.shape)
+                    #     vid_mask_all = np.concatenate((vid_mask_vis, vid_mask_sub_vis), axis=1)
+                    #     cv2.imshow('vid_mask_all', vid_mask_all)
 
             seq_img_infos = json_vid_info[seq]
             if seq_img_infos:

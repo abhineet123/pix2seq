@@ -1201,7 +1201,7 @@ def visualize_mask(
         image,
         mask,
         mask_logits,
-        gt_mask,
+        mask_gt,
         class_to_col,
         seq_id,
         img_info,
@@ -1222,13 +1222,6 @@ def visualize_mask(
     image = cv2.resize(image, (n_cols, n_rows))
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-    vis_gt_mask_small = task_utils.mask_id_to_vis_bgr(gt_mask, class_to_col)
-    vis_mask_small = task_utils.mask_id_to_vis_bgr(mask, class_to_col)
-    vis_mask_logits_small = task_utils.mask_id_to_vis_bgr(mask_logits, class_to_col)
-
-    vis_gt_mask = cv2.resize(vis_gt_mask_small, (n_cols, n_rows))
-    vis_mask = cv2.resize(vis_mask_small, (n_cols, n_rows))
-    vis_mask_logits = cv2.resize(vis_mask_logits_small, (n_cols, n_rows))
 
     if isinstance(image_id, bytes):
         image_id_ = image_id.decode('utf-8')
@@ -1251,23 +1244,44 @@ def visualize_mask(
     else:
         vis_name = image_name_
 
-    gt_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_gt_mask), 0.5))
+    vis_mask_small = task_utils.mask_id_to_vis_bgr(mask, class_to_col)
+    vis_mask = cv2.resize(vis_mask_small, (n_cols, n_rows))
     pred_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_mask), 0.5))
-    pred_logits_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_mask_logits), 0.5))
-    vis_img = np.concatenate((gt_img, pred_img, pred_logits_img), axis=1)
-    vis_mask_all = np.concatenate((vis_gt_mask, vis_mask, vis_mask_logits), axis=1)
-    vis_img = np.concatenate((vis_img, vis_mask_all), axis=0)
+    vis_imgs = [pred_img, ]
+    vis_masks_small = [vis_mask_small, ]
+    vis_masks = [vis_mask, ]
+
+    if mask_gt is not None:
+        vis_gt_mask_small = task_utils.mask_id_to_vis_bgr(mask_gt, class_to_col)
+        vis_gt_mask = cv2.resize(vis_gt_mask_small, (n_cols, n_rows))
+        gt_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_gt_mask), 0.5))
+
+        vis_imgs.insert(0, gt_img)
+        vis_masks_small.insert(0, vis_gt_mask_small)
+        vis_masks.insert(0, vis_gt_mask)
+
+    if mask_logits is not None:
+        vis_mask_logits_small = task_utils.mask_id_to_vis_bgr(mask_logits, class_to_col)
+        vis_mask_logits = cv2.resize(vis_mask_logits_small, (n_cols, n_rows))
+        pred_logits_img = np.asarray(Image.blend(Image.fromarray(image), Image.fromarray(vis_mask_logits), 0.5))
+        vis_masks_small.append(vis_mask_logits_small)
+        vis_imgs.append(pred_logits_img)
+        vis_masks.append(vis_mask_logits)
+
+
+    vis_img = np.concatenate(vis_imgs, axis=1)
+    vis_mask = np.concatenate(vis_masks, axis=1)
+    vis_img = np.concatenate((vis_img, vis_mask), axis=0)
     vis_img = resize_ar(vis_img, 960, 540)
 
-    vis_img_small = np.concatenate(
-        (vis_gt_mask_small, vis_mask_small, vis_mask_logits_small), axis=1)
-    vis_img_small = resize_ar(vis_img_small, 960, 540)
+    vis_mask_small = np.concatenate(vis_masks_small, axis=1)
+    vis_mask_small = resize_ar(vis_mask_small, 960, 540)
 
     vis_img = eval_utils.annotate(vis_img, vis_name)
 
     if show:
         cv2.imshow('vis_img', vis_img)
-        cv2.imshow('vis_img_small', vis_img_small)
+        cv2.imshow('vis_mask_small', vis_mask_small)
         cv2.waitKey(0)
 
     if vid_writers is not None:
@@ -1286,26 +1300,33 @@ def visualize_mask(
                 vid_writers[seq_id_] = None
 
             mask_writer = get_video_writer(mask_path)
-            mask_logits_writer = get_video_writer(mask_logits_path)
+            mask_logits_writer = None
+            if mask_logits is not None:
+                mask_logits_writer = get_video_writer(mask_logits_path)
+                print(f'{seq_id} :: mask logits video: {mask_logits_path}')
+
             vis_writer = get_video_writer(vis_path, crf=20)
 
             print(f'{seq_id} :: mask video: {mask_path}')
-            print(f'{seq_id} :: mask logits video: {mask_logits_path}')
             print(f'{seq_id} :: vis video: {vis_path}')
 
             vid_writers[seq_id] = mask_writer, mask_logits_writer, vis_writer
 
-        write_frames_to_videos([mask_writer, mask_logits_writer, vis_writer], (mask, mask_logits, vis_img))
+        write_frames_to_videos([mask_writer, vis_writer], (mask, vis_img))
+        if mask_logits is not None:
+            write_frames_to_videos(mask_logits_writer, mask_logits)
+
     else:
         seq_mask_dir = os.path.join(out_mask_dir, seq_id)
         os.makedirs(seq_mask_dir, exist_ok=True)
         mask_path = os.path.join(seq_mask_dir, vis_name)
         cv2.imwrite(mask_path, mask)
 
-        seq_mask_logits_dir = os.path.join(out_mask_logits_dir, seq_id)
-        os.makedirs(seq_mask_logits_dir, exist_ok=True)
-        mask_logits_path = os.path.join(seq_mask_logits_dir, vis_name)
-        cv2.imwrite(mask_logits_path, mask_logits)
+        if mask_logits is not None:
+            seq_mask_logits_dir = os.path.join(out_mask_logits_dir, seq_id)
+            os.makedirs(seq_mask_logits_dir, exist_ok=True)
+            mask_logits_path = os.path.join(seq_mask_logits_dir, vis_name)
+            cv2.imwrite(mask_logits_path, mask_logits)
 
         seq_vis_dir = os.path.join(out_vis_dir, seq_id)
         os.makedirs(seq_vis_dir, exist_ok=True)
