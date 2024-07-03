@@ -1317,20 +1317,23 @@ def visualize_mask(
             write_frames_to_videos(mask_logits_writer, mask_logits)
 
     else:
+        out_img_name = f'{vis_name}.jpg'
+        out_mask_name = f'{vis_name}.png'
+
         seq_mask_dir = os.path.join(out_mask_dir, seq_id)
         os.makedirs(seq_mask_dir, exist_ok=True)
-        mask_path = os.path.join(seq_mask_dir, vis_name)
+        mask_path = os.path.join(seq_mask_dir, out_mask_name)
         cv2.imwrite(mask_path, mask)
 
         if mask_logits is not None:
             seq_mask_logits_dir = os.path.join(out_mask_logits_dir, seq_id)
             os.makedirs(seq_mask_logits_dir, exist_ok=True)
-            mask_logits_path = os.path.join(seq_mask_logits_dir, vis_name)
+            mask_logits_path = os.path.join(seq_mask_logits_dir, out_mask_name)
             cv2.imwrite(mask_logits_path, mask_logits)
 
         seq_vis_dir = os.path.join(out_vis_dir, seq_id)
         os.makedirs(seq_vis_dir, exist_ok=True)
-        vis_path = os.path.join(seq_vis_dir, vis_name)
+        vis_path = os.path.join(seq_vis_dir, out_img_name)
         cv2.imwrite(vis_path, vis_img)
 
     img_info['out_path'] = str(mask_path)
