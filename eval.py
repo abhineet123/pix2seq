@@ -77,8 +77,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         if cfg.eval.save_mask:
             print(f'\nwriting masks to: {out_mask_dir}\n')
             os.makedirs(out_mask_dir, exist_ok=True)
-            print(f'\nwriting logits masks to: {out_mask_logits_dir}\n')
-            os.makedirs(out_mask_logits_dir, exist_ok=True)
+            if cfg.eval.mask_from_logits:
+                print(f'\nwriting logits masks to: {out_mask_logits_dir}\n')
+                os.makedirs(out_mask_logits_dir, exist_ok=True)
 
             print(f'\nwriting vid info json to: {out_json_path}\n')
     else:
