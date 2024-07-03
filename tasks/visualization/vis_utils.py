@@ -1284,6 +1284,8 @@ def visualize_mask(
         cv2.imshow('vis_mask_small', vis_mask_small)
         cv2.waitKey(0)
 
+    mask_logits_path = None
+    
     if vid_writers is not None:
         ext = 'mp4'
         mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
