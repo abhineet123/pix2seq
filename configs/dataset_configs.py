@@ -416,6 +416,10 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
                 lengths_offset = model_cfg.len_vocab_shift
                 class_offset = model_cfg.class_vocab_shift
                 max_length = mode_cfg.max_length
+
+                if subsample > 1:
+                    max_length = int(max_length / subsample)
+
                 n_classes = 3 if ds_cfg.multi_class else 2
 
                 if not length_as_class:
