@@ -287,6 +287,7 @@ def check_video_rle_tokens(
         is_vis,
         tac_mask_sub,
         tac_id_to_col,
+        allow_overlap,
 ):
     vid_mask_gt = vid_mask_to_gs(vid_mask, copy=True)
     vid_len, n_rows, n_cols = vid_mask_gt.shape
@@ -296,7 +297,7 @@ def check_video_rle_tokens(
         n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
 
     if not length_as_class:
-        assert starts_offset > lengths_offset + max_length, "len_token_range overlaps starts_token_range"
+        assert allow_overlap or starts_offset > lengths_offset + max_length, "len_token_range overlaps starts_token_range"
 
     if multi_class or time_as_class or length_as_class:
         n_classes_ = n_classes
@@ -307,10 +308,10 @@ def check_video_rle_tokens(
         else:
             n_total_classes = n_classes_
 
-        assert starts_offset > class_offset + n_total_classes, "class_token_range overlaps starts_token_range"
+        assert allow_overlap or starts_offset > class_offset + n_total_classes, "class_token_range overlaps starts_token_range"
 
         if not length_as_class:
-            assert lengths_offset > class_offset + n_total_classes, "class_token_range overlaps len_token_range"
+            assert allow_overlap or lengths_offset > class_offset + n_total_classes, "class_token_range overlaps len_token_range"
 
     if len(rle_tokens) == 0:
         assert np.all(vid_mask_gt == 0), "non-zero mask found for empty rle_tokens"
@@ -2037,18 +2038,14 @@ def vid_mask_from_tokens(
         lengths_offset=lengths_offset,
         class_offset=class_offset,
         starts_2d=starts_2d,
+        max_length=max_length,
         multi_class=multi_class,
         flat_order=flat_order,
         ignore_invalid=ignore_invalid,
     )
-    if length_as_class:
-        assert len(rle_cmp) == 2, "rle_cmp len must be 2 for length_as_class"
-
-        starts, lac = rle_cmp
-        lengths, class_ids = rle_from_lac(lac, max_length)
-        rle_cmp = [starts, lengths, class_ids]
-
     starts, lengths = rle_cmp[:2]
+
+
     if len(rle_cmp) == 3:
         class_ids = rle_cmp[2]
     else:
@@ -2144,6 +2141,7 @@ def vid_rle_from_tokens(
         length_as_class,
         starts_offset, lengths_offset, class_offset,
         starts_2d,
+        max_length,
         multi_class,
         flat_order,
         ignore_invalid
@@ -2191,23 +2189,35 @@ def vid_rle_from_tokens(
 
     lengths = np.array(rle_tokens[len_id:][::n_tokens_per_run], dtype=np.int64)
     lengths -= lengths_offset
+
+    if length_as_class:
+        lengths, class_ids = rle_from_lac(lengths, max_length)
+        assert ignore_invalid or np.all(class_ids > 0), "class_ids must be > 0"
+
+        rle_cmp = [starts, lengths, class_ids]
+    else:
+        rle_cmp = [starts, lengths]
+
     assert ignore_invalid or np.all(lengths > 0), "lengths must be > 0"
-
-    valid_bool = np.logical_and(starts >= 0, lengths > 0)
-
-    rle_cmp = [starts, lengths]
+    assert ignore_invalid or np.all(lengths <= max_length), f"run length cannot be > {max_length}"
 
     if has_class_tokens:
+        assert len(rle_cmp)==2, "rle_cmp must have length 2 to append class IDs"
+
         class_ids = np.array(rle_tokens[len_id + 1:][::n_tokens_per_run], dtype=np.int64)
         class_ids -= class_offset
 
         assert ignore_invalid or np.all(class_ids > 0), "class_ids must be > 0"
 
-        valid_bool = np.logical_and(valid_bool, class_ids > 0)
-
         rle_cmp.append(class_ids)
 
     if ignore_invalid:
+        valid_bool = np.logical_and(starts >= 0, lengths > 0)
+        valid_bool = np.logical_and(valid_bool, lengths <= max_length)
+        if  len(rle_cmp)==3:
+            class_ids = rle_cmp[2]
+            valid_bool = np.logical_and(valid_bool, class_ids > 0)
+
         valid_ids = np.nonzero(valid_bool)
         for rle_id, rle_arr in enumerate(rle_cmp):
             rle_cmp[rle_id] = rle_arr[valid_ids]

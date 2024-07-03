@@ -85,6 +85,8 @@ class TaskVideoSegmentation(task_lib.Task):
         class_id_to_col = self.class_id_to_col
         class_id_to_name = self.class_id_to_name
 
+        allow_overlap = self.config.dataset.eval.allow_overlap
+
         vid_masks = []
         vid_masks_sub = []
 
@@ -161,6 +163,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 is_vis=1,
                 tac_mask_sub=None,
                 tac_id_to_col=None,
+                allow_overlap=allow_overlap,
             )
             vid_masks.append(vid_mask)
             vid_masks_sub.append(vid_mask_sub)
