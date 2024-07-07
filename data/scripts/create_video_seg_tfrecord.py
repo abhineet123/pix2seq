@@ -852,7 +852,7 @@ def main():
     if params.rle_to_json:
         print(f'writing RLE to json: {vid_json_path}')
 
-    skip_tfrecord = params.stats_only or params.vis or (params.rle_to_json and params.json_only)
+    skip_tfrecord = params.stats_only or (params.rle_to_json and params.json_only)
 
     annotations_iter = generate_annotations(
         params=params,

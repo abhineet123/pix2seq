@@ -34,6 +34,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
         self.class_id_to_col = class_id_to_col
         self.class_id_to_name = class_id_to_name
+        self.palette_flat = vis_utils.get_palette(class_id_to_col)
 
     def preprocess_single(self, dataset, batch_duplicates, training, validation):
         if self.config.debug != 2:
@@ -476,6 +477,7 @@ class TaskVideoSegmentation(task_lib.Task):
                     vid_writers=vid_writers,
                     orig_size=orig_size,
                     show=show,
+                    palette_flat=self.palette_flat,
                 )
                 seq_img_infos.append(
                     img_info

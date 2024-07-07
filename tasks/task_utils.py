@@ -29,7 +29,7 @@ import numpy as np
 from PIL import Image
 
 from tasks.visualization import vis_utils
-from eval_utils import col_bgr, bgr_col, resize_ar
+from eval_utils import col_bgr, resize_ar
 
 
 def split_runs(run_ids, starts, lengths, max_length):
@@ -310,11 +310,11 @@ def check_video_rle_tokens(
             n_total_classes = n_classes_
 
         assert allow_overlap or starts_offset > class_offset + n_total_classes, ("class_token_range overlaps "
-        "starts_token_range")
+                                                                                 "starts_token_range")
 
         if not length_as_class:
             assert allow_overlap or lengths_offset > class_offset + n_total_classes, ("class_token_range overlaps "
-            "len_token_range")
+                                                                                      "len_token_range")
 
     if len(rle_tokens) == 0:
         assert np.all(vid_mask_gt == 0), "non-zero mask found for empty rle_tokens"
@@ -1927,11 +1927,11 @@ def rle_from_logits(
             n_total_classes = n_classes_
 
         assert allow_overlap or starts_offset >= class_offset + n_total_classes, ("class_token_range overlaps "
-        "starts_token_range")
+                                                                                  "starts_token_range")
 
         if not length_as_class:
             assert allow_overlap or lengths_offset >= class_offset + n_total_classes, ("class_token_range overlaps "
-            "len_token_range")
+                                                                                       "len_token_range")
 
         class_token_range = [class_offset, class_offset + n_total_classes]
         class_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]

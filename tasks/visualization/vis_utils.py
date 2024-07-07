@@ -8,10 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import numpy as np
-import PIL.Image as Image
 import PIL.ImageColor as ImageColor
-import PIL.ImageDraw as ImageDraw
-import PIL.ImageFont as ImageFont
 
 import cv2
 import skvideo.io
@@ -30,7 +27,7 @@ import tensorflow.compat.v1 as tf
 dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
 sys.path.append(dproc_path)
 
-from eval_utils import draw_box, annotate, resize_ar_video, resize_ar
+from eval_utils import col_bgr, draw_box, annotate, resize_ar
 
 _TITLE_LEFT_MARGIN = 10
 _TITLE_TOP_MARGIN = 10
@@ -1133,6 +1130,15 @@ def draw_mask_on_image_array(image, mask, color='red', alpha=0.4):
     np.copyto(image, np.array(pil_image.convert('RGB')))
 
 
+def save_mask_to_image(mask_path, mask, palette_flat):
+    from PIL import Image
+
+    mask_img_pil = Image.fromarray(mask)
+    mask_img_pil = mask_img_pil.convert('P')
+    mask_img_pil.putpalette(palette_flat)
+    mask_img_pil.save(mask_path)
+
+
 def write_frames_to_videos(vid_writers, frames):
     if not isinstance(vid_writers, (list, tuple)):
         vid_writers = [vid_writers, ]
@@ -1196,6 +1202,14 @@ def get_video_writer(vid_path, codec='mp4v', crf=0, fps=5, cv=False, shape=None)
     return vid_writer
 
 
+def get_palette(class_to_col):
+    palette_flat = []
+    for class_id, col in class_to_col.items():
+        col_rgb = col_bgr[col][::-1]
+        palette_flat += list(col_rgb)
+    return palette_flat
+
+
 def visualize_mask(
         image_id,
         image,
@@ -1213,6 +1227,7 @@ def visualize_mask(
         orig_size=None,
         video_id=None,
         show=False,
+        palette_flat=None,
 ):
     n_classes = len(class_to_col)
 
@@ -1221,7 +1236,6 @@ def visualize_mask(
     import cv2
     image = cv2.resize(image, (n_cols, n_rows))
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
 
     if isinstance(image_id, bytes):
         image_id_ = image_id.decode('utf-8')
@@ -1268,7 +1282,6 @@ def visualize_mask(
         vis_imgs.append(pred_logits_img)
         vis_masks.append(vis_mask_logits)
 
-
     vis_img = np.concatenate(vis_imgs, axis=1)
     vis_mask = np.concatenate(vis_masks, axis=1)
     vis_img = np.concatenate((vis_img, vis_mask), axis=0)
@@ -1285,7 +1298,7 @@ def visualize_mask(
         cv2.waitKey(0)
 
     mask_logits_path = None
-    
+
     if vid_writers is not None:
         ext = 'mp4'
         mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
@@ -1325,13 +1338,16 @@ def visualize_mask(
         seq_mask_dir = os.path.join(out_mask_dir, seq_id)
         os.makedirs(seq_mask_dir, exist_ok=True)
         mask_path = os.path.join(seq_mask_dir, out_mask_name)
-        cv2.imwrite(mask_path, mask)
+
+        save_mask_to_image(mask_path, mask, palette_flat)
+        # cv2.imwrite(mask_path, mask)
 
         if mask_logits is not None:
             seq_mask_logits_dir = os.path.join(out_mask_logits_dir, seq_id)
             os.makedirs(seq_mask_logits_dir, exist_ok=True)
             mask_logits_path = os.path.join(seq_mask_logits_dir, out_mask_name)
-            cv2.imwrite(mask_logits_path, mask_logits)
+            save_mask_to_image(mask_logits_path, mask_logits, palette_flat)
+            # cv2.imwrite(mask_logits_path, mask_logits)
 
         seq_vis_dir = os.path.join(out_vis_dir, seq_id)
         os.makedirs(seq_vis_dir, exist_ok=True)
