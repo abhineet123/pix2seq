@@ -273,6 +273,7 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:sub-8:r-2560:s
 `dbg`
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:sub-8:r-2560:strd-160:seq-0:lac:json
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_55:p-640:sub-8:r-2560:strd-160:seq-0:lac:json
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:52_53:p-640:sub-8:r-2560:strd-160:seq-0:lac
 
 <a id="p_640_sub_8___r_2560_54_12_6_"></a>
 ### p-640-sub-8       @ r-2560/54_126-->p2s_seg_tf

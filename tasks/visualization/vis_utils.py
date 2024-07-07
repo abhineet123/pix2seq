@@ -1204,7 +1204,9 @@ def get_video_writer(vid_path, codec='mp4v', crf=0, fps=5, cv=False, shape=None)
 
 def get_palette(class_to_col):
     palette_flat = []
-    for class_id, col in class_to_col.items():
+    n_classes = len(class_to_col)
+    for class_id in range(n_classes):
+        col = class_to_col[class_id]
         col_rgb = col_bgr[col][::-1]
         palette_flat += list(col_rgb)
     return palette_flat

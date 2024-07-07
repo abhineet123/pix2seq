@@ -32,9 +32,9 @@ class TaskSemanticSegmentation(task_lib.Task):
         # class_names_from_json = tuple(self._category_names[i]['name'] for i in range(n_classes))
         # assert class_names_from_json == class_names, "class_names mismatch"
 
+        self.palette_flat = vis_utils.get_palette(class_id_to_col)
         self.class_id_to_col = class_id_to_col
         self.class_id_to_name = class_id_to_name
-        self.palette_flat = vis_utils.get_palette(class_id_to_col)
 
     def preprocess_single(self, dataset, batch_duplicates, training, validation):
         if self.config.debug != 2:
