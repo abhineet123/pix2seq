@@ -1305,6 +1305,8 @@ def visualize_mask(
         ext = 'mp4'
         mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
         vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
+        if mask_logits is not None:
+            mask_logits_path = os.path.join(out_mask_logits_dir, f'{seq_id}.{ext}')
 
         if vid_writers[seq_id] is not None:
             mask_writer, mask_logits_writer, vis_writer = vid_writers[seq_id]
@@ -1318,7 +1320,6 @@ def visualize_mask(
             mask_writer = get_video_writer(mask_path)
             mask_logits_writer = None
             if mask_logits is not None:
-                mask_logits_path = os.path.join(out_mask_logits_dir, f'{seq_id}.{ext}')
                 mask_logits_writer = get_video_writer(mask_logits_path)
                 print(f'{seq_id} :: mask logits video: {mask_logits_path}')
 
@@ -1340,14 +1341,13 @@ def visualize_mask(
         seq_mask_dir = os.path.join(out_mask_dir, seq_id)
         os.makedirs(seq_mask_dir, exist_ok=True)
         mask_path = os.path.join(seq_mask_dir, out_mask_name)
-
         save_mask_to_image(mask_path, mask, palette_flat)
         # cv2.imwrite(mask_path, mask)
 
         if mask_logits is not None:
             seq_mask_logits_dir = os.path.join(out_mask_logits_dir, seq_id)
-            os.makedirs(seq_mask_logits_dir, exist_ok=True)
             mask_logits_path = os.path.join(seq_mask_logits_dir, out_mask_name)
+            os.makedirs(seq_mask_logits_dir, exist_ok=True)
             save_mask_to_image(mask_logits_path, mask_logits, palette_flat)
             # cv2.imwrite(mask_logits_path, mask_logits)
 

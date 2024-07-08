@@ -362,7 +362,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
             rle_tokens = rle[rle != vocab.PADDING_TOKEN]
 
-            vid_mask_logits = [None, ] * self.config.eval.batch_size
+            vid_mask_logits = [None, ] * vid_len
             rle_logits_len = 0
 
             if self.config.eval.mask_from_logits:
@@ -408,7 +408,7 @@ class TaskVideoSegmentation(task_lib.Task):
             if gt_rle_len > 0 and rle_rec_len == 0:
                 print('empty pred rle')
 
-            vid_mask_gt = [None, ] * self.config.eval.batch_size
+            vid_mask_gt = [None, ] * vid_len
 
             if self.config.eval.mask_from_gt:
                 vid_mask_gt, tac_mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
@@ -450,7 +450,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 out_frame_id = 0
 
             for image_id_, frame_id, image_, mask_rec, mask_logits, mask_gt in zip(
-                    image_ids_, frame_ids_, video, vid_mask_rec, vid_mask_logits, vid_mask_gt):
+                    image_ids_, frame_ids_, video, vid_mask_rec, vid_mask_logits, vid_mask_gt, strict=True):
                 out_frame_id += 1
                 img_info = dict(
                     seq=str(seq),
