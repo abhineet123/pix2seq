@@ -300,7 +300,7 @@ class TaskSemanticSegmentation(task_lib.Task):
         for (image_id_, image_, frame_id_, rle_, logits_,
              orig_size_, gt_rle_, vid_path, mask_vid_path) in zip(
             image_ids, images, frame_ids, rles, logits,
-            orig_sizes, gt_rles, vid_paths, mask_vid_paths):
+            orig_sizes, gt_rles, vid_paths, mask_vid_paths, strict=True):
 
             assert '/' in image_id_, f"invalid image_id_: {image_id_}"
 

@@ -335,7 +335,7 @@ class TaskVideoSegmentation(task_lib.Task):
              vid_path, mask_vid_path) in (
                 zip(image_ids, frame_ids, videos, vid_ids, rles, logits,
                     orig_sizes, gt_rles, gt_rle_lens, n_runs, seqs,
-                    vid_paths, mask_vid_paths)):
+                    vid_paths, mask_vid_paths, strict=True)):
 
             orig_size = tuple(orig_size)
             n_rows, n_cols = orig_size
