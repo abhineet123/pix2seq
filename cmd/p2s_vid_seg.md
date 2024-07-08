@@ -133,5 +133,5 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-
 `seq-0`
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,vid_seg-frame-54_126:seq-0:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vis-0,no_gt
 `seq-0-vstrd-8`
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,vid_seg-frame-54_126:seq-0:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vstrd-8,vis-0,no_gt
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-6,save-vis-1,dbg-0,dyn-1,vid_seg-frame-54_126:seq-0:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vstrd-8,vis-0,no_gt
 

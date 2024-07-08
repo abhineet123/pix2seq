@@ -313,11 +313,25 @@ def generate_patch_vid_infos(
         sorted(patch_infos, key=lambda x: int(x['frame_id']))
 
         n_all_files = len(patch_infos)
-        subseq_start_ids = list(range(0, n_all_files, params.vid.stride))
-        for subseq_id, subseq_start_id in enumerate(subseq_start_ids):
-            subseq_end_id = min(subseq_start_id + (params.vid.length - 1) * params.vid.frame_gap, n_all_files - 1)
+        # subseq_start_ids = list(range(0, n_all_files - params.vid.stride, params.vid.stride))
+        subseq_end_ids = list(range(params.vid.stride - 1, n_all_files, params.vid.stride))
+
+        n_subseq = n_all_files // params.vid.stride
+        n_residuals = n_all_files % params.vid.stride
+
+        if n_residuals != 0:
+            subseq_end_ids.append(n_all_files-1)
+
+        subseq_end_ids = np.asarray(subseq_end_ids)
+        subseq_start_ids = subseq_end_ids - (params.vid.stride - 1)
+        for subseq_id, (subseq_start_id, subseq_end_id) in enumerate(zip(subseq_start_ids, subseq_end_ids, strict=True)):
+            subseq_end_id_ = min(subseq_start_id + (params.vid.length - 1) * params.vid.frame_gap, n_all_files - 1)
+
+            assert subseq_end_id == subseq_end_id_, "subseq_end_id_ mismatch"
+
             if subseq_start_id > subseq_end_id:
                 break
+
             subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:params.vid.frame_gap]
 
             src_ids = tuple(image_info['src_id'] for image_info in subseq_img_infos)
@@ -499,7 +513,7 @@ def create_tf_example(
         assert mask_w == vid_width, "mask_w mismatch"
 
         if subsample_method == 2:
-            mask_sub = task_utils.subsample_mask(mask,params.subsample, n_classes, is_vis=1)
+            mask_sub = task_utils.subsample_mask(mask, params.subsample, n_classes, is_vis=1)
         else:
             mask_sub = np.copy(mask)
 
