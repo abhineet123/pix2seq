@@ -1,8 +1,13 @@
 <!-- MarkdownTOC -->
 
+- [32_49       @ ipsc](#32_49___ipsc_)
+    - [orig       @ 32_49](#orig___32_4_9_)
+        - [sub-8       @ orig/32_49](#sub_8___orig_32_49_)
+            - [lac       @ sub-8/orig/32_49](#lac___sub_8_orig_32_49_)
 - [0_31       @ ipsc](#0_31___ipsc_)
     - [orig       @ 0_31](#orig___0_31_)
         - [sub-8       @ orig/0_31](#sub_8___orig_0_3_1_)
+            - [lac       @ sub-8/orig/0_31](#lac___sub_8_orig_0_3_1_)
         - [sub-8-aug       @ orig/0_31](#sub_8_aug___orig_0_3_1_)
             - [bin       @ sub-8-aug/orig/0_31](#bin___sub_8_aug_orig_0_3_1_)
             - [mc       @ sub-8-aug/orig/0_31](#mc___sub_8_aug_orig_0_3_1_)
@@ -79,14 +84,27 @@
 
 <!-- /MarkdownTOC -->
 
+<a id="32_49___ipsc_"></a>
+# 32_49       @ ipsc-->p2s_seg_tfrecord
+<a id="orig___32_4_9_"></a>
+## orig       @ 32_49-->p2s_seg_tf-617
+<a id="sub_8___orig_32_49_"></a>
+### sub-8       @ orig/32_49-->p2s_seg_tf-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:32_49:p-640:sub-8
+<a id="lac___sub_8_orig_32_49_"></a>
+#### lac       @ sub-8/orig/32_49-->p2s_seg_tf-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:32_49:p-640:sub-8:lac:json
+
 <a id="0_31___ipsc_"></a>
 # 0_31       @ ipsc-->p2s_seg_tfrecord
-
 <a id="orig___0_31_"></a>
 ## orig       @ 0_31-->p2s_seg_tf-617
 <a id="sub_8___orig_0_3_1_"></a>
 ### sub-8       @ orig/0_31-->p2s_seg_tf-617
 python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8
+<a id="lac___sub_8_orig_0_3_1_"></a>
+#### lac       @ sub-8/orig/0_31-->p2s_seg_tf-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:lac:json
 <a id="sub_8_aug___orig_0_3_1_"></a>
 ### sub-8-aug       @ orig/0_31-->p2s_seg_tf-617
 <a id="bin___sub_8_aug_orig_0_3_1_"></a>
