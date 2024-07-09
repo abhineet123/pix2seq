@@ -107,7 +107,7 @@ python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-
 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-160_160-sub_8-lac-batch_32,_eval_,batch-16,save-vis-1,dbg-0,dyn-1,seg-52_53:p-640:r-2560:sub-8:strd-160:seq-0,lac,no_vid
 <a id="on_54_126_strd_160___lac_strd_160_r_2560_p_640_sub_8_16_5_3_"></a>
 #### on-54_126-strd-160       @ lac-strd-160/r-2560-p-640-sub-8/16_53-->p2s_seg
-python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-160_160-sub_8-lac-batch_32,_eval_,batch-16,save-vis-1,dbg-0,dyn-1,seg-54_126:p-640:r-2560:sub-8:strd-160,lac
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-160_160-sub_8-lac-batch_32,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,seg-54_126:p-640:r-2560:sub-8:strd-160,lac
 `dbg`
 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-160_160-sub_8-lac-batch_32,_eval_,batch-16,save-vis-1,dbg-0,dyn-1,seg-54_55:p-640:r-2560:sub-8:strd-160:seq-0,lac
 <a id="on_train___lac_strd_160_r_2560_p_640_sub_8_16_5_3_"></a>
