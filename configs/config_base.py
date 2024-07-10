@@ -24,6 +24,7 @@ def D(**kwargs):
 
 train_eval_config = D(
     steps=0,
+    db_prefix=[],
     save_suffix=[],
     pt=0,
     batch_size=32,
