@@ -26,6 +26,16 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         train_data_iters = [iter(dataset) for dataset in train_datasets]
         summary_writer = tf.summary.create_file_writer(cfg.model_dir)
 
+        trainable_params = np.sum([np.prod(v.get_shape()) for v in trainer.model.trainable_weights])
+        non_trainable_params = np.sum([np.prod(v.get_shape()) for v in trainer.model.non_trainable_weights])
+        total_params = trainable_params + non_trainable_params
+
+        print(f'trainable_params: {trainable_params}')
+        print(f'non_trainable_params: {non_trainable_params}')
+        print(f'total_params: {total_params}')
+
+        exit()
+
         is_greater = lambda x, y: x > y
         is_smaller = lambda x, y: x < y
         is_better = dict(
@@ -106,7 +116,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         is_seg = 'segmentation' in cfg.task.name
 
         if is_seg:
-            rle_lens =  cfg.dataset.train.rle_lens
+            rle_lens = cfg.dataset.train.rle_lens
             rle_lens_str = '\n'.join(rle_lens)
             rle_lens_path = os.path.join(cfg.model_dir, "rle_lens.txt")
             with open(rle_lens_path, 'w') as fid:
