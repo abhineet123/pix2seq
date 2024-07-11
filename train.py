@@ -30,9 +30,11 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         non_trainable_params = np.sum([np.prod(v.get_shape()) for v in trainer.model.non_trainable_weights])
         total_params = trainable_params + non_trainable_params
 
+        print('\n\n')
         print(f'trainable_params: {trainable_params}')
         print(f'non_trainable_params: {non_trainable_params}')
         print(f'total_params: {total_params}')
+        print('\n\n')
 
         # exit()
 
