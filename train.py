@@ -34,7 +34,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         print(f'non_trainable_params: {non_trainable_params}')
         print(f'total_params: {total_params}')
 
-        exit()
+        # exit()
 
         is_greater = lambda x, y: x > y
         is_smaller = lambda x, y: x < y
