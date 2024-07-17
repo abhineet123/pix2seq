@@ -19,6 +19,9 @@
             - [ord       @ p-640-sub-8-mc/r-2560/16_53](#ord___p_640_sub_8_mc_r_2560_16_5_3_)
         - [p-640-sub-8-len-3       @ r-2560/16_53](#p_640_sub_8_len_3___r_2560_16_53_)
         - [p-640-sub-8-mc-len-3       @ r-2560/16_53](#p_640_sub_8_mc_len_3___r_2560_16_53_)
+            - [lac       @ p-640-sub-8-mc-len-3/r-2560/16_53](#lac___p_640_sub_8_mc_len_3_r_2560_16_5_3_)
+            - [tac       @ p-640-sub-8-mc-len-3/r-2560/16_53](#tac___p_640_sub_8_mc_len_3_r_2560_16_5_3_)
+            - [ltac       @ p-640-sub-8-mc-len-3/r-2560/16_53](#ltac___p_640_sub_8_mc_len_3_r_2560_16_5_3_)
         - [p-640-sub-8-len-4       @ r-2560/16_53](#p_640_sub_8_len_4___r_2560_16_53_)
             - [tac       @ p-640-sub-8-len-4/r-2560/16_53](#tac___p_640_sub_8_len_4_r_2560_16_53_)
             - [ltac       @ p-640-sub-8-len-4/r-2560/16_53](#ltac___p_640_sub_8_len_4_r_2560_16_53_)
@@ -153,9 +156,15 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 <a id="p_640_sub_8_mc_len_3___r_2560_16_53_"></a>
 ### p-640-sub-8-mc-len-3       @ r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:stats 
+<a id="lac___p_640_sub_8_mc_len_3_r_2560_16_5_3_"></a>
+#### lac       @ p-640-sub-8-mc-len-3/r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:lac:stats 
+<a id="tac___p_640_sub_8_mc_len_3_r_2560_16_5_3_"></a>
+#### tac       @ p-640-sub-8-mc-len-3/r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:tac:stats-2
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:ltac:stats
+<a id="ltac___p_640_sub_8_mc_len_3_r_2560_16_5_3_"></a>
+#### ltac       @ p-640-sub-8-mc-len-3/r-2560/16_53-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:ltac
 
 <a id="p_640_sub_8_len_4___r_2560_16_53_"></a>
 ### p-640-sub-8-len-4       @ r-2560/16_53-->p2s_vid_seg_tf

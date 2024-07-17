@@ -4,6 +4,9 @@
     - [orig       @ 32_49](#orig___32_4_9_)
         - [sub-8       @ orig/32_49](#sub_8___orig_32_49_)
             - [lac       @ sub-8/orig/32_49](#lac___sub_8_orig_32_49_)
+    - [r-640       @ 32_49](#r_640___32_4_9_)
+        - [sub-4       @ r-640/32_49](#sub_4___r_640_32_4_9_)
+                - [lac       @ sub-4/r-640/32_49](#lac___sub_4_r_640_32_4_9_)
 - [0_31       @ ipsc](#0_31___ipsc_)
     - [orig       @ 0_31](#orig___0_31_)
         - [sub-8       @ orig/0_31](#sub_8___orig_0_3_1_)
@@ -25,6 +28,8 @@
             - [bin       @ sub-8-aug/r-640/0_31](#bin___sub_8_aug_r_640_0_31_)
             - [mc       @ sub-8-aug/r-640/0_31](#mc___sub_8_aug_r_640_0_31_)
             - [lac       @ sub-8-aug/r-640/0_31](#lac___sub_8_aug_r_640_0_31_)
+        - [sub-4       @ r-640/0_31](#sub_4___r_640_0_31_)
+                - [lac       @ sub-4/r-640/0_31](#lac___sub_4_r_640_0_31_)
         - [sub-4-aug       @ r-640/0_31](#sub_4_aug___r_640_0_31_)
                 - [lac       @ sub-4-aug/r-640/0_31](#lac___sub_4_aug_r_640_0_31_)
                 - [lac-2d       @ sub-4-aug/r-640/0_31](#lac_2d___sub_4_aug_r_640_0_31_)
@@ -95,6 +100,16 @@ python3 data/scripts/create_seg_tfrecord.py cfg=617:32_49:p-640:sub-8
 #### lac       @ sub-8/orig/32_49-->p2s_seg_tf-617
 python3 data/scripts/create_seg_tfrecord.py cfg=617:32_49:p-640:sub-8:lac:json
 
+
+<a id="r_640___32_4_9_"></a>
+## r-640       @ 32_49-->p2s_seg_tf-617
+<a id="sub_4___r_640_32_4_9_"></a>
+### sub-4       @ r-640/32_49-->p2s_seg_tf-617
+<a id="lac___sub_4_r_640_32_4_9_"></a>
+##### lac       @ sub-4/r-640/32_49-->p2s_seg_tf-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:32_49:p-640:sub-4:r-640:lac:segm
+
+
 <a id="0_31___ipsc_"></a>
 # 0_31       @ ipsc-->p2s_seg_tfrecord
 <a id="orig___0_31_"></a>
@@ -152,6 +167,12 @@ python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:r-640:rot-1
 <a id="lac___sub_8_aug_r_640_0_31_"></a>
 #### lac       @ sub-8-aug/r-640/0_31-->p2s_seg_tf-617
 python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-8:r-640:rot-15_345_16:strd-64_256:flip:lac:json:segm
+
+<a id="sub_4___r_640_0_31_"></a>
+### sub-4       @ r-640/0_31-->p2s_seg_tf-617
+<a id="lac___sub_4_r_640_0_31_"></a>
+##### lac       @ sub-4/r-640/0_31-->p2s_seg_tf-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-640:sub-4:r-640:lac:segm
 
 <a id="sub_4_aug___r_640_0_31_"></a>
 ### sub-4-aug       @ r-640/0_31-->p2s_seg_tf-617
