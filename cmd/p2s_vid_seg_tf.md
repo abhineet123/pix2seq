@@ -50,15 +50,17 @@
         - [p-640-sub-4-mc       @ r-640/16_53](#p_640_sub_4_mc___r_640_16_5_3_)
     - [res-320       @ 16_53](#res_320___16_5_3_)
         - [sz-80       @ res-320/16_53](#sz_80___res_320_16_5_3_)
-        - [sz-80-aug       @ res-320/16_53](#sz_80_aug___res_320_16_5_3_)
         - [sz-160       @ res-320/16_53](#sz_160___res_320_16_5_3_)
-        - [sz-160-aug       @ res-320/16_53](#sz_160_aug___res_320_16_5_3_)
 - [54_126](#54_12_6_)
     - [r-2560       @ 54_126](#r_2560___54_126_)
         - [p-640-sub-8       @ r-2560/54_126](#p_640_sub_8___r_2560_54_12_6_)
             - [ltac       @ p-640-sub-8/r-2560/54_126](#ltac___p_640_sub_8_r_2560_54_12_6_)
             - [lac-mc       @ p-640-sub-8/r-2560/54_126](#lac_mc___p_640_sub_8_r_2560_54_12_6_)
             - [ltac-mc       @ p-640-sub-8/r-2560/54_126](#ltac_mc___p_640_sub_8_r_2560_54_12_6_)
+        - [p-640-sub-8-mc-len-3       @ r-2560/54_126](#p_640_sub_8_mc_len_3___r_2560_54_12_6_)
+            - [lac       @ p-640-sub-8-mc-len-3/r-2560/54_126](#lac___p_640_sub_8_mc_len_3_r_2560_54_126_)
+            - [tac       @ p-640-sub-8-mc-len-3/r-2560/54_126](#tac___p_640_sub_8_mc_len_3_r_2560_54_126_)
+            - [ltac       @ p-640-sub-8-mc-len-3/r-2560/54_126](#ltac___p_640_sub_8_mc_len_3_r_2560_54_126_)
         - [p-640-sub-8-len-8       @ r-2560/54_126](#p_640_sub_8_len_8___r_2560_54_12_6_)
             - [lac-mc       @ p-640-sub-8-len-8/r-2560/54_126](#lac_mc___p_640_sub_8_len_8_r_2560_54_12_6_)
             - [tac-mc       @ p-640-sub-8-len-8/r-2560/54_126](#tac_mc___p_640_sub_8_len_8_r_2560_54_12_6_)
@@ -123,17 +125,17 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 
 <a id="p_640_sub_8_mc___r_2560_16_53_"></a>
 ### p-640-sub-8-mc       @ r-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:stats
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:json
 `dbg`
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:p-640:sub-8:r-2560:gz:seq-0:frame-0_1:mc
 <a id="lac___p_640_sub_8_mc_r_2560_16_5_3_"></a>
 #### lac       @ p-640-sub-8-mc/r-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:lac
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:lac:json
 `dbg`
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:p-640:sub-8:r-2560:gz:seq-0_2:frame-0_2:mc:lac
 <a id="tac___p_640_sub_8_mc_r_2560_16_5_3_"></a>
 #### tac       @ p-640-sub-8-mc/r-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:tac
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:tac:json
 `dbg`
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:p-640:sub-8:r-2560:gz:seq-0:frame-0_1:mc:tac
 <a id="ltac___p_640_sub_8_mc_r_2560_16_5_3_"></a>
@@ -155,13 +157,13 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2
 
 <a id="p_640_sub_8_mc_len_3___r_2560_16_53_"></a>
 ### p-640-sub-8-mc-len-3       @ r-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:stats 
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:json 
 <a id="lac___p_640_sub_8_mc_len_3_r_2560_16_5_3_"></a>
 #### lac       @ p-640-sub-8-mc-len-3/r-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:lac:stats 
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:lac:json 
 <a id="tac___p_640_sub_8_mc_len_3_r_2560_16_5_3_"></a>
 #### tac       @ p-640-sub-8-mc-len-3/r-2560/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:tac:stats-2
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:tac:json
 <a id="ltac___p_640_sub_8_mc_len_3_r_2560_16_5_3_"></a>
 #### ltac       @ p-640-sub-8-mc-len-3/r-2560/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-8:r-2560:gz:mc:len-3:ltac
@@ -293,19 +295,9 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:gz:p-640:r-640:
 ### sz-80       @ res-320/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:gz:p-80:r-320
 
-<a id="sz_80_aug___res_320_16_5_3_"></a>
-### sz-80-aug       @ res-320/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:gz:p-80:r-320:strd-40_80:rot-15_345_4:flip-1
-`seq-0`
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:gz:p-80:r-320:strd-40_80:rot-15_345_4:flip-1:seq-0
-
 <a id="sz_160___res_320_16_5_3_"></a>
 ### sz-160       @ res-320/16_53-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:gz:p-160:r-320
-
-<a id="sz_160_aug___res_320_16_5_3_"></a>
-### sz-160-aug       @ res-320/16_53-->p2s_vid_seg_tf
-python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:gz:p-160:r-320:strd-40_160:rot-15_345_4:flip-1
 
 <a id="54_12_6_"></a>
 # 54_126
@@ -323,6 +315,20 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:54_126:p-640:sub-8:r-
 <a id="ltac_mc___p_640_sub_8_r_2560_54_12_6_"></a>
 #### ltac-mc       @ p-640-sub-8/r-2560/54_126-->p2s_vid_seg_tf
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:54_126:p-640:sub-8:r-2560:gz:mc:ltac:json
+
+
+<a id="p_640_sub_8_mc_len_3___r_2560_54_12_6_"></a>
+### p-640-sub-8-mc-len-3       @ r-2560/54_126-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:54_126:p-640:sub-8:r-2560:gz:mc:len-3:json 
+<a id="lac___p_640_sub_8_mc_len_3_r_2560_54_126_"></a>
+#### lac       @ p-640-sub-8-mc-len-3/r-2560/54_126-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:54_126:p-640:sub-8:r-2560:gz:mc:len-3:lac:json 
+<a id="tac___p_640_sub_8_mc_len_3_r_2560_54_126_"></a>
+#### tac       @ p-640-sub-8-mc-len-3/r-2560/54_126-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:54_126:p-640:sub-8:r-2560:gz:mc:len-3:tac:json
+<a id="ltac___p_640_sub_8_mc_len_3_r_2560_54_126_"></a>
+#### ltac       @ p-640-sub-8-mc-len-3/r-2560/54_126-->p2s_vid_seg_tf
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:54_126:p-640:sub-8:r-2560:gz:mc:len-3:ltac
 
 <a id="p_640_sub_8_len_8___r_2560_54_12_6_"></a>
 ### p-640-sub-8-len-8       @ r-2560/54_126-->p2s_vid_seg_tf
