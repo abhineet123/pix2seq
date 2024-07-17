@@ -314,7 +314,7 @@ def generate_patch_vid_infos(
 
         n_all_files = len(patch_infos)
         # subseq_start_ids = list(range(0, n_all_files - params.vid.stride, params.vid.stride))
-        subseq_end_ids = list(range(params.vid.stride - 1, n_all_files, params.vid.stride))
+        subseq_end_ids = list(range(params.vid.length - 1, n_all_files, params.vid.stride))
 
         n_subseq = n_all_files // params.vid.stride
         n_residuals = n_all_files % params.vid.stride
@@ -323,7 +323,7 @@ def generate_patch_vid_infos(
             subseq_end_ids.append(n_all_files-1)
 
         subseq_end_ids = np.asarray(subseq_end_ids)
-        subseq_start_ids = subseq_end_ids - (params.vid.stride - 1)
+        subseq_start_ids = subseq_end_ids - (params.vid.length - 1)
         for subseq_id, (subseq_start_id, subseq_end_id) in enumerate(zip(subseq_start_ids, subseq_end_ids, strict=True)):
             subseq_end_id_ = min(subseq_start_id + (params.vid.length - 1) * params.vid.frame_gap, n_all_files - 1)
 
