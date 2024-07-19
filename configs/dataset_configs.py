@@ -45,7 +45,7 @@ def get_shared_det_data():
     )
 
     for mode in ['train', 'eval']:
-        _shared_dataset_config[f'{mode}_name'] = 1
+        _shared_dataset_config[f'{mode}_name'] = ''
         _shared_dataset_config[f'{mode}_filename_for_metrics'] = ''
         _shared_dataset_config[f'{mode}_suffix'] = ''
         _shared_dataset_config[f'{mode}_start_seq_id'] = 0
