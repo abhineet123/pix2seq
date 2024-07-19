@@ -114,15 +114,15 @@
 # swin-t 
 <a id="ipsc_16_53_jtr_res_1280_pt_len_2___swin_t_"></a>
 ## ipsc-16_53-jtr-res-1280-pt-len-2       @ swin-t-->p2s_vid
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t,spt,jtr,res-1280
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,swin-t,spt,jtr,res-1280
 
 <a id="ipsc_16_53_jtr_res_1280_pt_len_6___swin_t_"></a>
 ## ipsc-16_53-jtr-res-1280-pt-len-6       @ swin-t-->p2s_vid
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t,spt,jtr,res-1280
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-9,dbg-0,dyn-1,dist-0,swin-t,spt,jtr,res-1280
 
 <a id="ipsc_16_53_len_2_pt___swin_t_"></a>
 ## ipsc-16_53-len-2-pt       @ swin-t-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t,spt
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,swin-t,spt
 <a id="on_train___ipsc_16_53_len_2_pt_swin_t_"></a>
 ### on-train       @ ipsc-16_53-len-2-pt/swin-t-->p2s_vid
 `strd-1` 
@@ -138,7 +138,7 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_pt_640_ext_reorg
 
 <a id="ipsc_16_53_len_6_pt___swin_t_"></a>
 ## ipsc-16_53-len-6-pt       @ swin-t-->p2s_vid
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t,spt
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-9,dbg-0,dyn-1,dist-0,swin-t,spt
 <a id="on_train___ipsc_16_53_len_6_pt_swin_t_"></a>
 ### on-train       @ ipsc-16_53-len-6-pt/swin-t-->p2s_vid
 `strd-1` 
@@ -154,7 +154,7 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 
 <a id="ipsc_16_53_len_2___swin_t_"></a>
 ## ipsc-16_53-len-2       @ swin-t-->p2s_vid
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,swin-t
 <a id="on_train___ipsc_16_53_len_2_swin_t_"></a>
 ### on-train       @ ipsc-16_53-len-2/swin-t-->p2s_vid
 `strd-1` 
@@ -176,7 +176,7 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_640_ext_reorg_ro
 
 <a id="ipsc_16_53_len_6___swin_t_"></a>
 ## ipsc-16_53-len-6       @ swin-t-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-1,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-1,dbg-0,dyn-1,dist-0,swin-t
 <a id="on_train___ipsc_16_53_len_6_swin_t_"></a>
 ### on-train       @ ipsc-16_53-len-6/swin-t-->p2s_vid
 `strd-1` 
@@ -186,7 +186,7 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_640_ext_reorg_ro
 
 <a id="ipsc_16_53_len_6_spd_2___swin_t_"></a>
 ## ipsc-16_53-len-6-spd-2       @ swin-t-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-3,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t,spd-2
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-3,dbg-0,dyn-1,dist-0,swin-t,spd-2
 
 <a id="on_train___ipsc_16_53_len_6_spd_2_swin_t_"></a>
 ### on-train       @ ipsc-16_53-len-6-spd-2/swin-t-->p2s_vid
@@ -206,13 +206,13 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_640_ext_reorg_ro
 
 <a id="ipsc_16_53_len_6_jtr_res_1280___swin_t_"></a>
 ## ipsc-16_53-len-6-jtr-res-1280       @ swin-t-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t,jtr,res-1280
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-9,dbg-0,dyn-1,dist-0,swin-t,jtr,res-1280
 
 <a id="gram_0_1___swin_t_"></a>
 ## gram-0_1       @ swin-t-->p2s_vid
 <a id="len_2___gram_0_1_swin_t_"></a>
 ### len-2       @ gram-0_1/swin-t-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1,len-2,batch-3,dbg-1,dyn-1,dist-0,ep-10000,ckpt_ep-1,swin-t
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1,len-2,batch-3,dbg-1,dyn-1,dist-0,swin-t
 
 <a id="resnet_640_lf_n_"></a>
 # resnet-640-lfn 
@@ -220,27 +220,27 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 ## gram-0_1       @ resnet-640-lfn-->p2s_vid
 <a id="len_9___gram_0_1_resnet_640_lf_n_"></a>
 ### len-9       @ gram-0_1/resnet-640-lfn-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1,len-9,batch-2,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1,len-9,batch-2,dbg-0,dyn-1,dist-0,lfn
 <a id="on_train___len_9_gram_0_1_resnet_640_lf_n_"></a>
 #### on-train       @ len-9/gram-0_1/resnet-640-lfn-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=vid_det,m-resnet_640_gram_only-length-9-stride-1-seq-0_1-batch_2-lfn,_eval_,gram-0_1,len-9,strd-9,batch-2,save-vis-1,dbg-0,dyn-1,dist-0
 
 <a id="len_14_0_2000___gram_0_1_resnet_640_lf_n_"></a>
 ### len-14-0_2000       @ gram-0_1/resnet-640-lfn-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1-0_2000,len-14,batch-2,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1-0_2000,len-14,batch-2,dbg-0,dyn-1,dist-1,lfn
 <a id="on_3000_5000___len_14_0_2000_gram_0_1_resnet_640_lf_n_"></a>
 #### on-3000_5000       @ len-14-0_2000/gram-0_1/resnet-640-lfn-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=vid_det,m-resnet_640_gram_only-0_2000-length-14-stride-1-seq-0_1-batch_2-lfn,_eval_,gram-0_1-3000_5000,len-14,strd-14,batch-1,save-vis-1,dbg-0,dyn-1,dist-0
 
 <a id="len_16_0_2000___gram_0_1_resnet_640_lf_n_"></a>
 ### len-16-0_2000       @ gram-0_1/resnet-640-lfn-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1-0_2000,len-16,batch-2,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,gram-0_1-0_2000,len-16,batch-2,dbg-0,dyn-1,dist-1,lfn
 
 <a id="detrac_non_empty___resnet_640_lfn_"></a>
 ## detrac-non_empty       @ resnet-640-lfn-->p2s_vid
 <a id="0_19_jtr___detrac_non_empty_resnet_640_lf_n_"></a>
 ### 0_19-jtr       @ detrac-non_empty/resnet-640-lfn-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,len-6,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn,jtr
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,len-6,batch-6,dbg-0,dyn-1,dist-1,lfn,jtr
 <a id="on_train___0_19_jtr_detrac_non_empty_resnet_640_lfn_"></a>
 #### on-train       @ 0_19-jtr/detrac-non_empty/resnet-640-lfn-->p2s_vid
 <a id="strd_2___on_train_0_19_jtr_detrac_non_empty_resnet_640_lf_n_"></a>
@@ -249,11 +249,11 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eva
 
 <a id="0_19_len_9___detrac_non_empty_resnet_640_lf_n_"></a>
 ### 0_19-len-9       @ detrac-non_empty/resnet-640-lfn-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,len-9,batch-2,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,lfn
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,len-9,batch-2,dbg-0,dyn-1,dist-1,lfn
 
 <a id="ipsc_16_53_len_2___resnet_640_lfn_"></a>
 ## ipsc-16_53-len-2       @ resnet-640-lfn-->p2s_vid
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,lfn
 <a id="on_train___ipsc_16_53_len_2_resnet_640_lf_n_"></a>
 ### on-train       @ ipsc-16_53-len-2/resnet-640-lfn-->p2s_vid
 <a id="strd_1___on_train_ipsc_16_53_len_2_resnet_640_lfn_"></a>
@@ -273,7 +273,7 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_ro
 
 <a id="ipsc_16_53_len_6___resnet_640_lfn_"></a>
 ## ipsc-16_53-len-6       @ resnet-640-lfn-->p2s_vid
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-3,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-3,dbg-0,dyn-1,dist-0,lfn
 <a id="on_train___ipsc_16_53_len_6_resnet_640_lf_n_"></a>
 ### on-train       @ ipsc-16_53-len-6/resnet-640-lfn-->p2s_vid
 <a id="strd_1___on_train_ipsc_16_53_len_6_resnet_640_lfn_"></a>
@@ -293,7 +293,7 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 
 <a id="ipsc_16_53_len_3___resnet_640_lfn_"></a>
 ## ipsc-16_53-len-3       @ resnet-640-lfn-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-3,strd-1,batch-6,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-3,strd-1,batch-6,dbg-0,dyn-1,dist-0,lfn
 <a id="on_train___ipsc_16_53_len_3_resnet_640_lf_n_"></a>
 ### on-train       @ ipsc-16_53-len-3/resnet-640-lfn-->p2s_vid
 <a id="strd_1___on_train_ipsc_16_53_len_3_resnet_640_lfn_"></a>
@@ -313,18 +313,18 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_ro
 
 <a id="ipsc_16_53_jtr_res_1280_len_2___resnet_640_lfn_"></a>
 ## ipsc-16_53-jtr-res-1280-len-2       @ resnet-640-lfn-->p2s_vid
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn,jtr,res-1280
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,lfn,jtr,res-1280
 
 <a id="ipsc_16_53_jtr_res_1280_len_6___resnet_640_lfn_"></a>
 ## ipsc-16_53-jtr-res-1280-len-6       @ resnet-640-lfn-->p2s_vid
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-3,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1,lfn,jtr,res-1280
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-3,dbg-0,dyn-1,dist-0,lfn,jtr,res-1280
 
 <a id="resnet_64_0_"></a>
 # resnet-640 
 
 <a id="detrac_0_19___resnet_640_"></a>
 ## detrac-0_19       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,batch-3,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_19,batch-3,dbg-0,dyn-1,dist-1
 <a id="on_train___detrac_0_19_resnet_640_"></a>
 ### on-train       @ detrac-0_19/resnet-640-->p2s_vid
 <a id="strd_1___on_train_detrac_0_19_resnet_64_0_"></a>
@@ -345,7 +345,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=m-r
 
 <a id="detrac_0_9___resnet_640_"></a>
 ## detrac-0_9       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_9,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_9,batch-18,dbg-0,dyn-1,dist-1
 <a id="on_train___detrac_0_9_resnet_64_0_"></a>
 ### on-train       @ detrac-0_9/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-2-stride-1-non_empty-seq-0_9-batch_18,detrac-non_empty-0_9,batch-48,save-vis-1,dbg-0,dyn-1,dist-0
@@ -382,7 +382,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eva
 ## 5_9       @ resnet-640-->p2s_vid
 <a id="batch_8___5_9_resnet_640_"></a>
 ### batch-8       @ 5_9/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_5_9,batch-3,dbg-1,dyn-1,ep-1000000,dist-0,ckpt_ep-20
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_5_9,batch-3,dbg-1,dyn-100,dist-0,ckpt_ep-20
 <a id="on_g2_0_4___batch_8_5_9_resnet_640_"></a>
 #### on-g2_0_4       @ batch-8/5_9/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_0_4,batch-4,save-vis-1,dbg-1,dyn-1
@@ -396,11 +396,11 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=eval,vid_det,m-resnet_640
 
 <a id="fg_4___5_9_resnet_640_"></a>
 ### fg-4       @ 5_9/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_5_9,batch-4,dbg-1,dyn-1,ep-10000,dist-1,ckpt_ep-20,fg-4
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_5_9,batch-4,dbg-1,dyn-1,dist-1,ckpt_ep-20,fg-4
 
 <a id="16_53_len_2___resnet_640_"></a>
 ## 16_53-len-2       @ resnet-640-->p2s_vid
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0
 <a id="on_train___16_53_len_2_resnet_640_"></a>
 ### on-train       @ 16_53-len-2/resnet-640-->p2s_vid
 `strd-1` 
@@ -416,7 +416,7 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 
 <a id="16_53_len_6___resnet_640_"></a>
 ## 16_53-len-6       @ resnet-640-->p2s_vid
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-3,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-3,dbg-0,dyn-1,dist-0
 <a id="on_train___16_53_len_6_resnet_640_"></a>
 ### on-train       @ 16_53-len-6/resnet-640-->p2s_vid
 <a id="strd_1___on_54_126_ipsc_16_53_resnet_64_0_"></a>
@@ -436,7 +436,7 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_ro
 
 <a id="0_37___resnet_640_"></a>
 ## 0_37       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,strd-1,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,strd-1,batch-18,dbg-0,dyn-1,dist-1
 <a id="on_54_126___0_37_resnet_64_0_"></a>
 ### on-54_126       @ 0_37/resnet-640-->p2s_vid
 <a id="strd_1___on_54_126_0_37_resnet_64_0_"></a>
@@ -448,11 +448,11 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_ro
 
 <a id="0_37_fg_4___resnet_640_"></a>
 ## 0_37-fg-4       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_0_37,len-2,strd-1,fg-4,batch-16,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_0_37,len-2,strd-1,fg-4,batch-16,dbg-0,dyn-1,dist-1
 
 <a id="16_53_jtr_res_1280___resnet_640_"></a>
 ## 16_53-jtr-res-1280       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=_val_,ipsc-54_126,batch-2,len-2,strd-2,sample-8,_train_,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-100000,ckpt_ep-1,jtr,res-1280
+python3 run.py --cfg=configs/config_video_det.py --j5=_val_,ipsc-54_126,batch-2,len-2,strd-2,sample-8,_train_,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-00,jtr,res-1280
 <a id="on_train___16_53_jtr_res_1280_resnet_64_0_"></a>
 ### on-train       @ 16_53-jtr-res-1280/resnet-640-->p2s_vid
 <a id="strd_1___on_train_16_53_jtr_res_1280_resnet_640_"></a>
@@ -472,11 +472,11 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 
 <a id="16_53_jtr_res_1280_len_6___resnet_640_"></a>
 ## 16_53-jtr-res-1280-len-6       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,jtr,res-1280
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-6,dbg-0,dyn-1,dist-1,jtr,res-1280
 
 <a id="16_53_jtr_res_1280_len_6_val___resnet_640_"></a>
 ## 16_53-jtr-res-1280-len-6-val       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=_val_,ipsc-54_126,batch-2,len-6,strd-6,sample-4,_train_,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,jtr,res-1280
+python3 run.py --cfg=configs/config_video_det.py --j5=_val_,ipsc-54_126,batch-2,len-6,strd-6,sample-4,_train_,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-6,dbg-0,dyn-1,dist-1,jtr,res-1280
 <a id="on_train___16_53_jtr_res_1280_len_6_val_resnet_64_0_"></a>
 ### on-train       @ 16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
 <a id="strd_1___on_train_16_53_jtr_res_1280_len_6_val_resnet_640_"></a>
@@ -498,11 +498,11 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_ro
 ## acamp       @ resnet-640-->p2s_vid
 <a id="1k8_vid_entire_seq___acamp_resnet_640_"></a>
 ### 1k8_vid_entire_seq       @ acamp/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-1k8_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-1k8_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1
 
 <a id="10k6_vid_entire_seq___resnet_640_"></a>
 ## 10k6_vid_entire_seq       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1
 
 
 

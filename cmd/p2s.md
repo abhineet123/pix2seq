@@ -76,18 +76,18 @@
 ## acamp       @ resnet-640-->p2s
 <a id="1k8_vid_entire_seq___acamp_resnet_640_"></a>
 ### 1k8_vid_entire_seq       @ acamp/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-1k8_vid_entire_seq,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-1k8_vid_entire_seq,batch-9,dbg-0,dyn-1,dist-0
 
 <a id="10k6_vid_entire_seq___resnet_640_"></a>
 ## 10k6_vid_entire_seq       @ resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-10k6_vid_entire_seq,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-10k6_vid_entire_seq,batch-9,dbg-0,dyn-1,dist-0
 
 
 <a id="detrac_non_empty___resnet_640_"></a>
 ## detrac-non_empty       @ resnet-640-->p2s
 <a id="0_19___detrac_non_empty_resnet_64_0_"></a>
 ### 0_19       @ detrac-non_empty/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detrac-non_empty-0_19,batch-3,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detrac-non_empty-0_19,batch-3,dbg-0,dyn-1,dist-0
 <a id="on_train___0_19_detrac_non_empty_resnet_640_"></a>
 #### on-train       @ 0_19/detrac-non_empty/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_detrac-non_empty-seq-0_19-batch_18,detrac-non_empty-0_19,batch-48,save-vis-1,dbg-0,dyn-1,dist-0
@@ -97,18 +97,18 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 
 <a id="0_9___detrac_non_empty_resnet_64_0_"></a>
 ### 0_9       @ detrac-non_empty/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detrac-non_empty-0_9,batch-18,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detrac-non_empty-0_9,batch-18,dbg-0,dyn-1,dist-0
 
 <a id="mnist_640_1___resnet_640_"></a>
 ## mnist-640-1       @ resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-1-12_1000-train,batch-4,pt-1,dbg-1,dyn-1,dist-0,ep-10000
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-1-12_1000-train,batch-4,pt-1,dbg-1,dyn-1,dist-0
 <a id="frame_0_1___mnist_640_1_resnet_640_"></a>
 ### frame-0-1       @ mnist-640-1/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py --j5=val-1,mnist-640-1-12_1000-train,frame-0-1,batch-12,train,resnet-640,mnist-640-1-12_1000-train,frame-0-1,batch-6,dbg-1,dyn-1,dist-0,ep-10000,pt-0
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=val-1,mnist-640-1-12_1000-train,frame-0-1,batch-12,train,resnet-640,mnist-640-1-12_1000-train,frame-0-1,batch-6,dbg-1,dyn-1,dist-0,pt-0
 
 <a id="mnist_640_5___resnet_640_"></a>
 ## mnist-640-5       @ resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-5-12_1000-train,batch-18,pt-1,dbg-0,dyn-1,dist-0,ep-10000
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,mnist-640-5-12_1000-train,batch-18,pt-1,dbg-0,dyn-1,dist-0
 <a id="on_test___mnist_640_5_resnet_640_"></a>
 #### on-test       @ mnist-640-5/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval,m-resnet_640_mnist_640_5_12_1000_var-train-batch_18,mnist-640-5-12_1000-test,batch-96,save-vis-1,dbg-0,dyn-1,dist-0
@@ -117,16 +117,16 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 
 <a id="0_1___resnet_640_"></a>
 ## 0_1       @ resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-0_1,batch-6,train,resnet-640,ipsc-0_1,batch-6,dbg-0,dyn-1,dist-0,ep-10000,pt-1
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-0_1,batch-6,train,resnet-640,ipsc-0_1,batch-6,dbg-0,dyn-1,dist-0,pt-1
 <a id="val_2_3___0_1_resnet_640_"></a>
 ### val-2_3       @ 0_1/resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-2_3,batch-18,train,resnet-640,ipsc-0_1,batch-18,dbg-0,dyn-1,dist-0,ep-10000,pt-1
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-2_3,batch-18,train,resnet-640,ipsc-0_1,batch-18,dbg-0,dyn-1,dist-0,pt-1
 
-python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-2_3,batch-6,train,resnet-640,ipsc-0_1,batch-6,dbg-0,dyn-1,dist-0,ep-10000,pt-1,jtr,res-1280
+python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-2_3,batch-6,train,resnet-640,ipsc-0_1,batch-6,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280
 
 <a id="16_53___resnet_640_"></a>
 ## 16_53       @ resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-54_126_8,batch-24,train,resnet-640,ipsc-16_53,batch-18,dbg-0,dyn-1,dist-0,ep-10000,pt-1
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-54_126_8,batch-24,train,resnet-640,ipsc-16_53,batch-18,dbg-0,dyn-1,dist-0,pt-1
 <a id="on_16_53___16_53_resnet_640_"></a>
 ### on-16_53       @ 16_53/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-frame-16_53-batch_18,_eval_,ipsc-16_53,batch-36,save-vis-1,dbg-0,dyn-1
@@ -136,14 +136,14 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-r
 
 <a id="ipsc_0_37___resnet_640_"></a>
 ## ipsc-0_37       @ resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-54_126_8,batch-24,train,resnet-640,ipsc-0_37,batch-18,dbg-0,dyn-1,dist-0,ep-10000,pt-1
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-54_126_8,batch-24,train,resnet-640,ipsc-0_37,batch-18,dbg-0,dyn-1,dist-0,pt-1
 <a id="on_54_126___ipsc_0_37_resnet_640_"></a>
 ### on-54_126       @ ipsc-0_37/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-batch_18,_eval_,ipsc-54_126,batch-36,save-vis-1,dbg-0,dyn-1,dist-0
 
 <a id="16_53_jtr_res_1280___resnet_640_"></a>
 ## 16_53-jtr-res-1280       @ resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-54_126_8,batch-24,train,resnet-640,ipsc-16_53,batch-18,dbg-0,dyn-1,dist-0,ep-10000,pt-1,jtr,res-1280
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-54_126_8,batch-24,train,resnet-640,ipsc-16_53,batch-18,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280
 <a id="on_train___16_53_jtr_res_1280_resnet_64_0_"></a>
 ### on-train       @ 16_53-jtr-res-1280/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-batch_18-jtr-res_1280,_eval_,ipsc-16_53,batch-16,save-vis-1
@@ -160,7 +160,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-r
 
 <a id="0_37_jtr_res_1280___resnet_640_"></a>
 ## 0_37-jtr-res-1280       @ resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-54_126_8,batch-24,train,resnet-640,ipsc-0_37,batch-18,dbg-0,dyn-1,dist-0,ep-10000,pt-1,jtr,res-1280
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val-1,ipsc-54_126_8,batch-24,train,resnet-640,ipsc-0_37,batch-18,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280
 <a id="on_54_126___0_37_jtr_res_1280_resnet_640_"></a>
 ### on-54_126       @ 0_37-jtr-res-1280/resnet-640-->p2s
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-batch_18-jtr-res_1280,_eval_,ipsc-54_126,batch-16,save-vis-1
