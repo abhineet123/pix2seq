@@ -38,6 +38,7 @@
             - [sample-8       @ len-6/54_126/ipsc](#sample_8___len_6_54_126_ips_c_)
             - [sample-4       @ len-6/54_126/ipsc](#sample_4___len_6_54_126_ips_c_)
 - [acamp](#acamp_)
+    - [1k8_vid_entire_seq       @ acamp](#1k8_vid_entire_seq___acam_p_)
     - [10k6_vid_entire_seq       @ acamp](#10k6_vid_entire_seq___acam_p_)
 
 <!-- /MarkdownTOC -->
@@ -183,6 +184,9 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:gz:shards-32:len-6:
 
 <a id="acamp_"></a>
 # acamp
+<a id="1k8_vid_entire_seq___acam_p_"></a>
+## 1k8_vid_entire_seq       @ acamp-->p2s_vid_tf
+python data/scripts/create_video_tfrecord.py cfg=acamp:1k8_vid_entire_seq:gz:shards-32:len-2:strd-1
 <a id="10k6_vid_entire_seq___acam_p_"></a>
 ## 10k6_vid_entire_seq       @ acamp-->p2s_vid_tf
 python data/scripts/create_video_tfrecord.py cfg=acamp:10k6_vid_entire_seq:gz:shards-32:len-2:strd-1

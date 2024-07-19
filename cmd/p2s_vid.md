@@ -105,6 +105,7 @@
         - [on-54_126       @ ipsc-16_53-jtr-res-1280-len-6-val/resnet-640](#on_54_126___ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_)
             - [strd-1       @ on-54_126/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640](#strd_1___on_54_126_ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_)
             - [strd-6       @ on-54_126/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640](#strd_6___on_54_126_ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_)
+    - [acamp-1k8_vid_entire_seq       @ resnet-640](#acamp_1k8_vid_entire_seq___resnet_640_)
     - [acamp-10k6_vid_entire_seq       @ resnet-640](#acamp_10k6_vid_entire_seq___resnet_640_)
 
 <!-- /MarkdownTOC -->
@@ -493,9 +494,13 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_ro
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_6-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-6,strd-6,batch-4,save-vis-1,dbg-0,dyn-1
 
 
+<a id="acamp_1k8_vid_entire_seq___resnet_640_"></a>
+## acamp-1k8_vid_entire_seq       @ resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-1k8_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+
 <a id="acamp_10k6_vid_entire_seq___resnet_640_"></a>
 ## acamp-10k6_vid_entire_seq       @ resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 
 
 
