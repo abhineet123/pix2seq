@@ -1952,17 +1952,10 @@ def rle_from_logits(
         rle_cmp.append(class_ids)
 
     if length_as_class:
-        if starts_2d:
-            assert len(rle_cmp) == 3, "rle_cmp len must be 2 for length_as_class"
-
-            starts_rows, starts_cols, lac = rle_cmp
-            lengths, class_ids = rle_from_lac(lac, max_length)
-            rle_cmp = [starts_rows, starts_cols, lengths, class_ids]
-        else:
-            assert len(rle_cmp) == 2, "rle_cmp len must be 2 for length_as_class"
-            starts, lac = rle_cmp
-            lengths, class_ids = rle_from_lac(lac, max_length)
-            rle_cmp = [starts, lengths, class_ids]
+        assert len(rle_cmp) == 2, "rle_cmp len must be 2 for length_as_class"
+        starts, lac = rle_cmp
+        lengths, class_ids = rle_from_lac(lac, max_length)
+        rle_cmp = [starts, lengths, class_ids]
 
     return rle_cmp
 
