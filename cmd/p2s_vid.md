@@ -68,45 +68,46 @@
             - [strd-2       @ on-train/detrac-0_9/resnet-640](#strd_2___on_train_detrac_0_9_resnet_640_)
         - [on-49_68       @ detrac-0_9/resnet-640](#on_49_68___detrac_0_9_resnet_64_0_)
             - [strd-2       @ on-49_68/detrac-0_9/resnet-640](#strd_2___on_49_68_detrac_0_9_resnet_640_)
-    - [ipsc-0_4       @ resnet-640](#ipsc_0_4___resnet_640_)
-        - [batch-3       @ ipsc-0_4/resnet-640](#batch_3___ipsc_0_4_resnet_64_0_)
-            - [on-g2_0_4       @ batch-3/ipsc-0_4/resnet-640](#on_g2_0_4___batch_3_ipsc_0_4_resnet_64_0_)
-        - [batch-6       @ ipsc-0_4/resnet-640](#batch_6___ipsc_0_4_resnet_64_0_)
-            - [on-g2_5_9       @ batch-6/ipsc-0_4/resnet-640](#on_g2_5_9___batch_6_ipsc_0_4_resnet_64_0_)
-            - [on-g2_0_4       @ batch-6/ipsc-0_4/resnet-640](#on_g2_0_4___batch_6_ipsc_0_4_resnet_64_0_)
-    - [ipsc-5_9       @ resnet-640](#ipsc_5_9___resnet_640_)
-        - [batch-8       @ ipsc-5_9/resnet-640](#batch_8___ipsc_5_9_resnet_64_0_)
-            - [on-g2_0_4       @ batch-8/ipsc-5_9/resnet-640](#on_g2_0_4___batch_8_ipsc_5_9_resnet_64_0_)
-            - [on-5_9       @ batch-8/ipsc-5_9/resnet-640](#on_5_9___batch_8_ipsc_5_9_resnet_64_0_)
-        - [fg-4       @ ipsc-5_9/resnet-640](#fg_4___ipsc_5_9_resnet_64_0_)
-    - [ipsc-16_53-len-2       @ resnet-640](#ipsc_16_53_len_2___resnet_640_)
-        - [on-train       @ ipsc-16_53-len-2/resnet-640](#on_train___ipsc_16_53_len_2_resnet_64_0_)
-        - [on-54_126       @ ipsc-16_53-len-2/resnet-640](#on_54_126___ipsc_16_53_len_2_resnet_64_0_)
-    - [ipsc-16_53-len-6       @ resnet-640](#ipsc_16_53_len_6___resnet_640_)
-        - [on-train       @ ipsc-16_53-len-6/resnet-640](#on_train___ipsc_16_53_len_6_resnet_64_0_)
-        - [on-54_126       @ ipsc-16_53-len-6/resnet-640](#on_54_126___ipsc_16_53_len_6_resnet_64_0_)
-    - [ipsc-0_37       @ resnet-640](#ipsc_0_37___resnet_640_)
-        - [on-54_126       @ ipsc-0_37/resnet-640](#on_54_126___ipsc_0_37_resnet_640_)
-            - [strd-1       @ on-54_126/ipsc-0_37/resnet-640](#strd_1___on_54_126_ipsc_0_37_resnet_640_)
-            - [strd-2       @ on-54_126/ipsc-0_37/resnet-640](#strd_2___on_54_126_ipsc_0_37_resnet_640_)
-    - [ipsc-0_37-fg-4       @ resnet-640](#ipsc_0_37_fg_4___resnet_640_)
-    - [ipsc-16_53-jtr-res-1280       @ resnet-640](#ipsc_16_53_jtr_res_1280___resnet_640_)
-        - [on-train       @ ipsc-16_53-jtr-res-1280/resnet-640](#on_train___ipsc_16_53_jtr_res_1280_resnet_640_)
-            - [strd-1       @ on-train/ipsc-16_53-jtr-res-1280/resnet-640](#strd_1___on_train_ipsc_16_53_jtr_res_1280_resnet_64_0_)
-            - [strd-2       @ on-train/ipsc-16_53-jtr-res-1280/resnet-640](#strd_2___on_train_ipsc_16_53_jtr_res_1280_resnet_64_0_)
-        - [on-54_126       @ ipsc-16_53-jtr-res-1280/resnet-640](#on_54_126___ipsc_16_53_jtr_res_1280_resnet_640_)
-            - [strd-1       @ on-54_126/ipsc-16_53-jtr-res-1280/resnet-640](#strd_1___on_54_126_ipsc_16_53_jtr_res_1280_resnet_640_)
-            - [strd-2       @ on-54_126/ipsc-16_53-jtr-res-1280/resnet-640](#strd_2___on_54_126_ipsc_16_53_jtr_res_1280_resnet_640_)
-    - [ipsc-16_53-jtr-res-1280-len-6       @ resnet-640](#ipsc_16_53_jtr_res_1280_len_6___resnet_640_)
-    - [ipsc-16_53-jtr-res-1280-len-6-val       @ resnet-640](#ipsc_16_53_jtr_res_1280_len_6_val___resnet_640_)
-        - [on-train       @ ipsc-16_53-jtr-res-1280-len-6-val/resnet-640](#on_train___ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_)
-            - [strd-1       @ on-train/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640](#strd_1___on_train_ipsc_16_53_jtr_res_1280_len_6_val_resnet_64_0_)
-            - [strd-6       @ on-train/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640](#strd_6___on_train_ipsc_16_53_jtr_res_1280_len_6_val_resnet_64_0_)
-        - [on-54_126       @ ipsc-16_53-jtr-res-1280-len-6-val/resnet-640](#on_54_126___ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_)
-            - [strd-1       @ on-54_126/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640](#strd_1___on_54_126_ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_)
-            - [strd-6       @ on-54_126/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640](#strd_6___on_54_126_ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_)
-    - [acamp-1k8_vid_entire_seq       @ resnet-640](#acamp_1k8_vid_entire_seq___resnet_640_)
-    - [acamp-10k6_vid_entire_seq       @ resnet-640](#acamp_10k6_vid_entire_seq___resnet_640_)
+    - [0_4       @ resnet-640](#0_4___resnet_640_)
+        - [batch-3       @ 0_4/resnet-640](#batch_3___0_4_resnet_640_)
+            - [on-g2_0_4       @ batch-3/0_4/resnet-640](#on_g2_0_4___batch_3_0_4_resnet_640_)
+        - [batch-6       @ 0_4/resnet-640](#batch_6___0_4_resnet_640_)
+            - [on-g2_5_9       @ batch-6/0_4/resnet-640](#on_g2_5_9___batch_6_0_4_resnet_640_)
+            - [on-g2_0_4       @ batch-6/0_4/resnet-640](#on_g2_0_4___batch_6_0_4_resnet_640_)
+    - [5_9       @ resnet-640](#5_9___resnet_640_)
+        - [batch-8       @ 5_9/resnet-640](#batch_8___5_9_resnet_640_)
+            - [on-g2_0_4       @ batch-8/5_9/resnet-640](#on_g2_0_4___batch_8_5_9_resnet_640_)
+            - [on-5_9       @ batch-8/5_9/resnet-640](#on_5_9___batch_8_5_9_resnet_640_)
+        - [fg-4       @ 5_9/resnet-640](#fg_4___5_9_resnet_640_)
+    - [16_53-len-2       @ resnet-640](#16_53_len_2___resnet_640_)
+        - [on-train       @ 16_53-len-2/resnet-640](#on_train___16_53_len_2_resnet_640_)
+        - [on-54_126       @ 16_53-len-2/resnet-640](#on_54_126___16_53_len_2_resnet_640_)
+    - [16_53-len-6       @ resnet-640](#16_53_len_6___resnet_640_)
+        - [on-train       @ 16_53-len-6/resnet-640](#on_train___16_53_len_6_resnet_640_)
+        - [on-54_126       @ 16_53-len-6/resnet-640](#on_54_126___16_53_len_6_resnet_640_)
+    - [0_37       @ resnet-640](#0_37___resnet_640_)
+        - [on-54_126       @ 0_37/resnet-640](#on_54_126___0_37_resnet_64_0_)
+            - [strd-1       @ on-54_126/0_37/resnet-640](#strd_1___on_54_126_0_37_resnet_64_0_)
+            - [strd-2       @ on-54_126/0_37/resnet-640](#strd_2___on_54_126_0_37_resnet_64_0_)
+    - [0_37-fg-4       @ resnet-640](#0_37_fg_4___resnet_640_)
+    - [16_53-jtr-res-1280       @ resnet-640](#16_53_jtr_res_1280___resnet_640_)
+        - [on-train       @ 16_53-jtr-res-1280/resnet-640](#on_train___16_53_jtr_res_1280_resnet_64_0_)
+            - [strd-1       @ on-train/16_53-jtr-res-1280/resnet-640](#strd_1___on_train_16_53_jtr_res_1280_resnet_640_)
+            - [strd-2       @ on-train/16_53-jtr-res-1280/resnet-640](#strd_2___on_train_16_53_jtr_res_1280_resnet_640_)
+        - [on-54_126       @ 16_53-jtr-res-1280/resnet-640](#on_54_126___16_53_jtr_res_1280_resnet_64_0_)
+            - [strd-1       @ on-54_126/16_53-jtr-res-1280/resnet-640](#strd_1___on_54_126_16_53_jtr_res_1280_resnet_64_0_)
+            - [strd-2       @ on-54_126/16_53-jtr-res-1280/resnet-640](#strd_2___on_54_126_16_53_jtr_res_1280_resnet_64_0_)
+    - [16_53-jtr-res-1280-len-6       @ resnet-640](#16_53_jtr_res_1280_len_6___resnet_640_)
+    - [16_53-jtr-res-1280-len-6-val       @ resnet-640](#16_53_jtr_res_1280_len_6_val___resnet_640_)
+        - [on-train       @ 16_53-jtr-res-1280-len-6-val/resnet-640](#on_train___16_53_jtr_res_1280_len_6_val_resnet_64_0_)
+            - [strd-1       @ on-train/16_53-jtr-res-1280-len-6-val/resnet-640](#strd_1___on_train_16_53_jtr_res_1280_len_6_val_resnet_640_)
+            - [strd-6       @ on-train/16_53-jtr-res-1280-len-6-val/resnet-640](#strd_6___on_train_16_53_jtr_res_1280_len_6_val_resnet_640_)
+        - [on-54_126       @ 16_53-jtr-res-1280-len-6-val/resnet-640](#on_54_126___16_53_jtr_res_1280_len_6_val_resnet_64_0_)
+            - [strd-1       @ on-54_126/16_53-jtr-res-1280-len-6-val/resnet-640](#strd_1___on_54_126_16_53_jtr_res_1280_len_6_val_resnet_64_0_)
+            - [strd-6       @ on-54_126/16_53-jtr-res-1280-len-6-val/resnet-640](#strd_6___on_54_126_16_53_jtr_res_1280_len_6_val_resnet_64_0_)
+    - [acamp       @ resnet-640](#acamp___resnet_640_)
+        - [1k8_vid_entire_seq       @ acamp/resnet-640](#1k8_vid_entire_seq___acamp_resnet_640_)
+    - [10k6_vid_entire_seq       @ resnet-640](#10k6_vid_entire_seq___resnet_640_)
 
 <!-- /MarkdownTOC -->
 <a id="swin_t_"></a>
@@ -358,74 +359,74 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eva
 #### strd-2       @ on-49_68/detrac-0_9/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=m-resnet_640_detrac-length-2-stride-1-non_empty-seq-0_9-batch_18,eval,vid_det,detrac-non_empty-49_68,strd-2,batch-48,save-vis-1,dbg-0,dyn-1,dist-0
 
-<a id="ipsc_0_4___resnet_640_"></a>
-## ipsc-0_4       @ resnet-640-->p2s_vid
-<a id="batch_3___ipsc_0_4_resnet_64_0_"></a>
-### batch-3       @ ipsc-0_4/resnet-640-->p2s_vid
+<a id="0_4___resnet_640_"></a>
+## 0_4       @ resnet-640-->p2s_vid
+<a id="batch_3___0_4_resnet_640_"></a>
+### batch-3       @ 0_4/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,ipsc-g2_0_4,batch-3,dbg-1,dyn-1,ep-4000
-<a id="on_g2_0_4___batch_3_ipsc_0_4_resnet_64_0_"></a>
-#### on-g2_0_4       @ batch-3/ipsc-0_4/resnet-640-->p2s_vid
+<a id="on_g2_0_4___batch_3_0_4_resnet_640_"></a>
+#### on-g2_0_4       @ batch-3/0_4/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_0_4-length-2-stride-1-batch_3,ipsc-g2_0_4,batch-1,save-vis-1,dbg-1,dyn-1
 
-<a id="batch_6___ipsc_0_4_resnet_64_0_"></a>
-### batch-6       @ ipsc-0_4/resnet-640-->p2s_vid
+<a id="batch_6___0_4_resnet_640_"></a>
+### batch-6       @ 0_4/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-0,ipsc-g2_0_4,batch-6,dbg-0,dyn-1,ep-4000,dist-1
-<a id="on_g2_5_9___batch_6_ipsc_0_4_resnet_64_0_"></a>
-#### on-g2_5_9       @ batch-6/ipsc-0_4/resnet-640-->p2s_vid
+<a id="on_g2_5_9___batch_6_0_4_resnet_640_"></a>
+#### on-g2_5_9       @ batch-6/0_4/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_0_4-length-2-stride-1-batch_6,ipsc-g2_5_9,batch-3,save-vis-1,dbg-1,dyn-1
-<a id="on_g2_0_4___batch_6_ipsc_0_4_resnet_64_0_"></a>
-#### on-g2_0_4       @ batch-6/ipsc-0_4/resnet-640-->p2s_vid
+<a id="on_g2_0_4___batch_6_0_4_resnet_640_"></a>
+#### on-g2_0_4       @ batch-6/0_4/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_0_4-length-2-stride-1-batch_6,ipsc-g2_0_4,batch-1,save-vis-1,dbg-1,dyn-1
 
-<a id="ipsc_5_9___resnet_640_"></a>
-## ipsc-5_9       @ resnet-640-->p2s_vid
-<a id="batch_8___ipsc_5_9_resnet_64_0_"></a>
-### batch-8       @ ipsc-5_9/resnet-640-->p2s_vid
+<a id="5_9___resnet_640_"></a>
+## 5_9       @ resnet-640-->p2s_vid
+<a id="batch_8___5_9_resnet_640_"></a>
+### batch-8       @ 5_9/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_5_9,batch-3,dbg-1,dyn-1,ep-1000000,dist-0,ckpt_ep-20
-<a id="on_g2_0_4___batch_8_ipsc_5_9_resnet_64_0_"></a>
-#### on-g2_0_4       @ batch-8/ipsc-5_9/resnet-640-->p2s_vid
+<a id="on_g2_0_4___batch_8_5_9_resnet_640_"></a>
+#### on-g2_0_4       @ batch-8/5_9/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_0_4,batch-4,save-vis-1,dbg-1,dyn-1
 **12094**
 python3 run.py --cfg=configs/config_video_det.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-12094_0_4,batch-4,save-vis-1,dbg-1,dyn-1
 **12094_short**
 python3 run.py --cfg=configs/config_video_det.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-12094_short_0_4,batch-4,save-vis-1,dbg-1,dyn-1
-<a id="on_5_9___batch_8_ipsc_5_9_resnet_64_0_"></a>
-#### on-5_9       @ batch-8/ipsc-5_9/resnet-640-->p2s_vid
+<a id="on_5_9___batch_8_5_9_resnet_640_"></a>
+#### on-5_9       @ batch-8/5_9/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py  --j5=eval,vid_det,m-resnet_640_ext_reorg_roi_g2_5_9-length-2-stride-1-batch_8,ipsc-g2_5_9,batch-4,save-vis-1,dbg-1,dyn-1
 
-<a id="fg_4___ipsc_5_9_resnet_64_0_"></a>
-### fg-4       @ ipsc-5_9/resnet-640-->p2s_vid
+<a id="fg_4___5_9_resnet_640_"></a>
+### fg-4       @ 5_9/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_5_9,batch-4,dbg-1,dyn-1,ep-10000,dist-1,ckpt_ep-20,fg-4
 
-<a id="ipsc_16_53_len_2___resnet_640_"></a>
-## ipsc-16_53-len-2       @ resnet-640-->p2s_vid
+<a id="16_53_len_2___resnet_640_"></a>
+## 16_53-len-2       @ resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1
-<a id="on_train___ipsc_16_53_len_2_resnet_64_0_"></a>
-### on-train       @ ipsc-16_53-len-2/resnet-640-->p2s_vid
+<a id="on_train___16_53_len_2_resnet_640_"></a>
+### on-train       @ 16_53-len-2/resnet-640-->p2s_vid
 `strd-1` 
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9,_eval_,vid_det,ipsc-16_53,len-2,strd-1,batch-4,save-vis-1,dbg-0,dyn-1
 `strd-2` 
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9,_eval_,vid_det,ipsc-16_53,len-2,strd-2,batch-4,save-vis-1,dbg-0,dyn-1
-<a id="on_54_126___ipsc_16_53_len_2_resnet_64_0_"></a>
-### on-54_126       @ ipsc-16_53-len-2/resnet-640-->p2s_vid
+<a id="on_54_126___16_53_len_2_resnet_640_"></a>
+### on-54_126       @ 16_53-len-2/resnet-640-->p2s_vid
 `strd-1` 
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9,_eval_,vid_det,ipsc-54_126,len-2,strd-1,batch-4,save-vis-1,dbg-0,dyn-1
 `strd-2` 
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9,_eval_,vid_det,ipsc-54_126,len-2,strd-2,batch-4,save-vis-1,dbg-0,dyn-1
 
-<a id="ipsc_16_53_len_6___resnet_640_"></a>
-## ipsc-16_53-len-6       @ resnet-640-->p2s_vid
+<a id="16_53_len_6___resnet_640_"></a>
+## 16_53-len-6       @ resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-3,dbg-0,dyn-1,dist-0,ep-10000,ckpt_ep-1
-<a id="on_train___ipsc_16_53_len_6_resnet_64_0_"></a>
-### on-train       @ ipsc-16_53-len-6/resnet-640-->p2s_vid
+<a id="on_train___16_53_len_6_resnet_640_"></a>
+### on-train       @ 16_53-len-6/resnet-640-->p2s_vid
 <a id="strd_1___on_54_126_ipsc_16_53_resnet_64_0_"></a>
 `strd-1` 
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_3,_eval_,vid_det,ipsc-16_53,len-6,strd-1,batch-4,save-vis-1,dbg-0,dyn-1
 <a id="strd_2___on_54_126_ipsc_16_53_resnet_64_0_"></a>
 `strd-6` 
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_3,_eval_,vid_det,ipsc-16_53,len-6,strd-6,batch-4,save-vis-1,dbg-0,dyn-1
-<a id="on_54_126___ipsc_16_53_len_6_resnet_64_0_"></a>
-### on-54_126       @ ipsc-16_53-len-6/resnet-640-->p2s_vid
+<a id="on_54_126___16_53_len_6_resnet_640_"></a>
+### on-54_126       @ 16_53-len-6/resnet-640-->p2s_vid
 <a id="strd_1___on_54_126_ipsc_16_53_resnet_64_0_"></a>
 `strd-1` 
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_3,_eval_,vid_det,ipsc-54_126,len-6,strd-1,batch-4,save-vis-1,dbg-0,dyn-1
@@ -433,73 +434,74 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_ro
 `strd-6` 
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_3,_eval_,vid_det,ipsc-54_126,len-6,strd-6,batch-4,save-vis-1,dbg-0,dyn-1
 
-<a id="ipsc_0_37___resnet_640_"></a>
-## ipsc-0_37       @ resnet-640-->p2s_vid
+<a id="0_37___resnet_640_"></a>
+## 0_37       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,strd-1,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
-<a id="on_54_126___ipsc_0_37_resnet_640_"></a>
-### on-54_126       @ ipsc-0_37/resnet-640-->p2s_vid
-<a id="strd_1___on_54_126_ipsc_0_37_resnet_640_"></a>
-#### strd-1       @ on-54_126/ipsc-0_37/resnet-640-->p2s_vid
+<a id="on_54_126___0_37_resnet_64_0_"></a>
+### on-54_126       @ 0_37/resnet-640-->p2s_vid
+<a id="strd_1___on_54_126_0_37_resnet_64_0_"></a>
+#### strd-1       @ on-54_126/0_37/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-54_126,len-2,strd-1,batch-36,save-vis-1,dbg-0,dyn-1
-<a id="strd_2___on_54_126_ipsc_0_37_resnet_640_"></a>
-#### strd-2       @ on-54_126/ipsc-0_37/resnet-640-->p2s_vid
+<a id="strd_2___on_54_126_0_37_resnet_64_0_"></a>
+#### strd-2       @ on-54_126/0_37/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-54_126,len-2,strd-2,batch-36,save-vis-1,dbg-0,dyn-1
 
-<a id="ipsc_0_37_fg_4___resnet_640_"></a>
-## ipsc-0_37-fg-4       @ resnet-640-->p2s_vid
+<a id="0_37_fg_4___resnet_640_"></a>
+## 0_37-fg-4       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_0_37,len-2,strd-1,fg-4,batch-16,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 
-<a id="ipsc_16_53_jtr_res_1280___resnet_640_"></a>
-## ipsc-16_53-jtr-res-1280       @ resnet-640-->p2s_vid
+<a id="16_53_jtr_res_1280___resnet_640_"></a>
+## 16_53-jtr-res-1280       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=_val_,ipsc-54_126,batch-2,len-2,strd-2,sample-8,_train_,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,strd-1,batch-9,dbg-0,dyn-1,dist-0,ep-100000,ckpt_ep-1,jtr,res-1280
-<a id="on_train___ipsc_16_53_jtr_res_1280_resnet_640_"></a>
-### on-train       @ ipsc-16_53-jtr-res-1280/resnet-640-->p2s_vid
-<a id="strd_1___on_train_ipsc_16_53_jtr_res_1280_resnet_64_0_"></a>
-#### strd-1       @ on-train/ipsc-16_53-jtr-res-1280/resnet-640-->p2s_vid
+<a id="on_train___16_53_jtr_res_1280_resnet_64_0_"></a>
+### on-train       @ 16_53-jtr-res-1280/resnet-640-->p2s_vid
+<a id="strd_1___on_train_16_53_jtr_res_1280_resnet_640_"></a>
+#### strd-1       @ on-train/16_53-jtr-res-1280/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9-jtr-res_1280,_eval_,vid_det,ipsc-16_53,len-2,strd-1,batch-4,save-vis-1,dbg-0,dyn-1,sample-0
-<a id="strd_2___on_train_ipsc_16_53_jtr_res_1280_resnet_64_0_"></a>
-#### strd-2       @ on-train/ipsc-16_53-jtr-res-1280/resnet-640-->p2s_vid
+<a id="strd_2___on_train_16_53_jtr_res_1280_resnet_640_"></a>
+#### strd-2       @ on-train/16_53-jtr-res-1280/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9-jtr-res_1280,_eval_,vid_det,ipsc-16_53,len-2,strd-2,batch-4,save-vis-1,dbg-0,dyn-1,sample-0
-<a id="on_54_126___ipsc_16_53_jtr_res_1280_resnet_640_"></a>
-### on-54_126       @ ipsc-16_53-jtr-res-1280/resnet-640-->p2s_vid
-<a id="strd_1___on_54_126_ipsc_16_53_jtr_res_1280_resnet_640_"></a>
-#### strd-1       @ on-54_126/ipsc-16_53-jtr-res-1280/resnet-640-->p2s_vid
+<a id="on_54_126___16_53_jtr_res_1280_resnet_64_0_"></a>
+### on-54_126       @ 16_53-jtr-res-1280/resnet-640-->p2s_vid
+<a id="strd_1___on_54_126_16_53_jtr_res_1280_resnet_64_0_"></a>
+#### strd-1       @ on-54_126/16_53-jtr-res-1280/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-2,strd-1,batch-4,save-vis-1,dbg-0,dyn-1,sample-0
-<a id="strd_2___on_54_126_ipsc_16_53_jtr_res_1280_resnet_640_"></a>
-#### strd-2       @ on-54_126/ipsc-16_53-jtr-res-1280/resnet-640-->p2s_vid
+<a id="strd_2___on_54_126_16_53_jtr_res_1280_resnet_64_0_"></a>
+#### strd-2       @ on-54_126/16_53-jtr-res-1280/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_9-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-2,strd-2,batch-4,save-vis-1,dbg-0,dyn-1,sample-0
 
-<a id="ipsc_16_53_jtr_res_1280_len_6___resnet_640_"></a>
-## ipsc-16_53-jtr-res-1280-len-6       @ resnet-640-->p2s_vid
+<a id="16_53_jtr_res_1280_len_6___resnet_640_"></a>
+## 16_53-jtr-res-1280-len-6       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,jtr,res-1280
 
-<a id="ipsc_16_53_jtr_res_1280_len_6_val___resnet_640_"></a>
-## ipsc-16_53-jtr-res-1280-len-6-val       @ resnet-640-->p2s_vid
+<a id="16_53_jtr_res_1280_len_6_val___resnet_640_"></a>
+## 16_53-jtr-res-1280-len-6-val       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=_val_,ipsc-54_126,batch-2,len-6,strd-6,sample-4,_train_,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,strd-1,batch-6,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1,jtr,res-1280
-<a id="on_train___ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_"></a>
-### on-train       @ ipsc-16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
-<a id="strd_1___on_train_ipsc_16_53_jtr_res_1280_len_6_val_resnet_64_0_"></a>
-#### strd-1       @ on-train/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
+<a id="on_train___16_53_jtr_res_1280_len_6_val_resnet_64_0_"></a>
+### on-train       @ 16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
+<a id="strd_1___on_train_16_53_jtr_res_1280_len_6_val_resnet_640_"></a>
+#### strd-1       @ on-train/16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_6-jtr-res_1280,_eval_,vid_det,ipsc-16_53,len-6,strd-1,batch-4,save-vis-1,dbg-0,dyn-1
-<a id="strd_6___on_train_ipsc_16_53_jtr_res_1280_len_6_val_resnet_64_0_"></a>
-#### strd-6       @ on-train/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
+<a id="strd_6___on_train_16_53_jtr_res_1280_len_6_val_resnet_640_"></a>
+#### strd-6       @ on-train/16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_6-jtr-res_1280,_eval_,vid_det,ipsc-16_53,len-6,strd-6,batch-4,save-vis-1,dbg-0,dyn-1
-<a id="on_54_126___ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_"></a>
-### on-54_126       @ ipsc-16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
-<a id="strd_1___on_54_126_ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_"></a>
-#### strd-1       @ on-54_126/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
+<a id="on_54_126___16_53_jtr_res_1280_len_6_val_resnet_64_0_"></a>
+### on-54_126       @ 16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
+<a id="strd_1___on_54_126_16_53_jtr_res_1280_len_6_val_resnet_64_0_"></a>
+#### strd-1       @ on-54_126/16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_6-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-6,strd-1,batch-4,save-vis-1,dbg-0,dyn-1
-<a id="strd_6___on_54_126_ipsc_16_53_jtr_res_1280_len_6_val_resnet_640_"></a>
-#### strd-6       @ on-54_126/ipsc-16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
+<a id="strd_6___on_54_126_16_53_jtr_res_1280_len_6_val_resnet_64_0_"></a>
+#### strd-6       @ on-54_126/16_53-jtr-res-1280-len-6-val/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_6-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-6,strd-6,batch-4,save-vis-1,dbg-0,dyn-1
 
-
-<a id="acamp_1k8_vid_entire_seq___resnet_640_"></a>
-## acamp-1k8_vid_entire_seq       @ resnet-640-->p2s_vid
+<a id="acamp___resnet_640_"></a>
+## acamp       @ resnet-640-->p2s_vid
+<a id="1k8_vid_entire_seq___acamp_resnet_640_"></a>
+### 1k8_vid_entire_seq       @ acamp/resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-1k8_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 
-<a id="acamp_10k6_vid_entire_seq___resnet_640_"></a>
-## acamp-10k6_vid_entire_seq       @ resnet-640-->p2s_vid
+<a id="10k6_vid_entire_seq___resnet_640_"></a>
+## 10k6_vid_entire_seq       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1,ep-10000,ckpt_ep-1
 
 

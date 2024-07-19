@@ -114,6 +114,8 @@ def get_config(config_str=None):
             name='encoder_ar_decoder',
             image_size=image_size,
             max_seq_len=512,
+            defer_seq=0,
+            defer_vocab=0,
             vocab_size=3000,  # Note: should be large enough for 100 + num_classes + quantization_bins + (optional) text
             coord_vocab_shift=1000,  # Note: make sure num_class <= coord_vocab_shift - 100
             text_vocab_shift=3000,  # Note: make sure coord_vocab_shift + quantization_bins <= text_vocab_shift

@@ -64,7 +64,7 @@ def get_ipsc_data():
         name='ipsc_object_detection',
         root_dir=root_dir,
         label_shift=0,
-        compressed=0,
+        compressed=1,
         **get_shared_det_data()
     )
 
@@ -97,7 +97,7 @@ def get_shared_seg_data():
         root_dir=root_dir,
         rle_from_json=1,
         label_shift=0,
-        compressed=0,
+        compressed=1,
         empty_seg_prob=0.1,
 
         buffer_size=300,
