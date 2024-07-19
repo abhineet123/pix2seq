@@ -1,9 +1,7 @@
 {
   "dataset": {
 	root_dir: "datasets/acamp/acamp20k",
-    %mode%_name: "acamp",
-
-	%mode%_suffix: "%0%",
+    %mode%_name: "%0%",
 
 	transforms:{
 		scale_jitter: 0,
