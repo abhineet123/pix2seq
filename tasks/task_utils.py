@@ -1724,6 +1724,7 @@ def mask_from_logits(
         starts_offset, lengths_offset, class_offset,
         length_as_class,
         starts_2d,
+        flat_order,
         multi_class,
         max_seq_len,
         vocab_size,
@@ -1739,6 +1740,7 @@ def mask_from_logits(
         class_offset=class_offset,
         time_as_class=False,
         length_as_class=length_as_class,
+        flat_order=flat_order,
         starts_2d=starts_2d,
         multi_class=multi_class,
         vid_len=1,
@@ -1768,6 +1770,7 @@ def vid_mask_from_logits(
         time_as_class,
         length_as_class,
         starts_2d,
+        flat_order,
         multi_class,
         vid_len,
         max_seq_len,
@@ -1783,6 +1786,7 @@ def vid_mask_from_logits(
         time_as_class,
         length_as_class,
         starts_2d,
+        flat_order,
         multi_class,
         vid_len,
         max_seq_len,
@@ -1816,6 +1820,7 @@ def rle_from_logits(
         time_as_class,
         length_as_class,
         starts_2d,
+        flat_order,
         multi_class,
         vid_len,
         max_seq_len,
@@ -1896,8 +1901,7 @@ def rle_from_logits(
 
         assert len(starts_rows) == len(starts_cols), "starts_rows-starts_cols len mismatch"
 
-
-        rle_cmp = [starts_rows, starts_cols]
+        starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
     else:
         starts_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
         starts_token_range = [starts_offset, starts_offset + starts_bins]
@@ -1905,7 +1909,7 @@ def rle_from_logits(
         starts = starts_tokens - starts_offset - 1
         rle_id += 1
 
-        rle_cmp = [starts, ]
+    rle_cmp = [starts, ]
 
     if not length_as_class:
         assert allow_overlap or starts_offset >= lengths_offset + max_length, ("len_token_range overlaps "
@@ -1948,11 +1952,17 @@ def rle_from_logits(
         rle_cmp.append(class_ids)
 
     if length_as_class:
-        assert len(rle_cmp) == 2, "rle_cmp len must be 2 for length_as_class"
+        if starts_2d:
+            assert len(rle_cmp) == 3, "rle_cmp len must be 2 for length_as_class"
 
-        starts, lac = rle_cmp
-        lengths, class_ids = rle_from_lac(lac, max_length)
-        rle_cmp = [starts, lengths, class_ids]
+            starts_rows, starts_cols, lac = rle_cmp
+            lengths, class_ids = rle_from_lac(lac, max_length)
+            rle_cmp = [starts_rows, starts_cols, lengths, class_ids]
+        else:
+            assert len(rle_cmp) == 2, "rle_cmp len must be 2 for length_as_class"
+            starts, lac = rle_cmp
+            lengths, class_ids = rle_from_lac(lac, max_length)
+            rle_cmp = [starts, lengths, class_ids]
 
     return rle_cmp
 

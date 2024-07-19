@@ -332,6 +332,7 @@ class TaskSemanticSegmentation(task_lib.Task):
                 class_offset=class_offset,
                 length_as_class=length_as_class,
                 starts_2d=starts_2d,
+                flat_order=flat_order,
                 multi_class=multi_class,
                 max_seq_len=max_seq_len,
                 vocab_size=vocab_size,

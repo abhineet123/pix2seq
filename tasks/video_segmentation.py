@@ -318,6 +318,7 @@ class TaskVideoSegmentation(task_lib.Task):
 
         time_as_class = self.config.dataset.time_as_class
         length_as_class = self.config.dataset.length_as_class
+        starts_2d = self.config.dataset.starts_2d
         flat_order = self.config.dataset.flat_order
 
         starts_offset = self.config.model.coord_vocab_shift
@@ -374,7 +375,8 @@ class TaskVideoSegmentation(task_lib.Task):
                     starts_offset, lengths_offset, class_offset,
                     time_as_class,
                     length_as_class,
-                    False,
+                    starts_2d,
+                    flat_order,
                     multi_class,
                     vid_len,
                     max_seq_len,
