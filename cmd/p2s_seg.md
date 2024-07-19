@@ -36,6 +36,8 @@
         - [p-640-aug-lac-sub-8       @ r-640/16_53](#p_640_aug_lac_sub_8___r_640_16_5_3_)
         - [p-640-aug-lac-2d       @ r-640/16_53](#p_640_aug_lac_2d___r_640_16_5_3_)
         - [p-640-aug-lac-2d-sub-2       @ r-640/16_53](#p_640_aug_lac_2d_sub_2___r_640_16_5_3_)
+            - [on-train       @ p-640-aug-lac-2d-sub-2/r-640/16_53](#on_train___p_640_aug_lac_2d_sub_2_r_640_16_53_)
+            - [on-54_126       @ p-640-aug-lac-2d-sub-2/r-640/16_53](#on_54_126___p_640_aug_lac_2d_sub_2_r_640_16_53_)
         - [p-80       @ r-640/16_53](#p_80___r_640_16_5_3_)
             - [on-train       @ p-80/r-640/16_53](#on_train___p_80_r_640_16_53_)
             - [on-54_126       @ p-80/r-640/16_53](#on_54_126___p_80_r_640_16_53_)
@@ -178,9 +180,17 @@ python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-64
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-640:rot-15_345_4:flip-1,batch-2,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,lac,2d,seq8k
 `dbg`
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-640:rot-15_345_4:flip-1,batch-1,dbg-1,dyn-1,dist-0,ep-10000,gz,pt-1,lac,2d,seq8k
+
+
 <a id="p_640_aug_lac_2d_sub_2___r_640_16_5_3_"></a>
 ### p-640-aug-lac-2d-sub-2       @ r-640/16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-640:rot-15_345_4:flip-1:sub-2,batch-8,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,lac,2d,seq3k
+<a id="on_train___p_640_aug_lac_2d_sub_2_r_640_16_53_"></a>
+#### on-train       @ p-640-aug-lac-2d-sub-2/r-640/16_53-->p2s_seg
+python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-16_53-640_640-640_640-rot_15_345_4-flip-sub_2-2d-lac-batch_8-seq3k,_eval_,batch-4,save-vis-1,dbg-0,dyn-1,seg-16_53:p-640:r-640:sub-2,lac,2d,seq3k
+<a id="on_54_126___p_640_aug_lac_2d_sub_2_r_640_16_53_"></a>
+#### on-54_126       @ p-640-aug-lac-2d-sub-2/r-640/16_53-->p2s_seg
+python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-16_53-640_640-640_640-rot_15_345_4-flip-sub_2-2d-lac-batch_8-seq3k,_eval_,batch-4,save-vis-1,dbg-0,dyn-1,seg-54_126:p-640:r-640:sub-2,lac,2d,seq3k
 
 <a id="p_80___r_640_16_5_3_"></a>
 ### p-80       @ r-640/16_53-->p2s_seg

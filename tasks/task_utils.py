@@ -1894,6 +1894,9 @@ def rle_from_logits(
         starts_cols = starts_cols_tokens - starts_offset - 1
         rle_id += 1
 
+        assert len(starts_rows) == len(starts_cols), "starts_rows-starts_cols len mismatch"
+
+
         rle_cmp = [starts_rows, starts_cols]
     else:
         starts_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
@@ -1913,7 +1916,8 @@ def rle_from_logits(
         len_tokens = selective_argmax(len_logits, len_token_range)
         lengths = len_tokens - lengths_offset
 
-        assert len(lengths) == len(starts), "lengths-starts len mismatch"
+        starts_ = rle_cmp[0]
+        assert len(lengths) == len(starts_), "lengths-starts len mismatch"
         rle_cmp.append(lengths)
         rle_id += 1
 
@@ -1937,7 +1941,9 @@ def rle_from_logits(
         class_logits = rle_logits_non_padding[rle_id::n_tokens_per_run, :]
         class_tokens = selective_argmax(class_logits, class_token_range)
         class_ids = class_tokens - class_offset
-        assert len(class_ids) == len(starts), "class_ids-starts len mismatch"
+
+        starts_ = rle_cmp[0]
+        assert len(class_ids) == len(starts_), "class_ids-starts len mismatch"
 
         rle_cmp.append(class_ids)
 
