@@ -41,6 +41,7 @@
     - [1k8_vid_entire_seq       @ acamp](#1k8_vid_entire_seq___acam_p_)
     - [1k8_vid_entire_seq_inv       @ acamp](#1k8_vid_entire_seq_inv___acam_p_)
     - [10k6_vid_entire_seq       @ acamp](#10k6_vid_entire_seq___acam_p_)
+    - [10k6_vid_entire_seq_inv       @ acamp](#10k6_vid_entire_seq_inv___acam_p_)
 
 <!-- /MarkdownTOC -->
 
@@ -188,9 +189,16 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-6:strd-6:sample
 <a id="1k8_vid_entire_seq___acam_p_"></a>
 ## 1k8_vid_entire_seq       @ acamp-->p2s_vid_tf
 python data/scripts/create_video_tfrecord.py cfg=acamp:1k8_vid_entire_seq:len-2:strd-1
+python data/scripts/create_video_tfrecord.py cfg=acamp:1k8_vid_entire_seq:len-2:strd-2
 <a id="1k8_vid_entire_seq_inv___acam_p_"></a>
 ## 1k8_vid_entire_seq_inv       @ acamp-->p2s_vid_tf
 python data/scripts/create_video_tfrecord.py cfg=acamp:1k8_vid_entire_seq_inv:len-2:strd-1
+python data/scripts/create_video_tfrecord.py cfg=acamp:1k8_vid_entire_seq_inv:len-2:strd-2
 <a id="10k6_vid_entire_seq___acam_p_"></a>
 ## 10k6_vid_entire_seq       @ acamp-->p2s_vid_tf
 python data/scripts/create_video_tfrecord.py cfg=acamp:10k6_vid_entire_seq:len-2:strd-1
+python data/scripts/create_video_tfrecord.py cfg=acamp:10k6_vid_entire_seq:len-2:strd-2
+<a id="10k6_vid_entire_seq_inv___acam_p_"></a>
+## 10k6_vid_entire_seq_inv       @ acamp-->p2s_vid_tf
+python data/scripts/create_video_tfrecord.py cfg=acamp:10k6_vid_entire_seq_inv:len-2:strd-1
+python data/scripts/create_video_tfrecord.py cfg=acamp:10k6_vid_entire_seq_inv:len-2:strd-2
