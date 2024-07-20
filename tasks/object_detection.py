@@ -234,7 +234,7 @@ class TaskObjectDetection(task_lib.Task):
                         train_step,
                         # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
                         out_vis_dir=None,
-                        vid_cap=None,
+                        vid_writers=None,
                         csv_data=None,
                         eval_step=None,
                         training=False,
@@ -271,7 +271,7 @@ class TaskObjectDetection(task_lib.Task):
             # train_step, tag,
             # max_images_shown=(-1 if ret_results else 3)
             out_vis_dir=out_vis_dir,
-            vid_cap=vid_cap,
+            vid_writers=vid_writers,
             csv_data=csv_data,
             min_score_thresh=min_score_thresh,
             unpadded_size=unpadded_image_size,

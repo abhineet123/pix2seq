@@ -1648,7 +1648,7 @@ def add_image_summary_with_bbox(
         image_ids,
         unpadded_size,
         orig_size,
-        vid_cap=None,
+        vid_writers=None,
         out_vis_dir=None,
         csv_data=None,
         min_score_thresh=0.1,
@@ -1662,7 +1662,7 @@ def add_image_summary_with_bbox(
 
         image = visualize_boxes_and_labels_on_image_array(
             out_vis_dir=out_vis_dir,
-            vid_cap=vid_cap,
+            vid_cap=vid_writers,
             csv_data=csv_data,
             image_id=image_id_,
             image=image_,
@@ -1695,7 +1695,7 @@ def add_video_summary_with_bbox(
         unpadded_size=None,
         orig_size=None,
         out_vis_dir=None,
-        vid_cap=None,
+        vid_writers=None,
         csv_data=None,
         min_score_thresh=0.1,
 
@@ -1712,7 +1712,7 @@ def add_video_summary_with_bbox(
 
         vis_video = visualize_boxes_and_labels_on_video(
             out_vis_dir=out_vis_dir,
-            vid_cap=vid_cap,
+            vid_cap=vid_writers,
             csv_data=csv_data,
             video_id=video_id_,
             video=video,
