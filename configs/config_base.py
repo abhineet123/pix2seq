@@ -38,6 +38,7 @@ train_config = D(
     val_epochs=0,
 )
 eval_config = D(
+    csv_steps=1,
     write_to_video=1,
     mask_from_gt=1,
     mask_from_logits=1,

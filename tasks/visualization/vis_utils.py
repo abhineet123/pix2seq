@@ -1370,7 +1370,7 @@ def visualize_boxes_and_labels_on_image_array(
         scores,
         category_index,
         img_ext='.jpg',
-        vid_cap=None,
+        vid_writers=None,
         out_vis_dir=None,
         csv_data=None,
         instance_masks=None,
@@ -1521,7 +1521,7 @@ def visualize_boxes_and_labels_on_image_array(
                 keypoint_edge_width=line_thickness // 2)
 
     if out_vis_dir:
-        save_image(image, vid_cap, out_vis_dir, seq_id, image_id_,
+        save_image(image, vid_writers, out_vis_dir, seq_id, image_id_,
                    unpadded_size=unpadded_size, orig_size=orig_size)
 
     return image
@@ -1662,7 +1662,7 @@ def add_image_summary_with_bbox(
 
         image = visualize_boxes_and_labels_on_image_array(
             out_vis_dir=out_vis_dir,
-            vid_cap=vid_writers,
+            vid_writers=vid_writers,
             csv_data=csv_data,
             image_id=image_id_,
             image=image_,

@@ -4,6 +4,7 @@ import collections
 import time
 import json
 import pickle
+import pandas as pd
 
 import utils
 
@@ -15,7 +16,7 @@ from eval_utils import profile
 def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     """Perform evaluation."""
     eval_tag = cfg.eval.tag
-    summary_writer = None
+    # summary_writer = None
     # summary_writer = tf.summary.create_file_writer(FLAGS.model_dir)
 
     is_video = 'video' in cfg.task.name
@@ -71,9 +72,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     out_json_name = f"vid_info.json.gz"
     out_json_path = os.path.join(out_dir, out_json_name)
 
-    if is_seg:
-        seq_to_csv_rows = None
+    csv_columns = csv_exists = seq_to_vid_writers = seq_to_csv_rows = None
 
+    if is_seg:
         if cfg.eval.save_mask:
             print(f'\nwriting masks to: {out_mask_dir}\n')
             os.makedirs(out_mask_dir, exist_ok=True)
@@ -87,14 +88,21 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             print(f'\nwriting csv files to: {out_csv_dir}\n')
             os.makedirs(out_csv_dir, exist_ok=True)
 
+            csv_columns = [
+                "ImageID", "LabelName",
+                "XMin", "XMax", "YMin", "YMax", "Confidence",
+            ]
+            if is_video:
+                csv_columns.insert(1, 'VideoID')
+
         seq_to_csv_rows = collections.defaultdict(list)
+        csv_exists = []
 
     if cfg.eval.save_vis:
         print(f'\nwriting vis images to: {out_vis_dir}\n')
         os.makedirs(out_vis_dir, exist_ok=True)
 
     json_vid_info = collections.defaultdict(list)
-    seq_to_vid_writers = None
     if cfg.eval.write_to_video:
         seq_to_vid_writers = collections.defaultdict(lambda: None)
 
@@ -188,33 +196,38 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 ret_results=False,
             )
 
+            if seq_to_csv_rows is not None and (
+                    (eval_steps and cur_step >= eval_steps) or (
+                    cfg.eval.csv_steps > 0 and cur_step % cfg.eval.csv_steps == 0)):
+                for csv_seq_name, csv_rows in seq_to_csv_rows.items():
+                    if not csv_rows:
+                        continue
+                        # print(f'{csv_seq_name}: no csv data found')
+                    out_csv_path = os.path.join(out_csv_dir, f"{csv_seq_name}.csv")
+
+                    if csv_seq_name not in csv_exists:
+                        pd.DataFrame([], columns=csv_columns).to_csv(out_csv_path, index=False)
+                        csv_exists.append(csv_seq_name)
+
+                    # print(f'{csv_seq_name} :: saving csv to {out_csv_path}')
+                    df = pd.DataFrame(csv_rows, columns=csv_columns)
+                    df.to_csv(out_csv_path, index=False, mode='a', header=False)
+
+                    seq_to_csv_rows[csv_seq_name] = []
+
         logging.info('Finished eval in %.2f mins', (time.time() - start_time) / 60.)
 
+    if seq_to_vid_writers is not None:
+        for seq_name, vid_writers in seq_to_vid_writers.items():
+            vis_utils.close_video_writers(vid_writers)
     if is_seg:
         json_kwargs = dict(
             indent=4
         )
         import compress_json
         compress_json.dump(json_vid_info, out_json_path, json_kwargs=json_kwargs)
-
-    elif cfg.eval.save_csv:
-        import pandas as pd
-        csv_columns = [
-            "ImageID", "LabelName",
-            "XMin", "XMax", "YMin", "YMax", "Confidence",
-        ]
-        if is_video:
-            csv_columns.insert(1, 'VideoID')
-        for seq_name, vid_writers in seq_to_vid_writers.items():
-            vis_utils.close_video_writers(vid_writers)
-
+    if seq_to_csv_rows is not None:
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():
-            if not csv_rows:
-                print(f'{csv_seq_name}: no csv data found')
-            out_csv_name = f"{csv_seq_name}.csv"
-            out_csv_path = os.path.join(out_csv_dir, out_csv_name)
-            # print(f'{csv_seq_name} :: saving csv to {out_csv_path}')
-            df = pd.DataFrame(csv_rows, columns=csv_columns)
-            df.to_csv(out_csv_path, index=False)
+            assert not csv_rows, "unexplained non-empty csv_rows found"
 
     return csv_dir_name
