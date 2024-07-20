@@ -19,11 +19,11 @@
             - [on-54_126       @ sub-8-ltac-mc-len-4/r-2560-p-640/resnet-640-16_53](#on_54_126___sub_8_ltac_mc_len_4_r_2560_p_640_resnet_640_16_5_3_)
         - [sub-8-tac-mc-len-8       @ r-2560-p-640/resnet-640-16_53](#sub_8_tac_mc_len_8___r_2560_p_640_resnet_640_16_5_3_)
             - [on-train       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53](#on_train___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_)
-                - [ofj-ovl       @ on-train/sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53](#ofj_ovl___on_train_sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_5_3_)
             - [on-54_126       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53](#on_54_126___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_)
-                - [ofj-ovl       @ on-54_126/sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53](#ofj_ovl___on_54_126_sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_)
             - [on-54_126-vstrd-8       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53](#on_54_126_vstrd_8___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_)
-                - [ofj-ovl       @ on-54_126-vstrd-8/sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53](#ofj_ovl___on_54_126_vstrd_8_sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_)
+            - [on-train-ofj-ovl       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53](#on_train_ofj_ovl___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_)
+            - [on-54_126-ofj-ovl       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53](#on_54_126_ofj_ovl___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_)
+            - [on-54_126-vstrd-8-ofj-ovl       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53](#on_54_126_vstrd_8_ofj_ovl___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_)
 
 <!-- /MarkdownTOC -->
 <a id="resnet_640_16_5_3_"></a>
@@ -103,24 +103,24 @@ python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-
 <a id="on_train___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
 #### on-train       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-6,save-vis-1,dbg-0,dyn-1,vid_seg-16_53:p-640:r-2560:sub-8,mc,tac,voc15,seq3k,len-8,vis-0
-<a id="ofj_ovl___on_train_sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_5_3_"></a>
-##### ofj-ovl       @ on-train/sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
+<a id="on_54_126___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
+#### on-54_126       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-6,save-vis-1,dbg-0,dyn-1,vid_seg-54_126:p-640:r-2560:sub-8,mc,tac,voc15,seq3k,len-8,vis-0
+<a id="on_54_126_vstrd_8___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
+#### on-54_126-vstrd-8       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-6,save-vis-1,dbg-0,dyn-1,vid_seg-frame-54_126:p-640:r-2560:sub-8,mc,tac,voc15,seq3k,len-8,vstrd-8,vis-0
+<a id="on_train_ofj_ovl___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
+#### on-train-ofj-ovl       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-6,save-vis-1,dbg-0,dyn-1,vid_seg-16_53:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vis-0
 `dbg`
 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,vid_seg-frame-0_7:seq-0_1:p-640:r-2560:sub-8,mc,tac,voc15,seq3k,len-8
-<a id="on_54_126___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
-#### on-54_126       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,vid_seg-54_126:p-640:r-2560:sub-8:mc,tac,voc15,seq3k,len-8,vis-0
-<a id="ofj_ovl___on_54_126_sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
-##### ofj-ovl       @ on-54_126/sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
+<a id="on_54_126_ofj_ovl___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
+#### on-54_126-ofj-ovl       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,vid_seg-54_126:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vis-0,no_gt
 `seq-0`
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,vid_seg-frame-54_126:seq-0:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vis-0,no_gt
-<a id="on_54_126_vstrd_8___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
-#### on-54_126-vstrd-8       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-12,save-vis-1,dbg-0,dyn-1,vid_seg-frame-54_126:p-640:r-2560:sub-8:mc,tac,voc15,seq3k,len-8,vstrd-8,vis-0
-<a id="ofj_ovl___on_54_126_vstrd_8_sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
-##### ofj-ovl       @ on-54_126-vstrd-8/sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
+<a id="on_54_126_vstrd_8_ofj_ovl___sub_8_tac_mc_len_8_r_2560_p_640_resnet_640_16_53_"></a>
+#### on-54_126-vstrd-8-ofj-ovl       @ sub-8-tac-mc-len-8/r-2560-p-640/resnet-640-16_53-->p2s_vid_seg
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-12,save-vis-1,dbg-0,dyn-1,vid_seg-frame-54_126:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vstrd-8,vis-0,no_gt
 `seq-0`
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-6,save-vis-1,dbg-0,dyn-1,vid_seg-frame-54_126:seq-0:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vstrd-8,vis-0,no_gt

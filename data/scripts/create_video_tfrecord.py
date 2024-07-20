@@ -26,7 +26,7 @@ class Params(paramparse.CFG):
         paramparse.CFG.__init__(self, cfg_prefix='p2s_vid_tf')
         self.ann_file = ''
         self.ann_suffix = ''
-        self.ann_ext = 'json'
+        self.ann_ext = 'json.gz'
 
         self.frame_gaps = []
         self.length = 0
