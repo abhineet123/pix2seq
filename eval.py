@@ -95,8 +95,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             if is_video:
                 csv_columns.insert(1, 'VideoID')
 
-        seq_to_csv_rows = collections.defaultdict(list)
-        csv_exists = []
+            seq_to_csv_rows = collections.defaultdict(list)
+            csv_exists = []
 
     if cfg.eval.save_vis:
         print(f'\nwriting vis images to: {out_vis_dir}\n')
