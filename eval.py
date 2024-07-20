@@ -220,12 +220,14 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     if seq_to_vid_writers is not None:
         for seq_name, vid_writers in seq_to_vid_writers.items():
             vis_utils.close_video_writers(vid_writers)
+
     if is_seg:
         json_kwargs = dict(
             indent=4
         )
         import compress_json
         compress_json.dump(json_vid_info, out_json_path, json_kwargs=json_kwargs)
+
     if seq_to_csv_rows is not None:
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():
             assert not csv_rows, "unexplained non-empty csv_rows found"
