@@ -114,6 +114,7 @@
         - [1k8_vid_entire_seq-jtr-res-1280       @ acamp/resnet-640](#1k8_vid_entire_seq_jtr_res_1280___acamp_resnet_640_)
     - [10k6_vid_entire_seq       @ resnet-640](#10k6_vid_entire_seq___resnet_640_)
     - [10k6_vid_entire_seq-jtr-res-1280       @ resnet-640](#10k6_vid_entire_seq_jtr_res_1280___resnet_640_)
+    - [20k6_5_video-jtr-res-1280       @ resnet-640](#20k6_5_video_jtr_res_1280___resnet_640_)
 
 <!-- /MarkdownTOC -->
 <a id="swin_t_"></a>
@@ -529,6 +530,10 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 <a id="10k6_vid_entire_seq_jtr_res_1280___resnet_640_"></a>
 ## 10k6_vid_entire_seq-jtr-res-1280       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1,jtr,res-1280
+
+<a id="20k6_5_video_jtr_res_1280___resnet_640_"></a>
+## 20k6_5_video-jtr-res-1280       @ resnet-640-->p2s_vid
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-20k6_5_video,batch-18,dbg-0,dyn-1,dist-1,jtr,res-1280
 
 
 
