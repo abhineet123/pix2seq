@@ -234,7 +234,7 @@ class VideoARTrainer(model_lib.Trainer):
 
     def sample_to_tb(self):
         for video_id, video in  enumerate(self.sample):
-            tf.summary.image(f'video {video_id}', video, step=0)
+            tf.summary.image(f'video {video_id}', video)
 
 
     def compute_loss(self, preprocess_outputs, validation):

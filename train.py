@@ -105,6 +105,9 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 if not cfg.eager:
                     continue
 
+                if cfg.debug:
+                    trainer.sample_to_tb()
+
                 progbar.add(1)
 
         global_step = trainer.optimizer.iterations
@@ -156,10 +159,6 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 timestamp = time.time()
                 train_metrics_dict = {}
                 with tf.name_scope('train'):
-
-                    if cfg.eager and cfg.debug:
-                        trainer.sample_to_tb()
-
                     nan_metric = 0
                     for metric_name, metric_val in trainer.metrics.items():
                         metric_val_np = metric_val.result().numpy()
