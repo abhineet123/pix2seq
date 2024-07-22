@@ -215,6 +215,7 @@ class VideoARTrainer(model_lib.Trainer):
           **kwargs: other neccesary configurations to pass for training setup.
         """
         super().__init__(config, **kwargs)
+        self.sample = None
         self.vid_len = config.dataset.length
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
@@ -231,10 +232,17 @@ class VideoARTrainer(model_lib.Trainer):
                 'accuracy_notpad'),
         })
 
+    def sample_to_tb(self):
+        for video_id, video in  enumerate(self.sample):
+            tf.summary.image(f'video {video_id}', video, step=0)
+
+
     def compute_loss(self, preprocess_outputs, validation):
         batched_examples, input_seq, target_seq, token_weights = preprocess_outputs
 
         videos = batched_examples['video']
+
+        self.sample = videos
 
         model = self.model  # type:Model
 

@@ -164,6 +164,10 @@ class Trainer(abc.ABC):
             self._val_metrics[k].update_state(v)
 
     @abc.abstractmethod
+    def sample_to_tb(self):
+        """writes a training sample to tensorboard"""
+
+    @abc.abstractmethod
     def compute_loss(self, preprocessed_outputs, validation):
         """Compute loss based on model outputs and targets."""
 
