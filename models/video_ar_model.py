@@ -216,6 +216,8 @@ class VideoARTrainer(model_lib.Trainer):
         """
         super().__init__(config, **kwargs)
         self.sample = None
+        self.step = 0
+        
         self.vid_len = config.dataset.length
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
@@ -233,8 +235,9 @@ class VideoARTrainer(model_lib.Trainer):
         })
 
     def sample_to_tb(self):
+        self.step += 1
         for video_id, video in  enumerate(self.sample):
-            tf.summary.image(f'video {video_id}', video)
+            tf.summary.image(f'video {video_id}', video, self.step)
 
 
     def compute_loss(self, preprocess_outputs, validation):
