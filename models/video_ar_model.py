@@ -217,7 +217,7 @@ class VideoARTrainer(model_lib.Trainer):
         super().__init__(config, **kwargs)
         self.sample = None
         self.step = 0
-        
+
         self.vid_len = config.dataset.length
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))

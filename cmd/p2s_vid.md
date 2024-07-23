@@ -113,6 +113,10 @@
             - [vstrd-2       @ on-inv/acamp/resnet-640](#vstrd_2___on_inv_acamp_resnet_64_0_)
         - [1k8_vid_entire_seq-jtr-res-1280       @ acamp/resnet-640](#1k8_vid_entire_seq_jtr_res_1280___acamp_resnet_640_)
     - [10k6_vid_entire_seq       @ resnet-640](#10k6_vid_entire_seq___resnet_640_)
+        - [on-train       @ 10k6_vid_entire_seq/resnet-640](#on_train___10k6_vid_entire_seq_resnet_640_)
+        - [on-inv       @ 10k6_vid_entire_seq/resnet-640](#on_inv___10k6_vid_entire_seq_resnet_640_)
+            - [vstrd-1       @ on-inv/10k6_vid_entire_seq/resnet-640](#vstrd_1___on_inv_10k6_vid_entire_seq_resnet_64_0_)
+            - [vstrd-2       @ on-inv/10k6_vid_entire_seq/resnet-640](#vstrd_2___on_inv_10k6_vid_entire_seq_resnet_64_0_)
     - [10k6_vid_entire_seq-jtr-res-1280       @ resnet-640](#10k6_vid_entire_seq_jtr_res_1280___resnet_640_)
     - [20k6_5_video-jtr-res-1280       @ resnet-640](#20k6_5_video_jtr_res_1280___resnet_640_)
 
@@ -514,10 +518,10 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_enti
 ### on-inv       @ acamp/resnet-640-->p2s_vid
 <a id="vstrd_1___on_inv_acamp_resnet_64_0_"></a>
 #### vstrd-1       @ on-inv/acamp/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv,vstrd-1,batch-2,save-vis-1,dbg-0,dyn-1
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-1k8_vid_entire_seq_inv,vstrd-1,batch-3,save-vis-1,dbg-0,dyn-1
 <a id="vstrd_2___on_inv_acamp_resnet_64_0_"></a>
 #### vstrd-2       @ on-inv/acamp/resnet-640-->p2s_vid
-python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv,vstrd-2,batch-2,save-vis-1,dbg-0,dyn-1
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-1k8_vid_entire_seq_inv,vstrd-2,batch-3,save-vis-1,dbg-0,dyn-1
 
 <a id="1k8_vid_entire_seq_jtr_res_1280___acamp_resnet_640_"></a>
 ### 1k8_vid_entire_seq-jtr-res-1280       @ acamp/resnet-640-->p2s_vid
@@ -526,11 +530,23 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 <a id="10k6_vid_entire_seq___resnet_640_"></a>
 ## 10k6_vid_entire_seq       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1
+<a id="on_train___10k6_vid_entire_seq_resnet_640_"></a>
+### on-train       @ 10k6_vid_entire_seq/resnet-640-->p2s_vid
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-10k6_vid_entire_seq,vstrd-1,batch-3,save-vis-1,dbg-0,dyn-1
+<a id="on_inv___10k6_vid_entire_seq_resnet_640_"></a>
+### on-inv       @ 10k6_vid_entire_seq/resnet-640-->p2s_vid
+<a id="vstrd_1___on_inv_10k6_vid_entire_seq_resnet_64_0_"></a>
+#### vstrd-1       @ on-inv/10k6_vid_entire_seq/resnet-640-->p2s_vid
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv,vstrd-1,batch-4,save-vis-1,dbg-0,dyn-1
+<a id="vstrd_2___on_inv_10k6_vid_entire_seq_resnet_64_0_"></a>
+#### vstrd-2       @ on-inv/10k6_vid_entire_seq/resnet-640-->p2s_vid
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv,vstrd-2,batch-4,save-vis-1,dbg-0,dyn-1
+
 
 <a id="10k6_vid_entire_seq_jtr_res_1280___resnet_640_"></a>
 ## 10k6_vid_entire_seq-jtr-res-1280       @ resnet-640-->p2s_vid
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1,jtr,res-1280
-`dbg`
+`2_per_seq_dbg_bear`
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-2_per_seq_dbg_bear,batch-1,dbg-1,dyn-1,dist-0,jtr,res-1280
 
 <a id="20k6_5_video_jtr_res_1280___resnet_640_"></a>
