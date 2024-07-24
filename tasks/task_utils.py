@@ -319,7 +319,7 @@ def check_video_rle_tokens(
     if len(rle_tokens) == 0:
         assert np.all(vid_mask_gt == 0), "non-zero mask found for empty rle_tokens"
 
-        print('empty masks match !')
+        # print('empty masks match !')
         return
 
     if is_vis:
@@ -382,8 +382,8 @@ def check_video_rle_tokens(
         check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_sub,
                                    class_id_to_col, n_classes)
         raise AssertionError()
-    else:
-        print('vid_mask_gt_sub matches')
+    # else:
+    #     print('vid_mask_gt_sub matches')
 
     if not np.array_equal(vid_mask_gt_sub, vid_mask_rec):
         print("vid_mask_rec mismatch")
@@ -434,8 +434,8 @@ def check_video_rle_tokens(
         k = cv2.waitKey(1)
         if k == 27:
             exit()
-    else:
-        print('\nvid masks match !\n')
+    # else:
+    #     print('\nvid masks match !\n')
 
 
 def interleave_rle(rle_cmps):
@@ -2180,7 +2180,7 @@ def vid_rle_from_tokens(
     n_extra_tokens = seq_len % n_tokens_per_run
     if n_extra_tokens != 0:
         if not allow_extra:
-            raise AssertionError(f"rle_tokens length must be divisible by {n_tokens_per_run}")
+            raise AssertionError(f"found rle with length {seq_len} that is not divisible by {n_tokens_per_run}")
         rle_tokens = rle_tokens[:-n_extra_tokens]
 
     if starts_2d:

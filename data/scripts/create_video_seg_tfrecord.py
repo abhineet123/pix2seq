@@ -39,7 +39,9 @@ class Params(paramparse.CFG):
         self.stats_only = 0
         self.rle_to_json = 1
         self.json_only = 0
+
         self.check = 0
+        self.load = 0
 
         self.excluded_src_ids = []
 
@@ -320,11 +322,12 @@ def generate_patch_vid_infos(
         n_residuals = n_all_files % params.vid.stride
 
         if n_residuals != 0:
-            subseq_end_ids.append(n_all_files-1)
+            subseq_end_ids.append(n_all_files - 1)
 
         subseq_end_ids = np.asarray(subseq_end_ids)
         subseq_start_ids = subseq_end_ids - (params.vid.length - 1)
-        for subseq_id, (subseq_start_id, subseq_end_id) in enumerate(zip(subseq_start_ids, subseq_end_ids, strict=True)):
+        for subseq_id, (subseq_start_id, subseq_end_id) in enumerate(
+                zip(subseq_start_ids, subseq_end_ids, strict=True)):
             subseq_end_id_ = min(subseq_start_id + (params.vid.length - 1) * params.vid.frame_gap, n_all_files - 1)
 
             assert subseq_end_id == subseq_end_id_, "subseq_end_id_ mismatch"
@@ -539,86 +542,90 @@ def create_tf_example(
     vid_mask_orig = np.stack(subseq_masks, axis=0)
     vid_mask_sub_orig = np.stack(subseq_masks_sub, axis=0)
     tac_mask = tac_mask_sub = None
-
     if params.time_as_class:
-        tac_mask = task_utils.vid_mask_to_tac(
-            vid, vid_mask_orig, n_classes, class_id_to_col, params.check)
-        tac_mask_sub = task_utils.vid_mask_to_tac(
-            vid, vid_mask_sub_orig, n_classes, class_id_to_col, params.check)
-
-        # vid_mask_rec = task_utils.vid_mask_from_tac(tac_mask, vid_len, n_classes)
-        # vid_mask_sub_rec = task_utils.vid_mask_from_tac(tac_mask_sub, vid_len, n_classes)
-        # assert np.array_equal(vid_mask, vid_mask_rec), "vid_mask_rec mismatch"
-        # assert np.array_equal(vid_mask_sub, vid_mask_sub_rec), "vid_mask_rec mismatch"
-
         rle_id_to_col, rle_id_to_name = tac_id_to_col, tac_id_to_name
-
-        vid_mask = tac_mask
-        vid_mask_sub = tac_mask_sub
-        # return
     else:
         rle_id_to_col, rle_id_to_name = class_id_to_col, class_id_to_name
-        vid_mask = vid_mask_orig
-        vid_mask_sub = vid_mask_sub_orig
 
-    n_rle_classes = len(rle_id_to_col)
-
-    if subsample_method == 2:
-        max_length_sub = int(max_length / params.subsample)
-        n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
+    if params.load:
+        rle_tokens = video["rle"]
+        n_runs = video["n_runs"]
     else:
-        n_rows_sub, n_cols_sub = n_rows, n_cols
-        max_length_sub = max_length
+        if params.time_as_class:
+            tac_mask = task_utils.vid_mask_to_tac(
+                vid, vid_mask_orig, n_classes, class_id_to_col, params.check)
+            tac_mask_sub = task_utils.vid_mask_to_tac(
+                vid, vid_mask_sub_orig, n_classes, class_id_to_col, params.check)
 
-    starts, lengths = task_utils.mask_to_rle(
-        mask=vid_mask_sub,
-        max_length=max_length_sub,
-        n_classes=n_rle_classes,
-        order=params.flat_order,
-    )
-    rle_cmp = [starts, lengths]
+            # vid_mask_rec = task_utils.vid_mask_from_tac(tac_mask, vid_len, n_classes)
+            # vid_mask_sub_rec = task_utils.vid_mask_from_tac(tac_mask_sub, vid_len, n_classes)
+            # assert np.array_equal(vid_mask, vid_mask_rec), "vid_mask_rec mismatch"
+            # assert np.array_equal(vid_mask_sub, vid_mask_sub_rec), "vid_mask_rec mismatch"
+            vid_mask = tac_mask
+            vid_mask_sub = tac_mask_sub
+            # return
+        else:
+            vid_mask = vid_mask_orig
+            vid_mask_sub = vid_mask_sub_orig
 
-    n_runs = len(starts)
+        n_rle_classes = len(rle_id_to_col)
 
-    multi_class = False
-    if n_rle_classes > 2:
-        multi_class = True
+        if subsample_method == 2:
+            max_length_sub = int(max_length / params.subsample)
+            n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
+        else:
+            n_rows_sub, n_cols_sub = n_rows, n_cols
+            max_length_sub = max_length
 
-        assert params.class_offset > 0, "class_offset must be > 0"
-
-        class_ids = task_utils.get_rle_class_ids(
-            vid_mask_sub, starts, lengths, rle_id_to_col,
-            order=params.flat_order)
-
-        rle_cmp.append(class_ids)
-        if params.length_as_class:
-            rle_cmp = task_utils.rle_to_lac(rle_cmp, max_length_sub)
-
-    if params.vis:
-        task_utils.vis_video_rle(
-            rle_cmp,
-            class_id_to_col, class_id_to_name,
-            image_ids,
-            vid, vid_mask, vid_mask_sub,
-            params.time_as_class,
-            params.length_as_class,
-            max_length_sub,
-            params.flat_order,
-            rle_id_to_name,
-            rle_id_to_col,
-            params.pad_tokens,
+        starts, lengths = task_utils.mask_to_rle(
+            mask=vid_mask_sub,
+            max_length=max_length_sub,
+            n_classes=n_rle_classes,
+            order=params.flat_order,
         )
+        rle_cmp = [starts, lengths]
 
-    rle_tokens = task_utils.rle_to_tokens(
-        rle_cmp,
-        vid_mask_sub.shape,
-        params.length_as_class,
-        params.starts_offset,
-        params.lengths_offset,
-        params.class_offset,
-        params.starts_2d,
-        params.flat_order,
-    )
+        n_runs = len(starts)
+
+        multi_class = False
+        if n_rle_classes > 2:
+            multi_class = True
+
+            assert params.class_offset > 0, "class_offset must be > 0"
+
+            class_ids = task_utils.get_rle_class_ids(
+                vid_mask_sub, starts, lengths, rle_id_to_col,
+                order=params.flat_order)
+
+            rle_cmp.append(class_ids)
+            if params.length_as_class:
+                rle_cmp = task_utils.rle_to_lac(rle_cmp, max_length_sub)
+
+        if params.vis:
+            task_utils.vis_video_rle(
+                rle_cmp,
+                class_id_to_col, class_id_to_name,
+                image_ids,
+                vid, vid_mask, vid_mask_sub,
+                params.time_as_class,
+                params.length_as_class,
+                max_length_sub,
+                params.flat_order,
+                rle_id_to_name,
+                rle_id_to_col,
+                params.pad_tokens,
+            )
+
+        rle_tokens = task_utils.rle_to_tokens(
+            rle_cmp,
+            vid_mask_sub.shape,
+            params.length_as_class,
+            params.starts_offset,
+            params.lengths_offset,
+            params.class_offset,
+            params.starts_2d,
+            params.flat_order,
+        )
 
     if params.check:
         task_utils.check_video_rle_tokens(
@@ -662,7 +669,7 @@ def create_tf_example(
 
     assert rle_len == n_runs * tokens_per_run, "n_runs mismatch"
 
-    if params.rle_to_json:
+    if not params.load and params.rle_to_json:
         video['rle'] = rle_tokens
         video['rle_len'] = rle_len
         video['n_runs'] = n_runs
@@ -851,6 +858,35 @@ def main():
         vid_infos,
     )
 
+    if params.load:
+        print(f'loading vid json: {vid_json_path}')
+        if params.ann_ext == 'json.gz':
+            import compress_json
+            vid_json_dict = compress_json.load(vid_json_path)
+        else:
+            import json
+            with open(vid_json_path, 'r') as fid:
+                vid_json_dict = json.load(fid)
+        videos = vid_json_dict['videos']
+
+        if params.check:
+            n_tokens_per_run_gt = None
+            for video in videos:
+                n_runs = video['n_runs']
+                rle_len = video['rle_len']
+                rle = video['rle']
+                assert len(rle) == rle_len, "rle_len mismatch"
+                if n_runs == 0 or rle_len==0:
+                    assert n_runs == 0 and rle_len == 0, "n_runs and rle_len must both be zero or non-zero"
+                else:
+                    assert rle_len % n_runs == 0, "rle_len must be divisible by n_runs"
+                    n_tokens_per_run = rle_len // n_runs
+                    if n_tokens_per_run_gt is None:
+                        n_tokens_per_run_gt = n_tokens_per_run
+                    else:
+                        assert n_tokens_per_run == n_tokens_per_run_gt, "n_tokens_per_run mismatch"
+            # print()
+
     assert len(all_subseq_img_infos) == len(videos), "all_subseq_img_infos length mismatch"
 
     # if params.json_only:
@@ -901,7 +937,8 @@ def main():
             iter_len=len(all_subseq_img_infos),
         )
 
-    save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path)
+    if not params.load:
+        save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path)
 
     metrics_dir = linux_path(params.db_path, '_metrics_')
 
