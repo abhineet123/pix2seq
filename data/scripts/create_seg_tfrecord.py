@@ -43,7 +43,7 @@ class Params(paramparse.CFG):
     """
 
     def __init__(self):
-        paramparse.CFG.__init__(self, cfg_prefix='p2s_seg_tf')
+        paramparse.CFG.__init__(self, cfg_prefix='tf_seg')
         self.class_names_path = ''
         self.db_path = ''
         self.db_suffix = ''
