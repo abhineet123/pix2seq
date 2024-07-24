@@ -1,4 +1,4 @@
-from absl import logging
+# from absl import logging
 import os
 import collections
 import time
@@ -10,7 +10,7 @@ import utils
 
 from tasks.visualization import vis_utils
 
-from eval_utils import profile
+from eval_utils import profile, print_with_time
 
 
 def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
@@ -26,14 +26,14 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         # Restore model checkpoint.
         model = model_lib.ModelRegistry.lookup(cfg.model.name)(cfg)
 
-        logging.info('Restoring from %s', ckpt)
+        print_with_time(f'Restoring from {ckpt:s}')
         checkpoint = tf.train.Checkpoint(
             model=model, global_step=tf.Variable(0, dtype=tf.int64))
         status = checkpoint.restore(ckpt).expect_partial()  # Not restore optimizer.
         verify_restored = status.assert_consumed
         verify_existing = status.assert_existing_objects_matched
         global_step = checkpoint.global_step
-        logging.info('Performing eval at step %d', global_step.numpy())
+        print_with_time(f'Performing eval at step {global_step.numpy():d}')
 
     ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
     json_name = cfg.dataset.eval_filename_for_metrics
@@ -176,9 +176,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 timestamp = time.time()
                 progress = cur_step / float(eval_steps) * 100
                 eta = (eval_steps - cur_step) / steps_per_sec / 60.
-                logging.info(f'Completed: {cur_step} / {eval_steps} steps ({progress:.2f}%), ETA {eta:.2f} mins')
+                print_with_time(f'Completed: {cur_step} / {eval_steps} steps ({progress:.2f}%), ETA {eta:.2f} mins')
             else:
-                logging.info(f'Completed: {cur_step:d} steps')
+                print_with_time(f'Completed: {cur_step:d} steps')
 
             task.postprocess_cpu(
                 outputs=per_step_outputs,
@@ -215,7 +215,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
                     seq_to_csv_rows[csv_seq_name] = []
 
-        logging.info('Finished eval in %.2f mins', (time.time() - start_time) / 60.)
+        print_with_time(f'Finished eval in {(time.time() - start_time) / 60.:.2f} mins', )
 
     if seq_to_vid_writers is not None:
         for seq_name, vid_writers in seq_to_vid_writers.items():
