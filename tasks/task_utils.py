@@ -288,7 +288,7 @@ def check_video_rle_tokens(
         tac_mask_sub,
         tac_id_to_col,
         allow_overlap,
-        max_seq_len,
+        allow_extra,
 ):
     vid_mask_gt = vid_mask_to_gs(vid_mask, copy=True)
     vid_len, n_rows, n_cols = vid_mask_gt.shape
@@ -339,7 +339,7 @@ def check_video_rle_tokens(
     # rle_len = len(rle_tokens)
     vid_mask_rec, tac_mask_rec, rle_rec_cmp = vid_mask_from_tokens(
         rle_tokens,
-        allow_extra=False,
+        allow_extra=allow_extra,
         vid_len=vid_len,
         shape=(n_rows, n_cols),
         length_as_class=length_as_class,
@@ -353,7 +353,6 @@ def check_video_rle_tokens(
         time_as_class=time_as_class,
         n_classes=n_classes,
         ignore_invalid=False,
-        max_seq_len=max_seq_len,
     )
 
     starts, lengths = rle_rec_cmp[:2]
@@ -2035,7 +2034,6 @@ def vid_mask_from_tokens(
         multi_class,
         flat_order,
         ignore_invalid,
-        max_seq_len,
 ):
     n_rows, n_cols = shape
     has_class_tokens = (time_as_class or multi_class) and not length_as_class
@@ -2060,7 +2058,6 @@ def vid_mask_from_tokens(
         multi_class=multi_class,
         flat_order=flat_order,
         ignore_invalid=ignore_invalid,
-        max_seq_len=max_seq_len,
     )
     starts, lengths = rle_cmp[:2]
 
@@ -2163,7 +2160,6 @@ def vid_rle_from_tokens(
         multi_class,
         flat_order,
         ignore_invalid,
-        max_seq_len
 ):
     if length_as_class:
         assert lengths_offset == class_offset, "lengths_offset and class_offset must be same for length_as_class"
@@ -2184,7 +2180,7 @@ def vid_rle_from_tokens(
     seq_len = len(rle_tokens)
     n_extra_tokens = seq_len % n_tokens_per_run
     if n_extra_tokens != 0:
-        if not allow_extra and (max_seq_len == 0 or seq_len < max_seq_len):
+        if not allow_extra:
             raise AssertionError(f"found rle with length {seq_len} that is not divisible by {n_tokens_per_run}")
         rle_tokens = rle_tokens[:-n_extra_tokens]
 

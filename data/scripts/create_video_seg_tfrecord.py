@@ -646,8 +646,8 @@ def create_tf_example(
             tac_mask_sub=tac_mask_sub,
             tac_id_to_col=rle_id_to_col,
             is_vis=0,
-            allow_overlap=0,
-            max_seq_len=0,
+            allow_overlap=False,
+            allow_extra=False,
         )
 
     rle_len = len(rle_tokens)

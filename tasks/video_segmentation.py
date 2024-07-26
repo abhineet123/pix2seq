@@ -165,7 +165,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 tac_mask_sub=None,
                 tac_id_to_col=None,
                 allow_overlap=allow_overlap,
-                max_seq_len=max_seq_len,
+                allow_extra=False,
             )
             vid_masks.append(vid_mask)
             vid_masks_sub.append(vid_mask_sub)
@@ -402,7 +402,6 @@ class TaskVideoSegmentation(task_lib.Task):
                 time_as_class=time_as_class,
                 n_classes=n_classes,
                 ignore_invalid=True,
-                max_seq_len=max_seq_len,
             )
             rle_rec_len = len(rle_rec_cmp[0])
 
@@ -415,9 +414,10 @@ class TaskVideoSegmentation(task_lib.Task):
             vid_mask_gt = [None, ] * vid_len
 
             if self.config.eval.mask_from_gt:
+                is_curtailed = len(gt_rle_tokens) < gt_rle_len
                 vid_mask_gt, tac_mask_gt, rle_gt_cmp = task_utils.vid_mask_from_tokens(
                     gt_rle_tokens,
-                    allow_extra=False,
+                    allow_extra=is_curtailed,
                     vid_len=vid_len,
                     shape=(n_rows, n_cols),
                     length_as_class=length_as_class,
@@ -431,7 +431,6 @@ class TaskVideoSegmentation(task_lib.Task):
                     time_as_class=time_as_class,
                     n_classes=n_classes,
                     ignore_invalid=False,
-                    max_seq_len=max_seq_len,
                 )
 
                 if self.config.debug:
