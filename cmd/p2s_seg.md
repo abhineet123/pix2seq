@@ -21,6 +21,8 @@
             - [on-train       @ aug/r-2560-p-640-sub-8/16_53](#on_train___aug_r_2560_p_640_sub_8_16_53_)
             - [on-54_126       @ aug/r-2560-p-640-sub-8/16_53](#on_54_126___aug_r_2560_p_640_sub_8_16_53_)
         - [aug-lac       @ r-2560-p-640-sub-8/16_53](#aug_lac___r_2560_p_640_sub_8_16_53_)
+            - [on-16_53       @ aug-lac/r-2560-p-640-sub-8/16_53](#on_16_53___aug_lac_r_2560_p_640_sub_8_16_53_)
+            - [on-54_126       @ aug-lac/r-2560-p-640-sub-8/16_53](#on_54_126___aug_lac_r_2560_p_640_sub_8_16_53_)
     - [r-2560-p-640-sub-4       @ 16_53](#r_2560_p_640_sub_4___16_5_3_)
         - [lac       @ r-2560-p-640-sub-4/16_53](#lac___r_2560_p_640_sub_4_16_53_)
             - [on-16_53       @ lac/r-2560-p-640-sub-4/16_53](#on_16_53___lac_r_2560_p_640_sub_4_16_53_)
@@ -134,6 +136,12 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet
 <a id="aug_lac___r_2560_p_640_sub_8_16_53_"></a>
 ### aug-lac       @ r-2560-p-640-sub-8/16_53-->p2s_seg
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-16_53:p-640:r-2560:rot-15_345_4:sub-8,batch-32,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,lac
+<a id="on_16_53___aug_lac_r_2560_p_640_sub_8_16_53_"></a>
+#### on-16_53       @ aug-lac/r-2560-p-640-sub-8/16_53-->p2s_seg
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-rot_15_345_4-sub_8-lac-batch_32,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,seg-16_53:p-640:r-2560:sub-8,lac
+<a id="on_54_126___aug_lac_r_2560_p_640_sub_8_16_53_"></a>
+#### on-54_126       @ aug-lac/r-2560-p-640-sub-8/16_53-->p2s_seg
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-rot_15_345_4-sub_8-lac-batch_32,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,seg-16_53:p-640:r-2560:sub-8,lac
 
 <a id="r_2560_p_640_sub_4___16_5_3_"></a>
 ## r-2560-p-640-sub-4       @ 16_53-->p2s_seg

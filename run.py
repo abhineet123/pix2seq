@@ -15,6 +15,10 @@
 # ==============================================================================
 """Train and eval script."""
 
+# import torch
+# k = torch.cuda.device_count()
+# print(f'found {k} GPUs')
+
 import json
 import os
 import sys

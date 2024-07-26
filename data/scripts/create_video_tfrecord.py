@@ -33,9 +33,12 @@ class Params(paramparse.CFG):
         self.stride = 0
         self.sample = 0
 
+        self.add_stride_info = 1
+        self.save_tfrecord = 1
+
         self.image_dir = ''
         self.n_proc = 0
-        self.save_fg_json = 0
+        self.save_json = 0
         self.num_shards = 32
         self.output_dir = ''
 
@@ -67,25 +70,29 @@ def save_ytvis_annotations(json_dict, json_path):
 
 
 def load_ytvis_annotations(annotation_path, vid_id_offset):
+    assert os.path.exists(annotation_path), f"ytvis json does not exist: {annotation_path}"
+
     print(f'Reading ytvis annotations from {annotation_path}')
     if annotation_path.endswith('.json'):
         import json
         with open(annotation_path, 'r') as f:
-            annotations = json.load(f)
+            json_data = json.load(f)
     elif annotation_path.endswith('.json.gz'):
         import compress_json
-        annotations = compress_json.load(annotation_path)
+        json_data = compress_json.load(annotation_path)
     else:
         raise AssertionError(f'Invalid annotation_path: {annotation_path}')
 
-    video_info = annotations['videos']
+    video_info = json_data['videos']
+    annotations = json_data['annotations']
+    categories = json_data['categories']
 
     if vid_id_offset > 0:
         for vid in video_info:
             vid["id"] += vid_id_offset
 
     category_id_to_name_map = dict(
-        (element['id'], element['name']) for element in annotations['categories'])
+        (category['id'], category['name']) for category in categories)
 
     # assert 0 not in category_id_to_name_map.keys(), "class IDs must to be > 0"
 
@@ -97,12 +104,12 @@ def load_ytvis_annotations(annotation_path, vid_id_offset):
         assert bkg_class == 'background', "class id 0 can be used only for background"
 
     vid_to_ann = collections.defaultdict(list)
-    for ann in annotations['annotations']:
+    for ann in annotations:
         ann['video_id'] += vid_id_offset
         vid_id = ann['video_id']
         vid_to_ann[vid_id].append(ann)
 
-    return video_info, category_id_to_name_map, vid_to_ann, annotations
+    return video_info, category_id_to_name_map, vid_to_ann, json_data
 
 
 def show_img_rgb(frame, cu_z, mlab):
@@ -543,10 +550,27 @@ def main():
     category_id_to_name_map = {}
     vid_to_obj_ann = collections.defaultdict(list)
 
+    save_json = params.add_stride_info or params.save_json
+
+    stride_to_video_ids = {}
+
     for ann_file in ann_files:
-        assert os.path.exists(ann_file), f"ann_file does not exist: {ann_file}"
         video_info_, category_id_to_name_map_, vid_to_obj_ann_, annotations_ = load_ytvis_annotations(
             ann_file, vid_id_offset)
+
+        if params.add_stride_info:
+            filenames_to_vid_id = dict(
+                (tuple(video_['file_names']), video_['id']) for video_ in video_info_
+            )
+            for _stride in range(params.stride + 1, params.length + 1):
+                _stride_ann_file = ann_file.replace(f'stride-{params.stride}', f'stride-{_stride}')
+                _stride_video_info_, _, _, _ = load_ytvis_annotations(_stride_ann_file, vid_id_offset=0)
+                stride_to_video_ids[_stride] = [filenames_to_vid_id[tuple(video_['file_names'])]
+                                     for video_ in _stride_video_info_]
+
+                print()
+            annotations_['stride_to_video_ids'] = stride_to_video_ids
+
         new_vid_ids = set(vid_to_obj_ann_.keys())
         n_new_vid_ids = len(new_vid_ids)
         counts_ = annotations_['info']['counts'][0]
@@ -568,7 +592,7 @@ def main():
 
         vid_id_offset = max(vid_to_obj_ann.keys())
 
-        if not params.save_fg_json:
+        if not save_json:
             continue
 
         if not annotations_all:
@@ -577,6 +601,8 @@ def main():
             annotations_all['videos'] += annotations_['videos']
             annotations_all['annotations'] += annotations_['annotations']
             # annotations_all['categories'] += annotations_['categories']
+            if params.add_stride_info:
+                annotations_all['stride_to_video_ids'].update(annotations_['stride_to_video_ids'])
 
             counts = annotations_all['info']['counts'][0]
 
@@ -612,34 +638,36 @@ def main():
         if frame_gaps_suffix not in out_name:
             out_name = f'{out_name}-{frame_gaps_suffix}'
 
-        if params.save_fg_json:
-            out_json_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}.{params.ann_ext}')
-            annotations_all['info']['description'] = out_name
-            save_ytvis_annotations(annotations_all, out_json_path)
+    if save_json:
+        out_json_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}.{params.ann_ext}')
+        annotations_all['info']['description'] = out_name
+        save_ytvis_annotations(annotations_all, out_json_path)
 
-    annotations_iter = generate_video_annotations(
-        params=params,
-        videos=video_info,
-        category_id_to_name_map=category_id_to_name_map,
-        vid_to_obj_ann=vid_to_obj_ann,
-        image_dir=params.image_dir,
-    )
-    output_path = os.path.join(params.output_dir, out_name)
-    os.makedirs(output_path, exist_ok=True)
+    if params.save_tfrecord:
 
-    tfrecord_pattern = os.path.join(output_path, 'shard')
+        annotations_iter = generate_video_annotations(
+            params=params,
+            videos=video_info,
+            category_id_to_name_map=category_id_to_name_map,
+            vid_to_obj_ann=vid_to_obj_ann,
+            image_dir=params.image_dir,
+        )
+        output_path = os.path.join(params.output_dir, out_name)
+        os.makedirs(output_path, exist_ok=True)
 
-    tfrecord_lib.write_tf_record_dataset(
-        output_path=tfrecord_pattern,
-        annotation_iterator=annotations_iter,
-        process_func=create_video_tf_example,
-        num_shards=params.num_shards,
-        multiple_processes=params.n_proc,
-        iter_len=len(video_info),
-    )
+        tfrecord_pattern = os.path.join(output_path, 'shard')
+
+        tfrecord_lib.write_tf_record_dataset(
+            output_path=tfrecord_pattern,
+            annotation_iterator=annotations_iter,
+            process_func=create_video_tf_example,
+            num_shards=params.num_shards,
+            multiple_processes=params.n_proc,
+            iter_len=len(video_info),
+        )
+        print(f'output_path: {output_path}')
 
     print(f'out_name: {out_name}')
-    print(f'output_path: {output_path}')
 
 
 if __name__ == '__main__':
