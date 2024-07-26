@@ -549,8 +549,6 @@ def main():
     category_id_to_name_map = {}
     vid_to_obj_ann = collections.defaultdict(list)
 
-    save_json = params.add_stride_info or params.save_json
-
     stride_to_video_ids = {}
 
     for ann_file in ann_files:
@@ -591,7 +589,7 @@ def main():
 
         vid_id_offset = max(vid_to_obj_ann.keys())
 
-        if not save_json:
+        if not params.save_json:
             continue
 
         if not annotations_all:
@@ -637,12 +635,12 @@ def main():
         if frame_gaps_suffix not in out_name:
             out_name = f'{out_name}-{frame_gaps_suffix}'
 
-    if save_json:
+    if params.save_json:
         out_json_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}.{params.ann_ext}')
         annotations_all['info']['description'] = out_name
         save_ytvis_annotations(annotations_all, out_json_path)
 
-    if save_json != 2:
+    if params.save_json != 2:
         annotations_iter = generate_video_annotations(
             params=params,
             videos=video_info,
