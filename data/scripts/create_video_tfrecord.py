@@ -34,7 +34,6 @@ class Params(paramparse.CFG):
         self.sample = 0
 
         self.add_stride_info = 1
-        self.save_tfrecord = 1
 
         self.image_dir = ''
         self.n_proc = 0
@@ -566,7 +565,7 @@ def main():
                 _stride_ann_file = ann_file.replace(f'stride-{params.stride}', f'stride-{_stride}')
                 _stride_video_info_, _, _, _ = load_ytvis_annotations(_stride_ann_file, vid_id_offset=0)
                 stride_to_video_ids[_stride] = [filenames_to_vid_id[tuple(video_['file_names'])]
-                                     for video_ in _stride_video_info_]
+                                                for video_ in _stride_video_info_]
 
                 print()
             annotations_['stride_to_video_ids'] = stride_to_video_ids
@@ -643,8 +642,7 @@ def main():
         annotations_all['info']['description'] = out_name
         save_ytvis_annotations(annotations_all, out_json_path)
 
-    if params.save_tfrecord:
-
+    if save_json != 2:
         annotations_iter = generate_video_annotations(
             params=params,
             videos=video_info,

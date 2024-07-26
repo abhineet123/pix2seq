@@ -68,7 +68,7 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-3:strd-1
 python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-3:strd-3
 <a id="len_6___54_126_"></a>
 ## len-6       @ 54_126-->tf_vid
-python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-6:strd-1:asi
+python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-6:strd-1:asi-2
 python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-6:strd-6
 <a id="sample_8___len_6_54_126_"></a>
 ### sample-8       @ len-6/54_126-->tf_vid
