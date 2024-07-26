@@ -215,7 +215,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
                     seq_to_csv_rows[csv_seq_name] = []
 
-        print_with_time(f'Finished eval in {(time.time() - start_time) / 60.:.2f} mins', )
+        print_with_time(f'Finished eval in {(time.time() - start_time) / 60.:.2f} mins')
 
     if seq_to_vid_writers is not None:
         for seq_name, vid_writers in seq_to_vid_writers.items():

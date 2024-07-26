@@ -165,6 +165,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 tac_mask_sub=None,
                 tac_id_to_col=None,
                 allow_overlap=allow_overlap,
+                max_seq_len=max_seq_len,
             )
             vid_masks.append(vid_mask)
             vid_masks_sub.append(vid_mask_sub)
@@ -401,6 +402,7 @@ class TaskVideoSegmentation(task_lib.Task):
                 time_as_class=time_as_class,
                 n_classes=n_classes,
                 ignore_invalid=True,
+                max_seq_len=max_seq_len,
             )
             rle_rec_len = len(rle_rec_cmp[0])
 
@@ -429,6 +431,7 @@ class TaskVideoSegmentation(task_lib.Task):
                     time_as_class=time_as_class,
                     n_classes=n_classes,
                     ignore_invalid=False,
+                    max_seq_len=max_seq_len,
                 )
 
                 if self.config.debug:

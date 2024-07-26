@@ -35,7 +35,7 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-18,dbg-0,dyn-1,dist-1
 <a id="on_train___10k6_vid_entire_seq_mi_d_"></a>
 ### on-train       @ 10k6_vid_entire_seq/mid-->p2s_vid-acamp
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-10k6_vid_entire_seq,vstrd-1,batch-3,save-vis-1,dbg-0,dyn-1
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k610k6_vid_entire_seq_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-,vstrd-1,batch-3,save-vis-1,dbg-0,dyn-1
 <a id="on_inv___10k6_vid_entire_seq_mi_d_"></a>
 ### on-inv       @ 10k6_vid_entire_seq/mid-->p2s_vid-acamp
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_18,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv,vstrd-1,batch-3,save-vis-1,dbg-0,dyn-1
