@@ -8,6 +8,7 @@ import pandas as pd
 
 import utils
 
+from tasks import task_utils
 from tasks.visualization import vis_utils
 
 from eval_utils import profile, print_with_time
@@ -103,6 +104,11 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         os.makedirs(out_vis_dir, exist_ok=True)
 
     json_vid_info = collections.defaultdict(list)
+    if is_video:
+        json_dict = task_utils.load_json(cfg.dataset.category_names_path)
+        stride_to_video_ids = json_dict['stride_to_video_ids']
+        json_vid_info['stride_to_video_ids'] = stride_to_video_ids
+
     if cfg.eval.write_to_video:
         seq_to_vid_writers = collections.defaultdict(lambda: None)
 
@@ -221,7 +227,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         for seq_name, vid_writers in seq_to_vid_writers.items():
             vis_utils.close_video_writers(vid_writers)
 
-    if is_seg:
+
+
+    if is_seg or is_video:
         json_kwargs = dict(
             indent=4
         )

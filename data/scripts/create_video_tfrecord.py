@@ -30,7 +30,7 @@ class Params(paramparse.CFG):
 
         self.frame_gaps = []
         self.length = 0
-        self.stride = 0
+        self.stride = 1
         self.sample = 0
 
         self.add_stride_info = 1
@@ -556,6 +556,7 @@ def main():
             ann_file, vid_id_offset)
 
         if params.add_stride_info:
+            stride_to_video_ids[params.stride] = ','.join(str(video_['id']) for video_ in video_info)
             filenames_to_vid_id = dict(
                 (tuple(video_['file_names']), video_['id']) for video_ in video_info_
             )
@@ -563,7 +564,7 @@ def main():
                 _stride_ann_file = ann_file.replace(f'stride-{params.stride}', f'stride-{_stride}')
                 _stride_video_info_, _, _, _ = load_ytvis_annotations(_stride_ann_file, vid_id_offset=0)
                 _stride_video_ids = [filenames_to_vid_id[tuple(video_['file_names'])]
-                                                for video_ in _stride_video_info_]
+                                     for video_ in _stride_video_info_]
 
                 stride_to_video_ids[_stride] = ','.join(str(x) for x in _stride_video_ids)
 

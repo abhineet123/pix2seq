@@ -108,6 +108,8 @@ CUDA_VISIBLE_DEVICES=2 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 <a id="on_54_126___16_53_jtr_res_1280_pt_len_6_swin_"></a>
 ### on-54_126       @ 16_53-jtr-res-1280-pt-len-6/swin-->p2s_vid
 CUDA_VISIBLE_DEVICES=2 python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_pt_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_9-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-6,vstrd-1,batch-28,save-vis-1,dbg-0,dyn-1
+`dbg`
+CUDA_VISIBLE_DEVICES=2 python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_pt_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_9-jtr-res_1280,_eval_,vid_det,ipsc-54_65,seq-0,len-6,vstrd-1,batch-28,save-vis-1,dbg-0,dyn-1
 
 <a id="16_53_len_2_pt___swin_"></a>
 ## 16_53-len-2-pt       @ swin-->p2s_vid
