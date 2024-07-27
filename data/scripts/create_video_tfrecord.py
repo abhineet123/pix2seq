@@ -562,8 +562,10 @@ def main():
             for _stride in range(params.stride + 1, params.length + 1):
                 _stride_ann_file = ann_file.replace(f'stride-{params.stride}', f'stride-{_stride}')
                 _stride_video_info_, _, _, _ = load_ytvis_annotations(_stride_ann_file, vid_id_offset=0)
-                stride_to_video_ids[_stride] = [filenames_to_vid_id[tuple(video_['file_names'])]
+                _stride_video_ids = [filenames_to_vid_id[tuple(video_['file_names'])]
                                                 for video_ in _stride_video_info_]
+
+                stride_to_video_ids[_stride] = ','.join(str(x) for x in _stride_video_ids)
 
                 print()
             annotations_['stride_to_video_ids'] = stride_to_video_ids
