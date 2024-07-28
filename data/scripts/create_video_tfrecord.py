@@ -556,7 +556,8 @@ def main():
             ann_file, vid_id_offset)
 
         if params.add_stride_info:
-            stride_to_video_ids[params.stride] = ','.join(str(video_['id']) for video_ in video_info)
+            vid_ids = [str(video_['id']) for video_ in video_info_]
+            stride_to_video_ids[params.stride] = ','.join(vid_ids)
             filenames_to_vid_id = dict(
                 (tuple(video_['file_names']), video_['id']) for video_ in video_info_
             )

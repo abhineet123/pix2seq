@@ -227,8 +227,6 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         for seq_name, vid_writers in seq_to_vid_writers.items():
             vis_utils.close_video_writers(vid_writers)
 
-
-
     if is_seg or is_video:
         json_kwargs = dict(
             indent=4

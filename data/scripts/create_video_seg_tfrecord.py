@@ -40,6 +40,8 @@ class Params(paramparse.CFG):
         self.rle_to_json = 1
         self.json_only = 0
 
+        self.add_stride_info = 0
+
         self.check = 0
         self.load = 0
 
@@ -191,9 +193,9 @@ def save_vid_info_to_json(
         videos: list,
         class_id_to_name: dict,
         class_id_to_col: dict,
-        out_path: str):
+        out_path: str,
+        stride_to_video_ids=None):
     from datetime import datetime
-
     annotations = []
     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S_%f")
     params_dict = paramparse.to_dict(params)
@@ -235,6 +237,8 @@ def save_vid_info_to_json(
         "categories": categories,
         "annotations": annotations,
     }
+    if stride_to_video_ids is not None:
+        json_dict['stride_to_video_ids'] = stride_to_video_ids
 
     n_vids = len(json_dict['videos'])
     print(f'saving json for {n_vids} videos to: {out_path}')
@@ -858,6 +862,31 @@ def main():
         image_infos,
         vid_infos,
     )
+    stride_to_video_ids = None
+    if params.add_stride_info:
+        stride = params.vid.stride
+        length = params.vid.length
+        stride_to_video_ids = {}
+
+        vid_ids = [str(video_['id']) for video_ in videos]
+        stride_to_video_ids[stride] = ','.join(vid_ids)
+        file_ids_to_vid_id = dict(
+            (tuple(video_['file_ids']), video_['id']) for video_ in videos
+        )
+        for _stride in range(stride + 1, length + 1):
+            params.vid.stride = _stride
+            _, _stride_videos = generate_patch_vid_infos(
+                params,
+                image_infos,
+                vid_infos,
+            )
+            _stride_video_ids = [file_ids_to_vid_id[tuple(video_['file_ids'])]
+                                 for video_ in _stride_videos]
+
+            stride_to_video_ids[_stride] = ','.join(str(x) for x in _stride_video_ids)
+
+            print()
+        params.vid.stride = stride
 
     if params.load:
         print(f'loading vid json: {vid_json_path}')
@@ -877,7 +906,7 @@ def main():
                 rle_len = video['rle_len']
                 rle = video['rle']
                 assert len(rle) == rle_len, "rle_len mismatch"
-                if n_runs == 0 or rle_len==0:
+                if n_runs == 0 or rle_len == 0:
                     assert n_runs == 0 and rle_len == 0, "n_runs and rle_len must both be zero or non-zero"
                 else:
                     assert rle_len % n_runs == 0, "rle_len must be divisible by n_runs"
@@ -939,7 +968,7 @@ def main():
         )
 
     if not params.load:
-        save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path)
+        save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path, stride_to_video_ids)
 
     metrics_dir = linux_path(params.db_path, '_metrics_')
 

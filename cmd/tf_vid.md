@@ -12,7 +12,6 @@
         - [sample-8       @ len-2/54_126](#sample_8___len_2_54_126_)
     - [len-3       @ 54_126](#len_3___54_126_)
     - [len-6       @ 54_126](#len_6___54_126_)
-        - [strd-6       @ len-6/54_126](#strd_6___len_6_54_126_)
         - [sample-8       @ len-6/54_126](#sample_8___len_6_54_126_)
         - [sample-4       @ len-6/54_126](#sample_4___len_6_54_126_)
 
@@ -44,8 +43,7 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-3
 python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-3:strd-3
 <a id="len_6___16_5_3_"></a>
 ## len-6       @ 16_53-->tf_vid
-python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-6
-python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-6:strd-6
+python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-6:asi-2
 
 <a id="0_37___ipsc_"></a>
 # 0_37       @ ipsc-->p2s_vid_tf
@@ -70,11 +68,9 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-3:strd-3
 <a id="len_6___54_126_"></a>
 ## len-6       @ 54_126-->tf_vid
 python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-6:asi-2
+python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-6:strd-6:asi-2
 `dbg`
 python data/scripts/create_video_tfrecord.py cfg=ipsc:frame-54_65:seq-0:len-6:asi-2
-<a id="strd_6___len_6_54_126_"></a>
-### strd-6       @ len-6/54_126-->tf_vid
-python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-6:strd-6
 <a id="sample_8___len_6_54_126_"></a>
 ### sample-8       @ len-6/54_126-->tf_vid
 python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-6:strd-6:sample-8
