@@ -882,11 +882,11 @@ def main():
             )
             _stride_video_ids = [file_ids_to_vid_id[tuple(video_['file_ids'])]
                                  for video_ in _stride_videos]
-
-            stride_to_video_ids[_stride] = ','.join(str(x) for x in _stride_video_ids)
-
-            print()
+            stride_to_video_ids[_stride] = _stride_video_ids
         params.vid.stride = stride
+
+        stride_to_video_ids = dict((_stride, ','.join(str(x) for x in _video_ids))
+                                   for _stride, _video_ids in stride_to_video_ids.items())
 
     if params.load:
         print(f'loading vid json: {vid_json_path}')
