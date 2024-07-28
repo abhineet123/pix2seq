@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 import cv2
@@ -285,13 +286,15 @@ def load_img_info_from_json(annotation_path):
 
 
 def generate_patch_vid_infos(
-        params: Params,
         image_infos: list[dict],
-        vid_infos: dict,
+        patch_start_id,
+        patch_end_id,
+
+        # vid_infos: dict,
 ):
     from collections import defaultdict
     patch_vids = defaultdict(list)
-    seq_names = list(vid_infos.keys()).sort()
+    # seq_names = list(vid_infos.keys()).sort()
     for image_info in image_infos:
         img_id = image_info['img_id']
         src_id, patch_id = img_id.split('_')
@@ -302,15 +305,18 @@ def generate_patch_vid_infos(
         image_info['src_id'] = src_id
         image_info['patch_id'] = patch_id
 
-        if patch_id < params.patch_start_id > 0:
+        if patch_id < patch_start_id > 0:
             continue
 
-        if patch_id > params.patch_end_id > 0:
+        if patch_id > patch_end_id > 0:
             continue
 
         patch_seq_id = f'{seq_id}_{patch_id}'
         patch_vids[patch_seq_id].append(image_info)
+    return patch_vids
 
+
+def generate_subseq_infos(patch_vids, vid_params: Params.Video, excluded_src_ids):
     all_subseq_img_infos = []
     videos = []
     vid_id = 0
@@ -320,40 +326,40 @@ def generate_patch_vid_infos(
 
         n_all_files = len(patch_infos)
         # subseq_start_ids = list(range(0, n_all_files - params.vid.stride, params.vid.stride))
-        subseq_end_ids = list(range(params.vid.length - 1, n_all_files, params.vid.stride))
+        subseq_end_ids = list(range(vid_params.length - 1, n_all_files, vid_params.stride))
 
-        n_subseq = n_all_files // params.vid.stride
-        n_residuals = n_all_files % params.vid.stride
+        n_subseq = n_all_files // vid_params.stride
+        n_residuals = n_all_files % vid_params.stride
 
         if n_residuals != 0:
             subseq_end_ids.append(n_all_files - 1)
 
         subseq_end_ids = np.asarray(subseq_end_ids)
-        subseq_start_ids = subseq_end_ids - (params.vid.length - 1)
+        subseq_start_ids = subseq_end_ids - (vid_params.length - 1)
         for subseq_id, (subseq_start_id, subseq_end_id) in enumerate(
                 zip(subseq_start_ids, subseq_end_ids, strict=True)):
-            subseq_end_id_ = min(subseq_start_id + (params.vid.length - 1) * params.vid.frame_gap, n_all_files - 1)
+            subseq_end_id_ = min(subseq_start_id + (vid_params.length - 1) * vid_params.frame_gap, n_all_files - 1)
 
             assert subseq_end_id == subseq_end_id_, "subseq_end_id_ mismatch"
 
             if subseq_start_id > subseq_end_id:
                 break
 
-            subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:params.vid.frame_gap]
+            subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:vid_params.frame_gap]
 
             src_ids = tuple(image_info['src_id'] for image_info in subseq_img_infos)
             from itertools import chain, combinations
             src_ids_subsets = list(chain.from_iterable(combinations(src_ids, r)
                                                        for r in range(2, len(src_ids) + 1)))
 
-            if any(src_ids_subset in params.excluded_src_ids for src_ids_subset in src_ids_subsets):
+            if any(src_ids_subset in excluded_src_ids for src_ids_subset in src_ids_subsets):
                 # print(f'Skipping excluded src_ids: {src_ids}')
                 skipped += 1
                 continue
 
             n_subseq_files = len(subseq_img_infos)
 
-            if n_subseq_files < params.vid.length:
+            if n_subseq_files < vid_params.length:
                 # print(f'skipping subseq {subseq_id + 1} - with length {n_subseq_files}')
                 skipped += 1
                 continue
@@ -370,7 +376,7 @@ def generate_patch_vid_infos(
             video_dict = {
                 "width": vid_w,
                 "height": vid_h,
-                "length": params.vid.length,
+                "length": vid_params.length,
                 "seq": seq,
                 "date_captured": "",
                 "license": 1,
@@ -857,10 +863,15 @@ def main():
 
     vid_infos = get_vid_infos(image_infos, params.db_path)
 
-    all_subseq_img_infos, videos = generate_patch_vid_infos(
-        params,
+    patch_vids = generate_patch_vid_infos(
         image_infos,
-        vid_infos,
+        params.patch_start_id,
+        params.patch_end_id
+    )
+    all_subseq_img_infos, videos = generate_subseq_infos(
+        patch_vids,
+        params.vid,
+        params.excluded_src_ids
     )
     stride_to_video_ids = None
     if params.add_stride_info:
@@ -868,20 +879,23 @@ def main():
         length = params.vid.length
         stride_to_video_ids = {}
 
-        vid_ids = [str(video_['id']) for video_ in videos]
-        stride_to_video_ids[stride] = ','.join(vid_ids)
+        file_ids = [str(video_['file_ids']) for video_ in videos]
+        video_ids = [str(video_['id']) for video_ in videos]
+        stride_to_video_ids[stride] = ','.join(video_ids)
+
         file_ids_to_vid_id = dict(
             (tuple(video_['file_ids']), video_['id']) for video_ in videos
         )
         for _stride in range(stride + 1, length + 1):
             params.vid.stride = _stride
-            _, _stride_videos = generate_patch_vid_infos(
-                params,
-                image_infos,
-                vid_infos,
+            _, _stride_videos = generate_subseq_infos(
+                patch_vids,
+                params.vid,
+                params.excluded_src_ids
             )
-            _stride_video_ids = [file_ids_to_vid_id[tuple(video_['file_ids'])]
-                                 for video_ in _stride_videos]
+            _stride_file_ids = [tuple(video_['file_ids']) for video_ in _stride_videos]
+            _stride_video_ids = [file_ids_to_vid_id[_stride_file_id]
+                                 for _stride_file_id in _stride_file_ids]
             stride_to_video_ids[_stride] = _stride_video_ids
         params.vid.stride = stride
 
