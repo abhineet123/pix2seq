@@ -45,6 +45,7 @@ class Params(paramparse.CFG):
 
         self.check = 0
         self.load = 0
+        self.save_json = 1
 
         self.excluded_src_ids = []
 
@@ -316,36 +317,46 @@ def generate_patch_vid_infos(
     return patch_vids
 
 
-def generate_subseq_infos(patch_vids, vid_params: Params.Video, excluded_src_ids):
+def generate_subseq_infos(
+        patch_vids,
+        length, stride, frame_gap,
+        excluded_src_ids):
     all_subseq_img_infos = []
     videos = []
     vid_id = 0
     skipped = 0
-    for patch_seq_id, patch_infos in patch_vids.items():
+    n_patch_vids = len(patch_vids)
+
+    for _id, (patch_seq_id, patch_infos) in tqdm(enumerate(patch_vids.items()),
+                                                 desc='generate_subseq_infos',
+                                                 total=n_patch_vids):
         sorted(patch_infos, key=lambda x: int(x['frame_id']))
 
         n_all_files = len(patch_infos)
         # subseq_start_ids = list(range(0, n_all_files - params.vid.stride, params.vid.stride))
-        subseq_end_ids = list(range(vid_params.length - 1, n_all_files, vid_params.stride))
+        subseq_end_ids = list(range(length - 1, n_all_files, stride))
 
-        n_subseq = n_all_files // vid_params.stride
-        n_residuals = n_all_files % vid_params.stride
-
-        if n_residuals != 0:
+        if subseq_end_ids[-1] != n_all_files - 1:
             subseq_end_ids.append(n_all_files - 1)
 
         subseq_end_ids = np.asarray(subseq_end_ids)
-        subseq_start_ids = subseq_end_ids - (vid_params.length - 1)
+        subseq_start_ids = subseq_end_ids - (length - 1)
+
+        n_subseq = len(subseq_end_ids)
+
+        if _id == 0:
+            print()
+
         for subseq_id, (subseq_start_id, subseq_end_id) in enumerate(
                 zip(subseq_start_ids, subseq_end_ids, strict=True)):
-            subseq_end_id_ = min(subseq_start_id + (vid_params.length - 1) * vid_params.frame_gap, n_all_files - 1)
+            subseq_end_id_ = min(subseq_start_id + (length - 1) * frame_gap, n_all_files - 1)
 
             assert subseq_end_id == subseq_end_id_, "subseq_end_id_ mismatch"
 
             if subseq_start_id > subseq_end_id:
                 break
 
-            subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:vid_params.frame_gap]
+            subseq_img_infos = patch_infos[subseq_start_id:subseq_end_id + 1:frame_gap]
 
             src_ids = tuple(image_info['src_id'] for image_info in subseq_img_infos)
             from itertools import chain, combinations
@@ -359,7 +370,7 @@ def generate_subseq_infos(patch_vids, vid_params: Params.Video, excluded_src_ids
 
             n_subseq_files = len(subseq_img_infos)
 
-            if n_subseq_files < vid_params.length:
+            if n_subseq_files < length:
                 # print(f'skipping subseq {subseq_id + 1} - with length {n_subseq_files}')
                 skipped += 1
                 continue
@@ -376,7 +387,7 @@ def generate_subseq_infos(patch_vids, vid_params: Params.Video, excluded_src_ids
             video_dict = {
                 "width": vid_w,
                 "height": vid_h,
-                "length": vid_params.length,
+                "length": length,
                 "seq": seq,
                 "date_captured": "",
                 "license": 1,
@@ -868,36 +879,46 @@ def main():
         params.patch_start_id,
         params.patch_end_id
     )
+
+    length = params.vid.length
+    stride = params.vid.stride
+    frame_gap = params.vid.frame_gap
+
     all_subseq_img_infos, videos = generate_subseq_infos(
         patch_vids,
-        params.vid,
+        length, stride, frame_gap,
         params.excluded_src_ids
     )
+    file_names = [tuple(video_['file_names']) for video_ in videos]
+    file_names_unique = list(dict.fromkeys(file_names))
+    assert file_names == file_names_unique, "file_names_unique mismatch"
+
     stride_to_video_ids = None
     if params.add_stride_info:
-        stride = params.vid.stride
-        length = params.vid.length
         stride_to_video_ids = {}
 
-        file_ids = [str(video_['file_ids']) for video_ in videos]
-        video_ids = [str(video_['id']) for video_ in videos]
-        stride_to_video_ids[stride] = ','.join(video_ids)
+        video_ids = [video_['id'] for video_ in videos]
+        stride_to_video_ids[stride] = video_ids
 
-        file_ids_to_vid_id = dict(
-            (tuple(video_['file_ids']), video_['id']) for video_ in videos
+        file_names_to_vid_id = dict(
+            (tuple(video_['file_names']), video_['id']) for video_ in videos
         )
         for _stride in range(stride + 1, length + 1):
-            params.vid.stride = _stride
             _, _stride_videos = generate_subseq_infos(
                 patch_vids,
-                params.vid,
+                length, _stride, frame_gap,
                 params.excluded_src_ids
             )
-            _stride_file_ids = [tuple(video_['file_ids']) for video_ in _stride_videos]
-            _stride_video_ids = [file_ids_to_vid_id[_stride_file_id]
-                                 for _stride_file_id in _stride_file_ids]
+            _stride_file_names = [tuple(video_['file_names']) for video_ in _stride_videos]
+            _stride_file_names_unique = list(dict.fromkeys(_stride_file_names))
+            assert _stride_file_names == _stride_file_names_unique, "_stride_file_names_unique mismatch"
+
+            _stride_video_ids = [file_names_to_vid_id[_stride_file_name]
+                                 for _stride_file_name in _stride_file_names]
+            _stride_video_ids_unique = list(dict.fromkeys(_stride_video_ids))
+            assert _stride_video_ids == _stride_video_ids_unique, "_stride_video_ids_unique mismatch"
+
             stride_to_video_ids[_stride] = _stride_video_ids
-        params.vid.stride = stride
 
         stride_to_video_ids = dict((_stride, ','.join(str(x) for x in _video_ids))
                                    for _stride, _video_ids in stride_to_video_ids.items())
@@ -946,7 +967,7 @@ def main():
     if params.rle_to_json:
         print(f'writing RLE to json: {vid_json_path}')
 
-    skip_tfrecord = params.stats_only or (params.rle_to_json and params.json_only)
+    skip_tfrecord = params.stats_only or (params.rle_to_json and params.json_only) or params.add_stride_info == 2
 
     annotations_iter = generate_annotations(
         params=params,
@@ -964,24 +985,25 @@ def main():
     tfrecord_path = linux_path(params.output_dir, vid_out_name if params.rle_to_json else rle_out_name)
     os.makedirs(tfrecord_path, exist_ok=True)
 
-    if skip_tfrecord:
-        print('skipping tfrecord creation')
-        for idx, annotations_iter_ in tqdm(enumerate(annotations_iter),
-                                           total=len(all_subseq_img_infos)):
-            create_tf_example(*annotations_iter_)
-    else:
-        print(f'tfrecord_path: {tfrecord_path}')
-        tfrecord_pattern = linux_path(tfrecord_path, 'shard')
-        tfrecord_lib.write_tf_record_dataset(
-            output_path=tfrecord_pattern,
-            annotation_iterator=annotations_iter,
-            process_func=create_tf_example,
-            num_shards=params.num_shards,
-            multiple_processes=params.n_proc,
-            iter_len=len(all_subseq_img_infos),
-        )
+    if not params.load or params.check or not skip_tfrecord:
+        if skip_tfrecord:
+            print('skipping tfrecord creation')
+            for idx, annotations_iter_ in tqdm(enumerate(annotations_iter),
+                                               total=len(all_subseq_img_infos)):
+                create_tf_example(*annotations_iter_)
+        else:
+            print(f'tfrecord_path: {tfrecord_path}')
+            tfrecord_pattern = linux_path(tfrecord_path, 'shard')
+            tfrecord_lib.write_tf_record_dataset(
+                output_path=tfrecord_pattern,
+                annotation_iterator=annotations_iter,
+                process_func=create_tf_example,
+                num_shards=params.num_shards,
+                multiple_processes=params.n_proc,
+                iter_len=len(all_subseq_img_infos),
+            )
 
-    if not params.load:
+    if params.save_json:
         save_vid_info_to_json(params, videos, class_id_to_name, class_id_to_col, vid_json_path, stride_to_video_ids)
 
     metrics_dir = linux_path(params.db_path, '_metrics_')

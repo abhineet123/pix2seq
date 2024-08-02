@@ -104,7 +104,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         os.makedirs(out_vis_dir, exist_ok=True)
 
     json_vid_info = collections.defaultdict(list)
-    if is_video:
+    if is_video and cfg.eval.add_stride_info:
         json_dict = task_utils.load_json(cfg.dataset.category_names_path)
         stride_to_video_ids = json_dict['stride_to_video_ids']
         json_vid_info['stride_to_video_ids'] = stride_to_video_ids

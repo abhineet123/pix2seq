@@ -204,6 +204,9 @@ class ARTrainer(model_lib.Trainer):
           **kwargs: other neccesary configurations to pass for training setup.
         """
         super().__init__(config, **kwargs)
+        self.sample = None
+        self.step = 0
+
         self._category_names = task_utils.get_category_names(
             config.dataset.get('category_names_path'))
 
@@ -220,10 +223,18 @@ class ARTrainer(model_lib.Trainer):
                 'accuracy_notpad'),
         })
 
+    def sample_to_tb(self):
+        self.step += 1
+        for image_id, image in  enumerate(self.sample):
+            tf.summary.image(f'video {image_id}', image, self.step)
+
     def compute_loss(self, preprocess_outputs, validation):
         """Compute loss based on model outputs and targets."""
         examples, input_seq, target_seq, token_weights = preprocess_outputs
         image = examples["image"]
+
+        self.sample = image
+
 
         target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
         token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)

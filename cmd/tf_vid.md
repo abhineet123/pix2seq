@@ -35,7 +35,7 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:shards-2:len-2:fgs-4 ann_f
 # 16_53       @ ipsc-->p2s_vid_tf
 <a id="len_2___16_5_3_"></a>
 ## len-2       @ 16_53-->tf_vid
-python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-2
+python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-2:asi-2
 python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-2:strd-2
 <a id="len_3___16_5_3_"></a>
 ## len-3       @ 16_53-->tf_vid
@@ -55,7 +55,8 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:0_37:len-2:fgs-4
 # 54_126       @ ipsc-->p2s_vid_tf
 <a id="len_2___54_126_"></a>
 ## len-2       @ 54_126-->tf_vid
-python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-2
+python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-2:asi-2
+
 python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-2:strd-2
 <a id="sample_8___len_2_54_126_"></a>
 ### sample-8       @ len-2/54_126-->tf_vid
