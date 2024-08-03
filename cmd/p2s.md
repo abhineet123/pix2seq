@@ -73,11 +73,11 @@
 ## acamp       @ resnet-640-->p2s
 <a id="1k8_vid_entire_seq___acamp_resnet_640_"></a>
 ### 1k8_vid_entire_seq       @ acamp/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-1k8_vid_entire_seq,batch-9,dbg-0,dyn-1,dist-0
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-1k8_vid_entire_seq,batch-32,dbg-0,dyn-1,dist-1
 
 <a id="1k8_vid_entire_seq_aug___acamp_resnet_640_"></a>
 ### 1k8_vid_entire_seq-aug       @ acamp/resnet-640-->p2s
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-1k8_vid_entire_seq,batch-9,dbg-0,dyn-1,dist-0,jtr,res-1280
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-1k8_vid_entire_seq,batch-32,dbg-0,dyn-1,dist-1,jtr,res-1280
 
 <a id="10k6_vid_entire_seq___resnet_640_"></a>
 ## 10k6_vid_entire_seq       @ resnet-640-->p2s
