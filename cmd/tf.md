@@ -17,6 +17,9 @@
     - [1k8_vid_entire_seq       @ acamp](#1k8_vid_entire_seq___acam_p_)
     - [10k6_vid_entire_seq       @ acamp](#10k6_vid_entire_seq___acam_p_)
     - [20k6_5_video       @ acamp](#20k6_5_video___acam_p_)
+    - [1k8_vid_entire_seq_inv       @ acamp](#1k8_vid_entire_seq_inv___acam_p_)
+    - [10k6_vid_entire_seq_inv       @ acamp](#10k6_vid_entire_seq_inv___acam_p_)
+    - [20k6_5_video_inv       @ acamp](#20k6_5_video_inv___acam_p_)
 
 <!-- /MarkdownTOC -->
 <a id="detrac___tfrecord_"></a>
@@ -75,4 +78,14 @@ python data/scripts/create_ipsc_tfrecord.py cfg=acamp:10k6_vid_entire_seq
 <a id="20k6_5_video___acam_p_"></a>
 ## 20k6_5_video       @ acamp-->tf
 python data/scripts/create_ipsc_tfrecord.py cfg=acamp:20k6_5_video
+
+<a id="1k8_vid_entire_seq_inv___acam_p_"></a>
+## 1k8_vid_entire_seq_inv       @ acamp-->tf
+python data/scripts/create_ipsc_tfrecord.py cfg=acamp:1k8_vid_entire_seq_inv
+<a id="10k6_vid_entire_seq_inv___acam_p_"></a>
+## 10k6_vid_entire_seq_inv       @ acamp-->tf
+python data/scripts/create_ipsc_tfrecord.py cfg=acamp:10k6_vid_entire_seq_inv
+<a id="20k6_5_video_inv___acam_p_"></a>
+## 20k6_5_video_inv       @ acamp-->tf
+python data/scripts/create_ipsc_tfrecord.py cfg=acamp:20k6_5_video_inv
 

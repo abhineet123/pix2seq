@@ -5,6 +5,8 @@
         - [1k8_vid_entire_seq       @ acamp/resnet-640](#1k8_vid_entire_seq___acamp_resnet_640_)
         - [1k8_vid_entire_seq-aug       @ acamp/resnet-640](#1k8_vid_entire_seq_aug___acamp_resnet_640_)
     - [10k6_vid_entire_seq       @ resnet-640](#10k6_vid_entire_seq___resnet_640_)
+    - [20k6_5_video       @ resnet-640](#20k6_5_video___resnet_640_)
+    - [20k6_5_video-aug       @ resnet-640](#20k6_5_video_aug___resnet_640_)
     - [detrac-non_empty       @ resnet-640](#detrac_non_empty___resnet_640_)
         - [0_19       @ detrac-non_empty/resnet-640](#0_19___detrac_non_empty_resnet_64_0_)
             - [on-train       @ 0_19/detrac-non_empty/resnet-640](#on_train___0_19_detrac_non_empty_resnet_640_)
@@ -81,7 +83,15 @@ python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp
 
 <a id="10k6_vid_entire_seq___resnet_640_"></a>
 ## 10k6_vid_entire_seq       @ resnet-640-->p2s
-python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-10k6_vid_entire_seq,batch-9,dbg-0,dyn-1,dist-0
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-10k6_vid_entire_seq,batch-32,dbg-0,dyn-1,dist-1
+
+<a id="20k6_5_video___resnet_640_"></a>
+## 20k6_5_video       @ resnet-640-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-20k6_5_video,batch-32,dbg-0,dyn-1,dist-1
+
+<a id="20k6_5_video_aug___resnet_640_"></a>
+## 20k6_5_video-aug       @ resnet-640-->p2s
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-20k6_5_video,batch-32,dbg-0,dyn-1,dist-1,jtr,res-1280
 
 
 <a id="detrac_non_empty___resnet_640_"></a>
