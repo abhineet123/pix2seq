@@ -51,8 +51,8 @@ class Params(paramparse.CFG):
         self.vis = 0
 
 
-def save_ytvis_annotations(json_dict, json_path):
-    print(f'saving ytvis annotations to {json_path}')
+def save_dict_to_json(json_dict, json_path, label='ytvis annotations'):
+    print(f'saving {label} to {json_path}')
     json_kwargs = dict(
         indent=4
     )
@@ -549,7 +549,10 @@ def main():
     category_id_to_name_map = {}
     vid_to_obj_ann = collections.defaultdict(list)
 
+    stride_to_file_names = {}
     stride_to_video_ids = {}
+
+    out_name = os.path.basename(ann_files[0]).split(os.extsep)[0]
 
     for ann_file in ann_files:
         video_info_, category_id_to_name_map_, vid_to_obj_ann_, annotations_ = load_ytvis_annotations(
@@ -557,20 +560,36 @@ def main():
 
         if params.add_stride_info:
             vid_ids = [str(video_['id']) for video_ in video_info_]
-            stride_to_video_ids[params.stride] = ','.join(vid_ids)
+            file_names = [str(video_['file_names']) for video_ in video_info_]
             filenames_to_vid_id = dict(
                 (tuple(video_['file_names']), video_['id']) for video_ in video_info_
             )
+            # vid_id_to_filenames = dict(
+            #     (video_['id'], tuple(video_['file_names'])) for video_ in video_info_
+            # )
+            stride_to_video_ids[params.stride] = ','.join(vid_ids)
+            stride_to_file_names[params.stride] = file_names
+
             for _stride in range(params.stride + 1, params.length + 1):
                 _stride_ann_file = ann_file.replace(f'stride-{params.stride}', f'stride-{_stride}')
                 _stride_video_info_, _, _, _ = load_ytvis_annotations(_stride_ann_file, vid_id_offset=0)
+                _stride_file_names = [str(video_['file_names']) for video_ in _stride_video_info_]
                 _stride_video_ids = [filenames_to_vid_id[tuple(video_['file_names'])]
                                      for video_ in _stride_video_info_]
 
                 stride_to_video_ids[_stride] = ','.join(str(x) for x in _stride_video_ids)
+                stride_to_file_names[_stride] = _stride_file_names
 
                 print()
             annotations_['stride_to_video_ids'] = stride_to_video_ids
+            annotations_['stride_to_file_names'] = stride_to_file_names
+
+            vid_info_dict = dict(
+                stride_to_video_ids=stride_to_video_ids,
+                stride_to_file_names=stride_to_file_names,
+            )
+            vid_info_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}_vid_info.{params.ann_ext}')
+            save_dict_to_json(vid_info_dict, vid_info_path, 'vid_info')
 
         new_vid_ids = set(vid_to_obj_ann_.keys())
         n_new_vid_ids = len(new_vid_ids)
@@ -632,8 +651,6 @@ def main():
 
     os.makedirs(params.output_dir, exist_ok=True)
 
-    out_name = os.path.basename(ann_files[0]).split(os.extsep)[0]
-
     if len(params.frame_gaps) > 1:
         frame_gaps_suffix = 'fg_' + '_'.join(map(str, params.frame_gaps))
         if frame_gaps_suffix not in out_name:
@@ -642,7 +659,7 @@ def main():
     if params.save_json:
         out_json_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}.{params.ann_ext}')
         annotations_all['info']['description'] = out_name
-        save_ytvis_annotations(annotations_all, out_json_path)
+        save_dict_to_json(annotations_all, out_json_path)
 
     if params.save_json != 2:
         annotations_iter = generate_video_annotations(
