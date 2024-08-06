@@ -240,7 +240,6 @@ class TaskObjectDetection(task_lib.Task):
                         training=False,
                         summary_tag='eval',
                         ret_results=False,
-                        min_score_thresh=0.1,
                         **kwargs
                         ):
         # Copy outputs to cpu.
@@ -273,7 +272,6 @@ class TaskObjectDetection(task_lib.Task):
             out_vis_dir=out_vis_dir,
             vid_writers=vid_writers,
             csv_data=csv_data,
-            min_score_thresh=min_score_thresh,
             unpadded_size=unpadded_image_size,
             orig_size=orig_image_size,
         )

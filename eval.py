@@ -198,7 +198,6 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 csv_data=seq_to_csv_rows,
                 eval_step=cur_step,
                 summary_tag=eval_tag,
-                min_score_thresh=cfg.eval.min_score_thresh,
                 ret_results=False,
             )
 
@@ -210,6 +209,8 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                         continue
                         # print(f'{csv_seq_name}: no csv data found')
                     out_csv_path = os.path.join(out_csv_dir, f"{csv_seq_name}.csv")
+
+                    print(f'saving {csv_seq_name} csv to {out_csv_path}')
 
                     if csv_seq_name not in csv_exists:
                         pd.DataFrame([], columns=csv_columns).to_csv(out_csv_path, index=False)
@@ -224,6 +225,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         print_with_time(f'Finished eval in {(time.time() - start_time) / 60.:.2f} mins')
 
     if seq_to_vid_writers is not None:
+        print(f'closing video_writers')
         for seq_name, vid_writers in seq_to_vid_writers.items():
             vis_utils.close_video_writers(vid_writers)
 
@@ -231,6 +233,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         json_kwargs = dict(
             indent=4
         )
+        print(f'saving vid info json to {out_json_path}')
         import compress_json
         compress_json.dump(json_vid_info, out_json_path, json_kwargs=json_kwargs)
 

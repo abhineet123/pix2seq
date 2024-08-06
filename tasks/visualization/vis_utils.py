@@ -1373,89 +1373,90 @@ def visualize_boxes_and_labels_on_image_array(
         vid_writers=None,
         out_vis_dir=None,
         csv_data=None,
-        instance_masks=None,
-        instance_boundaries=None,
-        keypoints=None,
-        keypoint_edges=None,
-        track_ids=None,
+        # instance_masks=None,
+        # instance_boundaries=None,
+        # keypoints=None,
+        # keypoint_edges=None,
+        # track_ids=None,
         use_normalized_coordinates=False,
-        max_boxes_to_draw=20,
-        min_score_thresh=.5,
         agnostic_mode=False,
         line_thickness=4,
         groundtruth_box_visualization_color='black',
         skip_boxes=False,
         skip_scores=False,
         skip_labels=False,
-        skip_track_ids=False,
+        # skip_track_ids=False,
         unpadded_size=None,
         orig_size=None,
 ):
-    box_to_display_str_map = collections.defaultdict(list)
-    box_to_color_map = collections.defaultdict(str)
-    box_to_rescaled_map = {}
-    box_to_class_map = {}
-    box_to_scores_map = {}
-    box_to_instance_masks_map = {}
-    box_to_instance_boundaries_map = {}
-    box_to_keypoints_map = collections.defaultdict(list)
-    box_to_track_ids_map = {}
-    if not max_boxes_to_draw:
-        max_boxes_to_draw = boxes.shape[0]
+    box_id_to_display_str = collections.defaultdict(list)
+    box_id_to_color = collections.defaultdict(str)
+    box_id_to_orig = {}
+    box_id_to_rescaled = {}
+    box_id_to_class = {}
+    box_id_to_scores = {}
+
+    # box_id_to_instance_masks = {}
+    # box_id_to_instance_boundaries = {}
+    # box_id_to_keypoints = collections.defaultdict(list)
+    # box_id_to_track_ids = {}
     """
     Collect supplementary information for each bounding box including instance mask, key points, track IDs, colour
     """
-    for i in range(boxes.shape[0]):
-        if max_boxes_to_draw == len(box_to_color_map):
-            break
-        if scores is None or scores[i] > min_score_thresh:
-            box = tuple(boxes[i].tolist())
-            if instance_masks is not None:
-                box_to_instance_masks_map[box] = instance_masks[i]
-            if instance_boundaries is not None:
-                box_to_instance_boundaries_map[box] = instance_boundaries[i]
-            if keypoints is not None:
-                box_to_keypoints_map[box].extend(keypoints[i])
-            if track_ids is not None:
-                box_to_track_ids_map[box] = track_ids[i]
+    for box_id in range(boxes.shape[0]):
 
-            if classes[i] in six.viewkeys(category_index):
-                class_name = category_index[classes[i]]['name']
-            else:
-                class_name = 'N/A'
-            box_to_class_map[box] = class_name
-            box_to_rescaled_map[box] = tuple(bboxes_rescaled[i].tolist())
+        # if instance_masks is not None:
+        #     box_id_to_instance_masks[box_id] = instance_masks[box_id]
+        # if instance_boundaries is not None:
+        #     box_id_to_instance_boundaries[box_id] = instance_boundaries[box_id]
+        # if keypoints is not None:
+        #     box_id_to_keypoints[box_id].extend(keypoints[box_id])
+        # if track_ids is not None:
+        #     box_id_to_track_ids[box_id] = track_ids[box_id]
 
-            if scores is None:
-                box_to_color_map[box] = groundtruth_box_visualization_color
-                box_to_scores_map[box] = 1.0
-            else:
-                box_to_scores_map[box] = scores[i]
-                display_str = ''
-                if not skip_labels:
-                    if not agnostic_mode:
-                        display_str = str(class_name)
-                if not skip_scores:
-                    if not display_str:
-                        display_str = '{}%'.format(int(100 * scores[i]))
-                    else:
-                        display_str = '{}: {}%'.format(display_str, int(100 * scores[i]))
-                if not skip_track_ids and track_ids is not None:
-                    if not display_str:
-                        display_str = 'ID {}'.format(track_ids[i])
-                    else:
-                        display_str = '{}: ID {}'.format(display_str, track_ids[i])
-                box_to_display_str_map[box].append(display_str)
-                if agnostic_mode:
-                    box_to_color_map[box] = 'DarkOrange'
-                elif track_ids is not None:
-                    prime_multipler = _get_multiplier_for_color_randomness()
-                    box_to_color_map[box] = STANDARD_COLORS[(prime_multipler *
-                                                             track_ids[i]) %
-                                                            len(STANDARD_COLORS)]
+        if classes[box_id] in six.viewkeys(category_index):
+            class_name = category_index[classes[box_id]]['name']
+        else:
+            class_name = 'invalid'
+
+        box_id_to_class[box_id] = class_name
+        box_id_to_orig[box_id] = tuple(boxes[box_id].tolist())
+        box_id_to_rescaled[box_id] = tuple(bboxes_rescaled[box_id].tolist())
+
+        display_str = ''
+
+        if scores is None:
+            box_id_to_color[box_id] = groundtruth_box_visualization_color
+            box_id_to_scores[box_id] = 1.0
+        else:
+            box_id_to_scores[box_id] = scores[box_id]
+            if not skip_labels:
+                if not agnostic_mode:
+                    display_str = str(class_name)
+
+            if not skip_scores:
+                if not display_str:
+                    display_str = '{}%'.format(int(100 * scores[box_id]))
                 else:
-                    box_to_color_map[box] = STANDARD_COLORS[classes[i] %
-                                                            len(STANDARD_COLORS)]
+                    display_str = '{}: {}%'.format(display_str, int(100 * scores[box_id]))
+
+            # if not skip_track_ids and track_ids is not None:
+            #     if not display_str:
+            #         display_str = 'ID {}'.format(track_ids[box_id])
+            #     else:
+            #         display_str = '{}: ID {}'.format(display_str, track_ids[box_id])
+
+            if agnostic_mode:
+                box_id_to_color[box_id] = 'DarkOrange'
+            # elif track_ids is not None:
+            #     prime_multipler = _get_multiplier_for_color_randomness()
+            #     box_id_to_color[box_id] = STANDARD_COLORS[(prime_multipler *
+            #                                              track_ids[box_id]) %
+            #                                             len(STANDARD_COLORS)]
+            else:
+                box_id_to_color[box_id] = STANDARD_COLORS[classes[box_id] %
+                                                        len(STANDARD_COLORS)]
+        box_id_to_display_str[box_id].append(display_str)
 
     seq_id = 'generic'
     if isinstance(image_id, bytes):
@@ -1470,15 +1471,15 @@ def visualize_boxes_and_labels_on_image_array(
     if not image_id_.endswith(img_ext):
         image_id_ += img_ext
 
-    # Draw all boxes onto image.
-    for box, color in box_to_color_map.items():
-        ymin, xmin, ymax, xmax = box
+    for box_id, color in box_id_to_color.items():
+        box_orig = box_id_to_orig[box_id]
+        ymin, xmin, ymax, xmax = box_orig
 
         if csv_data is not None:
-            score = box_to_scores_map[box]
-            label = box_to_class_map[box]
+            score = box_id_to_scores[box_id]
+            label = box_id_to_class[box_id]
 
-            box_rescaled = box_to_rescaled_map[box]
+            box_rescaled = box_id_to_rescaled[box_id]
             ymin_, xmin_, ymax_, xmax_ = box_rescaled
             row = {
                 "ImageID": image_id_,
@@ -1491,13 +1492,13 @@ def visualize_boxes_and_labels_on_image_array(
             }
             csv_data[seq_id].append(row)
 
-        if instance_masks is not None:
-            draw_mask_on_image_array(
-                image, box_to_instance_masks_map[box], color=color)
-
-        if instance_boundaries is not None:
-            draw_mask_on_image_array(
-                image, box_to_instance_boundaries_map[box], color='red', alpha=1.0)
+        # if instance_masks is not None:
+        #     draw_mask_on_image_array(
+        #         image, box_id_to_instance_masks[box], color=color)
+        #
+        # if instance_boundaries is not None:
+        #     draw_mask_on_image_array(
+        #         image, box_id_to_instance_boundaries[box], color='red', alpha=1.0)
 
         draw_bounding_box_on_image_array(
             image,
@@ -1507,18 +1508,19 @@ def visualize_boxes_and_labels_on_image_array(
             xmax,
             color=color,
             thickness=0 if skip_boxes else line_thickness,
-            display_str_list=box_to_display_str_map[box],
+            display_str_list=box_id_to_display_str[box_id],
             use_normalized_coordinates=use_normalized_coordinates)
-        if keypoints is not None:
-            draw_keypoints_on_image_array(
-                image,
-                box_to_keypoints_map[box],
-                color=color,
-                radius=line_thickness / 2,
-                use_normalized_coordinates=use_normalized_coordinates,
-                keypoint_edges=keypoint_edges,
-                keypoint_edge_color=color,
-                keypoint_edge_width=line_thickness // 2)
+
+        # if keypoints is not None:
+        #     draw_keypoints_on_image_array(
+        #         image,
+        #         box_id_to_keypoints[box],
+        #         color=color,
+        #         radius=line_thickness / 2,
+        #         use_normalized_coordinates=use_normalized_coordinates,
+        #         keypoint_edges=keypoint_edges,
+        #         keypoint_edge_color=color,
+        #         keypoint_edge_width=line_thickness // 2)
 
     if out_vis_dir:
         save_image(image, vid_writers, out_vis_dir, seq_id, image_id_,
@@ -1651,8 +1653,6 @@ def add_image_summary_with_bbox(
         vid_writers=None,
         out_vis_dir=None,
         csv_data=None,
-        min_score_thresh=0.1,
-
 ):
     k = 0
     new_images = []
@@ -1672,8 +1672,6 @@ def add_image_summary_with_bbox(
             scores=scores_[keep_indices],
             category_index=category_names,
             use_normalized_coordinates=True,
-            min_score_thresh=min_score_thresh,
-            max_boxes_to_draw=100,
             unpadded_size=unpadded_size_,
             orig_size=orig_size_,
         )
@@ -1697,14 +1695,12 @@ def add_video_summary_with_bbox(
         out_vis_dir=None,
         vid_writers=None,
         csv_data=None,
-        min_score_thresh=0.1,
-
 ):
     k = 0
     vis_videos = []
     for iter_data in zip(
             video_ids, videos, filenames, file_ids, bboxes,
-            bboxes_rescaled, scores, classes, unpadded_size, orig_size):
+            bboxes_rescaled, scores, classes, unpadded_size, orig_size, strict=True):
         (video_id_, video, filenames_, file_ids_, boxes_, bboxes_rescaled_,
          scores_, classes_, unpadded_size_, orig_size_) = iter_data
 
@@ -1725,11 +1721,8 @@ def add_video_summary_with_bbox(
             scores=scores_[keep_indices],
             category_index=category_names,
             use_normalized_coordinates=True,
-            min_score_thresh=min_score_thresh,
             unpadded_size=unpadded_size_,
             orig_size=orig_size_,
-            max_boxes_to_draw=100,
-
         )
         vis_videos.append(vis_video)
         k += 1
@@ -1751,8 +1744,6 @@ def visualize_boxes_and_labels_on_video(
         vid_cap=None,
         csv_data=None,
         use_normalized_coordinates=False,
-        max_boxes_to_draw=20,
-        min_score_thresh=.5,
         agnostic_mode=False,
         line_thickness=4,
         groundtruth_box_visualization_color='black',
@@ -1762,12 +1753,6 @@ def visualize_boxes_and_labels_on_video(
         unpadded_size=None,
         orig_size=None,
 ):
-    box_to_display_str_map = collections.defaultdict(list)
-    box_to_color_map = collections.defaultdict(str)
-    box_to_rescaled_map = {}
-    box_to_class_map = {}
-    box_to_scores_map = {}
-
     file_names = [str(filename.decode("utf-8")) for filename in file_names]
 
     seg_dir_path = os.path.dirname(file_names[0])
@@ -1780,46 +1765,49 @@ def visualize_boxes_and_labels_on_video(
     else:
         seq_id = seq_name
 
-    if not max_boxes_to_draw:
-        max_boxes_to_draw = boxes.shape[0]
     """
     Collect supplementary information for each bounding box including colour, class
     """
+    box_id_to_display_str = collections.defaultdict(list)
+    box_id_to_color = collections.defaultdict(str)
+    box_id_to_orig = {}
+    box_id_to_rescaled = {}
+    box_id_to_class = {}
+    box_id_to_scores = {}
+
     for box_id in range(boxes.shape[0]):
-        if max_boxes_to_draw == len(box_to_color_map):
-            break
-        if scores is None or scores[box_id] > min_score_thresh:
-            box = tuple(boxes[box_id].tolist())
+        # box = tuple(boxes[box_id].tolist())
 
-            if classes[box_id] in six.viewkeys(category_index):
-                class_name = category_index[classes[box_id]]['name']
-            else:
-                class_name = 'N/A'
-            box_to_class_map[box] = class_name
-            box_to_rescaled_map[box] = tuple(bboxes_rescaled[box_id].tolist())
+        if classes[box_id] in six.viewkeys(category_index):
+            class_name = category_index[classes[box_id]]['name']
+        else:
+            class_name = 'N/A'
 
-            display_str = f'{video_id_}'
-            if not skip_labels:
-                if not agnostic_mode:
-                    display_str = f'{display_str} {str(class_name)}'
+        box_id_to_orig[box_id] = tuple(boxes[box_id].tolist())
+        box_id_to_class[box_id] = class_name
+        box_id_to_rescaled[box_id] = tuple(bboxes_rescaled[box_id].tolist())
 
-            if scores is None:
-                box_to_color_map[box] = groundtruth_box_visualization_color
-                box_to_scores_map[box] = 1.0
-            else:
-                box_to_scores_map[box] = scores[box_id]
+        display_str = f'{video_id_}'
+        if not skip_labels:
+            if not agnostic_mode:
+                display_str = f'{display_str} {str(class_name)}'
 
-                if not skip_scores:
-                    conf = int(100 * scores[box_id])
-                    display_str = f'{display_str}: {conf:d}%'
+        if scores is None:
+            box_id_to_color[box_id] = groundtruth_box_visualization_color
+            box_id_to_scores[box_id] = 1.0
+        else:
+            box_id_to_scores[box_id] = scores[box_id]
 
-            box_to_display_str_map[box].append(display_str)
-            if agnostic_mode:
-                box_to_color_map[box] = 'DarkOrange'
-            else:
-                box_to_color_map[box] = STANDARD_COLORS[classes[box_id] %
-                                                        len(STANDARD_COLORS)]
+            if not skip_scores:
+                conf = int(100 * scores[box_id])
+                display_str = f'{display_str}: {conf:d}%'
 
+        box_id_to_display_str[box_id].append(display_str)
+        if agnostic_mode:
+            box_id_to_color[box_id] = 'DarkOrange'
+        else:
+            box_id_to_color[box_id] = STANDARD_COLORS[classes[box_id] %
+                                                    len(STANDARD_COLORS)]
     video_vis = []
     for frame_id in range(vid_len):
         start_id = frame_id * 4
@@ -1833,12 +1821,13 @@ def visualize_boxes_and_labels_on_video(
 
         assert seg_dir_path_ == seg_dir_path, f"seg_dir_path_ mismatch: {seg_dir_path}, {seg_dir_path_}"
 
-        for box, color in box_to_color_map.items():
-            box_rescaled = box_to_rescaled_map[box]
-            score = box_to_scores_map[box]
-            label = box_to_class_map[box]
+        for box_id, color in box_id_to_color.items():
+            box_rescaled = box_id_to_rescaled[box_id]
+            score = box_id_to_scores[box_id]
+            label = box_id_to_class[box_id]
+            box_orig = box_id_to_orig[box_id]
 
-            ymin, xmin, ymax, xmax = box[start_id:start_id + 4]
+            ymin, xmin, ymax, xmax = box_orig[start_id:start_id + 4]
 
             if vocab.NO_BOX_FLOAT in [ymin, xmin, ymax, xmax]:
                 continue
@@ -1869,7 +1858,7 @@ def visualize_boxes_and_labels_on_video(
                 xmax,
                 color=color,
                 thickness=0 if skip_boxes else line_thickness,
-                display_str_list=box_to_display_str_map[box],
+                display_str_list=box_id_to_display_str[box_id],
                 use_normalized_coordinates=use_normalized_coordinates)
 
         video_vis.append(image_vis)

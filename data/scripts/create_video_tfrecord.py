@@ -516,10 +516,10 @@ def get_seq_info(video_info_, filenames_to_vid_id, length):
 
     vid_id_to_seq_name = dict((vid_id_, file_names_[0].split('/')[0])
                               for vid_id_, file_names_ in zip(vid_ids, vid_file_names, strict=True))
-    seq_name_to_vid_ids = collections.defaultdict(list)
-    seq_name_to_file_names = collections.defaultdict(list)
+    seq_to_vid_ids = collections.defaultdict(list)
+    seq_to_file_names = collections.defaultdict(list)
     for vid_id, seq_name in vid_id_to_seq_name.items():
-        seq_name_to_vid_ids[seq_name].append(vid_id)
+        seq_to_vid_ids[seq_name].append(vid_id)
         file_names_ = vid_id_to_filenames[vid_id]
         assert all(file_name.startswith(f'{seq_name}/') for file_name in file_names_), \
             f"invalid file name for {seq_name}"
@@ -527,9 +527,11 @@ def get_seq_info(video_info_, filenames_to_vid_id, length):
         assert len(file_names_) == length, 'invalid subseq length'
 
         file_names_ = [file_name.replace(f'{seq_name}/', '') for file_name in file_names_]
-        seq_name_to_file_names[seq_name].append(str(file_names_))
+        seq_to_file_names[seq_name].append(','.join(file_names_))
 
-    return dict(seq_name_to_file_names), dict(seq_name_to_vid_ids)
+    seq_to_vid_ids = dict((seq, ','.join(vid_ids_)) for seq, vid_ids_ in seq_to_vid_ids.items())
+
+    return dict(seq_to_file_names), dict(seq_to_vid_ids)
 
 
 def main():
@@ -595,7 +597,7 @@ def main():
             #     f"invalid vid length found"
 
             filenames_to_vid_id = dict(
-                (tuple(video_['file_names']), video_['id']) for video_ in video_info_
+                (tuple(video_['file_names']), str(video_['id'])) for video_ in video_info_
             )
 
             seq_name_to_file_names, seq_name_to_vid_ids = get_seq_info(video_info_, None, params.length)

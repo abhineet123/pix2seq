@@ -230,7 +230,6 @@ class TaskVideoDetection(task_lib.Task):
             eval_step=None,
             summary_tag='eval',
             training=False,
-            min_score_thresh=0.1,
             ret_results=False,
             **kwargs
     ):
@@ -265,7 +264,6 @@ class TaskVideoDetection(task_lib.Task):
             out_vis_dir=out_vis_dir,
             vid_writers=vid_writers,
             csv_data=csv_data,
-            min_score_thresh=min_score_thresh,
             unpadded_size=unpadded_video_size,
             orig_size=orig_video_size,
         )

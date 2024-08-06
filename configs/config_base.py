@@ -50,7 +50,6 @@ eval_config = D(
     profile=0,
     tag='eval',
     checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
-    min_score_thresh=0.1,
 )
 
 eval_config.update(train_eval_config)
