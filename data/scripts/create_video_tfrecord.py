@@ -529,7 +529,7 @@ def get_seq_info(video_info_, filenames_to_vid_id, length):
         file_names_ = [file_name.replace(f'{seq_name}/', '') for file_name in file_names_]
         seq_name_to_file_names[seq_name].append(str(file_names_))
 
-    return seq_name_to_file_names, seq_name_to_vid_ids
+    return dict(seq_name_to_file_names), dict(seq_name_to_vid_ids)
 
 
 def main():
@@ -624,7 +624,7 @@ def main():
                 stride_to_video_ids=stride_to_video_ids,
                 stride_to_file_names=stride_to_file_names,
             )
-            vid_info_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}_vid_info.{params.ann_ext}')
+            vid_info_path = os.path.join(params.image_dir, 'ytvis19', f'{out_name}-vid_info.{params.ann_ext}')
             save_dict_to_json(vid_info_dict, vid_info_path, 'vid_info')
 
         new_vid_ids = set(vid_to_obj_ann_.keys())
