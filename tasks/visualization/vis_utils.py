@@ -1781,7 +1781,7 @@ def visualize_boxes_and_labels_on_video(
         if classes[box_id] in six.viewkeys(category_index):
             class_name = category_index[classes[box_id]]['name']
         else:
-            class_name = 'N/A'
+            class_name = 'invalid'
 
         box_id_to_orig[box_id] = tuple(boxes[box_id].tolist())
         box_id_to_class[box_id] = class_name
