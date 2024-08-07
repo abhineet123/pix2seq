@@ -5,6 +5,7 @@ import time
 import json
 import pickle
 import pandas as pd
+from tqdm import tqdm
 
 import utils
 
@@ -107,7 +108,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     if is_video and cfg.eval.add_stride_info:
         json_dict = task_utils.load_json(cfg.dataset.category_names_path)
         stride_to_video_ids = json_dict['stride_to_video_ids']
+        stride_to_file_names = json_dict['stride_to_file_names']
         json_vid_info['stride_to_video_ids'] = stride_to_video_ids
+        json_vid_info['stride_to_file_names'] = stride_to_file_names
 
     if cfg.eval.write_to_video:
         seq_to_vid_writers = collections.defaultdict(lambda: None)
@@ -136,6 +139,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         # cfg.eager = 1
 
         # print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
+        pbar = tqdm(total=eval_steps, ncols=100)
         while True:
             if eval_steps and cur_step >= eval_steps:
                 break
@@ -177,14 +181,16 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 )
 
             cur_step += 1
-            if eval_steps:
-                steps_per_sec = 1. / (time.time() - timestamp)
-                timestamp = time.time()
-                progress = cur_step / float(eval_steps) * 100
-                eta = (eval_steps - cur_step) / steps_per_sec / 60.
-                print_with_time(f'Completed: {cur_step} / {eval_steps} steps ({progress:.2f}%), ETA {eta:.2f} mins')
-            else:
-                print_with_time(f'Completed: {cur_step:d} steps')
+            pbar.update(1)
+
+            # if eval_steps:
+            #     steps_per_sec = 1. / (time.time() - timestamp)
+            #     timestamp = time.time()
+            #     progress = cur_step / float(eval_steps) * 100
+            #     eta = (eval_steps - cur_step) / steps_per_sec / 60.
+            #     print_with_time(f'Completed: {cur_step} / {eval_steps} steps ({progress:.2f}%), ETA {eta:.2f} mins')
+            # else:
+            #     print_with_time(f'Completed: {cur_step:d} steps')
 
             task.postprocess_cpu(
                 outputs=per_step_outputs,
@@ -207,10 +213,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
                 for csv_seq_name, csv_rows in seq_to_csv_rows.items():
                     if not csv_rows:
                         continue
-                        # print(f'{csv_seq_name}: no csv data found')
                     out_csv_path = os.path.join(out_csv_dir, f"{csv_seq_name}.csv")
-
-                    print(f'saving {csv_seq_name} csv to {out_csv_path}')
 
                     if csv_seq_name not in csv_exists:
                         pd.DataFrame([], columns=csv_columns).to_csv(out_csv_path, index=False)

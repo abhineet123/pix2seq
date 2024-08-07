@@ -361,7 +361,7 @@ def save_image(
             seq_vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
             vid_writer = get_video_writer(seq_vis_path)
 
-            print(f'S{seq_id} :: vis video: {seq_vis_path}')
+            # print(f'{seq_id} :: vis video: {seq_vis_path}')
             vid_writers[seq_id] = vid_writer
 
         write_frames_to_videos(vid_writer, image)

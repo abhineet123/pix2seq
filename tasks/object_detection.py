@@ -229,19 +229,20 @@ class TaskObjectDetection(task_lib.Task):
                 # is_crowd
                 )
 
-    def postprocess_cpu(self,
-                        outputs,
-                        train_step,
-                        # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
-                        out_vis_dir=None,
-                        vid_writers=None,
-                        csv_data=None,
-                        eval_step=None,
-                        training=False,
-                        summary_tag='eval',
-                        ret_results=False,
-                        **kwargs
-                        ):
+    def postprocess_cpu(
+            self,
+            outputs,
+            train_step,
+            # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
+            out_vis_dir=None,
+            vid_writers=None,
+            csv_data=None,
+            eval_step=None,
+            training=False,
+            summary_tag='eval',
+            ret_results=False,
+            **kwargs
+    ):
         # Copy outputs to cpu.
         new_outputs = []
         for i in range(len(outputs)):
