@@ -319,24 +319,24 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
                 if sample_suffix not in db_name:
                     db_name = f'{db_name}-{sample_suffix}'
 
-            if not is_seg:
-                suffix = ds_cfg[f'{mode}_suffix']
-                """suffix is already in name when the latter is loaded from a trained model config.json"""
-                if suffix and not name.endswith(suffix):
-                    db_name = f'{db_name}-{suffix}'
+        if not is_seg:
+            suffix = ds_cfg[f'{mode}_suffix']
+            """suffix is already in name when the latter is loaded from a trained model config.json"""
+            if suffix and not name.endswith(suffix):
+                db_name = f'{db_name}-{suffix}'
 
-                start_seq_id = ds_cfg[f'{mode}_start_seq_id']
-                end_seq_id = ds_cfg[f'{mode}_end_seq_id']
-                if start_seq_id > 0 or end_seq_id >= 0:
-                    assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
-                    seq_suffix = f'seq-{start_seq_id}_{end_seq_id}'
-                    db_name = f'{db_name}-{seq_suffix}'
+            start_seq_id = ds_cfg[f'{mode}_start_seq_id']
+            end_seq_id = ds_cfg[f'{mode}_end_seq_id']
+            if start_seq_id > 0 or end_seq_id >= 0:
+                assert end_seq_id >= start_seq_id, "end_seq_id must to be >= start_seq_id"
+                seq_suffix = f'seq-{start_seq_id}_{end_seq_id}'
+                db_name = f'{db_name}-{seq_suffix}'
 
-                start_frame_id = ds_cfg[f'{mode}_start_frame_id']
-                end_frame_id = ds_cfg[f'{mode}_end_frame_id']
-                if start_frame_id > 0 or end_frame_id >= 0:
-                    frame_suffix = f'{start_frame_id}_{end_frame_id}'
-                    db_name = f'{db_name}-{frame_suffix}'
+            start_frame_id = ds_cfg[f'{mode}_start_frame_id']
+            end_frame_id = ds_cfg[f'{mode}_end_frame_id']
+            if start_frame_id > 0 or end_frame_id >= 0:
+                frame_suffix = f'{start_frame_id}_{end_frame_id}'
+                db_name = f'{db_name}-{frame_suffix}'
 
         json_name = db_name
         if is_seg:

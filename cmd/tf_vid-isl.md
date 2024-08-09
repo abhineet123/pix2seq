@@ -21,7 +21,9 @@
     - [0_9       @ detrac](#0_9___detrac_)
         - [strd-2       @ 0_9/detrac](#strd_2___0_9_detrac_)
     - [49_68       @ detrac](#49_68___detrac_)
-        - [strd-2       @ 49_68/detrac](#strd_2___49_68_detrac_)
+        - [len-2       @ 49_68/detrac](#len_2___49_68_detrac_)
+        - [len-6       @ 49_68/detrac](#len_6___49_68_detrac_)
+        - [len-9       @ 49_68/detrac](#len_9___49_68_detrac_)
 
 <!-- /MarkdownTOC -->
 
@@ -32,7 +34,6 @@
 <a id="len_9___0_1_gram_"></a>
 ### len-9       @ 0_1/gram-->tf_vid-isl
 python data/scripts/create_video_tfrecord.py cfg=gram:0_1:len-9:strd-1
-
 python data/scripts/create_video_tfrecord.py cfg=gram:0_1:len-9:strd-9
 
 <a id="len_14___0_1_gram_"></a>
@@ -97,7 +98,16 @@ python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_9:len-2:strd
 
 <a id="49_68___detrac_"></a>
 ## 49_68       @ detrac-->tf_vid-isl
-python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-2:strd-1
-<a id="strd_2___49_68_detrac_"></a>
-### strd-2       @ 49_68/detrac-->tf_vid-isl
+<a id="len_2___49_68_detrac_"></a>
+### len-2       @ 49_68/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-2:strd-1:asi-2
+`strd-2` 
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-2:strd-2
+
+<a id="len_6___49_68_detrac_"></a>
+### len-6       @ 49_68/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-6:strd-1:asi
+
+<a id="len_9___49_68_detrac_"></a>
+### len-9       @ 49_68/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-6:strd-1:asi-0
