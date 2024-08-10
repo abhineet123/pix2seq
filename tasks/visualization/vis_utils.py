@@ -1500,33 +1500,35 @@ def visualize_boxes_and_labels_on_image_array(
         #     draw_mask_on_image_array(
         #         image, box_id_to_instance_boundaries[box], color='red', alpha=1.0)
 
-        draw_bounding_box_on_image_array(
-            image,
-            ymin,
-            xmin,
-            ymax,
-            xmax,
-            color=color,
-            thickness=0 if skip_boxes else line_thickness,
-            display_str_list=box_id_to_display_str[box_id],
-            use_normalized_coordinates=use_normalized_coordinates)
+        if out_vis_dir is not None:
+            draw_bounding_box_on_image_array(
+                image,
+                ymin,
+                xmin,
+                ymax,
+                xmax,
+                color=color,
+                thickness=0 if skip_boxes else line_thickness,
+                display_str_list=box_id_to_display_str[box_id],
+                use_normalized_coordinates=use_normalized_coordinates)
 
-        # if keypoints is not None:
-        #     draw_keypoints_on_image_array(
-        #         image,
-        #         box_id_to_keypoints[box],
-        #         color=color,
-        #         radius=line_thickness / 2,
-        #         use_normalized_coordinates=use_normalized_coordinates,
-        #         keypoint_edges=keypoint_edges,
-        #         keypoint_edge_color=color,
-        #         keypoint_edge_width=line_thickness // 2)
+            # if keypoints is not None:
+            #     draw_keypoints_on_image_array(
+            #         image,
+            #         box_id_to_keypoints[box],
+            #         color=color,
+            #         radius=line_thickness / 2,
+            #         use_normalized_coordinates=use_normalized_coordinates,
+            #         keypoint_edges=keypoint_edges,
+            #         keypoint_edge_color=color,
+            #         keypoint_edge_width=line_thickness // 2)
 
-    if out_vis_dir:
+    if out_vis_dir is not None:
         save_image(image, vid_writers, out_vis_dir, seq_id, image_id_,
                    unpadded_size=unpadded_size, orig_size=orig_size)
 
-    return image
+        return image
+
 
 
 def visualize_image(config, examples, logits, tokens, label, category_names, mask, vis_out_dir):
@@ -1808,7 +1810,11 @@ def visualize_boxes_and_labels_on_video(
         else:
             box_id_to_color[box_id] = STANDARD_COLORS[classes[box_id] %
                                                     len(STANDARD_COLORS)]
-    video_vis = []
+    video_vis = None
+
+    if out_vis_dir:
+        video_vis = []
+
     for frame_id in range(vid_len):
         start_id = frame_id * 4
         image_vis = np.copy(video[frame_id, ...])
@@ -1847,28 +1853,27 @@ def visualize_boxes_and_labels_on_video(
                 }
                 csv_data[seq_id].append(row)
 
-            """box_rescaled not actually used for visualization which is why they seem correct in spite of not 
-            cropping and resizing the 
-            transformed image into the original shape"""
-            image_vis = draw_bounding_box_on_image_array(
-                image_vis,
-                ymin,
-                xmin,
-                ymax,
-                xmax,
-                color=color,
-                thickness=0 if skip_boxes else line_thickness,
-                display_str_list=box_id_to_display_str[box_id],
-                use_normalized_coordinates=use_normalized_coordinates)
+            if out_vis_dir is not None:
+                """box_rescaled not actually used for visualization which is why they seem correct in spite of not 
+                cropping and resizing the 
+                transformed image into the original shape"""
+                image_vis = draw_bounding_box_on_image_array(
+                    image_vis,
+                    ymin,
+                    xmin,
+                    ymax,
+                    xmax,
+                    color=color,
+                    thickness=0 if skip_boxes else line_thickness,
+                    display_str_list=box_id_to_display_str[box_id],
+                    use_normalized_coordinates=use_normalized_coordinates)
 
-        video_vis.append(image_vis)
-
-        if out_vis_dir:
+        if out_vis_dir is not None:
+            video_vis.append(image_vis)
             save_image(image_vis, vid_cap, out_vis_dir, seq_id, image_name, video_id_,
                        unpadded_size=unpadded_size, orig_size=orig_size)
-
-    video_vis = np.stack(video_vis, axis=0)
-    return video_vis
+            video_vis = np.stack(video_vis, axis=0)
+            return video_vis
 
 
 def add_cdf_image_summary(values, name):

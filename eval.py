@@ -60,6 +60,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
     vis_dir_name = f'vis'
     mask_dir_name = 'masks'
     mask_logits_dir_name = 'masks_logits'
+    out_vis_dir = None
 
     if save_suffix:
         csv_dir_name = f'{csv_dir_name:s}-{save_suffix:s}'
@@ -69,7 +70,6 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
     out_mask_dir = os.path.join(out_dir, mask_dir_name)
     out_mask_logits_dir = os.path.join(out_dir, mask_logits_dir_name)
-    out_vis_dir = os.path.join(out_dir, vis_dir_name)
     out_csv_dir = os.path.join(out_dir, csv_dir_name)
     out_json_name = f"vid_info.json.gz"
     out_json_path = os.path.join(out_dir, out_json_name)
@@ -101,8 +101,11 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             csv_exists = []
 
     if cfg.eval.save_vis:
+        out_vis_dir = os.path.join(out_dir, vis_dir_name)
         print(f'\nwriting vis images to: {out_vis_dir}\n')
         os.makedirs(out_vis_dir, exist_ok=True)
+        if cfg.eval.write_to_video:
+            seq_to_vid_writers = collections.defaultdict(lambda: None)
 
     json_vid_info = collections.defaultdict(list)
     if is_video and cfg.eval.add_stride_info:
@@ -111,9 +114,6 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
         stride_to_file_names = json_dict['stride_to_file_names']
         json_vid_info['stride_to_video_ids'] = stride_to_video_ids
         json_vid_info['stride_to_file_names'] = stride_to_file_names
-
-    if cfg.eval.write_to_video:
-        seq_to_vid_writers = collections.defaultdict(lambda: None)
 
     def single_step(examples):
         preprocessed_outputs = task.preprocess_batched(examples, training=False)
