@@ -110,4 +110,4 @@ python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-6:st
 
 <a id="len_9___49_68_detrac_"></a>
 ### len-9       @ 49_68/detrac-->tf_vid-isl
-python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-9:strd-1:asi-0
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-9:strd-1:asi-2

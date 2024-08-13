@@ -90,8 +90,10 @@
             - [strd-6       @ on-54_126/16_53-len-6-aug-val/mid](#strd_6___on_54_126_16_53_len_6_aug_val_mi_d_)
     - [0_37-len-2       @ mid](#0_37_len_2___mi_d_)
         - [on-54_126       @ 0_37-len-2/mid](#on_54_126___0_37_len_2_mid_)
-    - [0_37-fg-4       @ mid](#0_37_fg_4___mi_d_)
+    - [0_37-len-2-fg-4       @ mid](#0_37_len_2_fg_4___mi_d_)
+    - [0_37-len-2-aug       @ mid](#0_37_len_2_aug___mi_d_)
     - [0_37-len-3       @ mid](#0_37_len_3___mi_d_)
+    - [0_37-len-3-aug       @ mid](#0_37_len_3_aug___mi_d_)
 
 <!-- /MarkdownTOC -->
 <a id="swi_n_"></a>
@@ -441,11 +443,19 @@ python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_ro
 `strd-2`
 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-length-2-stride-1-batch_18,_eval_,vid_det,ipsc-54_126,len-2,vstrd-2,batch-36,save-vis-1,dbg-0,dyn-1
 
-<a id="0_37_fg_4___mi_d_"></a>
-## 0_37-fg-4       @ mid-->p2s_vid-ipsc
+<a id="0_37_len_2_fg_4___mi_d_"></a>
+## 0_37-len-2-fg-4       @ mid-->p2s_vid-ipsc
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-g2_0_37,len-2,fg-4,batch-16,dbg-0,dyn-1,dist-1
+
+<a id="0_37_len_2_aug___mi_d_"></a>
+## 0_37-len-2-aug       @ mid-->p2s_vid-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,batch-10,dbg-0,dyn-1,dist-0,jtr,res-1280
 
 <a id="0_37_len_3___mi_d_"></a>
 ## 0_37-len-3       @ mid-->p2s_vid-ipsc
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-3,batch-8,dbg-0,dyn-1,dist-0
+
+<a id="0_37_len_3_aug___mi_d_"></a>
+## 0_37-len-3-aug       @ mid-->p2s_vid-ipsc
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-3,batch-6,dbg-0,dyn-1,dist-0,jtr,res-1280
 
