@@ -26,8 +26,9 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         train_data_iters = [iter(dataset) for dataset in train_datasets]
         summary_writer = tf.summary.create_file_writer(cfg.model_dir)
 
-        trainable_params = np.sum([np.prod(v.get_shape()) for v in trainer.model.trainable_weights])
-        non_trainable_params = np.sum([np.prod(v.get_shape()) for v in trainer.model.non_trainable_weights])
+        model = trainer.model
+        trainable_params = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
+        non_trainable_params = np.sum([np.prod(v.get_shape()) for v in model.non_trainable_weights])
         total_params = trainable_params + non_trainable_params
 
         print('\n\n')
@@ -105,6 +106,20 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 if not cfg.eager:
                     continue
 
+                global_step_ = trainer.optimizer.iterations.numpy()
+                global_step_ = global_step_.item()
+                if global_step_ >= 1:
+                    model = trainer.model
+                    trainable_params = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
+                    non_trainable_params = np.sum([np.prod(v.get_shape()) for v in model.non_trainable_weights])
+                    total_params = trainable_params + non_trainable_params
+
+                    print('\n\n')
+                    print(f'trainable_params: {trainable_params}')
+                    print(f'non_trainable_params: {non_trainable_params}')
+                    print(f'total_params: {total_params}')
+                    print('\n\n')
+
                 if cfg.debug:
                     trainer.sample_to_tb()
 
@@ -137,9 +152,13 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 best_val_metrics = json.loads(f.read())
             print(f'best_val_metrics:\n{best_val_metrics}')
 
+        from tqdm import tqdm
+        n_epochs = train_steps//steps_per_epoch
+        pbar = tqdm(total=n_epochs, ncols=100)
+
         while cur_step < train_steps:
             cur_epoch += 1
-            tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
+            # tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
                 train_multiple_steps(train_data_iters, tasks)
 
@@ -212,9 +231,12 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                             break
 
                 summary_writer.flush()
-            progress = cur_step / float(train_steps) * 100
-            eta = (train_steps - cur_step) / steps_per_sec / 60.
-            logging.info(f'Completed steps {cur_step} / {train_steps} ({progress:.2f}%), ETA {eta:.2f} mins')
+            pbar.update(1)
+            pbar.set_description(f'steps {cur_step}')
+
+            # progress = cur_step / float(train_steps) * 100
+            # eta = (train_steps - cur_step) / steps_per_sec / 60.
+            # logging.info(f'Completed steps {cur_step} / {train_steps} ({progress:.2f}%), ETA {eta:.2f} mins')
             trainer.reset()
         logging.info('###########################################')
         logging.info('Training complete...')

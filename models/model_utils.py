@@ -390,3 +390,28 @@ def get_metrics_info(y_true, y_pred, y_pred_logits, y_mask):
     metrics_info = [y_correct_pc_m, accuracy_notpad_m]
 
     return metrics_info
+
+
+def get_params_counts(model, level=0):
+    import numpy as np
+    total_params = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
+
+    if level == 0:
+        print(f'total: {total_params}')
+
+    level += 1
+
+    for module_name in model.trainable_modules:
+        module = getattr(model, module_name)
+        try:
+            module_params = np.sum([np.prod(v.get_shape())
+                                    for v in module.trainable_weights])
+        except AttributeError:
+            continue
+
+        module_params_pc = (module_params / total_params) * 100
+        if level > 0:
+            print('\t' * level)
+
+        print(f'{module_name}: {module_params} ({module_params_pc:.2f}%)')
+        get_params_counts(module, level=level + 1)

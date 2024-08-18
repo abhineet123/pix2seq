@@ -75,6 +75,7 @@ pix2seq\Scripts\activate
 # install
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -r p2s_requirements.txt
 
 <a id="skvideo___instal_l_"></a>
 ## skvideo       @ install-->p2s_setup

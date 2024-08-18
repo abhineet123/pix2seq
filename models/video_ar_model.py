@@ -66,12 +66,7 @@ class Model(tf.keras.models.Model):
                 use_cls_token=self.config.use_cls_token,
                 name='video_swin')
         elif self.config.resnet_variant == 'c1':
-            self.encoder = VisionTransformer(
-                self.config.image_size[0], self.config.image_size[1], self.config.patch_size,
-                self.config.num_encoder_layers, self.config.dim_att, mlp_ratio,
-                self.config.num_heads, self.config.drop_path, self.config.drop_units,
-                self.config.drop_att, self.config.pos_encoding, self.config.use_cls_token,
-                name='vit')
+            raise NotImplemented('Video vision transformer is not implemented yet')
         else:
             self.encoder = VideoResNetTransformer(
                 image_height=self.config.image_size[0],
@@ -136,6 +131,7 @@ class Model(tf.keras.models.Model):
             shared_embedding=self.config.shared_decoder_embedding,
             output_bias=self.config.decoder_output_bias,
             name='ar_decoder')
+        self.is_inited = False
 
     def _encode_videos(self, videos, training):
         config = self.config
@@ -175,6 +171,12 @@ class Model(tf.keras.models.Model):
             # encoded, seq = self._tile_vis_output(encoded, seq)
 
             logits = self.decoder(seq, encoded, training)
+
+            if not self.is_inited:
+                self.trainable_modules=['encoder', 'decoder', 'proj', 'proj_mlp']
+                model_utils.get_params_counts(self)
+                self.is_inited = True
+
             return logits, encoded
 
     def infer(self, videos, prompt_seq, encoded=None, max_seq_len=None,
@@ -236,9 +238,8 @@ class VideoARTrainer(model_lib.Trainer):
 
     def sample_to_tb(self):
         self.step += 1
-        for video_id, video in  enumerate(self.sample):
+        for video_id, video in enumerate(self.sample):
             tf.summary.image(f'video {video_id}', video, self.step)
-
 
     def compute_loss(self, preprocess_outputs, validation):
         batched_examples, input_seq, target_seq, token_weights = preprocess_outputs
