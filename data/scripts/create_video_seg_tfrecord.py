@@ -903,6 +903,9 @@ def main():
         file_names_to_vid_id = dict(
             (tuple(video_['file_names']), video_['id']) for video_ in videos
         )
+        # vid_id_to_file_names = dict(
+        #     (video_['id'], video_['file_names']) for video_ in videos
+        # )
         for _stride in range(stride + 1, length + 1):
             _, _stride_videos = generate_subseq_infos(
                 patch_vids,
@@ -919,6 +922,7 @@ def main():
             assert _stride_video_ids == _stride_video_ids_unique, "_stride_video_ids_unique mismatch"
 
             stride_to_video_ids[_stride] = _stride_video_ids
+
 
         stride_to_video_ids = dict((_stride, ','.join(str(x) for x in _video_ids))
                                    for _stride, _video_ids in stride_to_video_ids.items())

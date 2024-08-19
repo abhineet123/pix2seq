@@ -109,11 +109,17 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
     json_vid_info = collections.defaultdict(list)
     if is_video and cfg.eval.add_stride_info:
+        print(f'loading stride_to_video_ids from {cfg.dataset.category_names_path}')
         json_dict = task_utils.load_json(cfg.dataset.category_names_path)
         stride_to_video_ids = json_dict['stride_to_video_ids']
-        stride_to_file_names = json_dict['stride_to_file_names']
         json_vid_info['stride_to_video_ids'] = stride_to_video_ids
-        json_vid_info['stride_to_file_names'] = stride_to_file_names
+
+        try:
+            stride_to_file_names = json_dict['stride_to_file_names']
+        except KeyError:
+            print('skipping stride_to_file_names')
+        else:
+            json_vid_info['stride_to_file_names'] = stride_to_file_names
 
     def single_step(examples):
         preprocessed_outputs = task.preprocess_batched(examples, training=False)

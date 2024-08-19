@@ -14,6 +14,7 @@
     - [len-2       @ 54_126](#len_2___54_126_)
         - [sample-8       @ len-2/54_126](#sample_8___len_2_54_126_)
     - [len-3       @ 54_126](#len_3___54_126_)
+    - [len-4       @ 54_126](#len_4___54_126_)
     - [len-6       @ 54_126](#len_6___54_126_)
         - [sample-8       @ len-6/54_126](#sample_8___len_6_54_126_)
         - [sample-4       @ len-6/54_126](#sample_4___len_6_54_126_)
@@ -75,8 +76,14 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-2:strd-2:sample
 
 <a id="len_3___54_126_"></a>
 ## len-3       @ 54_126-->tf_vid-ipsc
-python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-3
+python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-3:asi
+
 python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-3:strd-3
+
+<a id="len_4___54_126_"></a>
+## len-4       @ 54_126-->tf_vid-ipsc
+python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-4:asi
+
 <a id="len_6___54_126_"></a>
 ## len-6       @ 54_126-->tf_vid-ipsc
 python data/scripts/create_video_tfrecord.py cfg=ipsc:54_126:len-6:asi-2
