@@ -54,7 +54,7 @@ python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg_
 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-2-stride-1-sub_8-ltac-batch_16,_eval_,batch-4,save-vis-1,dbg-0,dyn-1,vid_seg-16_53:p-640:r-2560:sub-8,ltac
 <a id="on_54_126___ltac_len_2_16_53_r_2560_p_640_sub_8_"></a>
 #### on-54_126       @ ltac/len-2/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-2-stride-1-sub_8-ltac-batch_16,_eval_,batch-4,save-vis-1,dbg-0,dyn-1,vid_seg-54_126:p-640:r-2560:sub-8,ltac,asi
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-2-stride-1-sub_8-ltac-batch_16,_eval_,batch-8,save-vis-1,dbg-0,dyn-1,vid_seg-54_126:p-640:r-2560:sub-8,ltac,asi
 
 
 <a id="mc___len_2_16_53_r_2560_p_640_sub_8_"></a>
