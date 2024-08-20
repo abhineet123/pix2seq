@@ -405,7 +405,7 @@ def get_params_counts(model, level=0):
         trainable_modules = model.trainable_modules
     except AttributeError:
         return
-    
+
     for module_name in trainable_modules:
         module = getattr(model, module_name)
         try:
