@@ -401,7 +401,12 @@ def get_params_counts(model, level=0):
 
     level += 1
 
-    for module_name in model.trainable_modules:
+    try:
+        trainable_modules = model.trainable_modules
+    except AttributeError:
+        return
+    
+    for module_name in trainable_modules:
         module = getattr(model, module_name)
         try:
             module_params = np.sum([np.prod(v.get_shape())
