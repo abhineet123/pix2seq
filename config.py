@@ -4,6 +4,8 @@ import ml_collections
 import json
 import copy
 
+import utils
+
 TRAIN = 'train'
 EVAL = 'eval'
 MAX_JSON_VARS = 10
@@ -54,6 +56,9 @@ def from_list(in_list):
 
 def load_from_model(cfg, model_dir, cmd_cfg, pt=False):
     pt_cfg_filepath = os.path.join(model_dir, 'config.json')
+
+    if cfg.eval.remote and not os.path.isfile(pt_cfg_filepath):
+        utils.get_remote_config(model_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
 
     assert os.path.isfile(pt_cfg_filepath), f"non-existent model cfg json: {pt_cfg_filepath}"
 

@@ -273,10 +273,22 @@ def main(unused_argv):
 
                 checkpoint_dir = cfg.model_dir
         import eval
+
+        checkpoint_dir = os.path.abspath(checkpoint_dir)
+
+        if cfg.eval.remote:
+            utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
+
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):
+            
             csv_dir_name = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
                                     model_lib, tf)
+            if cfg.eval.remote and cfg.eval.sleep:
+                utils.sleep_with_pbar(cfg.eval.sleep)
+                utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
+                continue
+
             # if cfg.eval.pipeline:
             #     continue
 

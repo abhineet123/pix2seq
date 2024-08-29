@@ -48,6 +48,11 @@ eval_config = D(
     save_vis=0,
     save_csv=1,
     profile=0,
+    info_file='',
+    remote='',
+    proxy='',
+    # sleep time between evals in minutes
+    sleep=360,
     tag='eval',
     checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
 )

@@ -12,7 +12,7 @@ import utils
 from tasks import task_utils
 from tasks.visualization import vis_utils
 
-from eval_utils import profile, print_with_time
+from eval_utils import profile, print_with_time, linux_path
 
 
 def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
@@ -146,6 +146,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
         # print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
         pbar = tqdm(total=eval_steps, ncols=100)
+
         while True:
             if eval_steps and cur_step >= eval_steps:
                 break

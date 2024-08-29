@@ -30,12 +30,13 @@
         - [on-train       @ 16_53-len-6-aug-pt/swin](#on_train___16_53_len_6_aug_pt_swi_n_)
         - [on-54_126       @ 16_53-len-6-aug-pt/swin](#on_54_126___16_53_len_6_aug_pt_swi_n_)
     - [16_53-len-6-aug-pt-no-spt       @ swin](#16_53_len_6_aug_pt_no_spt___swin_)
-    - [0_37-len-2-aug-pt-gxe       @ swin](#0_37_len_2_aug_pt_gxe___swin_)
     - [0_37-len-2-aug-pt       @ swin](#0_37_len_2_aug_pt___swin_)
         - [on-54_126       @ 0_37-len-2-aug-pt/swin](#on_54_126___0_37_len_2_aug_pt_swin_)
+    - [0_37-len-2-aug-pt-gxe       @ swin](#0_37_len_2_aug_pt_gxe___swin_)
     - [0_37-len-3-aug-pt       @ swin](#0_37_len_3_aug_pt___swin_)
         - [on-54_126       @ 0_37-len-3-aug-pt/swin](#on_54_126___0_37_len_3_aug_pt_swin_)
     - [54_126-len-2-aug-pt       @ swin](#54_126_len_2_aug_pt___swin_)
+        - [on-0_15       @ 54_126-len-2-aug-pt/swin](#on_0_15___54_126_len_2_aug_pt_swin_)
 - [mid](#mid_)
     - [0_4       @ mid](#0_4___mi_d_)
         - [batch-3       @ 0_4/mid](#batch_3___0_4_mi_d_)
@@ -82,6 +83,8 @@
         - [on-54_126       @ 0_37-len-3/mid](#on_54_126___0_37_len_3_mid_)
     - [0_37-len-3-aug       @ mid](#0_37_len_3_aug___mi_d_)
         - [on-54_126       @ 0_37-len-3-aug/mid](#on_54_126___0_37_len_3_aug_mid_)
+    - [54_126-len-2-aug       @ mid](#54_126_len_2_aug___mi_d_)
+        - [on-0_15       @ 54_126-len-2-aug/mid](#on_0_15___54_126_len_2_aug_mid_)
 - [lfn](#lfn_)
     - [16_53-len-2       @ lfn](#16_53_len_2___lf_n_)
         - [on-train       @ 16_53-len-2/lfn](#on_train___16_53_len_2_lf_n_)
@@ -110,6 +113,8 @@
     - [16_53-len-6-aug       @ lfn](#16_53_len_6_aug___lf_n_)
         - [on-0_15       @ 16_53-len-6-aug/lfn](#on_0_15___16_53_len_6_aug_lf_n_)
         - [on-54_126       @ 16_53-len-6-aug/lfn](#on_54_126___16_53_len_6_aug_lf_n_)
+    - [54_126-len-2-aug       @ lfn](#54_126_len_2_aug___lf_n_)
+        - [on-0_15       @ 54_126-len-2-aug/lfn](#on_0_15___54_126_len_2_aug_lfn_)
 
 <!-- /MarkdownTOC -->
 <a id="swi_n_"></a>
@@ -260,16 +265,18 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,batch-9,dbg-0,dyn-1,dist-0,swin-t,jtr,res-1280
 
 
-<a id="0_37_len_2_aug_pt_gxe___swin_"></a>
-## 0_37-len-2-aug-pt-gxe       @ swin-->p2s_vid-ipsc
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,batch-60,dbg-0,dyn-1,dist-2,gxe,swin-t,spt,jtr,res-1280
-
 <a id="0_37_len_2_aug_pt___swin_"></a>
 ## 0_37-len-2-aug-pt       @ swin-->p2s_vid-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,batch-10,dbg-0,dyn-1,dist-0,swin-t,spt,jtr,res-1280
 <a id="on_54_126___0_37_len_2_aug_pt_swin_"></a>
 ### on-54_126       @ 0_37-len-2-aug-pt/swin-->p2s_vid-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_pt_640_ext_reorg_roi_g2-0_37-length-2-stride-1-batch_10-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-2,batch-8,save-vis-0,dbg-0,dyn-1,swin-t,spt
+
+
+<a id="0_37_len_2_aug_pt_gxe___swin_"></a>
+## 0_37-len-2-aug-pt-gxe       @ swin-->p2s_vid-ipsc
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-2,batch-60,dbg-0,dyn-1,dist-2,gxe,swin-t,spt,jtr,res-1280
+
 
 <a id="0_37_len_3_aug_pt___swin_"></a>
 ## 0_37-len-3-aug-pt       @ swin-->p2s_vid-ipsc
@@ -281,7 +288,9 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 <a id="54_126_len_2_aug_pt___swin_"></a>
 ## 54_126-len-2-aug-pt       @ swin-->p2s_vid-ipsc
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-54_126,len-2,batch-20,dbg-0,dyn-1,dist-1,swin-t,spt,jtr,res-1280
-
+<a id="on_0_15___54_126_len_2_aug_pt_swin_"></a>
+### on-0_15       @ 54_126-len-2-aug-pt/swin-->p2s_vid-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-swin_t_pt_640_ext_reorg_roi_g2-54_126-length-2-stride-1-batch_20-jtr-res_1280,_eval_,vid_det,ipsc-0_15,len-2,batch-8,save-vis-0,dbg-1,dyn-1,swin-t,spt,grs
 
 
 <a id="mid_"></a>
@@ -438,6 +447,8 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=tra
 ### on-54_126       @ 0_37-len-2-aug/mid-->p2s_vid-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-length-2-stride-1-batch_10-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-2,batch-8,save-vis-0,dbg-0,dyn-1
 
+
+
 <a id="0_37_len_3___mi_d_"></a>
 ## 0_37-len-3       @ mid-->p2s_vid-ipsc
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-0_37,len-3,batch-8,dbg-0,dyn-1,dist-0
@@ -454,6 +465,14 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=tra
 <a id="on_54_126___0_37_len_3_aug_mid_"></a>
 ### on-54_126       @ 0_37-len-3-aug/mid-->p2s_vid-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-length-3-stride-1-batch_6-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-3,batch-8,save-vis-0,dbg-0,dyn-1
+
+
+<a id="54_126_len_2_aug___mi_d_"></a>
+## 54_126-len-2-aug       @ mid-->p2s_vid-ipsc
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-54_126,len-2,batch-20,dbg-0,dyn-1,dist-1,jtr,res-1280
+<a id="on_0_15___54_126_len_2_aug_mid_"></a>
+### on-0_15       @ 54_126-len-2-aug/mid-->p2s_vid-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-54_126-length-2-stride-1-batch_20-jtr-res_1280,_eval_,vid_det,ipsc-0_15,len-2,batch-8,save-vis-0,dbg-0,dyn-1,asi,x99
 
 
 
@@ -539,4 +558,11 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 ### on-54_126       @ 16_53-len-6-aug/lfn-->p2s_vid-ipsc
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-6-stride-1-batch_3-lfn-jtr-res_1280,_eval_,vid_det,ipsc-54_126,len-6,batch-4,save-vis-0,dbg-0,dyn-1,asi
 
+
+<a id="54_126_len_2_aug___lf_n_"></a>
+## 54_126-len-2-aug       @ lfn-->p2s_vid-ipsc
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-54_126,len-2,batch-18,dbg-0,dyn-1,dist-1,lfn,jtr,res-1280
+<a id="on_0_15___54_126_len_2_aug_lfn_"></a>
+### on-0_15       @ 54_126-len-2-aug/lfn-->p2s_vid-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-54_126-length-2-stride-1-batch_18-lfn-jtr-res_1280,_eval_,vid_det,ipsc-0_15,len-2,batch-8,save-vis-0,dbg-0,dyn-1,asi,e5g
 

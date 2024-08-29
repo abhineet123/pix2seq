@@ -28,6 +28,7 @@ import einops
 import matplotlib
 import matplotlib.cm
 import numpy as np
+from tqdm import tqdm
 
 import vocab
 import tensorflow as tf
@@ -745,3 +746,127 @@ def run_in_parallel(fns):
         tasks = [executor.submit(fn) for fn in fns]
         for task in tasks:
             task.result()
+
+def linux_path(*args, **kwargs):
+    return os.path.join(*args, **kwargs).replace(os.sep, '/')
+
+def connect_to_remote(info_file, remote, proxy):
+    remote_info = read_remote_info(info_file)
+    name0, name1, dst, ecr, key, port = remote_info[remote]
+
+    username, server = dst.split('@')
+    print(f'connecting to remote {remote}')
+
+    import paramiko
+    ssh = paramiko.SSHClient()
+
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(server, username=username, port=port, timeout=5)
+
+    ssh_main = None
+
+    if proxy:
+        print(f'connecting to proxy remote {proxy}')
+
+        _, _, proxy_dst, _, _, proxy_port = remote_info[proxy]
+        proxy_username, proxy_server = proxy_dst.split('@')
+
+        vmtransport = ssh.get_transport()
+        dest_addr = (proxy_server, proxy_port)  # edited#
+        local_addr = (server, port)  # edited#
+        vmchannel = vmtransport.open_channel("direct-tcpip", dest_addr, local_addr)
+
+        proxy_ssh = paramiko.SSHClient()
+        proxy_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        proxy_ssh.connect(proxy_server, username=proxy_username, sock=vmchannel)
+
+        ssh_main = ssh
+        ssh = proxy_ssh
+    return ssh, ssh_main
+
+def get_remote_config(checkpoint_dir, info_file, remote, proxy):
+    checkpoint_dir = os.path.abspath(checkpoint_dir)
+
+    ssh, ssh_main = connect_to_remote(info_file, remote, proxy)
+
+    sftp = ssh.open_sftp()
+    config_path = linux_path(checkpoint_dir, 'config.json')
+    sftp.get(config_path, config_path)
+
+    ssh.close()
+    if ssh_main is not None:
+        ssh_main.close()
+
+
+
+def sleep_with_pbar(sleep_mins):
+    for _ in tqdm(range(sleep_mins), desc='sleeping', ncols=100):
+        try:
+            time.sleep(60)
+        except KeyboardInterrupt:
+            print('sleep interrupted')
+            return
+
+def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
+    ssh, ssh_main = connect_to_remote(info_file, remote, proxy)
+
+    # key_file =  linux_path(os.path.expanduser('~'), '.ssh', 'id_rsa')
+    # k = paramiko.RSAKey.from_private_key_file(key_file)
+    # ssh.connect(hostname=server, username=username, port=port, pkey=k, timeout=5)
+
+    cmd_to_execute = f'ls {checkpoint_dir}'
+    ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(cmd_to_execute)
+
+    ssh_stdout.channel.recv_exit_status()
+    ssh_stdout_lines = ssh_stdout.readlines()
+
+    remote_files = [k.strip() for k in ssh_stdout_lines]
+    remote_ckpts = [k for k in remote_files if k.startswith('ckpt-')]
+    local_ckpts = [k for k in os.listdir(checkpoint_dir) if k.startswith('ckpt-')]
+    new_remote_ckpts = [ckpt for ckpt in remote_ckpts if ckpt not in local_ckpts]
+
+    new_remote_ckpts_str = '\n'.join(new_remote_ckpts)
+    print(f'\nnew_remote_ckpts:\n{new_remote_ckpts_str}\n')
+
+    if new_remote_ckpts:
+        files_to_transfer = new_remote_ckpts[-2:]
+        ckpt_name = os.path.splitext(os.path.basename(files_to_transfer[-1]))[0]
+
+        files_to_transfer_str = '\n'.join(files_to_transfer)
+        print(f'\nfiles_to_transfer:\n{files_to_transfer_str}\n')
+
+        # files_to_transfer.append('checkpoint')
+        sftp = ssh.open_sftp()
+        for file in files_to_transfer:
+            # print(f'transferring {file}')
+            ckpt_path = linux_path(checkpoint_dir, file)
+            sftp.get(ckpt_path, ckpt_path)
+
+        ckpt_info_file = linux_path(checkpoint_dir, 'checkpoint')
+        with open(ckpt_info_file, 'w') as f:
+            f.write(f'model_checkpoint_path: "{ckpt_name}"')
+    ssh.close()
+    if ssh_main is not None:
+        ssh_main.close()
+
+
+def read_remote_info(info_file):
+    info_path = linux_path(os.path.expanduser('~'), info_file)
+
+    info_data = open(info_path, 'r').readlines()
+    info_data = [k.strip() for k in info_data]
+
+    dst_info = {}
+    for datum in info_data:
+        info = datum.split(' ')
+        name0, name1, dst = info[:3]
+        port = 22
+        ecr = key = None
+        if len(info) > 3:
+            port = int(info[3])
+        if len(info) > 4:
+            ecr = info[4]
+        if len(info) > 5:
+            key = info[5]
+        dst_info[name0] = [name0, name1, dst, ecr, key, port]
+    return dst_info
