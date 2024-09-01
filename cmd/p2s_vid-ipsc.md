@@ -560,5 +560,5 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-54_126,len-2,batch-18,dbg-0,dyn-1,dist-1,lfn,jtr,res-1280
 <a id="on_0_15___54_126_len_2_aug_lfn_"></a>
 ### on-0_15       @ 54_126-len-2-aug/lfn-->p2s_vid-ipsc
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-54_126-length-2-stride-1-batch_18-lfn-jtr-res_1280,_eval_,vid_det,ipsc-0_15,len-2,batch-8,save-vis-0,dbg-0,dyn-1,asi,e5g-1
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-54_126-length-2-stride-1-batch_18-lfn-jtr-res_1280,_eval_,vid_det,ipsc-0_15,len-2,batch-8,save-vis-0,dbg-0,dyn-1,asi,e5g
 

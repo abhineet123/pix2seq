@@ -281,6 +281,9 @@ def main(unused_argv):
 
         evaluated_ckpts = []
 
+        # print(f' cfg.eval.run_existing: {cfg.eval.run_existing}')
+        # exit()
+
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):
             
@@ -292,6 +295,8 @@ def main(unused_argv):
                 if new_ckpt is not None:
                     evaluated_ckpts.append(new_ckpt)
                     continue
+                print('\nno existing non-evaluated ckpts found\n')
+                # exit()
 
             if cfg.eval.remote and cfg.eval.sleep:
                 utils.sleep_with_pbar(cfg.eval.sleep)
