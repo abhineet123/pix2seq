@@ -800,12 +800,34 @@ def get_remote_config(checkpoint_dir, info_file, remote, proxy):
 
 
 def sleep_with_pbar(sleep_mins):
-    for _ in tqdm(range(sleep_mins), desc='sleeping', ncols=100):
+    for _ in tqdm(range(sleep_mins), desc='sleeping', ncols=50):
         try:
             time.sleep(60)
         except KeyboardInterrupt:
             print('sleep interrupted')
             return
+
+def get_name(ckpt):
+    return os.path.splitext(os.path.basename(ckpt))[0]
+
+def get_local_ckpt(checkpoint_dir, excluded_ckpts):
+    eval_dirs = [k for k in os.listdir(checkpoint_dir)
+               if k.startswith('ckpt-') and os.path.isdir(linux_path(checkpoint_dir, k))]
+    local_ckpts = [k for k in os.listdir(checkpoint_dir)
+                   if k.startswith('ckpt-') and os.path.isfile(linux_path(checkpoint_dir, k))
+                   and k not in excluded_ckpts]
+    local_ckpts = [ckpt for ckpt in local_ckpts if not any(eval_dir.startswith(get_name(ckpt))
+                                                           for eval_dir in eval_dirs)]
+    if not local_ckpts:
+        return None
+
+    ckpt_info_file = linux_path(checkpoint_dir, 'checkpoint')
+    ckpt = local_ckpts[-1]
+    ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
+    with open(ckpt_info_file, 'w') as f:
+        f.write(f'model_checkpoint_path: "{ckpt_name}"')
+    return ckpt
+
 
 def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
     ssh, ssh_main = connect_to_remote(info_file, remote, proxy)
@@ -828,9 +850,12 @@ def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
     new_remote_ckpts_str = '\n'.join(new_remote_ckpts)
     print(f'\nnew_remote_ckpts:\n{new_remote_ckpts_str}\n')
 
+    ckpt = None
+
     if new_remote_ckpts:
         files_to_transfer = new_remote_ckpts[-2:]
-        ckpt_name = os.path.splitext(os.path.basename(files_to_transfer[-1]))[0]
+        ckpt = files_to_transfer[-1]
+        ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
 
         files_to_transfer_str = '\n'.join(files_to_transfer)
         print(f'\nfiles_to_transfer:\n{files_to_transfer_str}\n')
@@ -848,6 +873,7 @@ def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
     ssh.close()
     if ssh_main is not None:
         ssh_main.close()
+    return ckpt
 
 
 def read_remote_info(info_file):

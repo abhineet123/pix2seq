@@ -3,5 +3,6 @@
 	info_file: 'dgPolWm53WNOJ8PEioAL',
 	remote: 'grs',
 	proxy: 'x99',
+	run_existing: %%0%%,
 	},
 }

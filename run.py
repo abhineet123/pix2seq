@@ -279,11 +279,20 @@ def main(unused_argv):
         if cfg.eval.remote:
             utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
 
+        evaluated_ckpts = []
+
         for ckpt in tf.train.checkpoints_iterator(
                 checkpoint_dir, min_interval_secs=1, timeout=5):
             
             csv_dir_name = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
                                     model_lib, tf)
+
+            if cfg.eval.run_existing:
+                new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
+                if new_ckpt is not None:
+                    evaluated_ckpts.append(new_ckpt)
+                    continue
+
             if cfg.eval.remote and cfg.eval.sleep:
                 utils.sleep_with_pbar(cfg.eval.sleep)
                 utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)

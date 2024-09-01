@@ -49,6 +49,7 @@ eval_config = D(
     save_csv=1,
     profile=0,
     info_file='',
+    run_existing=1,
     remote='',
     proxy='',
     # sleep time between evals in minutes

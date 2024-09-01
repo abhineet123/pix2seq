@@ -1,6 +1,7 @@
 {
   "eval": {
 	info_file: 'dgPolWm53WNOJ8PEioAL',
-	remote: 'grs'
+	remote: 'grs',
+	run_existing: %%0%%,
 	},
 }
