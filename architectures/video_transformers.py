@@ -175,17 +175,22 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
                  drop_att=0.,
                  pos_encoding='sin_cos',
                  use_cls_token=True,
+                 freeze_backbone=0,
                  **kwargs):
         super(VideoResNetTransformer, self).__init__(**kwargs)
         self.dim = dim
         self.vid_len = vid_len
         self.use_cls_token = use_cls_token
         self.late_fusion = late_fusion
+        self.freeze_backbone = freeze_backbone
         self.resnet = resnet.resnet(
             resnet_depth=resnet_depth,
             width_multiplier=resnet_width_multiplier,
             sk_ratio=resnet_sk_ratio,
             variant=resnet_variant)
+        if self.freeze_backbone:
+            self.resnet.trainable=False
+            
         self.dropout = tf.keras.layers.Dropout(drop_units)
         self.stem_projection = tf.keras.layers.Dense(dim, name='stem_projection')
         self.stem_ln = tf.keras.layers.LayerNormalization(
@@ -287,6 +292,7 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
                  drop_att=0.,
                  pos_encoding='learned',
                  use_cls_token=True,
+                 freeze_backbone=0,
                  **kwargs):
         super(VideoSwinTransformer, self).__init__(**kwargs)
         self.swin_variant = swin_variant
@@ -296,6 +302,7 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
         self.patch_dim = patch_dim
         self.pos_encoding = pos_encoding
         self.dim = dim
+        self.freeze_backbone = freeze_backbone
 
         # ckpt_name = os.path.join('pretrained', self.ckpt_name())
         # self.backbone = tf.keras.models.load_model(ckpt_name, compile=False)
@@ -315,6 +322,10 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
             self.backbone = VideoSwinT(length=self.vid_len, patch_dim=self.patch_dim, pt=self.swin_pt)
         else:
             raise AssertionError('invalid swin_variant: {swin_variant}')
+
+        if self.freeze_backbone:
+            print('freezing backbone')
+            self.backbone.trainable = False
 
         factor = 32.
 

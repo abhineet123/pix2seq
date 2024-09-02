@@ -298,8 +298,9 @@ def main(unused_argv):
                 print('\nno existing non-evaluated ckpts found\n')
                 # exit()
 
-            if cfg.eval.remote and cfg.eval.sleep:
-                utils.sleep_with_pbar(cfg.eval.sleep)
+            if cfg.eval.remote and cfg.eval.sleep > 0:
+                sleep_mins = int(cfg.eval.sleep*60)
+                utils.sleep_with_pbar(sleep_mins)
                 utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
                 continue
 

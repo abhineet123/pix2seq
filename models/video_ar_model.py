@@ -33,6 +33,10 @@ class Model(tf.keras.models.Model):
         self.late_fusion = self.config.late_fusion
         self.pos_encoding = self.config.pos_encoding
         self.is_swin = False
+        self.freeze_backbone = self.config_all.train.freeze_backbone
+
+        if self.freeze_backbone:
+            print('freezing backbone')
 
         if self.late_fusion:
             self.pos_channels = self.vid_len
@@ -64,6 +68,7 @@ class Model(tf.keras.models.Model):
                 drop_att=self.config.drop_att,
                 pos_encoding=self.config.pos_encoding,
                 use_cls_token=self.config.use_cls_token,
+                freeze_backbone=self.freeze_backbone,
                 name='video_swin')
         elif self.config.resnet_variant == 'c1':
             raise NotImplemented('Video vision transformer is not implemented yet')
@@ -86,6 +91,7 @@ class Model(tf.keras.models.Model):
                 pos_encoding=self.config.pos_encoding,
                 use_cls_token=self.config.use_cls_token,
                 late_fusion=self.late_fusion,
+                freeze_backbone=self.freeze_backbone,
                 name='rest')
 
         mlp_ratio_dec = self.config.dim_mlp_dec // self.config.dim_att_dec

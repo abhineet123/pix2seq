@@ -35,6 +35,7 @@ train_config = D(
     checkpoint_steps=0,  # set to >0 to override checkpoint_epochs.
     keep_checkpoint_max=2,
     loss_type='xent',
+    freeze_backbone=0,
     val_epochs=0,
 )
 eval_config = D(
@@ -52,8 +53,8 @@ eval_config = D(
     run_existing=1,
     remote='',
     proxy='',
-    # sleep time between evals in minutes
-    sleep=360,
+    # sleep time between evals in hours
+    sleep=6.0,
     tag='eval',
     checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
 )
