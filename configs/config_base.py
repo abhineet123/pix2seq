@@ -39,6 +39,7 @@ train_config = D(
     val_epochs=0,
 )
 eval_config = D(
+    check_ckpt=0,
     add_stride_info=1,
     csv_steps=10,
     write_to_video=1,

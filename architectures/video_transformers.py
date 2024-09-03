@@ -190,7 +190,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             variant=resnet_variant)
         if self.freeze_backbone:
             self.resnet.trainable=False
-            
+
         self.dropout = tf.keras.layers.Dropout(drop_units)
         self.stem_projection = tf.keras.layers.Dense(dim, name='stem_projection')
         self.stem_ln = tf.keras.layers.LayerNormalization(
@@ -307,24 +307,32 @@ class VideoSwinTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-do
         # ckpt_name = os.path.join('pretrained', self.ckpt_name())
         # self.backbone = tf.keras.models.load_model(ckpt_name, compile=False)
 
-        from architectures.videoswin import VideoSwinB, VideoSwinS, VideoSwinT
+        from architectures.videoswin import video_swin_base, video_swin_small, video_swin_tiny
 
         # if self.patch_dim == 0:
         #     self.patch_dim = self.vid_len
 
         self.pos_channels = self.vid_len // self.patch_dim
 
+        verify = self.swin_pt == 2
+
         if swin_variant == 'b':
-            self.backbone = VideoSwinB(length=self.vid_len, patch_dim=self.patch_dim, pt=self.swin_pt)
+            video_swin = video_swin_base
         elif swin_variant == 's':
-            self.backbone = VideoSwinS(length=self.vid_len, patch_dim=self.patch_dim, pt=self.swin_pt)
+            video_swin = video_swin_small
         elif swin_variant == 't':
-            self.backbone = VideoSwinT(length=self.vid_len, patch_dim=self.patch_dim, pt=self.swin_pt)
+            video_swin = video_swin_tiny
         else:
-            raise AssertionError('invalid swin_variant: {swin_variant}')
+            raise AssertionError(f'invalid swin_variant: {swin_variant}')
+
+        self.backbone = video_swin(
+            length=self.vid_len,
+            patch_dim=self.patch_dim,
+            pt=self.swin_pt,
+            verify=verify
+        )
 
         if self.freeze_backbone:
-            print('freezing backbone')
             self.backbone.trainable = False
 
         factor = 32.

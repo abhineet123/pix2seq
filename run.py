@@ -276,10 +276,16 @@ def main(unused_argv):
 
         checkpoint_dir = os.path.abspath(checkpoint_dir)
 
-        if cfg.eval.remote:
-            utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
-
         evaluated_ckpts = []
+
+        new_ckpt = None
+
+        if cfg.eval.run_existing:
+            new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
+
+        if cfg.eval.remote and new_ckpt is None:
+            new_ckpt = utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
+
 
         # print(f' cfg.eval.run_existing: {cfg.eval.run_existing}')
         # exit()
@@ -289,19 +295,25 @@ def main(unused_argv):
             
             csv_dir_name = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
                                     model_lib, tf)
+            cfg.eval.check_ckpt = 0
 
             if cfg.eval.run_existing:
                 new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
                 if new_ckpt is not None:
+                    print(f'found local ckpt: {new_ckpt}')
                     evaluated_ckpts.append(new_ckpt)
                     continue
-                print('\nno existing non-evaluated ckpts found\n')
+                print('\nno local non-evaluated ckpts found\n')
                 # exit()
 
             if cfg.eval.remote and cfg.eval.sleep > 0:
                 sleep_mins = int(cfg.eval.sleep*60)
                 utils.sleep_with_pbar(sleep_mins)
-                utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
+
+                new_ckpt = utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
+                if new_ckpt is not None:
+                    print(f'found remote ckpt: {new_ckpt}')
+                    evaluated_ckpts.append(new_ckpt)
                 continue
 
             # if cfg.eval.pipeline:

@@ -1,4 +1,4 @@
 
-from .model import VideoSwinT
-from .model import VideoSwinS
-from .model import VideoSwinB
+from .model import video_swin_tiny
+from .model import video_swin_small
+from .model import video_swin_base
