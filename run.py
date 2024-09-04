@@ -5,6 +5,7 @@
 import json
 import os
 import sys
+import time
 
 dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
 sys.path.append(dproc_path)
@@ -280,50 +281,33 @@ def main(unused_argv):
 
         new_ckpt = None
 
-        if cfg.eval.run_existing:
-            new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
-
-        if cfg.eval.remote and new_ckpt is None:
-            new_ckpt = utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
-
-
-        # print(f' cfg.eval.run_existing: {cfg.eval.run_existing}')
-        # exit()
-
-        for ckpt in tf.train.checkpoints_iterator(
-                checkpoint_dir, min_interval_secs=1, timeout=5):
-            
-            csv_dir_name = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, ckpt, strategy,
-                                    model_lib, tf)
-            cfg.eval.check_ckpt = 0
-
+        # for ckpt in tf.train.checkpoints_iterator(
+        #         checkpoint_dir, min_interval_secs=1, timeout=5):
+        
+        start_t = time.time()
+        while True:
             if cfg.eval.run_existing:
                 new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
                 if new_ckpt is not None:
                     print(f'found local ckpt: {new_ckpt}')
-                    evaluated_ckpts.append(new_ckpt)
-                    continue
-                print('\nno local non-evaluated ckpts found\n')
-                # exit()
 
-            if cfg.eval.remote and cfg.eval.sleep > 0:
-                sleep_mins = int(cfg.eval.sleep*60)
-                utils.sleep_with_pbar(sleep_mins)
-
+            if new_ckpt is None and cfg.eval.remote:
                 new_ckpt = utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
                 if new_ckpt is not None:
                     print(f'found remote ckpt: {new_ckpt}')
-                    evaluated_ckpts.append(new_ckpt)
-                continue
+                else:
+                    utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t)
+                    continue
 
-            # if cfg.eval.pipeline:
-            #     continue
+            new_ckpt_from_tf = tf.train.latest_checkpoint(checkpoint_dir)
 
-            logging.info('Eval complete. Exiting...')
-            break
-        else:
-            raise AssertionError(f'no checkpoints found in {checkpoint_dir}')
+            if new_ckpt is None:
+                assert new_ckpt_from_tf == new_ckpt, "new_ckpt_from_tf mismatch"
 
+            start_t = time.time()
+            eval.run(cfg, train_datasets[0], tasks[0], eval_steps, new_ckpt_from_tf, strategy,
+                                    model_lib, tf)
+            evaluated_ckpts.append(new_ckpt_from_tf)
 
 if __name__ == '__main__':
     app.run(main)

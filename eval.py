@@ -181,11 +181,11 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
             # with open('per_step_outputs.pkl', 'wb') as fid:
             #     pickle.dump(per_step_outputs, fid)
 
-            # if cfg.eval.check_ckpt and cur_step == 0:
-            #     utils.check_checkpoint_restored(
-            #         strict_verifiers=(),
-            #         loose_verifiers=[verify_restored, verify_existing],
-            #     )
+            if cfg.eval.check_ckpt and cur_step == 0:
+                utils.check_checkpoint_restored(
+                    strict_verifiers=(),
+                    loose_verifiers=[verify_restored, verify_existing],
+                )
 
             cur_step += 1
             pbar.update(1)

@@ -799,8 +799,15 @@ def get_remote_config(checkpoint_dir, info_file, remote, proxy):
 
 
 
-def sleep_with_pbar(sleep_mins):
-    for _ in tqdm(range(sleep_mins), desc='sleeping', ncols=50):
+def sleep_with_pbar(hrs=0, mins=0, start=None):
+    sleep_mins = int(hrs + mins*60)
+
+    if start is not None:
+        sleep_secs = int(sleep_mins * 60)
+        sleep_secs = start + sleep_secs - time.time()
+        sleep_mins = max(0, sleep_secs // 60)
+
+    for _ in tqdm(range(sleep_mins), desc='sleeping', ncols=60):
         try:
             time.sleep(60)
         except KeyboardInterrupt:
