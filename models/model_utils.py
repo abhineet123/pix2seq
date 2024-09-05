@@ -397,26 +397,38 @@ def get_params_counts(model, level=0):
     total_params = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
 
     if level == 0:
-        print(f'total: {total_params}')
+        print(f'\ntotal ({type(model).__name__}): {total_params}')
 
     level += 1
 
     try:
         trainable_modules = model.trainable_modules
     except AttributeError:
-        return
+        # print(f'\nno trainable_modules in {type(model).__name__}\n')
+        trainable_modules = []
+        model_attrs = list(model.__dict__.keys())
+        for k in model_attrs:
+            attr_obj = getattr(model, k)
+            if hasattr(attr_obj, 'trainable_weights'):
+                trainable_modules.append(k)
 
     for module_name in trainable_modules:
         module = getattr(model, module_name)
         try:
+            trainable_weights = module.trainable_weights
+        except AttributeError as e:
+            # print(f'\nno trainable_weights in {module}\n')
+            # continue
+            raise e
+        else:
             module_params = np.sum([np.prod(v.get_shape())
-                                    for v in module.trainable_weights])
-        except AttributeError:
-            continue
+                                    for v in trainable_weights])
 
         module_params_pc = (module_params / total_params) * 100
+        txt = f'{module_name} ({type(module).__name__}): {module_params} ({module_params_pc:.2f}%)'
         if level > 0:
-            print('\t' * level)
+            txt = '\t' * level + txt
 
-        print(f'{module_name}: {module_params} ({module_params_pc:.2f}%)')
+        print(txt)
+
         get_params_counts(module, level=level + 1)

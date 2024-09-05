@@ -283,12 +283,13 @@ def main(unused_argv):
 
         # for ckpt in tf.train.checkpoints_iterator(
         #         checkpoint_dir, min_interval_secs=1, timeout=5):
-        
+
         start_t = time.time()
         while True:
             if cfg.eval.run_existing:
                 new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
                 if new_ckpt is not None:
+
                     print(f'found local ckpt: {new_ckpt}')
 
             if new_ckpt is None and cfg.eval.remote:

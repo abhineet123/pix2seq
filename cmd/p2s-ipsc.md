@@ -14,6 +14,8 @@
         - [on-54_126       @ 0_37/resnet-640](#on_54_126___0_37_resnet_64_0_)
     - [0_37-aug       @ resnet-640](#0_37_aug___resnet_640_)
         - [on-54_126       @ 0_37-aug/resnet-640](#on_54_126___0_37_aug_resnet_64_0_)
+    - [54_126-aug       @ resnet-640](#54_126_aug___resnet_640_)
+    - [54_126-aug-fbb       @ resnet-640](#54_126_aug_fbb___resnet_640_)
     - [16_53-buggy       @ resnet-640](#16_53_buggy___resnet_640_)
         - [batch-4-scratch       @ 16_53-buggy/resnet-640](#batch_4_scratch___16_53_buggy_resnet_640_)
             - [on-g2_0_15       @ batch-4-scratch/16_53-buggy/resnet-640](#on_g2_0_15___batch_4_scratch_16_53_buggy_resnet_640_)
@@ -92,6 +94,14 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=val
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-batch_18-jtr-res_1280,_eval_,ipsc-54_126,batch-32,save-vis-1
 `acc`    
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_ext_reorg_roi_g2-0_37-batch_18-jtr-res_1280,_eval_,ipsc-54_126,batch-16,save-vis-1,acc
+
+<a id="54_126_aug___resnet_640_"></a>
+## 54_126-aug       @ resnet-640-->p2s-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-54_126,batch-18,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280
+
+<a id="54_126_aug_fbb___resnet_640_"></a>
+## 54_126-aug-fbb       @ resnet-640-->p2s-ipsc
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-54_126,batch-18,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280,fbb
 
 <a id="16_53_buggy___resnet_640_"></a>
 ## 16_53-buggy       @ resnet-640-->p2s-ipsc
