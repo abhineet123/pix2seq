@@ -747,8 +747,10 @@ def run_in_parallel(fns):
         for task in tasks:
             task.result()
 
+
 def linux_path(*args, **kwargs):
     return os.path.join(*args, **kwargs).replace(os.sep, '/')
+
 
 def connect_to_remote(info_file, remote, proxy):
     remote_info = read_remote_info(info_file)
@@ -784,6 +786,7 @@ def connect_to_remote(info_file, remote, proxy):
         ssh = proxy_ssh
     return ssh, ssh_main
 
+
 def get_remote_config(checkpoint_dir, info_file, remote, proxy):
     checkpoint_dir = os.path.abspath(checkpoint_dir)
 
@@ -799,9 +802,8 @@ def get_remote_config(checkpoint_dir, info_file, remote, proxy):
         ssh_main.close()
 
 
-
 def sleep_with_pbar(hrs=0, mins=0, start=None):
-    sleep_mins = int(hrs + mins*60)
+    sleep_mins = int(hrs + mins * 60)
 
     if start is not None:
         sleep_secs = int(sleep_mins * 60)
@@ -815,17 +817,20 @@ def sleep_with_pbar(hrs=0, mins=0, start=None):
             print('sleep interrupted')
             return
 
+
 def get_name(ckpt):
     return os.path.splitext(os.path.basename(ckpt))[0]
 
+
 def get_local_ckpt(checkpoint_dir, excluded_ckpts):
     eval_dirs = [k for k in os.listdir(checkpoint_dir)
-               if k.startswith('ckpt-') and os.path.isdir(linux_path(checkpoint_dir, k))]
+                 if k.startswith('ckpt-') and os.path.isdir(linux_path(checkpoint_dir, k))]
     local_ckpts = [k for k in os.listdir(checkpoint_dir)
-                   if k.startswith('ckpt-') and os.path.isfile(linux_path(checkpoint_dir, k))
-                   and k not in excluded_ckpts]
-    local_ckpts = [ckpt for ckpt in local_ckpts if not any(eval_dir.startswith(get_name(ckpt))
-                                                           for eval_dir in eval_dirs)]
+                   if os.path.isfile(linux_path(checkpoint_dir, k))
+                   and is_ckpt(k) and k not in excluded_ckpts]
+    local_ckpts = [ckpt for ckpt in local_ckpts if
+                   not any(eval_dir.startswith(get_name(ckpt))
+                           for eval_dir in eval_dirs)]
     if not local_ckpts:
         return None
 
@@ -835,6 +840,10 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts):
     with open(ckpt_info_file, 'w') as f:
         f.write(f'model_checkpoint_path: "{ckpt_name}"')
     return ckpt
+
+
+def is_ckpt(k):
+    return k.startswith('ckpt-') and (k.endswith('.index') or k.endswith('.data-00000-of-00001'))
 
 
 def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
@@ -851,8 +860,8 @@ def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
     ssh_stdout_lines = ssh_stdout.readlines()
 
     remote_files = [k.strip() for k in ssh_stdout_lines]
-    remote_ckpts = [k for k in remote_files if k.startswith('ckpt-')]
-    local_ckpts = [k for k in os.listdir(checkpoint_dir) if k.startswith('ckpt-')]
+    remote_ckpts = [k for k in remote_files if is_ckpt(k)]
+    local_ckpts = [k for k in os.listdir(checkpoint_dir) if is_ckpt(k)]
     new_remote_ckpts = [ckpt for ckpt in remote_ckpts if ckpt not in local_ckpts]
 
     new_remote_ckpts_str = '\n'.join(new_remote_ckpts)
