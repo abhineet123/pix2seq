@@ -138,6 +138,7 @@ class Model(tf.keras.models.Model):
             output_bias=self.config.decoder_output_bias,
             name='ar_decoder')
         self.is_inited = False
+        self.trainable_modules = ['encoder', 'decoder', 'proj', 'proj_mlp']
 
     def _encode_videos(self, videos, training):
         config = self.config
@@ -179,7 +180,6 @@ class Model(tf.keras.models.Model):
             logits = self.decoder(seq, encoded, training)
 
             if not self.is_inited:
-                self.trainable_modules=['encoder', 'decoder', 'proj', 'proj_mlp']
                 model_utils.get_params_counts(self)
                 self.is_inited = True
 

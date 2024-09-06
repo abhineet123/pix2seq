@@ -106,19 +106,19 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 if not cfg.eager:
                     continue
 
-                global_step_ = trainer.optimizer.iterations.numpy()
-                global_step_ = global_step_.item()
-                if global_step_ >= 1:
-                    model = trainer.model
-                    trainable_params = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
-                    non_trainable_params = np.sum([np.prod(v.get_shape()) for v in model.non_trainable_weights])
-                    total_params = trainable_params + non_trainable_params
-
-                    print('\n\n')
-                    print(f'trainable_params: {trainable_params}')
-                    print(f'non_trainable_params: {non_trainable_params}')
-                    print(f'total_params: {total_params}')
-                    print('\n\n')
+                # global_step_ = trainer.optimizer.iterations.numpy()
+                # global_step_ = global_step_.item()
+                # if global_step_ >= 1:
+                #     model = trainer.model
+                #     trainable_params = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
+                #     non_trainable_params = np.sum([np.prod(v.get_shape()) for v in model.non_trainable_weights])
+                #     total_params = trainable_params + non_trainable_params
+                #
+                #     print('\n\n')
+                #     print(f'trainable_params: {trainable_params}')
+                #     print(f'non_trainable_params: {non_trainable_params}')
+                #     print(f'total_params: {total_params}')
+                #     print('\n\n')
 
                 if cfg.debug:
                     trainer.sample_to_tb()

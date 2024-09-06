@@ -392,12 +392,29 @@ def get_metrics_info(y_true, y_pred, y_pred_logits, y_mask):
     return metrics_info
 
 
+def num_to_words(num):
+    if num >= 1e12:
+        num_tril = num / 1e12
+        words = f'{num_tril:.2f} T'
+    elif num >= 1e9:
+        num_bil = num / 1e9
+        words = f'{num_bil:.2f} B'
+    elif num >= 1e6:
+        num_mil = num / 1e6
+        words = f'{num_mil:.2f} M'
+    elif num >= 1e3:
+        num_th = num / 1e3
+        words = f'{num_th:.2f} K'
+    else:
+        words = f'{num}'
+    return words
+
 def get_params_counts(model, level=0):
     import numpy as np
     total_params = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
 
     if level == 0:
-        print(f'\ntotal ({type(model).__name__}): {total_params}')
+        print(f'\ntotal ({type(model).__name__}): {num_to_words(total_params)}')
 
     level += 1
 
@@ -424,8 +441,13 @@ def get_params_counts(model, level=0):
             module_params = np.sum([np.prod(v.get_shape())
                                     for v in trainable_weights])
 
-        module_params_pc = (module_params / total_params) * 100
-        txt = f'{module_name} ({type(module).__name__}): {module_params} ({module_params_pc:.2f}%)'
+        assert module_params <= total_params, "module_params cannot exceed total_params"
+        if total_params > 0:
+            module_params_pc = (module_params / total_params) * 100
+        else:
+            module_params_pc = 0
+
+        txt = f'{module_name} ({type(module).__name__}): {num_to_words(module_params)} ({module_params_pc:.2f}%)'
         if level > 0:
             txt = '\t' * level + txt
 

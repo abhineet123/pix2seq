@@ -77,6 +77,9 @@ class Model(tf.keras.models.Model):
                 x_pos_encoding=config.pos_encoding,
                 latent_pos_encoding=config.latent_pos_encoding)
 
+            self.is_inited = False
+            self.trainable_modules = ['encoder', 'decoder', 'proj', 'proj_mlp']
+
     def call(self, images, labels=None, training=True):
         """Model function call for *training*."""
         with tf.name_scope(''):  # for other functions to have the same name scope.
@@ -86,6 +89,11 @@ class Model(tf.keras.models.Model):
             logits = self.decoder(input_seq, None, training=training)
             losses = model_utils.get_loss(logits, target_seq, self.loss_type)
             loss = tf.reduce_mean(losses) / tf.math.log(2.0)
+
+            if not self.is_inited:
+                model_utils.get_params_counts(self)
+                self.is_inited = True
+
             return loss, logits, target_seq
 
     def sample(self, **kwargs):
