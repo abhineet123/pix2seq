@@ -22,8 +22,13 @@ class Model(tf.keras.models.Model):
         # vocab_size and max_seq_len don't include start token, which is only used
         # inside this class.
         super().__init__(**kwargs)
+        self.config_all = config
         config = config.model
         self.config = config
+        self.freeze_backbone = self.config_all.train.freeze_backbone
+
+        if self.freeze_backbone:
+            print('freezing backbone')
 
         mlp_ratio = config.dim_mlp // config.dim_att
         if config.resnet_variant == 'c1':
@@ -32,6 +37,7 @@ class Model(tf.keras.models.Model):
                 config.num_encoder_layers, config.dim_att, mlp_ratio,
                 config.num_heads, config.drop_path, config.drop_units,
                 config.drop_att, config.pos_encoding, config.use_cls_token,
+                freeze_backbone=self.freeze_backbone,
                 name='vit')
         else:
             self.encoder = ResNetTransformer(
@@ -50,7 +56,7 @@ class Model(tf.keras.models.Model):
                 drop_att=config.drop_att,
                 pos_encoding=config.pos_encoding,
                 use_cls_token=config.use_cls_token,
-
+                freeze_backbone=self.freeze_backbone,
                 name='rest')
 
         mlp_ratio_dec = config.dim_mlp_dec // config.dim_att_dec
@@ -89,6 +95,9 @@ class Model(tf.keras.models.Model):
             shared_embedding=config.shared_decoder_embedding,
             output_bias=config.decoder_output_bias,
             name='ar_decoder')
+
+        self.is_inited = False
+        self.trainable_modules = ['encoder', 'decoder', 'proj', 'proj_mlp']
 
     def _tile_vis_output(self, vis_output, seq):
         """Tile vis_output per seq.
@@ -144,6 +153,11 @@ class Model(tf.keras.models.Model):
             encoded = self._encode_images(images, training)
             encoded, seq = self._tile_vis_output(encoded, seq)
             logits = self.decoder(seq, encoded, training)
+
+            if not self.is_inited:
+                model_utils.get_params_counts(self)
+                self.is_inited = True
+
             return logits
 
     def infer(self, images, prompt_seq, encoded=None, max_seq_len=None,
@@ -225,8 +239,7 @@ class ARTrainer(model_lib.Trainer):
 
     def sample_to_tb(self):
         self.step += 1
-        for image_id, image in  enumerate(self.sample):
-            tf.summary.image(f'video {image_id}', image, self.step)
+        tf.summary.image(f'images', self.sample, self.step)
 
     def compute_loss(self, preprocess_outputs, validation):
         """Compute loss based on model outputs and targets."""
@@ -234,7 +247,6 @@ class ARTrainer(model_lib.Trainer):
         image = examples["image"]
 
         self.sample = image
-
 
         target_seq = utils.flatten_batch_dims(target_seq, out_rank=2)
         token_weights = utils.flatten_batch_dims(token_weights, out_rank=2)

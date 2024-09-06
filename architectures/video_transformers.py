@@ -188,6 +188,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             width_multiplier=resnet_width_multiplier,
             sk_ratio=resnet_sk_ratio,
             variant=resnet_variant)
+
         if self.freeze_backbone:
             self.resnet.trainable=False
 

@@ -769,13 +769,18 @@ class VisionTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-docst
                  drop_att=0.,
                  pos_encoding='learned',
                  use_cls_token=True,
+                 freeze_backbone=False,
                  **kwargs):
         super(VisionTransformer, self).__init__(**kwargs)
         self.use_cls_token = use_cls_token
         self.patch_size = patch_size
+        self.freeze_backbone = freeze_backbone
         self.stem_conv = tf.keras.layers.Conv2D(
             filters=dim, kernel_size=patch_size, strides=patch_size,
             padding='VALID', use_bias=True, name='stem_conv')
+        if self.freeze_backbone:
+            self.stem_conv.trainable=False
+
         self.stem_ln = tf.keras.layers.LayerNormalization(
             epsilon=1e-6, name='stem_ln')
         if self.use_cls_token:
@@ -823,14 +828,20 @@ class ResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-docst
                  drop_att=0.,
                  pos_encoding='learned',
                  use_cls_token=True,
+                 freeze_backbone=False,
                  **kwargs):
         super(ResNetTransformer, self).__init__(**kwargs)
         self.use_cls_token = use_cls_token
+        self.freeze_backbone = freeze_backbone
+
         self.resnet = resnet.resnet(
             resnet_depth=resnet_depth,
             width_multiplier=resnet_width_multiplier,
             sk_ratio=resnet_sk_ratio,
             variant=resnet_variant)
+        if self.freeze_backbone:
+            self.resnet.trainable=False
+
         self.dropout = tf.keras.layers.Dropout(drop_units)
         self.stem_projection = tf.keras.layers.Dense(dim, name='stem_projection')
         self.stem_ln = tf.keras.layers.LayerNormalization(

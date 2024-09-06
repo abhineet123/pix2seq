@@ -55,7 +55,7 @@ eval_config = D(
     remote='',
     proxy='',
     # sleep time between evals in hours
-    sleep=6.0,
+    sleep=4.,
     tag='eval',
     checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
 )
