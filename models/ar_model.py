@@ -25,10 +25,21 @@ class Model(tf.keras.models.Model):
         self.config_all = config
         config = config.model
         self.config = config
-        self.freeze_backbone = self.config_all.train.freeze_backbone
 
-        if self.freeze_backbone:
-            print('freezing backbone')
+        self.freeze_backbone = self.config_all.train.freeze_backbone
+        self.freeze_encoder = self.config_all.train.freeze_encoder
+        self.freeze_decoder = self.config_all.train.freeze_decoder
+        self.freeze_encoder_decoder = self.config_all.train.freeze_encoder_decoder
+
+        if self.freeze_encoder_decoder:
+            print('freezing both encoder and decoder')
+        else:
+            if self.freeze_decoder:
+                print('freezing decoder')
+            if self.freeze_encoder:
+                print('freezing encoder')
+            elif self.freeze_backbone:
+                print('freezing backbone')
 
         mlp_ratio = config.dim_mlp // config.dim_att
         if config.resnet_variant == 'c1':
@@ -58,6 +69,9 @@ class Model(tf.keras.models.Model):
                 use_cls_token=config.use_cls_token,
                 freeze_backbone=self.freeze_backbone,
                 name='rest')
+
+        if self.freeze_encoder or self.freeze_encoder_decoder:
+            self.encoder.trainable = False
 
         mlp_ratio_dec = config.dim_mlp_dec // config.dim_att_dec
         self.proj = tf.keras.layers.Dense(
@@ -95,6 +109,9 @@ class Model(tf.keras.models.Model):
             shared_embedding=config.shared_decoder_embedding,
             output_bias=config.decoder_output_bias,
             name='ar_decoder')
+
+        if self.freeze_decoder or self.freeze_encoder_decoder:
+            self.decoder.trainable = False
 
         self.is_inited = False
         self.trainable_modules = ['encoder', 'decoder', 'proj', 'proj_mlp']

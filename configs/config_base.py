@@ -36,6 +36,9 @@ train_config = D(
     keep_checkpoint_max=2,
     loss_type='xent',
     freeze_backbone=0,
+    freeze_encoder=0,
+    freeze_decoder=0,
+    freeze_encoder_decoder=0,
     val_epochs=0,
 )
 eval_config = D(

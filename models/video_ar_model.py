@@ -35,8 +35,15 @@ class Model(tf.keras.models.Model):
         self.is_swin = False
         self.freeze_backbone = self.config_all.train.freeze_backbone
 
-        if self.freeze_backbone:
-            print('freezing backbone')
+        if self.freeze_encoder_decoder:
+            print('freezing both encoder and decoder')
+        else:
+            if self.freeze_decoder:
+                print('freezing decoder')
+            if self.freeze_encoder:
+                print('freezing encoder')
+            elif self.freeze_backbone:
+                print('freezing backbone')
 
         if self.late_fusion:
             self.pos_channels = self.vid_len
@@ -94,6 +101,10 @@ class Model(tf.keras.models.Model):
                 freeze_backbone=self.freeze_backbone,
                 name='rest')
 
+
+        if self.freeze_encoder or self.freeze_encoder_decoder:
+            self.encoder.trainable = False
+            
         mlp_ratio_dec = self.config.dim_mlp_dec // self.config.dim_att_dec
         self.proj = tf.keras.layers.Dense(
             self.config.dim_att_dec, name='proj/linear')
@@ -137,6 +148,10 @@ class Model(tf.keras.models.Model):
             shared_embedding=self.config.shared_decoder_embedding,
             output_bias=self.config.decoder_output_bias,
             name='ar_decoder')
+
+        if self.freeze_decoder or self.freeze_encoder_decoder:
+            self.decoder.trainable = False
+
         self.is_inited = False
         self.trainable_modules = ['encoder', 'decoder', 'proj', 'proj_mlp']
 
