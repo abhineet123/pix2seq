@@ -33,7 +33,11 @@ class Model(tf.keras.models.Model):
         self.late_fusion = self.config.late_fusion
         self.pos_encoding = self.config.pos_encoding
         self.is_swin = False
+
         self.freeze_backbone = self.config_all.train.freeze_backbone
+        self.freeze_encoder = self.config_all.train.freeze_encoder
+        self.freeze_decoder = self.config_all.train.freeze_decoder
+        self.freeze_encoder_decoder = self.config_all.train.freeze_encoder_decoder
 
         if self.freeze_encoder_decoder:
             print('freezing both encoder and decoder')
@@ -104,7 +108,7 @@ class Model(tf.keras.models.Model):
 
         if self.freeze_encoder or self.freeze_encoder_decoder:
             self.encoder.trainable = False
-            
+
         mlp_ratio_dec = self.config.dim_mlp_dec // self.config.dim_att_dec
         self.proj = tf.keras.layers.Dense(
             self.config.dim_att_dec, name='proj/linear')
