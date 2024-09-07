@@ -843,7 +843,11 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts):
 
 
 def is_ckpt(k):
-    return k.startswith('ckpt-') and (k.endswith('.index') or k.endswith('.data-00000-of-00001'))
+    return k.startswith('ckpt-') and (
+        k.endswith('.data-00000-of-00001')
+        # or
+        # k.endswith('.index')
+    )
 
 
 def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
@@ -870,9 +874,10 @@ def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
     ckpt = None
 
     if new_remote_ckpts:
-        files_to_transfer = new_remote_ckpts[-2:]
-        ckpt = files_to_transfer[-1]
+        ckpt = new_remote_ckpts[-1]
         ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
+        ckpt_idx = f'{ckpt_name}.index'
+        files_to_transfer = [ckpt, ckpt_idx]
 
         files_to_transfer_str = '\n'.join(files_to_transfer)
         print(f'\nfiles_to_transfer:\n{files_to_transfer_str}\n')
