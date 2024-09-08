@@ -803,12 +803,12 @@ def get_remote_config(checkpoint_dir, info_file, remote, proxy):
 
 
 def sleep_with_pbar(hrs=0, mins=0, start=None):
-    sleep_mins = int(hrs + mins * 60)
+    sleep_mins = int(hrs * 60 + mins)
 
     if start is not None:
         sleep_secs = int(sleep_mins * 60)
         sleep_secs = start + sleep_secs - time.time()
-        sleep_mins = max(0, sleep_secs // 60)
+        sleep_mins = int(max(0, sleep_secs // 60))
 
     for _ in tqdm(range(sleep_mins), desc='sleeping', ncols=60):
         try:
@@ -868,8 +868,8 @@ def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
     local_ckpts = [k for k in os.listdir(checkpoint_dir) if is_ckpt(k)]
     new_remote_ckpts = [ckpt for ckpt in remote_ckpts if ckpt not in local_ckpts]
 
-    new_remote_ckpts_str = '\n'.join(new_remote_ckpts)
-    print(f'\nnew_remote_ckpts:\n{new_remote_ckpts_str}\n')
+    # new_remote_ckpts_str = '\n'.join(new_remote_ckpts)
+    # print(f'\nnew_remote_ckpts:\n{new_remote_ckpts_str}\n')
 
     ckpt = None
 
