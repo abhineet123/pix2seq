@@ -289,26 +289,30 @@ def main(unused_argv):
             if cfg.eval.run_existing:
                 new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
                 if new_ckpt is not None:
-
                     print(f'found local ckpt: {new_ckpt}')
 
-            if new_ckpt is None and cfg.eval.remote:
-                new_ckpt = utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
-                if new_ckpt is not None:
-                    print(f'found remote ckpt: {new_ckpt}')
+            if new_ckpt is None:
+                if cfg.eval.remote:
+                    new_ckpt = utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
+                    if new_ckpt is not None:
+                        print(f'found remote ckpt: {new_ckpt}')
+                    else:
+                        utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t)
+                        continue
                 else:
-                    utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t)
-                    continue
-
-            new_ckpt_from_tf = tf.train.latest_checkpoint(checkpoint_dir)
+                    break
 
             if new_ckpt is None:
-                assert new_ckpt_from_tf == new_ckpt, "new_ckpt_from_tf mismatch"
+                continue
+
+            new_ckpt_from_tf = tf.train.latest_checkpoint(checkpoint_dir)
+            assert new_ckpt_from_tf == new_ckpt, "new_ckpt_from_tf mismatch"
 
             start_t = time.time()
             eval.run(cfg, train_datasets[0], tasks[0], eval_steps, new_ckpt_from_tf, strategy,
                                     model_lib, tf)
-            evaluated_ckpts.append(new_ckpt_from_tf)
+            ckpt_name = utils.get_name(new_ckpt_from_tf)
+            evaluated_ckpts.append(ckpt_name)
 
 if __name__ == '__main__':
     app.run(main)

@@ -822,26 +822,6 @@ def get_name(ckpt):
     return os.path.splitext(os.path.basename(ckpt))[0]
 
 
-def get_local_ckpt(checkpoint_dir, excluded_ckpts):
-    eval_dirs = [k for k in os.listdir(checkpoint_dir)
-                 if k.startswith('ckpt-') and os.path.isdir(linux_path(checkpoint_dir, k))]
-    local_ckpts = [k for k in os.listdir(checkpoint_dir)
-                   if os.path.isfile(linux_path(checkpoint_dir, k))
-                   and is_ckpt(k) and k not in excluded_ckpts]
-    local_ckpts = [ckpt for ckpt in local_ckpts if
-                   not any(eval_dir.startswith(get_name(ckpt))
-                           for eval_dir in eval_dirs)]
-    if not local_ckpts:
-        return None
-
-    ckpt_info_file = linux_path(checkpoint_dir, 'checkpoint')
-    ckpt = local_ckpts[-1]
-    ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
-    with open(ckpt_info_file, 'w') as f:
-        f.write(f'model_checkpoint_path: "{ckpt_name}"')
-    return ckpt
-
-
 def is_ckpt(k):
     return k.startswith('ckpt-') and (
         k.endswith('.data-00000-of-00001')
@@ -849,6 +829,29 @@ def is_ckpt(k):
         # k.endswith('.index')
     )
 
+def get_local_ckpt(checkpoint_dir, excluded_ckpts):
+    local_ckpts = [k for k in os.listdir(checkpoint_dir)
+                   if os.path.isfile(linux_path(checkpoint_dir, k))
+                   and is_ckpt(k) and get_name(k) not in excluded_ckpts]
+
+    # eval_dirs = [k for k in os.listdir(checkpoint_dir)
+    #              if k.startswith('ckpt-') and os.path.isdir(linux_path(checkpoint_dir, k))]
+    # local_ckpts = [ckpt for ckpt in local_ckpts if
+    #                not any(eval_dir.startswith(get_name(ckpt))
+    #                        for eval_dir in eval_dirs)]
+    if not local_ckpts:
+        return None
+
+    local_ckpts.sort()
+
+    ckpt_info_file = linux_path(checkpoint_dir, 'checkpoint')
+    ckpt = local_ckpts[-1]
+    ckpt_name = get_name(ckpt)
+    with open(ckpt_info_file, 'w') as f:
+        f.write(f'model_checkpoint_path: "{ckpt_name}"')
+
+    ckpt_path = linux_path(checkpoint_dir, ckpt_name)
+    return ckpt_path
 
 def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
     ssh, ssh_main = connect_to_remote(info_file, remote, proxy)
@@ -871,11 +874,15 @@ def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
     # new_remote_ckpts_str = '\n'.join(new_remote_ckpts)
     # print(f'\nnew_remote_ckpts:\n{new_remote_ckpts_str}\n')
 
-    ckpt = None
+    new_remote_ckpts.sort()
+
+    ckpt_path = None
 
     if new_remote_ckpts:
         ckpt = new_remote_ckpts[-1]
         ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
+        ckpt_path = linux_path(checkpoint_dir, ckpt_name)
+
         ckpt_idx = f'{ckpt_name}.index'
         files_to_transfer = [ckpt, ckpt_idx]
 
@@ -886,8 +893,8 @@ def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
         sftp = ssh.open_sftp()
         for file in files_to_transfer:
             # print(f'transferring {file}')
-            ckpt_path = linux_path(checkpoint_dir, file)
-            sftp.get(ckpt_path, ckpt_path)
+            file_path = linux_path(checkpoint_dir, file)
+            sftp.get(file_path, file_path)
 
         ckpt_info_file = linux_path(checkpoint_dir, 'checkpoint')
         with open(ckpt_info_file, 'w') as f:
@@ -895,7 +902,7 @@ def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
     ssh.close()
     if ssh_main is not None:
         ssh_main.close()
-    return ckpt
+    return ckpt_path
 
 
 def read_remote_info(info_file):
