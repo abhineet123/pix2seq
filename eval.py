@@ -40,6 +40,11 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
     json_name = os.path.basename(json_name).split(os.extsep)[0]
 
     out_dir = os.path.join(cfg.model_dir, f'{ckpt_name}-{json_name}')
+
+    if os.path.exists(out_dir):
+        print(f'\n\nskipping eval since output dir already exists: {out_dir}\n\n')
+        return
+
     os.makedirs(out_dir, exist_ok=True)
     if is_seg:
         rle_lens = cfg.dataset.eval.rle_lens
@@ -246,5 +251,3 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
     if seq_to_csv_rows is not None:
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():
             assert not csv_rows, "unexplained non-empty csv_rows found"
-
-    return csv_dir_name
