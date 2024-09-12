@@ -15,7 +15,7 @@ from tasks.visualization import vis_utils
 from eval_utils import profile, print_with_time, linux_path
 
 
-def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
+def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
     """Perform evaluation."""
     eval_tag = cfg.eval.tag
     # summary_writer = None
@@ -26,11 +26,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model_lib, tf):
 
     with strategy.scope():
         # Restore model checkpoint.
-        model = model_lib.ModelRegistry.lookup(cfg.model.name)(cfg)
-
         print_with_time(f'Restoring from {ckpt:s}')
-        checkpoint = tf.train.Checkpoint(
-            model=model, global_step=tf.Variable(0, dtype=tf.int64))
         status = checkpoint.restore(ckpt).expect_partial()  # Not restore optimizer.
         verify_restored = status.assert_consumed
         verify_existing = status.assert_existing_objects_matched

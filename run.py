@@ -243,6 +243,12 @@ def main(unused_argv):
         train.run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps,
                   checkpoint_steps, train_dataset.num_train_examples, strategy, model_lib, tf)
     else:
+        with strategy.scope():
+            # Restore model checkpoint.
+            model = model_lib.ModelRegistry.lookup(cfg.model.name)(cfg)
+            checkpoint = tf.train.Checkpoint(
+                model=model, global_step=tf.Variable(0, dtype=tf.int64))
+
         eval_steps = utils.get_eval_steps(
             train_dataset, cfg.eval.steps, cfg.eval.batch_size)
 
@@ -310,7 +316,7 @@ def main(unused_argv):
 
             start_t = time.time()
             eval.run(cfg, train_datasets[0], tasks[0], eval_steps, new_ckpt_from_tf, strategy,
-                                    model_lib, tf)
+                                    model, checkpoint, tf)
             ckpt_name = utils.get_name(new_ckpt_from_tf)
             evaluated_ckpts.append(ckpt_name)
 
