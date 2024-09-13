@@ -41,6 +41,7 @@ train_config = D(
     freeze_encoder_decoder=0,
     val_epochs=0,
 )
+
 eval_config = D(
     check_ckpt=0,
     add_stride_info=1,

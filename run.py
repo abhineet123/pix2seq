@@ -290,6 +290,9 @@ def main(unused_argv):
         # for ckpt in tf.train.checkpoints_iterator(
         #         checkpoint_dir, min_interval_secs=1, timeout=5):
 
+        print(f'cfg.eval.sleep: {cfg.eval.sleep}')
+        exit()
+
         start_t = time.time()
         while True:
             if cfg.eval.run_existing:
@@ -304,6 +307,7 @@ def main(unused_argv):
                         print(f'found remote ckpt: {new_ckpt}')
                     else:
                         utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t)
+                        start_t = time.time()
                         continue
                 else:
                     break
