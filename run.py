@@ -291,7 +291,7 @@ def main(unused_argv):
         #         checkpoint_dir, min_interval_secs=1, timeout=5):
 
         print(f'cfg.eval.sleep: {cfg.eval.sleep}')
-        exit()
+        # exit()
 
         start_t = time.time()
         while True:
