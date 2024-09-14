@@ -802,13 +802,20 @@ def get_remote_config(checkpoint_dir, info_file, remote, proxy):
         ssh_main.close()
 
 
-def sleep_with_pbar(hrs=0, mins=0, start=None):
+def sleep_with_pbar(hrs=0, mins=0, start=None, min_sleep=None):
+    """
+    :param min_sleep: minimum sleep time in minutes
+    """
     sleep_mins = int(hrs * 60 + mins)
 
     if start is not None:
         sleep_secs = int(sleep_mins * 60)
         sleep_secs = start + sleep_secs - time.time()
         sleep_mins = int(max(0, sleep_secs // 60))
+
+
+    if min_sleep is not None and sleep_mins < min_sleep:
+        sleep_mins = min_sleep
 
     for _ in tqdm(range(sleep_mins), desc='sleeping', ncols=60):
         try:

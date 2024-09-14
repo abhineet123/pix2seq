@@ -306,8 +306,8 @@ def main(unused_argv):
                     if new_ckpt is not None:
                         print(f'found remote ckpt: {new_ckpt}')
                     else:
-                        utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t)
-                        start_t = time.time()
+                        utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t, min_sleep=cfg.eval.min_sleep)
+                        # start_t = time.time()
                         continue
                 else:
                     break

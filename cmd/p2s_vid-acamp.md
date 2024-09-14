@@ -16,6 +16,7 @@
     - [20k6_5_video-aug       @ mid](#20k6_5_video_aug___mi_d_)
         - [on-train       @ 20k6_5_video-aug/mid](#on_train___20k6_5_video_aug_mid_)
         - [on-inv       @ 20k6_5_video-aug/mid](#on_inv___20k6_5_video_aug_mid_)
+    - [1k8_vid_entire_seq-aug-fbb       @ mid](#1k8_vid_entire_seq_aug_fbb___mi_d_)
 
 <!-- /MarkdownTOC -->
 
@@ -73,5 +74,9 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 <a id="on_inv___20k6_5_video_aug_mid_"></a>
 ### on-inv       @ 20k6_5_video-aug/mid-->p2s_vid-acamp
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_20k6_5_video-length-2-stride-1-batch_18-jtr-res_1280,_eval_,vid_det,acamp-20k6_5_video_inv,vstrd-1,batch-20,save-vis-0,dbg-0,dyn-1
+
+<a id="1k8_vid_entire_seq_aug_fbb___mi_d_"></a>
+## 1k8_vid_entire_seq-aug-fbb       @ mid-->p2s_vid-acamp
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-1k8_vid_entire_seq,batch-64,dbg-0,dyn-1,dist-1,jtr,res-1280,fbb
 
 

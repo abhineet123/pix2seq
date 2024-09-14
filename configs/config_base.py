@@ -60,6 +60,9 @@ eval_config = D(
     proxy='',
     # sleep time between evals in hours
     sleep=6.,
+    # minimum sleep time in minutes, used as fallback when computed sleep time is less than this;
+    # this is the time to wait before checking for new ckpt again when the previous check did not succeed
+    min_sleep=10,
     tag='eval',
     checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
 )
