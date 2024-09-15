@@ -293,18 +293,31 @@ def main(unused_argv):
         print(f'cfg.eval.sleep: {cfg.eval.sleep}')
         # exit()
 
+        if cfg.eval.run_existing:
+            while True:
+                new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
+                if new_ckpt is None:
+                    break
+                print(f'found local ckpt: {new_ckpt}')
+
+
         start_t = time.time()
         while True:
+            new_ckpt = None
+            is_local = False
+
             if cfg.eval.run_existing:
                 new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
                 if new_ckpt is not None:
                     print(f'found local ckpt: {new_ckpt}')
+                    is_local = True
 
             if new_ckpt is None:
                 if cfg.eval.remote:
                     new_ckpt = utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
                     if new_ckpt is not None:
                         print(f'found remote ckpt: {new_ckpt}')
+                        is_local = False
                     else:
                         utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t, min_sleep=cfg.eval.min_sleep)
                         # start_t = time.time()
@@ -323,6 +336,10 @@ def main(unused_argv):
                                     model, checkpoint, tf)
             ckpt_name = utils.get_name(new_ckpt_from_tf)
             evaluated_ckpts.append(ckpt_name)
+
+            if not is_local:
+                utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t, min_sleep=cfg.eval.min_sleep)
+
 
 if __name__ == '__main__':
     app.run(main)
