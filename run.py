@@ -290,8 +290,7 @@ def main(unused_argv):
         # for ckpt in tf.train.checkpoints_iterator(
         #         checkpoint_dir, min_interval_secs=1, timeout=5):
 
-        print(f'cfg.eval.sleep: {cfg.eval.sleep}')
-        # exit()
+        # print(f'cfg.eval.sleep: {cfg.eval.sleep}')
 
         start_t = time.time()
         is_remote = False
@@ -305,17 +304,19 @@ def main(unused_argv):
                     print(f'found local ckpt: {new_ckpt}')
                     is_remote = False
 
-            if cfg.eval.remote and new_ckpt is None:
-                new_ckpt = utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file, cfg.eval.remote, cfg.eval.proxy)
-                if new_ckpt is not None:
-                    print(f'found remote ckpt: {new_ckpt}')
-                    is_remote = True
+            if new_ckpt is None:
+                if cfg.eval.remote:
+                    new_ckpt = utils.get_remote_ckpt(checkpoint_dir, cfg.eval.info_file,
+                                                     cfg.eval.remote, cfg.eval.proxy)
+                    if new_ckpt is not None:
+                        print(f'found remote ckpt: {new_ckpt}')
+                        is_remote = True
+                    else:
+                        utils.sleep_with_pbar(mins=cfg.eval.min_sleep, start=start_t)
+                        # start_t = time.time()
+                        continue
                 else:
-                    utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t, min_sleep=cfg.eval.min_sleep)
-                    # start_t = time.time()
-                    continue
-            else:
-                break
+                    break
 
             if new_ckpt is None:
                 continue
