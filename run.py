@@ -312,7 +312,7 @@ def main(unused_argv):
                         print(f'found remote ckpt: {new_ckpt}')
                         is_remote = True
                     else:
-                        utils.sleep_with_pbar(mins=cfg.eval.min_sleep, start=start_t)
+                        utils.sleep_with_pbar(mins=cfg.eval.sleep_short, start=start_t)
                         # start_t = time.time()
                         continue
                 else:
