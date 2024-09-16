@@ -312,7 +312,7 @@ def main(unused_argv):
                         print(f'found remote ckpt: {new_ckpt}')
                         is_remote = True
                     else:
-                        utils.sleep_with_pbar(mins=cfg.eval.sleep_ckpt, start=start_t)
+                        utils.sleep_with_pbar(mins=cfg.eval.sleep_ckpt)
                         # start_t = time.time()
                         continue
                 else:
@@ -322,7 +322,7 @@ def main(unused_argv):
                 continue
 
             new_ckpt_from_tf = tf.train.latest_checkpoint(checkpoint_dir)
-            
+
             assert new_ckpt_from_tf == new_ckpt, f"new_ckpt_from_tf mismatch:\n{new_ckpt_from_tf}\n{new_ckpt}"
 
             start_t = time.time()
