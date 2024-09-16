@@ -322,11 +322,12 @@ def main(unused_argv):
                 continue
 
             new_ckpt_from_tf = tf.train.latest_checkpoint(checkpoint_dir)
-            assert new_ckpt_from_tf == new_ckpt, "new_ckpt_from_tf mismatch"
+            
+            assert new_ckpt_from_tf == new_ckpt, f"new_ckpt_from_tf mismatch:\n{new_ckpt_from_tf}\n{new_ckpt}"
 
             start_t = time.time()
             out_dir = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, new_ckpt_from_tf, strategy,
-                                    model, checkpoint, tf)
+                               model, checkpoint, tf)
 
             ckpt_name = utils.get_name(new_ckpt_from_tf)
             evaluated_ckpts.append(ckpt_name)

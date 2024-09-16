@@ -829,6 +829,9 @@ def get_name(ckpt):
     return os.path.splitext(os.path.basename(ckpt))[0]
 
 
+def ckpt_iter(k):
+    return int(get_name(k).replace('ckpt-', ''))
+
 def is_ckpt(k):
     return k.startswith('ckpt-') and (
         k.endswith('.data-00000-of-00001')
@@ -849,7 +852,7 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts):
     if not local_ckpts:
         return None
 
-    local_ckpts.sort()
+    local_ckpts.sort(reverse=True, key=ckpt_iter)
 
     ckpt_info_file = linux_path(checkpoint_dir, 'checkpoint')
     ckpt = local_ckpts[-1]
