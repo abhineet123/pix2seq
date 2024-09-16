@@ -31,7 +31,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
         verify_restored = status.assert_consumed
         verify_existing = status.assert_existing_objects_matched
         global_step = checkpoint.global_step
-        print_with_time(f'Performing eval at step {global_step.numpy():d}')
+        print_with_time(f'Performing inference at step {global_step.numpy():d}')
 
     ckpt_name = os.path.splitext(os.path.basename(ckpt))[0]
     json_name = cfg.dataset.eval_filename_for_metrics
@@ -71,7 +71,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
     flag_path = linux_path(out_csv_dir, '__inference')
     if os.path.exists(flag_path):
         timestamp = open(flag_path, 'r').read()
-        print(f'\n\nskipping eval completed previously at {timestamp}\n\n')
+        print(f'\n\nskipping inference completed previously at {timestamp}\n\n')
         return None
 
     out_json_name = f"vid_info.json.gz"

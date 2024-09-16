@@ -2,7 +2,6 @@
   "eval": {
 	info_file: 'dgPolWm53WNOJ8PEioAL',
 	remote: 'grs',
-	sleep: 6,
 	sleep: %%0%%,
 	},
 }
