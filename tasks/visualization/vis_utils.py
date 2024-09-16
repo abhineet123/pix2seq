@@ -1468,6 +1468,11 @@ def visualize_boxes_and_labels_on_image_array(
     if '/' in image_id_:
         seq_id, image_id_ = image_id_.split('/')
 
+    """add empty csv data for sequences that don't get any output boxes to 
+    avoid missing csv files causing eval problems later"""
+    if csv_data is not None and seq_id not in csv_data:
+        csv_data[seq_id] = []
+
     if not image_id_.endswith(img_ext):
         image_id_ += img_ext
 
@@ -1766,6 +1771,11 @@ def visualize_boxes_and_labels_on_video(
         seq_id, video_id_ = video_id_.split('/')
     else:
         seq_id = seq_name
+
+    """add empty csv data for sequences that don't get any output boxes to 
+    avoid missing csv files causing eval problems later"""
+    if csv_data is not None and seq_id not in csv_data:
+        csv_data[seq_id] = []
 
     """
     Collect supplementary information for each bounding box including colour, class

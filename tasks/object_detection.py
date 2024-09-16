@@ -264,6 +264,7 @@ class TaskObjectDetection(task_lib.Task):
         bboxes_, bboxes_rescaled_, classes_, scores_ = (
             pred_bboxes.numpy(), pred_bboxes_rescaled.numpy(), pred_classes.numpy(), scores.numpy())
         images_ = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
+
         ret_images += vis_utils.add_image_summary_with_bbox(
             images_, bboxes_, bboxes_rescaled_, classes_, scores_,
             self._category_names,
@@ -279,6 +280,9 @@ class TaskObjectDetection(task_lib.Task):
 
         if ret_results:
             return ret_images
+
+
+
 
     def evaluate(self, summary_writer, step, eval_tag):
         raise AssertionError('not implemented')

@@ -41,10 +41,6 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
 
     out_dir = os.path.join(cfg.model_dir, f'{ckpt_name}-{json_name}')
 
-    if os.path.exists(out_dir):
-        print(f'\n\nskipping eval since output dir already exists: {out_dir}\n\n')
-        return
-
     os.makedirs(out_dir, exist_ok=True)
     if is_seg:
         rle_lens = cfg.dataset.eval.rle_lens
@@ -72,6 +68,12 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
     out_mask_dir = os.path.join(out_dir, mask_dir_name)
     out_mask_logits_dir = os.path.join(out_dir, mask_logits_dir_name)
     out_csv_dir = os.path.join(out_dir, csv_dir_name)
+    flag_path = linux_path(out_csv_dir, '__inference')
+    if os.path.exists(flag_path):
+        timestamp = open(flag_path, 'r').read()
+        print(f'\n\nskipping eval completed previously at {timestamp}\n\n')
+        return None
+
     out_json_name = f"vid_info.json.gz"
     out_json_path = os.path.join(out_dir, out_json_name)
 
@@ -98,7 +100,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
             if is_video:
                 csv_columns.insert(1, 'VideoID')
 
-            seq_to_csv_rows = collections.defaultdict(list)
+            seq_to_csv_rows = dict()
             csv_exists = []
 
     if cfg.eval.save_vis:
@@ -200,6 +202,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
             # else:
             #     print_with_time(f'Completed: {cur_step:d} steps')
 
+
             task.postprocess_cpu(
                 outputs=per_step_outputs,
                 train_step=global_step.numpy(),
@@ -218,20 +221,21 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
             if seq_to_csv_rows is not None and (
                     (eval_steps and cur_step >= eval_steps) or (
                     cfg.eval.csv_steps > 0 and cur_step % cfg.eval.csv_steps == 0)):
-                for csv_seq_name, csv_rows in seq_to_csv_rows.items():
+                for seq_id, csv_rows in seq_to_csv_rows.items():
+                    out_csv_path = os.path.join(out_csv_dir, f"{seq_id}.csv")
+
+                    if seq_id not in csv_exists:
+                        pd.DataFrame([], columns=csv_columns).to_csv(out_csv_path, index=False)
+                        csv_exists.append(seq_id)
+
                     if not csv_rows:
                         continue
-                    out_csv_path = os.path.join(out_csv_dir, f"{csv_seq_name}.csv")
-
-                    if csv_seq_name not in csv_exists:
-                        pd.DataFrame([], columns=csv_columns).to_csv(out_csv_path, index=False)
-                        csv_exists.append(csv_seq_name)
 
                     # print(f'{csv_seq_name} :: saving csv to {out_csv_path}')
                     df = pd.DataFrame(csv_rows, columns=csv_columns)
                     df.to_csv(out_csv_path, index=False, mode='a', header=False)
 
-                    seq_to_csv_rows[csv_seq_name] = []
+                    seq_to_csv_rows[seq_id] = []
 
         print_with_time(f'Finished eval in {(time.time() - start_time) / 60.:.2f} mins')
 
@@ -244,10 +248,18 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
         json_kwargs = dict(
             indent=4
         )
-        print(f'saving vid info json to {out_json_path}')
+        # print(f'saving vid info json to {out_json_path}')
         import compress_json
         compress_json.dump(json_vid_info, out_json_path, json_kwargs=json_kwargs)
 
     if seq_to_csv_rows is not None:
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():
             assert not csv_rows, "unexplained non-empty csv_rows found"
+
+    from datetime import datetime
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
+    with open(utils.linux_path(out_csv_dir, '__inference'), 'w') as f:
+        f.write(time_stamp + '\n')
+
+    return out_dir
+

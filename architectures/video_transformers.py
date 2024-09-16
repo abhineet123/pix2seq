@@ -190,7 +190,7 @@ class VideoResNetTransformer(tf.keras.layers.Layer):  # pylint: disable=missing-
             variant=resnet_variant)
 
         if self.freeze_backbone:
-            self.resnet.trainable=False
+            self.resnet.trainable = False
 
         self.dropout = tf.keras.layers.Dropout(drop_units)
         self.stem_projection = tf.keras.layers.Dense(dim, name='stem_projection')

@@ -312,7 +312,7 @@ def main(unused_argv):
                         print(f'found remote ckpt: {new_ckpt}')
                         is_remote = True
                     else:
-                        utils.sleep_with_pbar(mins=cfg.eval.sleep_short, start=start_t)
+                        utils.sleep_with_pbar(mins=cfg.eval.sleep_ckpt, start=start_t)
                         # start_t = time.time()
                         continue
                 else:
@@ -325,13 +325,14 @@ def main(unused_argv):
             assert new_ckpt_from_tf == new_ckpt, "new_ckpt_from_tf mismatch"
 
             start_t = time.time()
-            eval.run(cfg, train_datasets[0], tasks[0], eval_steps, new_ckpt_from_tf, strategy,
+            out_dir = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, new_ckpt_from_tf, strategy,
                                     model, checkpoint, tf)
+
             ckpt_name = utils.get_name(new_ckpt_from_tf)
             evaluated_ckpts.append(ckpt_name)
 
             if is_remote:
-                utils.sleep_with_pbar(hrs=cfg.eval.sleep, start=start_t, min_sleep=cfg.eval.min_sleep)
+                utils.sleep_with_pbar(hrs=cfg.eval.sleep_eval, start=start_t)
 
 
 if __name__ == '__main__':

@@ -58,10 +58,10 @@ eval_config = D(
     run_existing=1,
     remote='',
     proxy='',
-    # sleep time between evals in hours
-    sleep=6.,
-    # time to wait in minutes before checking for new ckpt again when the previous check did not succeed
-    sleep_short=5,
+    # time in hours to wait between evals
+    sleep_eval=6.,
+    # time in minutes to wait before checking for new ckpt again
+    sleep_ckpt=5,
     tag='eval',
     checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
 )
