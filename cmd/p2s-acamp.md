@@ -18,6 +18,7 @@
         - [on-inv-2_per_seq       @ 1k8_vid_entire_seq-aug-fbb/resnet-640](#on_inv_2_per_seq___1k8_vid_entire_seq_aug_fbb_resnet_64_0_)
     - [10k6_vid_entire_seq-aug-fbb       @ resnet-640](#10k6_vid_entire_seq_aug_fbb___resnet_640_)
         - [on-inv-2_per_seq       @ 10k6_vid_entire_seq-aug-fbb/resnet-640](#on_inv_2_per_seq___10k6_vid_entire_seq_aug_fbb_resnet_640_)
+    - [20k6_5_video-aug-fbb       @ resnet-640](#20k6_5_video_aug_fbb___resnet_640_)
 
 <!-- /MarkdownTOC -->
 <a id="resnet_64_0_"></a>
@@ -81,3 +82,7 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=trai
 <a id="on_inv_2_per_seq___10k6_vid_entire_seq_aug_fbb_resnet_640_"></a>
 ### on-inv-2_per_seq       @ 10k6_vid_entire_seq-aug-fbb/resnet-640-->p2s-acamp
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-resnet_640_10k6_vid_entire_seq-batch_48-jtr-res_1280-fbb,_eval_,acamp-10k6_vid_entire_seq_inv_2_per_seq,batch-2,save-vis-0,dbg-0,dyn-1,grs-2
+
+<a id="20k6_5_video_aug_fbb___resnet_640_"></a>
+## 20k6_5_video-aug-fbb       @ resnet-640-->p2s-acamp
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,acamp-20k6_5_video,batch-48,dbg-0,dyn-1,dist-0,jtr,res-1280,fbb
