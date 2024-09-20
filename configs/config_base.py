@@ -59,7 +59,7 @@ eval_config = D(
     remote='',
     proxy='',
     # time in hours to wait between evals
-    sleep_eval=4.,
+    sleep_eval=2.,
     # time in minutes to wait before checking for new ckpt again
     sleep_ckpt=5.,
     tag='eval',
