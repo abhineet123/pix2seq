@@ -154,7 +154,9 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
 
         from tqdm import tqdm
         n_epochs = train_steps//steps_per_epoch
-        pbar = tqdm(total=n_epochs, ncols=100)
+
+        model_name = os.path.basename(cfg.model_dir)
+        pbar = tqdm(total=n_epochs, ncols=100, desc=model_name)
 
         while cur_step < train_steps:
             cur_epoch += 1
