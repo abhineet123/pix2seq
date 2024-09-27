@@ -658,10 +658,10 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 
 <a id="16_53_len_6_aug_fbb___lf_n_"></a>
 ## 16_53-len-6-aug-fbb       @ lfn-->p2s_vid-ipsc
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,batch-64,dbg-0,dyn-1,dist-1,lfn,jtr,res-1280,fbb
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,ipsc-16_53,len-6,batch-32,dbg-0,dyn-1,dist-1,lfn,jtr,res-1280,fbb
 <a id="on_0_15___16_53_len_6_aug_fbb_lf_n_"></a>
 ### on-0_15       @ 16_53-len-6-aug-fbb/lfn-->p2s_vid-ipsc
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_64-lfn-jtr-res_1280-fbb,_eval_,vid_det,ipsc-0_15,len-6,batch-4,save-vis-0,dbg-0,dyn-1,asi,x99-2
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-batch_64-lfn-jtr-res_1280-fbb,_eval_,vid_det,ipsc-0_15,len-6,batch-4,save-vis-0,dbg-0,dyn-1,asi,e5g-2
 
 
 <a id="54_126_len_2_aug___lf_n_"></a>

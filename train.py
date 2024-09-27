@@ -156,7 +156,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         n_epochs = train_steps//steps_per_epoch
 
         model_name = os.path.basename(cfg.model_dir)
-        pbar = tqdm(total=n_epochs, ncols=100, desc=model_name)
+        pbar = tqdm(total=n_epochs, desc=model_name)
 
         while cur_step < train_steps:
             cur_epoch += 1
@@ -234,7 +234,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
 
                 summary_writer.flush()
             pbar.update(1)
-            pbar.set_description(f'{model_name} steps {cur_step}')
+            pbar.set_description(f'{model_name} {cur_step}')
 
             # progress = cur_step / float(train_steps) * 100
             # eta = (train_steps - cur_step) / steps_per_sec / 60.
