@@ -234,7 +234,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
 
                 summary_writer.flush()
             pbar.update(1)
-            pbar.set_description(f'steps {cur_step}')
+            pbar.set_description(f'{model_name} steps {cur_step}')
 
             # progress = cur_step / float(train_steps) * 100
             # eta = (train_steps - cur_step) / steps_per_sec / 60.
