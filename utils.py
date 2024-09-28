@@ -904,7 +904,10 @@ def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
         for file in files_to_transfer:
             # print(f'transferring {file}')
             file_path = linux_path(checkpoint_dir, file)
-            sftp.get(file_path, file_path)
+            try:
+                sftp.get(file_path, file_path)
+            except FileNotFoundError:
+                return None
 
         ckpt_info_file = linux_path(checkpoint_dir, 'checkpoint')
         with open(ckpt_info_file, 'w') as f:

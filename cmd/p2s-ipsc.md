@@ -101,7 +101,7 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-r
 
 <a id="54_126_aug___resnet_640_"></a>
 ## 54_126-aug       @ resnet-640-->p2s-ipsc
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-54_126,batch-18,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-54_126,batch-2,dbg-1,dyn-1,dist-0,pt-1,jtr,res-1280
 `dbg` 
 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,resnet-640,ipsc-54_126,batch-2,dbg-1,dyn-1,dist-0,pt-1,jtr,res-1280
 <a id="on_0_15___54_126_aug_resnet_64_0_"></a>
