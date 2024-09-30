@@ -43,6 +43,7 @@ train_config = D(
 )
 
 eval_config = D(
+    ckpt_iter=0,
     check_ckpt=0,
     add_stride_info=1,
     csv_steps=10,

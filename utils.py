@@ -829,7 +829,7 @@ def get_name(ckpt):
     return os.path.splitext(os.path.basename(ckpt))[0]
 
 
-def ckpt_iter(k):
+def get_ckpt_iter(k):
     return int(get_name(k).replace('ckpt-', ''))
 
 def is_ckpt(k):
@@ -839,7 +839,7 @@ def is_ckpt(k):
         # k.endswith('.index')
     )
 
-def get_local_ckpt(checkpoint_dir, excluded_ckpts):
+def get_local_ckpt(checkpoint_dir, excluded_ckpts, ckpt_iter):
     local_ckpts = [k for k in os.listdir(checkpoint_dir)
                    if os.path.isfile(linux_path(checkpoint_dir, k))
                    and is_ckpt(k) and get_name(k) not in excluded_ckpts]
@@ -852,10 +852,16 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts):
     if not local_ckpts:
         return None
 
-    local_ckpts.sort(reverse=True, key=ckpt_iter)
+    if ckpt_iter > 0:
+        local_ckpt_iters = list(map(get_ckpt_iter, local_ckpts))
+        ckpt_idx = local_ckpt_iters.index(ckpt_iter)
+    else:
+        local_ckpts.sort(reverse=True, key=get_ckpt_iter)
+        ckpt_idx = -1
+
+    ckpt = local_ckpts[ckpt_idx]
 
     ckpt_info_file = linux_path(checkpoint_dir, 'checkpoint')
-    ckpt = local_ckpts[-1]
     ckpt_name = get_name(ckpt)
     with open(ckpt_info_file, 'w') as f:
         f.write(f'model_checkpoint_path: "{ckpt_name}"')

@@ -302,7 +302,7 @@ def main(unused_argv):
             new_ckpt = None
 
             if cfg.eval.run_existing and not is_remote:
-                new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts)
+                new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts, cfg.eval.ckpt_iter)
                 if new_ckpt is not None:
                     print(f'found local ckpt: {new_ckpt}')
                     is_remote = False
