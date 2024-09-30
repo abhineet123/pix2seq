@@ -30,6 +30,7 @@ train_eval_config = D(
     batch_size=32,
 )
 train_config = D(
+    check_ckpt=0,
     epochs=10000,
     checkpoint_epochs=1,
     checkpoint_steps=0,  # set to >0 to override checkpoint_epochs.

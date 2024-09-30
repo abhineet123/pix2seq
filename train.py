@@ -170,7 +170,8 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 which only restores many of the variables after they are created in the first call 
                 when the input shape becomes available
                 """
-                trainer.check_checkpoint_restored()
+                if cfg.train.check_ckpt:
+                    trainer.check_checkpoint_restored()
 
                 cur_step = global_step.numpy()
 
