@@ -221,10 +221,12 @@ def video_swin_base(length, patch_dim, pt, verify, window_size=(8, 7, 7), drop_p
         patch_norm=True,
         **kwargs
     )
-    if pt:
+    if pt==1:
         load_pt('TFVideoSwinB_K400_IN1K_P244_W877_32x224', model, verify)
-        # load_pt('TFVideoSwinB_K400_IN22K_P244_W877_32x224', model, verify)
-        # load_pt('TFVideoSwinB_K600_IN22K_P244_W877_32x224', model, verify)
+    elif pt==2:
+        load_pt('TFVideoSwinB_K400_IN22K_P244_W877_32x224', model, verify)
+    elif pt == 3:
+        load_pt('TFVideoSwinB_K600_IN22K_P244_W877_32x224', model, verify)
     return model
 
 
