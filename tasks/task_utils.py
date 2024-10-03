@@ -469,7 +469,7 @@ def supersample_mask(mask, factor, n_classes, is_vis=1, shape=None,
         n_rows_out, n_cols_out = shape
         assert n_rows_out >= n_rows and n_cols_out >= n_cols, \
             "target size must be larger than source size for super sampling"
-        factor_x, factor_y = n_cols_out / n_rows, n_rows_out / n_cols
+        factor_x, factor_y = n_cols_out / n_cols, n_rows_out / n_rows
     else:
         if isinstance(factor, (tuple, list)):
             factor_x, factor_y = factor
