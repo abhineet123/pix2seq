@@ -68,9 +68,12 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
     out_mask_dir = os.path.join(out_dir, mask_dir_name)
     out_mask_logits_dir = os.path.join(out_dir, mask_logits_dir_name)
     out_csv_dir = os.path.join(out_dir, csv_dir_name)
-    flag_path = linux_path(out_csv_dir, '__inference')
-    if os.path.exists(flag_path):
-        timestamp = open(flag_path, 'r').read()
+
+    inference_dir = out_mask_dir if is_seg else out_csv_dir
+    inference_flag = linux_path(inference_dir, '__inference')
+
+    if os.path.exists(inference_flag):
+        timestamp = open(inference_flag, 'r').read()
         print(f'\n\nskipping inference completed previously at {timestamp}\n\n')
         return None
 
@@ -258,7 +261,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
 
     from datetime import datetime
     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
-    with open(utils.linux_path(out_csv_dir, '__inference'), 'w') as f:
+    with open(inference_flag, 'w') as f:
         f.write(time_stamp + '\n')
 
     return out_dir
