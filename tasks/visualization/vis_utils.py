@@ -1304,7 +1304,7 @@ def visualize_mask(
     if vid_writers is not None:
         ext = 'mp4'
         mask_path = os.path.join(out_mask_dir, f'{seq_id}.{ext}')
-        vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
+
         if mask_logits is not None:
             mask_logits_path = os.path.join(out_mask_logits_dir, f'{seq_id}.{ext}')
 
@@ -1323,16 +1323,21 @@ def visualize_mask(
                 mask_logits_writer = get_video_writer(mask_logits_path)
                 print(f'{seq_id} :: mask logits video: {mask_logits_path}')
 
-            vis_writer = get_video_writer(vis_path, crf=20)
+            vis_writer = None
+            if out_vis_dir is not None:
+                vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
+                vis_writer = get_video_writer(vis_path, crf=20)
+                print(f'{seq_id} :: vis video: {vis_path}')
 
             print(f'{seq_id} :: mask video: {mask_path}')
-            print(f'{seq_id} :: vis video: {vis_path}')
 
             vid_writers[seq_id] = mask_writer, mask_logits_writer, vis_writer
 
-        write_frames_to_videos([mask_writer, vis_writer], (mask, vis_img))
+        write_frames_to_videos(mask_writer, mask)
         if mask_logits is not None:
             write_frames_to_videos(mask_logits_writer, mask_logits)
+        if out_vis_dir is not None:
+            write_frames_to_videos(vis_writer, vis_img)
 
     else:
         out_img_name = f'{vis_name}.jpg'
@@ -1351,14 +1356,16 @@ def visualize_mask(
             save_mask_to_image(mask_logits_path, mask_logits, palette_flat)
             # cv2.imwrite(mask_logits_path, mask_logits)
 
-        seq_vis_dir = os.path.join(out_vis_dir, seq_id)
-        os.makedirs(seq_vis_dir, exist_ok=True)
-        vis_path = os.path.join(seq_vis_dir, out_img_name)
-        cv2.imwrite(vis_path, vis_img)
+        if out_vis_dir is not None:
+            seq_vis_dir = os.path.join(out_vis_dir, seq_id)
+            os.makedirs(seq_vis_dir, exist_ok=True)
+            vis_path = os.path.join(seq_vis_dir, out_img_name)
+            cv2.imwrite(vis_path, vis_img)
 
     img_info['out_path'] = str(mask_path)
     img_info['out_logits_path'] = str(mask_logits_path)
-    img_info['vis_path'] = str(vis_path)
+    if out_vis_dir is not None:
+        img_info['vis_path'] = str(vis_path)
 
 
 def visualize_boxes_and_labels_on_image_array(
