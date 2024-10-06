@@ -2110,10 +2110,24 @@ def rle_from_tokens(
 
         starts_rows -= (starts_offset + 1)
         starts_cols -= (starts_offset + 1)
+        valid_starts_rows = starts_rows >= 0
+        valid_starts_cols = starts_cols >= 0
+
+        assert ignore_invalid or np.all(valid_starts_rows), "starts_rows must be >= 0"
+        assert ignore_invalid or np.all(valid_starts_cols), "starts_rows must be >= 0"
 
         len_id = 2
 
+        invalid_starts_rows = np.logical_not(valid_starts_rows)
+        invalid_starts_cols = np.logical_not(valid_starts_cols)
+
+        invalid_starts = np.logical_or(invalid_starts_rows, invalid_starts_cols)
+
+        starts_rows[invalid_starts_rows] = 0
+        starts_cols[invalid_starts_cols] = 0
+
         starts = np.ravel_multi_index((starts_rows, starts_cols), shape, order=flat_order)
+        starts[invalid_starts] = -1
     else:
         starts = np.asarray(rle_tokens[0:][::n_tokens_per_run], dtype=int)
         starts -= (starts_offset + 1)
