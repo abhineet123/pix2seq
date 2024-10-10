@@ -2221,7 +2221,16 @@ def vid_rle_from_tokens(
     lengths -= lengths_offset
 
     if length_as_class:
+        valid_lengths_pos = lengths > 0
+        invalid_ids = np.nonzero(np.logical_not(valid_lengths_pos))
+        if ignore_invalid:
+            lengths[invalid_ids] = 1
+        else:
+            assert np.all(valid_lengths_pos), "lac must be > 0"
         lengths, class_ids = rle_from_lac(lengths, max_length)
+        if ignore_invalid:
+            lengths[invalid_ids] = 0
+            class_ids[invalid_ids] = 0
         rle_cmp = [starts, lengths, class_ids]
     else:
         rle_cmp = [starts, lengths]
