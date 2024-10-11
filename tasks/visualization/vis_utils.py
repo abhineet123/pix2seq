@@ -1633,7 +1633,7 @@ def visualize_video(config, examples, logits, tokens, label, category_names, mas
         category_names=category_names,
         orig_size=orig_video_size,
         unpadded_size=unpadded_video_size,
-        min_score_thresh=0
+        return_vis=1,
     )
     import cv2
     for vid_id, video in enumerate(videos_vis):
@@ -1709,9 +1709,11 @@ def add_video_summary_with_bbox(
         out_vis_dir=None,
         vid_writers=None,
         csv_data=None,
+        return_vis=0,
 ):
     k = 0
-    vis_videos = []
+    vis_videos = [] if return_vis else None
+
     for iter_data in zip(
             video_ids, videos, filenames, file_ids, bboxes,
             bboxes_rescaled, scores, classes, unpadded_size, orig_size, strict=True):
@@ -1722,7 +1724,7 @@ def add_video_summary_with_bbox(
 
         vis_video = visualize_boxes_and_labels_on_video(
             out_vis_dir=out_vis_dir,
-            vid_cap=vid_writers,
+            vid_writers=vid_writers,
             csv_data=csv_data,
             video_id=video_id_,
             video=video,
@@ -1737,10 +1739,14 @@ def add_video_summary_with_bbox(
             use_normalized_coordinates=True,
             unpadded_size=unpadded_size_,
             orig_size=orig_size_,
+            return_vis=return_vis,
         )
-        vis_videos.append(vis_video)
+        if return_vis:
+            vis_videos.append(vis_video)
         k += 1
-    return vis_videos
+
+    if return_vis:
+        return vis_videos
 
 
 def visualize_boxes_and_labels_on_video(
@@ -1755,7 +1761,7 @@ def visualize_boxes_and_labels_on_video(
         scores,
         category_index,
         out_vis_dir=None,
-        vid_cap=None,
+        vid_writers=None,
         csv_data=None,
         use_normalized_coordinates=False,
         agnostic_mode=False,
@@ -1766,6 +1772,7 @@ def visualize_boxes_and_labels_on_video(
         skip_labels=False,
         unpadded_size=None,
         orig_size=None,
+        return_vis=0,
 ):
     file_names = [str(filename.decode("utf-8")) for filename in file_names]
 
@@ -1829,7 +1836,7 @@ def visualize_boxes_and_labels_on_video(
                                                     len(STANDARD_COLORS)]
     video_vis = None
 
-    if out_vis_dir:
+    if return_vis and out_vis_dir:
         video_vis = []
 
     for frame_id in range(vid_len):
@@ -1886,12 +1893,14 @@ def visualize_boxes_and_labels_on_video(
                     use_normalized_coordinates=use_normalized_coordinates)
 
         if out_vis_dir is not None:
-            video_vis.append(image_vis)
-            save_image(image_vis, vid_cap, out_vis_dir, seq_id, image_name, video_id_,
+            if return_vis:
+                video_vis.append(image_vis)
+            save_image(image_vis, vid_writers, out_vis_dir, seq_id, image_name, video_id_,
                        unpadded_size=unpadded_size, orig_size=orig_size)
-            video_vis = np.stack(video_vis, axis=0)
-            return video_vis
 
+    if return_vis and out_vis_dir is not None:
+        video_vis = np.stack(video_vis, axis=0)
+        return video_vis
 
 def add_cdf_image_summary(values, name):
     """Adds a tf.summary.image for a CDF plot of the values.

@@ -107,13 +107,16 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
             seq_to_csv_rows = dict()
             csv_exists = []
 
+    if cfg.eval.write_to_video:
+        seq_to_vid_writers = collections.defaultdict(lambda: None)
+
     if cfg.eval.save_vis:
         out_vis_dir = os.path.join(out_dir, vis_dir_name)
         print(f'\nwriting vis images to: {out_vis_dir}\n')
         os.makedirs(out_vis_dir, exist_ok=True)
+    elif not is_seg:
+        seq_to_vid_writers = None
 
-    if cfg.eval.write_to_video:
-        seq_to_vid_writers = collections.defaultdict(lambda: None)
 
     json_vid_info = collections.defaultdict(list)
     if is_video and cfg.eval.add_stride_info:
