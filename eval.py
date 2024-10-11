@@ -91,6 +91,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
                 os.makedirs(out_mask_logits_dir, exist_ok=True)
 
             print(f'\nwriting vid info json to: {out_json_path}\n')
+
     else:
         if cfg.eval.save_csv:
             print(f'\nwriting csv files to: {out_csv_dir}\n')
