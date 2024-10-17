@@ -85,6 +85,7 @@
         - [lac-mc       @ len-2/0_15-r-2560-p-640-sub-8](#lac_mc___len_2_0_15_r_2560_p_640_sub_8_)
         - [tac-mc       @ len-2/0_15-r-2560-p-640-sub-8](#tac_mc___len_2_0_15_r_2560_p_640_sub_8_)
         - [ltac-mc       @ len-2/0_15-r-2560-p-640-sub-8](#ltac_mc___len_2_0_15_r_2560_p_640_sub_8_)
+            - [vstrd-2       @ ltac-mc/len-2/0_15-r-2560-p-640-sub-8](#vstrd_2___ltac_mc_len_2_0_15_r_2560_p_640_sub_8_)
     - [len-4       @ 0_15-r-2560-p-640-sub-8](#len_4___0_15_r_2560_p_640_sub_8_)
         - [ltac-mc       @ len-4/0_15-r-2560-p-640-sub-8](#ltac_mc___len_4_0_15_r_2560_p_640_sub_8_)
     - [len-8       @ 0_15-r-2560-p-640-sub-8](#len_8___0_15_r_2560_p_640_sub_8_)
@@ -437,6 +438,9 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_15:p-640:sub-8:r-25
 <a id="ltac_mc___len_2_0_15_r_2560_p_640_sub_8_"></a>
 ### ltac-mc       @ len-2/0_15-r-2560-p-640-sub-8-->tf_vid_seg
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_15:p-640:sub-8:r-2560:gz:mc:ltac:json:asi
+<a id="vstrd_2___ltac_mc_len_2_0_15_r_2560_p_640_sub_8_"></a>
+#### vstrd-2       @ ltac-mc/len-2/0_15-r-2560-p-640-sub-8-->tf_vid_seg
+python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:0_15:p-640:sub-8:r-2560:gz:mc:ltac:asi:vstrd-2
 
 
 <a id="len_4___0_15_r_2560_p_640_sub_8_"></a>

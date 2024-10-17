@@ -1328,6 +1328,7 @@ def visualize_mask(
                 vis_path = os.path.join(out_vis_dir, f'{seq_id}.{ext}')
                 vis_writer = get_video_writer(vis_path, crf=20)
                 print(f'{seq_id} :: vis video: {vis_path}')
+                img_info['vis_path'] = str(vis_path)
 
             print(f'{seq_id} :: mask video: {mask_path}')
 
@@ -1361,11 +1362,10 @@ def visualize_mask(
             os.makedirs(seq_vis_dir, exist_ok=True)
             vis_path = os.path.join(seq_vis_dir, out_img_name)
             cv2.imwrite(vis_path, vis_img)
+            img_info['vis_path'] = str(vis_path)
 
     img_info['out_path'] = str(mask_path)
     img_info['out_logits_path'] = str(mask_logits_path)
-    if out_vis_dir is not None:
-        img_info['vis_path'] = str(vis_path)
 
 
 def visualize_boxes_and_labels_on_image_array(

@@ -409,7 +409,8 @@ class TaskVideoSegmentation(task_lib.Task):
                 continue
 
             if gt_rle_len > 0 and rle_rec_len == 0:
-                print('empty pred rle')
+                # print('empty pred rle')
+                pass
 
             vid_mask_gt = [None, ] * vid_len
 
