@@ -22,6 +22,8 @@
         - [mc-ltac-fbb       @ len-2/16_53-r-2560-p-640-sub-8](#mc_ltac_fbb___len_2_16_53_r_2560_p_640_sub_8_)
             - [on-0_15       @ mc-ltac-fbb/len-2/16_53-r-2560-p-640-sub-8](#on_0_15___mc_ltac_fbb_len_2_16_53_r_2560_p_640_sub_8_)
         - [mc-ltac-swin       @ len-2/16_53-r-2560-p-640-sub-8](#mc_ltac_swin___len_2_16_53_r_2560_p_640_sub_8_)
+        - [mc-ltac-lfn       @ len-2/16_53-r-2560-p-640-sub-8](#mc_ltac_lfn___len_2_16_53_r_2560_p_640_sub_8_)
+            - [on-0_15       @ mc-ltac-lfn/len-2/16_53-r-2560-p-640-sub-8](#on_0_15___mc_ltac_lfn_len_2_16_53_r_2560_p_640_sub_8_)
     - [len-4       @ 16_53-r-2560-p-640-sub-8](#len_4___16_53_r_2560_p_640_sub_8_)
         - [mc-ltac       @ len-4/16_53-r-2560-p-640-sub-8](#mc_ltac___len_4_16_53_r_2560_p_640_sub_8_)
             - [on-train       @ mc-ltac/len-4/16_53-r-2560-p-640-sub-8](#on_train___mc_ltac_len_4_16_53_r_2560_p_640_sub_8_)
@@ -137,6 +139,15 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-
 <a id="mc_ltac_swin___len_2_16_53_r_2560_p_640_sub_8_"></a>
 ### mc-ltac-swin       @ len-2/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
 python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-16_53:p-640:r-2560:sub-8,batch-16,dbg-0,dyn-1,dist-1,pt-1,mc,ltac,swin-t,spt
+`dbg`
+python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-16_53:p-640:r-2560:sub-8,batch-2,dbg-1,dyn-1,dist-0,pt-1,mc,ltac,swin-t,spt
+
+<a id="mc_ltac_lfn___len_2_16_53_r_2560_p_640_sub_8_"></a>
+### mc-ltac-lfn       @ len-2/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,vid_seg-16_53:p-640:r-2560:sub-8,batch-16,dbg-0,dyn-1,dist-1,pt-1,mc,ltac,lfn
+<a id="on_0_15___mc_ltac_lfn_len_2_16_53_r_2560_p_640_sub_8_"></a>
+#### on-0_15       @ mc-ltac-lfn/len-2/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-2-stride-1-sub_8-ltac-mc-batch_16-lfn,_eval_,batch-4,save-vis-0,dbg-0,dyn-1,vid_seg-0_15:p-640:r-2560:sub-8,mc,ltac,asi,vstrd-2,x99
 
 <a id="len_4___16_53_r_2560_p_640_sub_8_"></a>
 ## len-4       @ 16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
@@ -202,7 +213,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-3,save-vis-0,dbg-0,dyn-1,vid_seg-frame-54_126:seq-0:p-640:r-2560:sub-8,mc,tac,voc15,seq3k,len-8,vstrd-8,vis-0
 <a id="on_0_15___mc_tac_len_8_16_53_r_2560_p_640_sub_8_"></a>
 #### on-0_15       @ mc-tac/len-8/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-12,save-vis-0,dbg-0,dyn-1,vid_seg-frame-0_15:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vstrd-8,vis-0,no_gt
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_4-seq3k,_eval_,batch-4,save-vis-0,dbg-0,dyn-1,vid_seg-frame-0_15:p-640:r-2560:sub-8:ofj-0:ovl,mc,tac,voc15,seq3k,len-8,vstrd-8,vis-0,no_gt
 
 <a id="mc_tac_fbb___len_8_16_53_r_2560_p_640_sub_8_"></a>
 ### mc-tac-fbb       @ len-8/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
