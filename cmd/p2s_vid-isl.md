@@ -110,7 +110,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=m-r
 
 <a id="detrac_0_59_len_40___mi_d_"></a>
 ## detrac-0_59-len-40       @ mid-->p2s_vid-isl
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_59,batch-2,dbg-0,dyn-1,dist-1,len-40,seq6k,fbb
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_59,batch-6,dbg-0,dyn-1,dist-2,len-40,seq6k,fbb,gxe
 <a id="detrac_0_59_len_48___mi_d_"></a>
 ## detrac-0_59-len-48       @ mid-->p2s_vid-isl
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_59,batch-2,dbg-0,dyn-1,dist-1,len-48,seq7k,fbb
