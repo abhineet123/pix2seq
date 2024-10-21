@@ -26,6 +26,11 @@
         - [len-6       @ 49_68/detrac](#len_6___49_68_detrac_)
         - [len-9       @ 49_68/detrac](#len_9___49_68_detrac_)
         - [len-64       @ 49_68/detrac](#len_64___49_68_detrac_)
+    - [0_59       @ detrac](#0_59___detrac_)
+        - [len-32       @ 0_59/detrac](#len_32___0_59_detra_c_)
+        - [len-40       @ 0_59/detrac](#len_40___0_59_detra_c_)
+        - [len-48       @ 0_59/detrac](#len_48___0_59_detra_c_)
+        - [len-64       @ 0_59/detrac](#len_64___0_59_detra_c_)
 
 <!-- /MarkdownTOC -->
 
@@ -90,6 +95,7 @@ python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:len-8:str
 <a id="len_9___0_19_detra_c_"></a>
 ### len-9       @ 0_19/detrac-->tf_vid-isl
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:len-9:strd-1
+<a id="len_32___0_19_detra_c_"></a>
 <a id="len_64___0_19_detra_c_"></a>
 ### len-64       @ 0_19/detrac-->tf_vid-isl
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_19:len-64:strd-1:asi-0
@@ -120,3 +126,18 @@ python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-9:st
 <a id="len_64___49_68_detrac_"></a>
 ### len-64       @ 49_68/detrac-->tf_vid-isl
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_68:len-64:strd-1:asi-2
+
+<a id="0_59___detrac_"></a>
+## 0_59       @ detrac-->tf_vid-isl
+<a id="len_32___0_59_detra_c_"></a>
+### len-32       @ 0_59/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_59:len-32:strd-1:asi-0
+<a id="len_40___0_59_detra_c_"></a>
+### len-40       @ 0_59/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_59:len-40:strd-1:asi-0
+<a id="len_48___0_59_detra_c_"></a>
+### len-48       @ 0_59/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_59:len-48:strd-1:asi-0
+<a id="len_64___0_59_detra_c_"></a>
+### len-64       @ 0_59/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_59:len-64:strd-1:asi-0
