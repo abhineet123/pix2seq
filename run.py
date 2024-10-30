@@ -295,6 +295,9 @@ def main(unused_argv):
         start_t = time.time()
         is_remote = False
 
+        if cfg.eval.ckpt_iter:
+            print(f'running local inference on ckpt {cfg.eval.ckpt_iter}')
+
         if cfg.eval.remote:
             print(f'running remote inference every {cfg.eval.sleep_eval} hours')
 
