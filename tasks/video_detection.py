@@ -72,7 +72,7 @@ class TaskVideoDetection(task_lib.Task):
         config = self.config.task
         mconfig = self.config.model
         dconfig = self.config.dataset
-
+        batch_size = self.config.train.batch_size if training else self.config.eval.batch_size
         # batched_examples = vis_utils.debug_video_transforms(
         #     self.train_transforms if training else self.eval_transforms,
         #     batched_examples,
@@ -86,6 +86,9 @@ class TaskVideoDetection(task_lib.Task):
             noise_bbox_weight=config.noise_bbox_weight,
             coord_vocab_shift=mconfig.coord_vocab_shift,
             vid_len=dconfig.length,
+            batch_size=batch_size,
+
+            coords_1d=config.coords_1d,
             class_label_corruption=config.class_label_corruption)
 
         """
@@ -280,6 +283,39 @@ class TaskVideoDetection(task_lib.Task):
         if self._coco_metrics:
             self._coco_metrics.reset_states()
 
+def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size):
+
+    dims = tf.cast(dims, tf.int64)
+    strides = tf.math.cumprod(dims, exclusive=True, reverse=True)
+
+    # strides_tiled = tf.tile(strides, [length*2])
+    # strides_exp_1 = tf.expand_dims(strides, 0)
+    # strides_exp_2 = tf.expand_dims(strides_exp_1, 0)
+    # strides_exp_3 = tf.expand_dims(strides_exp_2,
+    # 0)
+
+    strides_exp_3 = tf.reshape(strides, (1, 1, 1, 2))
+    bboxes_res = tf.reshape(bboxes, (batch_size, -1, vid_len*2, 2))
+
+    bboxes_tmp = bboxes_res * strides_exp_3
+    ravel_idx = tf.reduce_sum(bboxes_tmp, axis=-1)
+
+    ravel_idx_flat = tf.reshape(ravel_idx, (-1,))
+    unravel_idx = tf.unravel_index(ravel_idx_flat, dims)
+
+    bboxes_rec = tf.reshape(tf.transpose(unravel_idx), tf.shape(bboxes))
+
+    if_eq = tf.math.reduce_all(tf.equal(bboxes,bboxes_rec))
+
+    # pt1 = bboxes[:, :2]
+    # pt2 = bboxes[:, 2:]
+    # pt1_temp = pt1 * strides_exp_2
+    # pt2_temp = pt2 * strides_exp_2
+    # pt1_idx = tf.reduce_sum(pt1_temp, axis=0)
+    # pt2_idx = tf.reduce_sum(pt2_temp, axis=0)
+    # ravel_idx = tf.concat([pt1_idx, pt2_idx], axis=-1)
+
+    return ravel_idx
 
 def build_response_seq_from_video_bboxes(
         bboxes,
@@ -288,7 +324,10 @@ def build_response_seq_from_video_bboxes(
         noise_bbox_weight,
         coord_vocab_shift,
         vid_len,
-        class_label_corruption='rand_cls'):
+        batch_size,
+        coords_1d,
+        class_label_corruption='rand_cls',
+):
     # assert bboxes.shape[-1] % 4 == 0, f"invalid bboxes shape: {bboxes.shape}"
     # n_bboxes_per_vid = int(bboxes.shape[-1] / 4)
     # assert vid_len == n_bboxes_per_vid, f"Mismatch between vid_len: {vid_len} and n_bboxes_per_vid: {
@@ -306,6 +345,11 @@ def build_response_seq_from_video_bboxes(
     # )
 
     quantized_bboxes = utils.quantize(bboxes, quantization_bins)
+    if coords_1d:
+        shape = tf.constant([quantization_bins, quantization_bins])
+        quantized_bboxes_1d = tf_ravel_multi_index(quantized_bboxes, shape, vid_len, batch_size)
+        quantized_bboxes = quantized_bboxes_1d
+
     quantized_bboxes = quantized_bboxes + coord_vocab_shift
 
     # np_dict = utils.to_numpy(locals())

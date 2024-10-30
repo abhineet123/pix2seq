@@ -604,6 +604,8 @@ def build_strategy(dist, use_tpu, master, training):
         # if the default cross_device_ops fails, try either of the following two
         # by uncommenting it.
         if not training:
+            """default NcclAllReduce does not allow gather operation with 
+            string tensors returned from postprocess_tpu"""
             # cross_device_ops = tf.distribute.HierarchicalCopyAllReduce()
             cross_device_ops = tf.distribute.ReductionToOneDevice()
         strategy = tf.distribute.MirroredStrategy(cross_device_ops=cross_device_ops)
