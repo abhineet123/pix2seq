@@ -587,7 +587,7 @@ def check_checkpoint_restored(strict_verifiers, loose_verifiers=()):
     return strict_verifiers_new, loose_verifiers_new
 
 
-def build_strategy(dist, use_tpu, master):
+def build_strategy(dist, use_tpu, master, training):
     """Returns a tf.distribute.Strategy."""
     if use_tpu:
         cluster = tf.distribute.cluster_resolver.TPUClusterResolver(master)
@@ -603,7 +603,8 @@ def build_strategy(dist, use_tpu, master):
         cross_device_ops = None  # tf.distribute.NcclAllReduce() by default
         # if the default cross_device_ops fails, try either of the following two
         # by uncommenting it.
-        # cross_device_ops = tf.distribute.HierarchicalCopyAllReduce()
+        if not training:
+            cross_device_ops = tf.distribute.HierarchicalCopyAllReduce()
         # cross_device_ops = tf.distribute.ReductionToOneDevice()
         strategy = tf.distribute.MirroredStrategy(cross_device_ops=cross_device_ops)
         logging.info('Running using MirroredStrategy on %d replicas',

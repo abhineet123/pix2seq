@@ -151,7 +151,7 @@ def main(unused_argv):
 
     import utils
 
-    strategy = utils.build_strategy(cfg.dist, cfg.use_tpu, cfg.master)
+    strategy = utils.build_strategy(cfg.dist, cfg.use_tpu, cfg.master, cfg.training)
 
     # tf.logging.set_verbosity(tf.logging.ERROR)
 

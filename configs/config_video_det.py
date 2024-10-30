@@ -72,6 +72,7 @@ def get_config(config_str=None):
             vocab_id=vocab.TASK_VID_DET,
             image_size=image_size,
             quantization_bins=1000,
+            coords_1d=0,
             # max_instances_per_image=max_instances_per_image,
             # max_instances_per_image_test=max_instances_per_image_test,
             # Train on both ground-truth and (augmented) noisy objects.

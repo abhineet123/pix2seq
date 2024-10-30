@@ -77,7 +77,7 @@ class TaskObjectDetection(task_lib.Task):
                 vis=1, model_dir=self.config.model_dir, training=training)
 
         # Create input/target seq.
-        """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
+        """coord_vocab_shift needed to accommodate class tokens before the coord tokens"""
         ret = build_response_seq_from_bbox(
             batched_examples['bbox'], batched_examples['label'],
             config.quantization_bins, config.noise_bbox_weight,
