@@ -309,6 +309,8 @@ def main(unused_argv):
                 if new_ckpt is not None:
                     print(f'found local ckpt: {new_ckpt}')
                     is_remote = False
+                elif cfg.eval.ckpt_iter:
+                    raise AssertionError(f'invalid local ckpt: {cfg.eval.ckpt_iter}')
 
             if new_ckpt is None:
                 if cfg.eval.remote:

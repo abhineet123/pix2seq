@@ -850,6 +850,8 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts, ckpt_iter):
     #                not any(eval_dir.startswith(get_name(ckpt))
     #                        for eval_dir in eval_dirs)]
     if not local_ckpts:
+        if ckpt_iter > 0:
+            raise AssertionError(f'ckpt {ckpt_iter} not found in {checkpoint_dir}')
         return None
 
     if ckpt_iter > 0:
