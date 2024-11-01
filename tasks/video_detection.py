@@ -88,7 +88,7 @@ class TaskVideoDetection(task_lib.Task):
             noise_bbox_weight=config.noise_bbox_weight,
             coord_vocab_shift=mconfig.coord_vocab_shift,
             vid_len=dconfig.length,
-            batch_size=batch_size,
+            # batch_size=batch_size,
             debug=self.config.debug,
             class_label_corruption=config.class_label_corruption)
 
@@ -298,7 +298,7 @@ class TaskVideoDetection(task_lib.Task):
             self._coco_metrics.reset_states()
 
 
-def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size, check):
+def tf_ravel_multi_index(bboxes, dims,  check):
     strides = tf.math.cumprod(dims, exclusive=True, reverse=True)
 
     # strides_tiled = tf.tile(strides, [length*2])
@@ -307,11 +307,14 @@ def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size, check):
     # strides_exp_3 = tf.expand_dims(strides_exp_2,
     # 0)
 
-    strides_exp_3 = tf.reshape(strides, (1, 1, 1, 2))
-    bboxes_res = tf.reshape(bboxes, (batch_size, -1, vid_len * 2, 2))
+    B, N, K = tf.shape(bboxes)
+
+    strides_exp_3 = tf.reshape(strides, (1, 2))
+    bboxes_res = tf.reshape(bboxes, (-1, 2))
 
     bboxes_tmp = bboxes_res * strides_exp_3
     ravel_idx = tf.reduce_sum(bboxes_tmp, axis=-1)
+    ravel_idx = tf.reshape(ravel_idx, (B, N, K//2))
 
     if check:
         ravel_idx_flat = tf.reshape(ravel_idx, (-1,))
@@ -341,7 +344,7 @@ def build_response_seq_from_video_bboxes(
         noise_bbox_weight,
         coord_vocab_shift,
         vid_len,
-        batch_size,
+        # batch_size,
         coords_1d,
         debug,
         class_label_corruption='rand_cls',
@@ -368,7 +371,7 @@ def build_response_seq_from_video_bboxes(
     if coords_1d:
         shape = tf.constant([quantization_bins, quantization_bins], dtype=tf.int64)
         quantized_bboxes_1d = tf_ravel_multi_index(
-            quantized_bboxes_2d, shape, vid_len, batch_size, check=debug)
+            quantized_bboxes_2d, shape,  check=debug)
         quantized_bboxes = quantized_bboxes_1d
         # is_no_box_quant = tf.math.is_nan(quantized_bboxes)
         is_no_box_1d = is_no_box[:, :, ::2]
