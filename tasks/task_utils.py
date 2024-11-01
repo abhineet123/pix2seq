@@ -2733,7 +2733,7 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
 
     boxes = []
 
-    shape = tf.constant([quantization_bins, quantization_bins])
+    shape = tf.constant([quantization_bins, quantization_bins], dtype=tf.int64)
 
     for _id in range(vid_len):
         bbox_start_id = n_bbox_tokens * _id

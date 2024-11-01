@@ -298,7 +298,6 @@ class TaskVideoDetection(task_lib.Task):
 
 
 def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size, check):
-    dims = tf.cast(dims, tf.int64)
     strides = tf.math.cumprod(dims, exclusive=True, reverse=True)
 
     # strides_tiled = tf.tile(strides, [length*2])
@@ -365,7 +364,7 @@ def build_response_seq_from_video_bboxes(
 
     quantized_bboxes = utils.quantize(bboxes, quantization_bins)
     if coords_1d:
-        shape = tf.constant([quantization_bins, quantization_bins])
+        shape = tf.constant([quantization_bins, quantization_bins], dtype=tf.int64)
         quantized_bboxes_1d = tf_ravel_multi_index(
             quantized_bboxes, shape, vid_len, batch_size, check=debug)
         quantized_bboxes = quantized_bboxes_1d
