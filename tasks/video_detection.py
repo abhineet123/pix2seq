@@ -78,17 +78,18 @@ class TaskVideoDetection(task_lib.Task):
         #     batched_examples,
         #     vis=1, model_dir=self.config.model_dir)
 
+
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
         ret = build_response_seq_from_video_bboxes(
             bboxes=batched_examples['bbox'],
             label=batched_examples['class_id'],
             quantization_bins=config.quantization_bins,
+            coords_1d=config.coords_1d,
             noise_bbox_weight=config.noise_bbox_weight,
             coord_vocab_shift=mconfig.coord_vocab_shift,
             vid_len=dconfig.length,
             batch_size=batch_size,
             debug=self.config.debug,
-            coords_1d=config.coords_1d,
             class_label_corruption=config.class_label_corruption)
 
         """
@@ -136,6 +137,18 @@ class TaskVideoDetection(task_lib.Task):
             target_seq == vocab.PADDING_TOKEN,
             tf.cast(config.eos_token_weight, token_weights.dtype),
             token_weights)
+
+        if self.config.debug:
+            bboxes=batched_examples['bbox']
+            bboxes_rec = task_utils.seq_to_video_bbox(
+                seq=input_seq,
+                quantization_bins=config.quantization_bins,
+                coords_1d=config.coords_1d,
+                vid_len=dconfig.length,
+                coord_vocab_shift=mconfig.coord_vocab_shift,
+            )
+            is_eq = tf.math.reduce_all(tf.equal(bboxes, bboxes_rec))
+            assert is_eq, "unravel_idx bboxes_rec mismatch"
 
         return batched_examples, input_seq, target_seq, token_weights
 
@@ -198,7 +211,7 @@ class TaskVideoDetection(task_lib.Task):
 
         # Decode sequence output.
         pred_classes, pred_bboxes, scores = task_utils.decode_video_seq_to_bbox(
-            logits, pred_seq, self.vid_len, config.quantization_bins, mconfig.coord_vocab_shift)
+            logits, pred_seq, self.vid_len, config.quantization_bins, config.coords_1d, mconfig.coord_vocab_shift)
 
         # Compute coordinate scaling from [0., 1.] to actual pixels in orig image.
         image_size = videos.shape[2:4].as_list()
@@ -283,8 +296,8 @@ class TaskVideoDetection(task_lib.Task):
         if self._coco_metrics:
             self._coco_metrics.reset_states()
 
-def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size, check):
 
+def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size, check):
     dims = tf.cast(dims, tf.int64)
     strides = tf.math.cumprod(dims, exclusive=True, reverse=True)
 
@@ -295,7 +308,7 @@ def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size, check):
     # 0)
 
     strides_exp_3 = tf.reshape(strides, (1, 1, 1, 2))
-    bboxes_res = tf.reshape(bboxes, (batch_size, -1, vid_len*2, 2))
+    bboxes_res = tf.reshape(bboxes, (batch_size, -1, vid_len * 2, 2))
 
     bboxes_tmp = bboxes_res * strides_exp_3
     ravel_idx = tf.reduce_sum(bboxes_tmp, axis=-1)
@@ -306,7 +319,7 @@ def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size, check):
 
         bboxes_rec = tf.reshape(tf.transpose(unravel_idx), tf.shape(bboxes))
 
-        is_eq = tf.math.reduce_all(tf.equal(bboxes,bboxes_rec))
+        is_eq = tf.math.reduce_all(tf.equal(bboxes, bboxes_rec))
 
         assert is_eq, "unravel_idx bboxes_rec mismatch"
 
@@ -319,6 +332,7 @@ def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size, check):
     # ravel_idx = tf.concat([pt1_idx, pt2_idx], axis=-1)
 
     return ravel_idx
+
 
 def build_response_seq_from_video_bboxes(
         bboxes,
@@ -448,7 +462,7 @@ def build_response_seq_from_video_bboxes(
 
     We don't care about the coordinates of fake boxes but we do care about their class   
     """
-    bbox_weight = tf.tile(is_real, [1, 1, int(bboxes.shape[-1])])
+    bbox_weight = tf.tile(is_real, [1, 1, int(quantized_bboxes.shape[-1])])
     label_weight = is_real + (1. - is_real) * noise_bbox_weight
 
     token_weights = tf.concat([bbox_weight, label_weight], -1)

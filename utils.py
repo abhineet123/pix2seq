@@ -371,7 +371,8 @@ def pad_to_max_len(data, max_len, dim, padding_token=0):
     padding_shape[dim] = max_len - padding_shape[dim]
     new_shape[dim] = max_len
     paddings = tf.fill(padding_shape, tf.cast(padding_token, dtype=data.dtype))
-    return tf.reshape(tf.concat([data, paddings], axis=dim), new_shape)
+    data_res = tf.reshape(tf.concat([data, paddings], axis=dim), new_shape)
+    return data_res
 
 
 # import pandas as pd

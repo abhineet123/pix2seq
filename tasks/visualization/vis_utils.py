@@ -1605,7 +1605,7 @@ def visualize_video(config, examples, logits, tokens, label, category_names, mas
     vid_len = config.dataset.length
 
     classes, bboxes, scores = task_utils.decode_video_seq_to_bbox(
-        logits, tokens, vid_len, tconfig.quantization_bins,
+        logits, tokens, vid_len, tconfig.quantization_bins, tconfig.coords_1d,
         mconfig.coord_vocab_shift, mask)
 
     image_size = videos.shape[2:4].as_list()

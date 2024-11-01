@@ -2673,6 +2673,7 @@ def decode_video_seq_to_bbox(
         seq,
         vid_len,
         quantization_bins,
+        coords_1d,
         coord_vocab_shift,
         seq_mask=None,
 ):
@@ -2681,7 +2682,8 @@ def decode_video_seq_to_bbox(
     if seq_mask is not None:
         seq = tf.where(seq_mask, seq, tf.cast(-1, seq.dtype))
 
-    bbox_seq_len = vid_len * 4 + 1
+    n_bbox_tokens = 2 if coords_1d else 4
+    bbox_seq_len = vid_len * n_bbox_tokens + 1
 
     # truncate out the last few tokens
     if seqlen % bbox_seq_len != 0:
@@ -2715,27 +2717,38 @@ def decode_video_seq_to_bbox(
     scores = tf.gather_nd(class_probs, class_tokens[:, :, tf.newaxis], batch_dims=2)
 
     class_ids = tf.maximum(class_tokens - vocab.BASE_VOCAB_SHIFT, 0)
-    bboxes = seq_to_video_bbox(seq, quantization_bins, vid_len, coord_vocab_shift)
+    bboxes = seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_shift)
     return class_ids, bboxes, scores
 
 
-def seq_to_video_bbox(seq, quantization_bins, vid_len, coord_vocab_shift):
+def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_shift):
     """Returns [0, 1] normalized yxyx bbox from token sequence."""
     # [batch, 5*num_instances]
     assert seq.shape.rank == 2, f'seq has non-rank 2 shape: {seq.shape.as_list()}'
 
-    bbox_seq_len = vid_len * 4 + 1
+    n_bbox_tokens = 2 if coords_1d else 4
+    bbox_seq_len = vid_len * n_bbox_tokens + 1
 
     # [batch, num_instances, 1]
 
     boxes = []
 
+    shape = tf.constant([quantization_bins, quantization_bins])
+
     for _id in range(vid_len):
-        bbox_start_id = 4 * _id
-        ymin = tf.expand_dims(seq[:, bbox_start_id::bbox_seq_len], -1)
-        xmin = tf.expand_dims(seq[:, bbox_start_id + 1::bbox_seq_len], -1)
-        ymax = tf.expand_dims(seq[:, bbox_start_id + 2::bbox_seq_len], -1)
-        xmax = tf.expand_dims(seq[:, bbox_start_id + 3::bbox_seq_len], -1)
+        bbox_start_id = n_bbox_tokens * _id
+        if coords_1d:
+            pt1 = tf.expand_dims(seq[:, bbox_start_id::bbox_seq_len], -1)
+            pt2 = tf.expand_dims(seq[:, bbox_start_id + 1::bbox_seq_len], -1)
+            pt1_flat = tf.reshape(pt1, (-1,))
+            pt2_flat = tf.reshape(pt2, (-1,))
+            pt1_unravel = tf.unravel_index(pt1_flat, shape)
+            pt2_unravel = tf.unravel_index(pt2_flat, shape)
+        else:
+            ymin = tf.expand_dims(seq[:, bbox_start_id::bbox_seq_len], -1)
+            xmin = tf.expand_dims(seq[:, bbox_start_id + 1::bbox_seq_len], -1)
+            ymax = tf.expand_dims(seq[:, bbox_start_id + 2::bbox_seq_len], -1)
+            xmax = tf.expand_dims(seq[:, bbox_start_id + 3::bbox_seq_len], -1)
         box_tokens = tf.concat([ymin, xmin, ymax, xmax], axis=-1)
 
         is_no_box = tf.equal(box_tokens, vocab.NO_BOX_TOKEN)
