@@ -78,10 +78,10 @@ class TaskVideoDetection(task_lib.Task):
         #     batched_examples,
         #     vis=1, model_dir=self.config.model_dir)
 
-
+        bboxes = batched_examples['bbox']
         """coord_vocab_shift needed to accomodate class tokens before the coord tokens"""
         ret = build_response_seq_from_video_bboxes(
-            bboxes=batched_examples['bbox'],
+            bboxes=bboxes,
             label=batched_examples['class_id'],
             quantization_bins=config.quantization_bins,
             coords_1d=config.coords_1d,
@@ -97,7 +97,18 @@ class TaskVideoDetection(task_lib.Task):
         target_seq = prompt_seq + response_seq
         input_seq = prompt_seq + response_seq_cm
         """
-        response_seq, response_seq_cm, token_weights = ret
+        response_seq, response_seq_cm, token_weights, boxes_quant = ret
+
+        if self.config.debug:
+            bboxes_rec, boxes_quant_rec = task_utils.seq_to_video_bbox(
+                seq=response_seq,
+                quantization_bins=config.quantization_bins,
+                coords_1d=config.coords_1d,
+                vid_len=dconfig.length,
+                coord_vocab_shift=mconfig.coord_vocab_shift,
+            )
+            is_eq = tf.math.reduce_all(tf.equal(boxes_quant, boxes_quant_rec))
+            assert is_eq, "unravel_idx boxes_quant_rec mismatch"
 
         """
         vocab_id=10 for object_detection
@@ -138,17 +149,7 @@ class TaskVideoDetection(task_lib.Task):
             tf.cast(config.eos_token_weight, token_weights.dtype),
             token_weights)
 
-        if self.config.debug:
-            bboxes=batched_examples['bbox']
-            bboxes_rec = task_utils.seq_to_video_bbox(
-                seq=input_seq,
-                quantization_bins=config.quantization_bins,
-                coords_1d=config.coords_1d,
-                vid_len=dconfig.length,
-                coord_vocab_shift=mconfig.coord_vocab_shift,
-            )
-            is_eq = tf.math.reduce_all(tf.equal(bboxes, bboxes_rec))
-            assert is_eq, "unravel_idx bboxes_rec mismatch"
+
 
         return batched_examples, input_seq, target_seq, token_weights
 
@@ -362,16 +363,19 @@ def build_response_seq_from_video_bboxes(
             tf.cast(max_no_boxes_per_obj, n_no_boxes_per_obj.dtype),
             message="There should be at least one valid box per object")
 
-    quantized_bboxes = utils.quantize(bboxes, quantization_bins)
+    quantized_bboxes_2d = utils.quantize(bboxes, quantization_bins)
+
     if coords_1d:
         shape = tf.constant([quantization_bins, quantization_bins], dtype=tf.int64)
         quantized_bboxes_1d = tf_ravel_multi_index(
-            quantized_bboxes, shape, vid_len, batch_size, check=debug)
+            quantized_bboxes_2d, shape, vid_len, batch_size, check=debug)
         quantized_bboxes = quantized_bboxes_1d
         # is_no_box_quant = tf.math.is_nan(quantized_bboxes)
         is_no_box_1d = is_no_box[:, :, ::2]
         is_no_box = is_no_box_1d
         # rand_tensor_quant = rand_tensor[:, :, ::2]
+    else:
+        quantized_bboxes = quantized_bboxes_2d
 
     quantized_bboxes = quantized_bboxes + coord_vocab_shift
 
@@ -467,4 +471,5 @@ def build_response_seq_from_video_bboxes(
     token_weights = tf.concat([bbox_weight, label_weight], -1)
     token_weights = utils.flatten_non_batch_dims(token_weights, 2)
 
-    return response_seq, response_seq_class_m, token_weights
+    return response_seq, response_seq_class_m, token_weights, quantized_bboxes_2d
+7

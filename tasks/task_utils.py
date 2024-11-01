@@ -2732,6 +2732,7 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
     # [batch, num_instances, 1]
 
     boxes = []
+    boxes_quant = []
 
     shape = tf.constant([quantization_bins, quantization_bins], dtype=tf.int64)
 
@@ -2748,22 +2749,29 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
             ymax = tf.expand_dims(seq[:, bbox_start_id + 2::bbox_seq_len], -1)
             xmax = tf.expand_dims(seq[:, bbox_start_id + 3::bbox_seq_len], -1)
             box_tokens = tf.concat([ymin, xmin, ymax, xmax], axis=-1)
-            box_quant = box_tokens - coord_vocab_shift
+
+        box_quant = box_tokens - coord_vocab_shift
 
         is_no_box = tf.equal(box_tokens, vocab.NO_BOX_TOKEN)
         is_padding = tf.equal(box_tokens, vocab.PADDING_TOKEN)
-
-        is_not_coord = tf.less(box_quant, 0)
 
         if coords_1d:
             box_quant_flat = tf.reshape(box_quant, (-1,))
             box_quant_unravel = tf.unravel_index(box_quant_flat, shape)
 
-            pt1_rec = tf.reshape(box_quant_unravel[0, :], tf.shape(box_quant))
-            pt2_rec = tf.reshape(box_quant_unravel[1, :], tf.shape(box_quant))
-            is_no_box = tf.concat([is_no_box, is_no_box], axis=-1)
-            box_quant_rec = tf.concat([pt1_rec, pt2_rec], axis=-1)
+            y_rec = tf.reshape(box_quant_unravel[0, :], tf.shape(box_quant))
+            x_rec = tf.reshape(box_quant_unravel[1, :], tf.shape(box_quant))
+
+            tf.expand_dims(y_rec[:, :, 0], -1)
+            ymin, ymax = tf.expand_dims(y_rec[:, :, 0], -1), tf.expand_dims(y_rec[:, :, 1], -1)
+            xmin, xmax = tf.expand_dims(x_rec[:, :, 0], -1), tf.expand_dims(x_rec[:, :, 1], -1)
+            box_quant_rec = tf.concat([ymin, xmin, ymax, xmax], axis=-1)
             box_quant = box_quant_rec
+            """if one pt in a bbox is no-box or padding, all pts in that box must be too"""
+            is_no_box = tf.concat([is_no_box, is_no_box], axis=-1)
+            is_padding = tf.concat([is_padding, is_padding], axis=-1)
+
+        is_not_coord = tf.less(box_quant, 0)
 
         box_dequant = utils.dequantize(box_quant, quantization_bins)
 
@@ -2778,10 +2786,12 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
             box_clipped)
 
         boxes.append(box_clipped)
+        boxes_quant.append(box_quant)
 
     boxes = tf.concat(boxes, axis=-1)
+    boxes_quant = tf.concat(boxes_quant, axis=-1)
 
-    return boxes
+    return boxes, boxes_quant
 
 
 def decode_object_seq_to_bbox(logits,
