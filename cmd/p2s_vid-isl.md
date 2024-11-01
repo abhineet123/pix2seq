@@ -25,6 +25,7 @@
         - [on-49_68       @ detrac-0_9/mid](#on_49_68___detrac_0_9_mid_)
     - [detrac-0_9-1d       @ mid](#detrac_0_9_1d___mi_d_)
     - [detrac-0_48-len-40-1d-quant-80       @ mid](#detrac_0_48_len_40_1d_quant_80___mi_d_)
+        - [on-49_85       @ detrac-0_48-len-40-1d-quant-80/mid](#on_49_85___detrac_0_48_len_40_1d_quant_80_mid_)
     - [detrac-0_48-len-40-1d       @ mid](#detrac_0_48_len_40_1d___mi_d_)
         - [on-49_85       @ detrac-0_48-len-40-1d/mid](#on_49_85___detrac_0_48_len_40_1d_mi_d_)
     - [detrac-0_48-len-48-1d       @ mid](#detrac_0_48_len_48_1d___mi_d_)
@@ -123,8 +124,11 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 
 <a id="detrac_0_48_len_40_1d_quant_80___mi_d_"></a>
 ## detrac-0_48-len-40-1d-quant-80       @ mid-->p2s_vid-isl
-__causes spontaneous restart on grs__
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_48,batch-6,dbg-0,dyn-1,dist-2,len-40,quant-80,1d,voc8,seq3k,fbb,gxe
+<a id="on_49_85___detrac_0_48_len_40_1d_quant_80_mid_"></a>
+### on-49_85       @ detrac-0_48-len-40-1d-quant-80/mid-->p2s_vid-isl
+`vstrd-40`
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-40-stride-1-non_empty-seq-0_48-batch_6-quant_80-1d-seq3k-fbb-gxe,detrac-non_empty-49_85,batch-6,save-vis-0,dbg-0,dyn-1,dist-0,len-40,vstrd-40,asi-0,grs
 
 <a id="detrac_0_48_len_40_1d___mi_d_"></a>
 ## detrac-0_48-len-40-1d       @ mid-->p2s_vid-isl
@@ -134,6 +138,7 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 ### on-49_85       @ detrac-0_48-len-40-1d/mid-->p2s_vid-isl
 `vstrd-40`
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-40-stride-1-non_empty-seq-0_48-batch_6-quant_160-1d-seq3k-fbb-gxe,detrac-non_empty-49_85,batch-6,save-vis-0,dbg-0,dyn-1,dist-0,len-40,vstrd-40,asi-0,grs
+
 
 <a id="detrac_0_48_len_48_1d___mi_d_"></a>
 ## detrac-0_48-len-48-1d       @ mid-->p2s_vid-isl
