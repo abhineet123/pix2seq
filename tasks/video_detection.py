@@ -377,6 +377,7 @@ def build_response_seq_from_video_bboxes(
     else:
         quantized_bboxes = quantized_bboxes_2d
 
+
     quantized_bboxes = quantized_bboxes + coord_vocab_shift
 
     # np_dict = utils.to_numpy(locals())
@@ -472,4 +473,3 @@ def build_response_seq_from_video_bboxes(
     token_weights = utils.flatten_non_batch_dims(token_weights, 2)
 
     return response_seq, response_seq_class_m, token_weights, quantized_bboxes_2d
-7

@@ -2785,6 +2785,11 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
             tf.cast(vocab.NO_BOX_FLOAT, box_clipped.dtype),
             box_clipped)
 
+        box_quant = tf.where(
+            is_invalid,
+            tf.cast(0, box_quant.dtype),
+            box_quant)
+
         boxes.append(box_clipped)
         boxes_quant.append(box_quant)
 
