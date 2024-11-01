@@ -37,21 +37,29 @@ def update_task_config(cfg):
     #     return
 
     image_size = cfg.model.image_size
+    max_seq_len = cfg.model.max_seq_len
+
     cfg.task.image_size = image_size
 
     """"update parameters that depend on image size but inexplicably missing from pretrained config files"""
     assert cfg.task.name == 'object_detection', f"invalid task name: {cfg.task.name}"
 
-    for task in cfg.tasks + [cfg.task, ]:
-        task.image_size = image_size
+    for task_config in cfg.tasks + [cfg.task, ]:
+        n_bbox_tokens = 2 if cfg.task.coords_1d else 4
+        max_instances_per_image = int(max_seq_len // (n_bbox_tokens + 1))
 
-        task.eval_transforms = transform_configs.get_object_detection_eval_transforms(
-            cfg.dataset.transforms,
-            image_size, task.max_instances_per_image_test)
+        task_config.max_instances_per_image = max_instances_per_image
+        task_config.max_instances_per_image_test = max_instances_per_image
 
-        task.train_transforms = transform_configs.get_object_detection_train_transforms(
+        task_config.image_size = image_size
+
+        task_config.eval_transforms = transform_configs.get_object_detection_eval_transforms(
             cfg.dataset.transforms,
-            image_size, task.max_instances_per_image,
+            image_size, task_config.max_instances_per_image_test)
+
+        task_config.train_transforms = transform_configs.get_object_detection_train_transforms(
+            cfg.dataset.transforms,
+            image_size, task_config.max_instances_per_image,
         )
 
 
@@ -114,6 +122,7 @@ def get_config(config_str=None):
             name='encoder_ar_decoder',
             image_size=image_size,
             max_seq_len=512,
+            coords_1d=0,
             defer_seq=0,
             defer_vocab=0,
             vocab_size=3000,  # Note: should be large enough for 100 + num_classes + quantization_bins + (optional) text

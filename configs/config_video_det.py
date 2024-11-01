@@ -34,7 +34,8 @@ def update_task_config(cfg):
     for task_config in cfg.tasks + [cfg.task, ]:
         task_config.image_size = image_size
 
-        max_instances_per_image = int(max_seq_len // (length * 4 + 1))
+        n_bbox_tokens = 2 if cfg.task.coords_1d else 4
+        max_instances_per_image = int(max_seq_len // (length * n_bbox_tokens + 1))
         max_instances_per_image_test = max_instances_per_image
 
         task_config.max_instances_per_image = max_instances_per_image

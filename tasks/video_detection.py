@@ -19,7 +19,7 @@ class TaskVideoDetection(task_lib.Task):
         self.max_seq_len = config.task.get('max_seq_len', 'auto')
         self.max_seq_len_test = config.task.get('max_seq_len_test', 'auto')
         self.vid_len = self.config.dataset.length
-        self.inst_len = self.vid_len * 4 + 1
+        self.inst_len = self.vid_len * 2 + 1 if config.task.coords_1d else self.vid_len * 4 + 1
         self.max_inst_per_image = self.config.task.max_instances_per_image
         self.max_inst_per_image_test = self.config.task.max_instances_per_image_test
 
@@ -87,7 +87,7 @@ class TaskVideoDetection(task_lib.Task):
             coord_vocab_shift=mconfig.coord_vocab_shift,
             vid_len=dconfig.length,
             batch_size=batch_size,
-
+            debug=self.config.debug,
             coords_1d=config.coords_1d,
             class_label_corruption=config.class_label_corruption)
 
@@ -283,7 +283,7 @@ class TaskVideoDetection(task_lib.Task):
         if self._coco_metrics:
             self._coco_metrics.reset_states()
 
-def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size):
+def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size, check):
 
     dims = tf.cast(dims, tf.int64)
     strides = tf.math.cumprod(dims, exclusive=True, reverse=True)
@@ -300,12 +300,15 @@ def tf_ravel_multi_index(bboxes, dims, vid_len, batch_size):
     bboxes_tmp = bboxes_res * strides_exp_3
     ravel_idx = tf.reduce_sum(bboxes_tmp, axis=-1)
 
-    ravel_idx_flat = tf.reshape(ravel_idx, (-1,))
-    unravel_idx = tf.unravel_index(ravel_idx_flat, dims)
+    if check:
+        ravel_idx_flat = tf.reshape(ravel_idx, (-1,))
+        unravel_idx = tf.unravel_index(ravel_idx_flat, dims)
 
-    bboxes_rec = tf.reshape(tf.transpose(unravel_idx), tf.shape(bboxes))
+        bboxes_rec = tf.reshape(tf.transpose(unravel_idx), tf.shape(bboxes))
 
-    if_eq = tf.math.reduce_all(tf.equal(bboxes,bboxes_rec))
+        is_eq = tf.math.reduce_all(tf.equal(bboxes,bboxes_rec))
+
+        assert is_eq, "unravel_idx bboxes_rec mismatch"
 
     # pt1 = bboxes[:, :2]
     # pt2 = bboxes[:, 2:]
@@ -326,6 +329,7 @@ def build_response_seq_from_video_bboxes(
         vid_len,
         batch_size,
         coords_1d,
+        debug,
         class_label_corruption='rand_cls',
 ):
     # assert bboxes.shape[-1] % 4 == 0, f"invalid bboxes shape: {bboxes.shape}"
@@ -334,21 +338,27 @@ def build_response_seq_from_video_bboxes(
     # n_bboxes_per_vid}"
 
     is_no_box = tf.math.is_nan(bboxes)
+    # rand_tensor = tf.random.uniform(is_no_box.shape)
 
-    """There should be at least one valid box per object"""
-    # max_no_boxes_per_obj = vid_len - 1
-    # n_no_boxes_per_obj = tf.reduce_sum(tf.cast(is_no_box, dtype=tf.int32), axis=-1) / 4
-    # tf.debugging.assert_less_equal(
-    #     n_no_boxes_per_obj,
-    #     tf.cast(max_no_boxes_per_obj, n_no_boxes_per_obj.dtype), message="There should be at least one valid box
-    #     per object"
-    # )
+    if debug:
+        """There should be at least one valid box per object"""
+        max_no_boxes_per_obj = vid_len - 1
+        n_no_boxes_per_obj = tf.reduce_sum(tf.cast(is_no_box, dtype=tf.int32), axis=-1) / 4
+        tf.debugging.assert_less_equal(
+            n_no_boxes_per_obj,
+            tf.cast(max_no_boxes_per_obj, n_no_boxes_per_obj.dtype),
+            message="There should be at least one valid box per object")
 
     quantized_bboxes = utils.quantize(bboxes, quantization_bins)
     if coords_1d:
         shape = tf.constant([quantization_bins, quantization_bins])
-        quantized_bboxes_1d = tf_ravel_multi_index(quantized_bboxes, shape, vid_len, batch_size)
+        quantized_bboxes_1d = tf_ravel_multi_index(
+            quantized_bboxes, shape, vid_len, batch_size, check=debug)
         quantized_bboxes = quantized_bboxes_1d
+        # is_no_box_quant = tf.math.is_nan(quantized_bboxes)
+        is_no_box_1d = is_no_box[:, :, ::2]
+        is_no_box = is_no_box_1d
+        # rand_tensor_quant = rand_tensor[:, :, ::2]
 
     quantized_bboxes = quantized_bboxes + coord_vocab_shift
 
