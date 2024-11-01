@@ -2740,22 +2740,30 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
         if coords_1d:
             pt1 = tf.expand_dims(seq[:, bbox_start_id::bbox_seq_len], -1)
             pt2 = tf.expand_dims(seq[:, bbox_start_id + 1::bbox_seq_len], -1)
-            pt1_flat = tf.reshape(pt1, (-1,))
-            pt2_flat = tf.reshape(pt2, (-1,))
-            pt1_unravel = tf.unravel_index(pt1_flat, shape)
-            pt2_unravel = tf.unravel_index(pt2_flat, shape)
+            box_tokens = tf.concat([pt1, pt2], axis=-1)
+
         else:
             ymin = tf.expand_dims(seq[:, bbox_start_id::bbox_seq_len], -1)
             xmin = tf.expand_dims(seq[:, bbox_start_id + 1::bbox_seq_len], -1)
             ymax = tf.expand_dims(seq[:, bbox_start_id + 2::bbox_seq_len], -1)
             xmax = tf.expand_dims(seq[:, bbox_start_id + 3::bbox_seq_len], -1)
-        box_tokens = tf.concat([ymin, xmin, ymax, xmax], axis=-1)
+            box_tokens = tf.concat([ymin, xmin, ymax, xmax], axis=-1)
+            box_quant = box_tokens - coord_vocab_shift
 
         is_no_box = tf.equal(box_tokens, vocab.NO_BOX_TOKEN)
         is_padding = tf.equal(box_tokens, vocab.PADDING_TOKEN)
 
-        box_quant = box_tokens - coord_vocab_shift
         is_not_coord = tf.less(box_quant, 0)
+
+        if coords_1d:
+            box_quant_flat = tf.reshape(box_quant, (-1,))
+            box_quant_unravel = tf.unravel_index(box_quant_flat, shape)
+
+            pt1_rec = tf.reshape(box_quant_unravel[0, :], tf.shape(box_quant))
+            pt2_rec = tf.reshape(box_quant_unravel[1, :], tf.shape(box_quant))
+            is_no_box = tf.concat([is_no_box, is_no_box], axis=-1)
+            box_quant_rec = tf.concat([pt1_rec, pt2_rec], axis=-1)
+            box_quant = box_quant_rec
 
         box_dequant = utils.dequantize(box_quant, quantization_bins)
 
