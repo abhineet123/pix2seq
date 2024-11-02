@@ -160,8 +160,10 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         model_name = os.path.basename(cfg.model_dir)
         pbar = tqdm(total=n_epochs, desc=model_name)
 
-        """use  watch tail -1 {progress_log_path} to monitor the intra-epoch training progress"""
         progress_log_path = os.path.join(cfg.model_dir, "progress_log.txt")
+        if not cfg.eager:
+            print(f"\n\nuse this to monitor the intra-epoch training progress:")
+            print(f"watch tail -1 {progress_log_path}\n\n")
 
         while cur_step < train_steps:
             cur_epoch += 1
