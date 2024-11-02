@@ -1,4 +1,5 @@
-import os.path
+import os
+import shutil
 
 from absl import logging
 
@@ -85,7 +86,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             # return loss.stack(), loss_notpad.stack(), correct_pc.stack(), accuracy_notpad.stack()
 
         @tf.function
-        def train_multiple_steps(data_iterators, tasks):
+        def train_multiple_steps(data_iterators, tasks, progress_log_path):
             """
             ts=tasks is just specifying the default value for optional arg ts
             strategy is needed to get the num_replicas_in_sync to divide the gradient and compute its mean
@@ -99,11 +100,12 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             if cfg.eager:
                 progbar = tf.keras.utils.Progbar(steps_per_epoch)
 
-            for _ in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
+            for step_id in tf.range(steps_per_epoch):  # using tf.range prevents unroll.
                 with tf.name_scope(''):  # prevent `while_` prefix for variable names.
                     strategy.run(train_step, ([next(it) for it in data_iterators],))
 
                 if not cfg.eager:
+                    tf.print(step_id, ' / ', steps_per_epoch, output_stream=f"file://{progress_log_path}")
                     continue
 
                 # global_step_ = trainer.optimizer.iterations.numpy()
@@ -158,11 +160,15 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
         model_name = os.path.basename(cfg.model_dir)
         pbar = tqdm(total=n_epochs, desc=model_name)
 
+        """use  watch tail -1 {progress_log_path} to monitor the intra-epoch training progress"""
+        progress_log_path = os.path.join(cfg.model_dir, "progress_log.txt")
+
         while cur_step < train_steps:
             cur_epoch += 1
             # tf.print(f'Training epoch {cur_epoch} with {steps_per_epoch} steps...')
             with summary_writer.as_default():
-                train_multiple_steps(train_data_iters, tasks)
+                train_multiple_steps(train_data_iters, tasks, progress_log_path)
+                os.remove(progress_log_path)
 
                 """
                 this check happens after the first forward pass because of deferred restoration 
