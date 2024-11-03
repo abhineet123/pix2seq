@@ -2735,6 +2735,7 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
     boxes_quant = []
 
     shape = tf.constant([quantization_bins, quantization_bins], dtype=tf.int64)
+    max_coord = int(quantization_bins * quantization_bins) if coords_1d else quantization_bins
 
     for _id in range(vid_len):
         bbox_start_id = n_bbox_tokens * _id
@@ -2757,7 +2758,9 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
 
         if coords_1d:
             """remove invalid tokens that cannot be unraveled"""
-            is_not_coord = tf.less(box_quant, 0)
+            is_not_coord = tf.math.logical_or(
+                tf.less(box_quant, 0),
+                tf.greater_equal(box_quant, max_coord))
             is_invalid = tf.math.logical_or(is_no_box, is_padding)
             is_invalid = tf.math.logical_or(is_invalid, is_not_coord)
             box_quant = tf.where(
@@ -2781,7 +2784,9 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
             is_no_box = tf.concat([is_no_box, is_no_box], axis=-1)
             is_padding = tf.concat([is_padding, is_padding], axis=-1)
 
-        is_not_coord = tf.less(box_quant, 0)
+        is_not_coord = tf.math.logical_or(
+            tf.less(box_quant, 0),
+            tf.greater_equal(box_quant, max_coord))
 
         box_dequant = utils.dequantize(box_quant, quantization_bins)
 
