@@ -2717,7 +2717,7 @@ def decode_video_seq_to_bbox(
     scores = tf.gather_nd(class_probs, class_tokens[:, :, tf.newaxis], batch_dims=2)
 
     class_ids = tf.maximum(class_tokens - vocab.BASE_VOCAB_SHIFT, 0)
-    bboxes = seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_shift)
+    bboxes, _ = seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_shift)
     return class_ids, bboxes, scores
 
 
@@ -2756,17 +2756,27 @@ def seq_to_video_bbox(seq, quantization_bins, coords_1d, vid_len, coord_vocab_sh
         is_padding = tf.equal(box_tokens, vocab.PADDING_TOKEN)
 
         if coords_1d:
+            """remove invalid tokens that cannot be unraveled"""
+            is_not_coord = tf.less(box_quant, 0)
+            is_invalid = tf.math.logical_or(is_no_box, is_padding)
+            is_invalid = tf.math.logical_or(is_invalid, is_not_coord)
+            box_quant = tf.where(
+                is_invalid,
+                tf.cast(0, box_quant.dtype),
+                box_quant)
+
             box_quant_flat = tf.reshape(box_quant, (-1,))
             box_quant_unravel = tf.unravel_index(box_quant_flat, shape)
 
             y_rec = tf.reshape(box_quant_unravel[0, :], tf.shape(box_quant))
             x_rec = tf.reshape(box_quant_unravel[1, :], tf.shape(box_quant))
 
-            tf.expand_dims(y_rec[:, :, 0], -1)
             ymin, ymax = tf.expand_dims(y_rec[:, :, 0], -1), tf.expand_dims(y_rec[:, :, 1], -1)
             xmin, xmax = tf.expand_dims(x_rec[:, :, 0], -1), tf.expand_dims(x_rec[:, :, 1], -1)
             box_quant_rec = tf.concat([ymin, xmin, ymax, xmax], axis=-1)
+
             box_quant = box_quant_rec
+
             """if one pt in a bbox is no-box or padding, all pts in that box must be too"""
             is_no_box = tf.concat([is_no_box, is_no_box], axis=-1)
             is_padding = tf.concat([is_padding, is_padding], axis=-1)

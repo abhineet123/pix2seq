@@ -24,6 +24,7 @@
         - [on-train       @ detrac-0_9/mid](#on_train___detrac_0_9_mid_)
         - [on-49_68       @ detrac-0_9/mid](#on_49_68___detrac_0_9_mid_)
     - [detrac-0_9-1d       @ mid](#detrac_0_9_1d___mi_d_)
+        - [on-49_68       @ detrac-0_9-1d/mid](#on_49_68___detrac_0_9_1d_mi_d_)
     - [detrac-0_48-len-40-1d-quant-80       @ mid](#detrac_0_48_len_40_1d_quant_80___mi_d_)
         - [on-49_85       @ detrac-0_48-len-40-1d-quant-80/mid](#on_49_85___detrac_0_48_len_40_1d_quant_80_mid_)
     - [detrac-0_48-len-40-1d-gxe       @ mid](#detrac_0_48_len_40_1d_gxe___mi_d_)
@@ -32,13 +33,14 @@
         - [on-49_85       @ detrac-0_48-len-40-1d-exg/mid](#on_49_85___detrac_0_48_len_40_1d_exg_mi_d_)
     - [detrac-0_48-len-48-1d       @ mid](#detrac_0_48_len_48_1d___mi_d_)
         - [on-49_85       @ detrac-0_48-len-48-1d/mid](#on_49_85___detrac_0_48_len_48_1d_mi_d_)
-    - [detrac-0_48-len-64-1d       @ mid](#detrac_0_48_len_64_1d___mi_d_)
     - [detrac-0_48-len-32       @ mid](#detrac_0_48_len_32___mi_d_)
         - [on-49_85       @ detrac-0_48-len-32/mid](#on_49_85___detrac_0_48_len_32_mid_)
     - [detrac-0_48-len-32-1d       @ mid](#detrac_0_48_len_32_1d___mi_d_)
     - [detrac-0_48-len-40       @ mid](#detrac_0_48_len_40___mi_d_)
     - [detrac-0_48-len-48       @ mid](#detrac_0_48_len_48___mi_d_)
     - [detrac-0_48-len-56       @ mid](#detrac_0_48_len_56___mi_d_)
+    - [detrac-0_48-len-64-1d       @ mid](#detrac_0_48_len_64_1d___mi_d_)
+        - [on-49_85       @ detrac-0_48-len-64-1d/mid](#on_49_85___detrac_0_48_len_64_1d_mi_d_)
 
 <!-- /MarkdownTOC -->
 <a id="swi_n_"></a>
@@ -124,6 +126,9 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=m-r
 <a id="detrac_0_9_1d___mi_d_"></a>
 ## detrac-0_9-1d       @ mid-->p2s_vid-isl
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_9,batch-8,dbg-0,dyn-1,dist-0,quant-160,1d,voc28
+<a id="on_49_68___detrac_0_9_1d_mi_d_"></a>
+### on-49_68       @ detrac-0_9-1d/mid-->p2s_vid-isl
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-2-stride-1-non_empty-seq-0_9-batch_8-quant_160-1d,detrac-non_empty-49_68,batch-4,save-vis-0,dbg-1,dyn-1,dist-0
 
 <a id="detrac_0_48_len_40_1d_quant_80___mi_d_"></a>
 ## detrac-0_48-len-40-1d-quant-80       @ mid-->p2s_vid-isl
@@ -161,12 +166,6 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 `vstrd-48`
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-48-stride-1-non_empty-seq-0_48-batch_6-quant_160-1d-seq4k-fbb-gxe,detrac-non_empty-49_85,batch-6,save-vis-0,dbg-0,dyn-1,dist-0,len-48,vstrd-48,asi-0,grs
 
-<a id="detrac_0_48_len_64_1d___mi_d_"></a>
-## detrac-0_48-len-64-1d       @ mid-->p2s_vid-isl
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_48,batch-6,dbg-0,dyn-1,dist-2,len-64,quant-160,1d,voc28,seq4k,fbb,exg
-`dbg`
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_48,batch-1,dbg-0,dyn-1,dist-0,len-64,quant-160,1d,voc28,seq4k,fbb
-
 <a id="detrac_0_48_len_32___mi_d_"></a>
 ## detrac-0_48-len-32       @ mid-->p2s_vid-isl
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_48,batch-6,dbg-0,dyn-1,dist-2,len-32,seq5k,fbb,gxe
@@ -196,9 +195,16 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 ## detrac-0_48-len-48       @ mid-->p2s_vid-isl
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_48,batch-2,dbg-0,dyn-1,dist-1,len-48,seq7k,fbb
 
-
 <a id="detrac_0_48_len_56___mi_d_"></a>
 ## detrac-0_48-len-56       @ mid-->p2s_vid-isl
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_48,batch-2,dbg-0,dyn-1,dist-1,len-56,seq8k,fbb
+
+<a id="detrac_0_48_len_64_1d___mi_d_"></a>
+## detrac-0_48-len-64-1d       @ mid-->p2s_vid-isl
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_48,batch-6,dbg-0,dyn-1,dist-2,len-64,quant-160,1d,voc28,seq4k,fbb,exg
+<a id="on_49_85___detrac_0_48_len_64_1d_mi_d_"></a>
+### on-49_85       @ detrac-0_48-len-64-1d/mid-->p2s_vid-isl
+`vstrd-64`
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-64-stride-1-non_empty-seq-0_48-batch_6-quant_160-1d-seq4k-fbb-exg,detrac-non_empty-49_85,batch-4,save-vis-0,dbg-0,dyn-1,dist-0,len-64,vstrd-64,asi-0,e5g
 
 
