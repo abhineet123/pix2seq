@@ -863,7 +863,7 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts, ckpt_iter):
         ckpt_idx = local_ckpt_iters.index(ckpt_iter)
     else:
         local_ckpts.sort(reverse=True, key=get_ckpt_iter)
-        ckpt_idx = -1
+        ckpt_idx = 0
 
     ckpt = local_ckpts[ckpt_idx]
 
