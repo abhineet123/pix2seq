@@ -38,8 +38,10 @@ def update_task_config(cfg):
 
     image_size = cfg.model.image_size
     max_seq_len = cfg.model.max_seq_len
+    coords_1d = cfg.model.coords_1d
 
     cfg.task.image_size = image_size
+    cfg.task.coords_1d = coords_1d
 
     """"update parameters that depend on image size but inexplicably missing from pretrained config files"""
     assert cfg.task.name == 'object_detection', f"invalid task name: {cfg.task.name}"
@@ -85,6 +87,7 @@ def get_config(config_str=None):
         'object_detection': D(
             name='object_detection',
             vocab_id=vocab.TASK_OBJ_DET,
+            coords_1d=0,
             image_size=image_size,
             quantization_bins=1000,
             max_instances_per_image=max_instances_per_image,
