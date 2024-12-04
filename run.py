@@ -27,7 +27,7 @@ flags.DEFINE_string('j5_root', 'configs/j5', 'relative path of the folder contai
 flags.DEFINE_integer('worker_id', 0, 'worker id for multi-machine training')
 FLAGS = flags.FLAGS
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 from utils import to_numpy
