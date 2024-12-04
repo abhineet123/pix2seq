@@ -502,7 +502,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 
 <a id="16_53_len_2_aug_retrain___mi_d_"></a>
 ## 16_53-len-2-aug-retrain       @ mid-->p2s_vid-ipsc
-python3 run.py --cfg=configs/config_video_det.py --j5=_val_,ipsc-54_126,batch-2,len-2,vstrd-2,sample-8,_train_,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,batch-4,dbg-0,dyn-1,dist-0,jtr,res-1280,sfx-retrain
+python3 run.py --cfg=configs/config_video_det.py --j5=_val_,ipsc-54_126,batch-2,len-2,vstrd-2,sample-8,_train_,resnet-640,vid_det,pt-1,ipsc-16_53,len-2,batch-4,dbg-0,dyn-1,dist-0,jtr,res-1280,sfxs-retrain
 
 
 <a id="16_53_len_2_aug_1d___mi_d_"></a>
