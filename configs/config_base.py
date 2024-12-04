@@ -27,7 +27,7 @@ train_eval_config = D(
     db_prefix=[],
     save_suffix=[],
     pt=0,
-    batch_size=32,
+    batch_size=16,
 )
 train_config = D(
     check_ckpt=0,
@@ -76,9 +76,9 @@ base_config = D(
     use_tpu=0,
     dist=0,
     master=None,
-    eager=1,
+    eager=0,
     dyn_ram=1,
-    debug=1,
+    debug=0,
     resnet_replace=[],
     gpu='',
 
