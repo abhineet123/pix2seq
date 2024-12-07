@@ -37,6 +37,9 @@ from eval_utils import add_suffix
 
 class Params(paramparse.CFG):
     """
+    :ivar subsample:
+    factor by which to reduce mask resolution
+
     :ivar subsample_method:
     1: create RLE of full-res mask and sample the starts and lengths thus generated
     2: decrease mask resolution by resizing and create RLE of the low-res mask

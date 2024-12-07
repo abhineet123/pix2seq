@@ -279,11 +279,9 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-640:sub-4:r-2
 <a id="p_80___r_640_16_5_3_"></a>
 ### p-80       @ r-640/16_53-->tf_vid_seg
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-80:r-640:gz
-<a id="seq_0___p_80_r_640_16_53_"></a>
-`seq-0`       @ p-80/r-640/16_53-->p2s_vid_seg_tf
+`seq-0` 
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-80:r-640:gz:seq-0
-<a id="seq_1___p_80_r_640_16_53_"></a>
-`seq-1`       @ p-80/r-640/16_53-->p2s_vid_seg_tf
+`seq-1` 
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:p-80:r-640:gz:seq-1
 
 <a id="p_80_mc___r_640_16_5_3_"></a>
@@ -301,6 +299,7 @@ python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:gz:p-640:r-640:
 <a id="p_640_sub_4___r_640_16_5_3_"></a>
 ### p-640-sub-4       @ r-640/16_53-->tf_vid_seg
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:gz:p-640:r-640:sub-4
+
 <a id="p_640_sub_4_mc___r_640_16_5_3_"></a>
 ### p-640-sub-4-mc       @ r-640/16_53-->tf_vid_seg
 python3 data/scripts/create_video_seg_tfrecord.py cfg=ipsc:16_53:gz:p-640:r-640:sub-4:mc

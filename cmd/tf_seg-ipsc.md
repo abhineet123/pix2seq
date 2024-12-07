@@ -64,6 +64,8 @@
             - [lac       @ p-640-sub-4/r-2560/54_126](#lac___p_640_sub_4_r_2560_54_12_6_)
             - [aug       @ p-640-sub-4/r-2560/54_126](#aug___p_640_sub_4_r_2560_54_12_6_)
     - [r-640       @ 54_126](#r_640___54_126_)
+        - [p-640-aug       @ r-640/54_126](#p_640_aug___r_640_54_126_)
+            - [lac-2d-sub-2       @ p-640-aug/r-640/54_126](#lac_2d_sub_2___p_640_aug_r_640_54_126_)
         - [p-640       @ r-640/54_126](#p_640___r_640_54_126_)
             - [lac-2d-sub-2       @ p-640/r-640/54_126](#lac_2d_sub_2___p_640_r_640_54_126_)
         - [p-80       @ r-640/54_126](#p_80___r_640_54_126_)
@@ -250,7 +252,6 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:r-640:sub-4:rot
 #### lac-2d-sub-8       @ p-640-aug/r-640/16_53-->tf_seg-ipsc
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:r-640:sub-8:rot-15_345_4:flip-1:lac:2d:json
 
-
 <a id="p_640_sub_8___r_640_16_5_3_"></a>
 ### p-640-sub-8       @ r-640/16_53-->tf_seg-ipsc
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-640:r-640:sub-8
@@ -325,6 +326,12 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:rot-15_345_4:s
 
 <a id="r_640___54_126_"></a>
 ## r-640       @ 54_126-->tf_seg-ipsc
+<a id="p_640_aug___r_640_54_126_"></a>
+### p-640-aug       @ r-640/54_126-->tf_seg-ipsc
+<a id="lac_2d_sub_2___p_640_aug_r_640_54_126_"></a>
+#### lac-2d-sub-2       @ p-640-aug/r-640/54_126-->tf_seg-ipsc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:r-640:sub-2:rot-15_345_4:flip-1:lac:2d:json
+
 <a id="p_640___r_640_54_126_"></a>
 ### p-640       @ r-640/54_126-->tf_seg-ipsc
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:r-640
