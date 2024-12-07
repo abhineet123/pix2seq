@@ -126,14 +126,12 @@ sudo dpkg -i cuda-repo-ubuntu2204-12-2-local_12.2.2-535.104.05-1_amd64.deb
 sudo cp /var/cuda-repo-ubuntu2204-12-2-local/cuda-*-keyring.gpg /usr/share/keyrings/
 sudo apt-get update
 sudo apt-get install cuda-12-2
-
 ```
 
 <a id="all___tensorflow_install_"></a>
 ### all       @ tensorflow/install-->p2s_setup
 download cudnn tar from
 https://developer.nvidia.com/rdp/cudnn-download
-<a id="12_2___all_tensorflow_install_"></a>
 ```
 wget https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
 ```

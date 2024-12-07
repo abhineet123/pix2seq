@@ -25,6 +25,8 @@
         - [on-49_68       @ detrac-0_9/mid](#on_49_68___detrac_0_9_mid_)
     - [detrac-0_9-1d       @ mid](#detrac_0_9_1d___mi_d_)
         - [on-49_68       @ detrac-0_9-1d/mid](#on_49_68___detrac_0_9_1d_mi_d_)
+    - [detrac-0_48-len-2       @ mid](#detrac_0_48_len_2___mi_d_)
+        - [on-49_85       @ detrac-0_48-len-2/mid](#on_49_85___detrac_0_48_len_2_mi_d_)
     - [detrac-0_48-len-16       @ mid](#detrac_0_48_len_16___mi_d_)
         - [on-49_85       @ detrac-0_48-len-16/mid](#on_49_85___detrac_0_48_len_16_mid_)
     - [detrac-0_48-len-32-fbb-seq5k       @ mid](#detrac_0_48_len_32_fbb_seq5k___mi_d_)
@@ -136,6 +138,14 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eva
 `dbg`
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-2-stride-1-non_empty-seq-0_9-batch_8-quant_160-1d,detrac-non_empty-49_68,batch-24,save-vis-0,dbg-1,dyn-1,dist-0
 
+<a id="detrac_0_48_len_2___mi_d_"></a>
+## detrac-0_48-len-2       @ mid-->p2s_vid-isl
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_48,batch-18,dbg-0,dyn-1,dist-1,len-2
+<a id="on_49_85___detrac_0_48_len_2_mi_d_"></a>
+### on-49_85       @ detrac-0_48-len-2/mid-->p2s_vid-isl
+`vstrd-2`
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-16-stride-1-non_empty-seq-0_48-batch_6-seq3k-exp,detrac-non_empty-49_85,batch-6,save-vis-0,dbg-0,dyn-1,dist-0,len-16,vstrd-16,asi-0,e5g
+
 <a id="detrac_0_48_len_16___mi_d_"></a>
 ## detrac-0_48-len-16       @ mid-->p2s_vid-isl
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,detrac-non_empty-0_48,batch-6,dbg-0,dyn-1,dist-2,len-16,seq3k,exp
@@ -143,6 +153,8 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 ### on-49_85       @ detrac-0_48-len-16/mid-->p2s_vid-isl
 `vstrd-16`
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-16-stride-1-non_empty-seq-0_48-batch_6-seq3k-exp,detrac-non_empty-49_85,batch-6,save-vis-0,dbg-0,dyn-1,dist-0,len-16,vstrd-16,asi-0,e5g
+`vstrd-1`
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-16-stride-1-non_empty-seq-0_48-batch_6-seq3k-exp,detrac-non_empty-49_85,batch-8,save-vis-0,dbg-0,dyn-1,dist-0,len-16,vstrd-1,asi-0,e5g
 
 
 <a id="detrac_0_48_len_32_fbb_seq5k___mi_d_"></a>
