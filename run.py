@@ -301,6 +301,9 @@ def main(unused_argv):
         if cfg.eval.remote:
             print(f'running remote inference every {cfg.eval.sleep_eval} hours')
 
+        if cfg.eval.defer:
+            print(f'only transferring checkpoints now and deferring evaluation runs for later')
+            
         while True:
             new_ckpt = None
 
@@ -334,8 +337,10 @@ def main(unused_argv):
             assert new_ckpt_from_tf == new_ckpt, f"new_ckpt_from_tf mismatch:\n{new_ckpt_from_tf}\n{new_ckpt}"
 
             start_t = time.time()
-            out_dir = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, new_ckpt_from_tf, strategy,
-                               model, checkpoint, tf)
+
+            if not cfg.eval.defer:
+                out_dir = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, new_ckpt_from_tf, strategy,
+                                   model, checkpoint, tf)
 
             ckpt_name = utils.get_name(new_ckpt_from_tf)
             evaluated_ckpts.append(ckpt_name)

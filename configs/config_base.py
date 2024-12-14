@@ -64,6 +64,8 @@ eval_config = D(
     sleep_eval=2.,
     # time in minutes to wait before checking for new ckpt again
     sleep_ckpt=5.,
+    # only transfers checkpoints periodically while deferring the actual evaluation run for later
+    defer=0.,
     tag='eval',
     checkpoint_dir='',  # checkpoint_dir will be model_dir if not set.
 )

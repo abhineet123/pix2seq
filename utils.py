@@ -799,7 +799,10 @@ def get_remote_config(checkpoint_dir, info_file, remote, proxy):
     sftp = ssh.open_sftp()
     config_path = linux_path(checkpoint_dir, 'config.json')
     os.makedirs(checkpoint_dir, exist_ok=True)
-    sftp.get(config_path, config_path)
+    try:
+        sftp.get(config_path, config_path)
+    except FileNotFoundError:
+        print(f'sftp file not found: {config_path}')
 
     ssh.close()
     if ssh_main is not None:
