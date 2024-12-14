@@ -91,7 +91,9 @@ class TaskVideoDetection(task_lib.Task):
             max_instances_per_image=config.max_instances_per_image,
             # batch_size=batch_size,
             debug=self.config.debug,
-            class_label_corruption=config.class_label_corruption)
+            class_label_corruption=config.class_label_corruption,
+            class_equal_weight=config.class_equal_weight,
+        )
 
         """
         response_seq_cm has random and noise labels by default
@@ -149,8 +151,6 @@ class TaskVideoDetection(task_lib.Task):
             target_seq == vocab.PADDING_TOKEN,
             tf.cast(config.eos_token_weight, token_weights.dtype),
             token_weights)
-
-
 
         return batched_examples, input_seq, target_seq, token_weights
 
@@ -299,7 +299,7 @@ class TaskVideoDetection(task_lib.Task):
             self._coco_metrics.reset_states()
 
 
-def tf_ravel_multi_index(bboxes, dims,  vid_len, max_instances_per_image, check):
+def tf_ravel_multi_index(bboxes, dims, vid_len, max_instances_per_image, check):
     strides = tf.math.cumprod(dims, exclusive=True, reverse=True)
 
     # strides_tiled = tf.tile(strides, [length*2])
@@ -315,7 +315,7 @@ def tf_ravel_multi_index(bboxes, dims,  vid_len, max_instances_per_image, check)
 
     bboxes_tmp = bboxes_res * strides_exp_3
     ravel_idx = tf.reduce_sum(bboxes_tmp, axis=-1)
-    ravel_idx = tf.reshape(ravel_idx, (-1, max_instances_per_image, vid_len*2))
+    ravel_idx = tf.reshape(ravel_idx, (-1, max_instances_per_image, vid_len * 2))
 
     if check:
         ravel_idx_flat = tf.reshape(ravel_idx, (-1,))
@@ -343,6 +343,7 @@ def build_response_seq_from_video_bboxes(
         label,
         quantization_bins,
         noise_bbox_weight,
+        class_equal_weight,
         coord_vocab_shift,
         vid_len,
         max_instances_per_image,
@@ -383,7 +384,6 @@ def build_response_seq_from_video_bboxes(
         # rand_tensor_quant = rand_tensor[:, :, ::2]
     else:
         quantized_bboxes = quantized_bboxes_2d
-
 
     quantized_bboxes = quantized_bboxes + coord_vocab_shift
 
@@ -473,7 +473,13 @@ def build_response_seq_from_video_bboxes(
 
     We don't care about the coordinates of fake boxes but we do care about their class   
     """
-    bbox_weight = tf.tile(is_real, [1, 1, int(quantized_bboxes.shape[-1])])
+    n_coord_tokens = int(quantized_bboxes.shape[-1])
+    bbox_weight = tf.tile(is_real, [1, 1, n_coord_tokens])
+
+    if class_equal_weight:
+        norm_factor = 1.0 / n_coord_tokens
+        bbox_weight = bbox_weight * norm_factor
+
     label_weight = is_real + (1. - is_real) * noise_bbox_weight
 
     token_weights = tf.concat([bbox_weight, label_weight], -1)
