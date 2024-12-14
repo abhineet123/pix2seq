@@ -40,6 +40,9 @@
         - [len-56       @ 0_48/detrac](#len_56___0_48_detra_c_)
         - [len-64       @ 0_48/detrac](#len_64___0_48_detra_c_)
     - [49_85-strd-1       @ detrac](#49_85_strd_1___detrac_)
+        - [len-2       @ 49_85-strd-1/detrac](#len_2___49_85_strd_1_detra_c_)
+        - [len-4       @ 49_85-strd-1/detrac](#len_4___49_85_strd_1_detra_c_)
+        - [len-8       @ 49_85-strd-1/detrac](#len_8___49_85_strd_1_detra_c_)
         - [len-16       @ 49_85-strd-1/detrac](#len_16___49_85_strd_1_detra_c_)
         - [len-32       @ 49_85-strd-1/detrac](#len_32___49_85_strd_1_detra_c_)
         - [len-40       @ 49_85-strd-1/detrac](#len_40___49_85_strd_1_detra_c_)
@@ -194,6 +197,15 @@ python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-0_48:len-64:st
 
 <a id="49_85_strd_1___detrac_"></a>
 ## 49_85-strd-1       @ detrac-->tf_vid-isl
+<a id="len_2___49_85_strd_1_detra_c_"></a>
+### len-2       @ 49_85-strd-1/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-2:strd-1:asi-0
+<a id="len_4___49_85_strd_1_detra_c_"></a>
+### len-4       @ 49_85-strd-1/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-4:strd-1:asi-0
+<a id="len_8___49_85_strd_1_detra_c_"></a>
+### len-8       @ 49_85-strd-1/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-8:strd-1:asi-0
 <a id="len_16___49_85_strd_1_detra_c_"></a>
 ### len-16       @ 49_85-strd-1/detrac-->tf_vid-isl
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-16:strd-1:asi-0

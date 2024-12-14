@@ -464,7 +464,7 @@ def build_response_seq_from_video_bboxes(
     is_real = tf.cast(tf.not_equal(new_label, vocab.FAKE_CLASS_TOKEN), tf.float32)
 
     """    
-    noise and real bbox coord tokens have weights 1 and 0 respectively
+    noise and real bbox coord tokens have weights 0 and 1 respectively
 
     real bbox class tokens have weight 1
     noise bbox class tokens have weight noise_bbox_weight 

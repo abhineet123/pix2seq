@@ -303,7 +303,7 @@ def main(unused_argv):
 
         if cfg.eval.defer:
             print(f'only transferring checkpoints now and deferring evaluation runs for later')
-            
+
         while True:
             new_ckpt = None
 
