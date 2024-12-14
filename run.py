@@ -314,6 +314,10 @@ def main(unused_argv):
                     is_remote = False
                 elif cfg.eval.ckpt_iter:
                     raise AssertionError(f'invalid local ckpt: {cfg.eval.ckpt_iter}')
+                else:
+                    utils.sleep_with_pbar(mins=cfg.eval.sleep_ckpt)
+                    # start_t = time.time()
+                    continue
 
             if new_ckpt is None:
                 if cfg.eval.remote:
