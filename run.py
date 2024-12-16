@@ -314,7 +314,7 @@ def main(unused_argv):
                     is_remote = False
                 elif cfg.eval.ckpt_iter:
                     raise AssertionError(f'invalid local ckpt: {cfg.eval.ckpt_iter}')
-                else:
+                elif not cfg.eval.remote:
                     utils.sleep_with_pbar(mins=cfg.eval.sleep_ckpt)
                     # start_t = time.time()
                     continue
@@ -342,7 +342,9 @@ def main(unused_argv):
 
             start_t = time.time()
 
-            if not cfg.eval.defer:
+            if cfg.eval.defer:
+                print(f'deferring ckpt eval for later: {new_ckpt}')
+            else:
                 out_dir = eval.run(cfg, train_datasets[0], tasks[0], eval_steps, new_ckpt_from_tf, strategy,
                                    model, checkpoint, tf)
 
