@@ -18,7 +18,7 @@ import paramparse
 from data.scripts import tfrecord_lib
 from tasks.visualization import vis_utils
 
-from eval_utils import col_bgr
+from eval_utils import col_bgr, show_labels
 
 
 class Params(paramparse.CFG):
@@ -227,15 +227,40 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     # mlab.plot3d(box_x, box_y, box_z, color=(1, 1, 1), line_width=2.0, tube_radius=1.5)
     text_img = np.full(((1000, 600, 3)), bkg_col, dtype=np.uint8)
 
+    n_objs = len(obj_annotations)
+
+    curr_obj_ids = [ann['id'] for ann in obj_annotations]
+
+    # max_obj_id = max(curr_obj_ids)
+    n_col_levels = int(n_objs ** (1. / 3) + 1)
+
+    if n_objs <= len(cols):
+        rgb_cols = cols[:n_objs]
+    else:
+        col_levels = [int(x) for x in np.linspace(
+            # exclude too light and too dark colours to avoid confusion with white and black
+            50, 200,
+            n_col_levels, dtype=int)]
+        import itertools
+        import random
+        rgb_cols = list(itertools.product(col_levels, repeat=3))
+        random.shuffle(rgb_cols)
+
+    assert len(rgb_cols) >= n_objs, "insufficient number of colours created"
+
+    curr_obj_cols = [rgb_cols[k] for k in curr_obj_ids]
+
     for frame_id, frame in enumerate(frames):
         cu_z = (frame_id + 1) * z_gap
 
         file_id = int(file_ids[frame_id])
         file_name = file_names[frame_id]
         # mlab.text(w/2, 0, file_name, z=cu_z, figure=fig, color=frg_col_rgb, line_width=1.0)
-        file_txt = f'image {file_id + 1}'
+        obj_txt = "object" if n_objs == 1 else "objects"
+        file_txt = f'frame {file_id + 1}: {file_name} :: {n_objs} {obj_txt}'
 
         frame, _, _ = vis_utils.write_text(frame, file_txt, 5, 5, frg_col, font_size=title_font_size)
+        show_labels(frame, curr_obj_ids, curr_obj_cols)
 
         show_img_rgb(frame, cu_z, mlab)
 
