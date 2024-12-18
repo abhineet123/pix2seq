@@ -12,11 +12,12 @@ sys.path.append(os.getcwd())
 sys.path.append(dproc_path)
 
 # import numpy as np
-
+from PIL import Image
 
 import paramparse
 from data.scripts import tfrecord_lib
 from tasks.visualization import vis_utils
+from tasks import task_utils
 
 from eval_utils import col_bgr, show_labels
 
@@ -27,6 +28,7 @@ class Params(paramparse.CFG):
         self.ann_file = ''
         self.ann_suffix = ''
         self.ann_ext = 'json.gz'
+        self.class_names_path = ''
 
         self.frame_gaps = []
         self.length = 0
@@ -49,6 +51,7 @@ class Params(paramparse.CFG):
         self.frame_stride = -1
 
         self.vis = 0
+        self.show_mask = 0
 
 
 def save_dict_to_json(json_dict, json_path, label='ytvis annotations'):
@@ -156,14 +159,14 @@ def set_camera_view(mlab, params_dict):
     # roll = mlab.roll()
 
 
-def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
+def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to_col, fig, show_mask):
     from mayavi import mlab
 
     file_ids = video['file_ids']
     file_names = video['file_names']
-    file_paths = [os.path.join(image_dir, filename) for filename in file_names]
 
-    file_names = [os.path.splitext(os.path.basename(file_path))[0] for file_path in file_paths]
+    file_paths = [os.path.join(image_dir, filename) for filename in file_names]
+    base_file_names = [os.path.splitext(os.path.basename(file_path))[0] for file_path in file_paths]
 
     # z_gap = 500
     # title_font_size=48
@@ -172,12 +175,14 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     title_font_size = 64
 
     cols = (
-        'green', 'red', 'deep_sky_blue',
+        'green', 'red', 'purple',
         'yellow', 'forest_green', 'cyan',
-        'magenta', 'purple', 'orange',
+        'magenta', 'deep_sky_blue', 'orange',
         'maroon', 'peach_puff', 'dark_orange',
         'slate_gray', 'pale_turquoise', 'green_yellow',
     )
+    if show_mask:
+        cols = [col for col in cols if col not in class_id_to_col.values()]
 
     bkg_col = 'black'
     # bkg_col = 'white'
@@ -190,7 +195,15 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
     bkg_col_rgb = to_rgb(bkg_col)
     frg_col_rgb = to_rgb(frg_col)
 
-    frames = [cv2.imread(file_path) for file_path in file_paths]
+    frames = [cv2.imread(file_path)
+              for file_path in file_paths]
+    masks = None
+    if show_mask:
+        mask_file_paths = [os.path.join(os.path.dirname(file_path), 'masks',
+                                        f'{os.path.splitext(os.path.basename(file_path))[0]}.png')
+                           for file_path in file_paths]
+        masks = [np.asarray(Image.open(file_path)) for file_path in mask_file_paths]
+
     h, w = frames[0].shape[:2]
 
     if fig is None:
@@ -229,7 +242,8 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
 
     n_objs = len(obj_annotations)
 
-    curr_obj_ids = [ann['id'] for ann in obj_annotations]
+    # curr_obj_ids = [ann['id'] for ann in obj_annotations]
+    curr_obj_ids = list(range(n_objs))
 
     # max_obj_id = max(curr_obj_ids)
     n_col_levels = int(n_objs ** (1. / 3) + 1)
@@ -254,13 +268,23 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, fig):
         cu_z = (frame_id + 1) * z_gap
 
         file_id = int(file_ids[frame_id])
-        file_name = file_names[frame_id]
+        file_name = base_file_names[frame_id]
         # mlab.text(w/2, 0, file_name, z=cu_z, figure=fig, color=frg_col_rgb, line_width=1.0)
         obj_txt = "object" if n_objs == 1 else "objects"
         file_txt = f'frame {file_id + 1}: {file_name} :: {n_objs} {obj_txt}'
 
+        if show_mask:
+            opacity = 0.25
+            seg_mask = masks[frame_id]
+            for class_id, class_name in id_to_name_map.items():
+                class_col = class_id_to_col[class_id]
+                class_col_bgr = col_bgr[class_col]
+                seg_mask_binary = seg_mask == class_id
+                frame[seg_mask_binary] = (frame[seg_mask_binary] * (1. - opacity) +
+                                          np.asarray(class_col_bgr) * opacity)
+
         frame, _, _ = vis_utils.write_text(frame, file_txt, 5, 5, frg_col, font_size=title_font_size)
-        show_labels(frame, curr_obj_ids, curr_obj_cols)
+        # show_labels(frame, curr_obj_ids, curr_obj_cols)
 
         show_img_rgb(frame, cu_z, mlab)
 
@@ -467,6 +491,7 @@ def generate_video_annotations(
         params: Params,
         videos,
         category_id_to_name_map,
+        class_id_to_col,
         vid_to_obj_ann,
         image_dir,
 
@@ -479,7 +504,9 @@ def generate_video_annotations(
             vis_utils.vis_json_ann(video, object_anns, category_id_to_name_map, image_dir)
 
         if params.vis == 2:
-            fig = show_vid_objs(video, image_dir, object_anns, category_id_to_name_map, fig)
+            fig = show_vid_objs(
+                video, image_dir, object_anns, category_id_to_name_map,
+                class_id_to_col, fig, params.show_mask)
         else:
             yield (
                 video,
@@ -565,8 +592,11 @@ def main():
 
     assert params.image_dir, "image_dir must be provided"
     assert params.ann_file, "ann_file must be provided"
+    assert params.class_names_path, "class_names_path must be provided"
 
     assert os.path.exists(params.image_dir), f"image_dir does not exist: {params.image_dir}"
+
+    class_id_to_col, class_id_to_name = task_utils.read_class_info(params.class_names_path)
 
     if params.start_frame_id > 0 or params.end_frame_id >= 0 or params.frame_stride > 1:
         frame_suffix = f'{params.start_frame_id}_{params.end_frame_id}'
@@ -729,6 +759,7 @@ def main():
             params=params,
             videos=video_info,
             category_id_to_name_map=category_id_to_name_map,
+            class_id_to_col=class_id_to_col,
             vid_to_obj_ann=vid_to_obj_ann,
             image_dir=params.image_dir,
         )
