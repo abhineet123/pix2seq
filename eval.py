@@ -6,6 +6,7 @@ import json
 import pickle
 import pandas as pd
 from tqdm import tqdm
+from datetime import datetime
 
 import utils
 
@@ -199,6 +200,9 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
                 )
 
             cur_step += 1
+            time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
+
+            pbar.set_description(time_stamp)
             pbar.update(1)
 
             # if eval_steps:
@@ -264,7 +268,6 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
         for csv_seq_name, csv_rows in seq_to_csv_rows.items():
             assert not csv_rows, "unexplained non-empty csv_rows found"
 
-    from datetime import datetime
     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
     with open(inference_flag, 'w') as f:
         f.write(time_stamp + '\n')
