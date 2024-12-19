@@ -33,7 +33,8 @@
         - [on-inv-2_per_seq       @ 1k8_vid_entire_seq-aug-cls_eq-fbb/mid](#on_inv_2_per_seq___1k8_vid_entire_seq_aug_cls_eq_fbb_mi_d_)
     - [10k6_vid_entire_seq-aug-cls_eq-fbb       @ mid](#10k6_vid_entire_seq_aug_cls_eq_fbb___mi_d_)
         - [on-inv-2_per_seq       @ 10k6_vid_entire_seq-aug-cls_eq-fbb/mid](#on_inv_2_per_seq___10k6_vid_entire_seq_aug_cls_eq_fbb_mid_)
-    - [10k6_vid_entire_seq-aug-cls_eq-fbb-b72       @ mid](#10k6_vid_entire_seq_aug_cls_eq_fbb_b72___mi_d_)
+    - [10k6_vid_entire_seq-aug-cls_eq-fbb-b56       @ mid](#10k6_vid_entire_seq_aug_cls_eq_fbb_b56___mi_d_)
+        - [on-inv-2_per_seq       @ 10k6_vid_entire_seq-aug-cls_eq-fbb-b56/mid](#on_inv_2_per_seq___10k6_vid_entire_seq_aug_cls_eq_fbb_b56_mid_)
 
 <!-- /MarkdownTOC -->
 
@@ -164,6 +165,9 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 ### on-inv-2_per_seq       @ 10k6_vid_entire_seq-aug-cls_eq-fbb/mid-->p2s_vid-acamp
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_32-jtr-res_1280-fbb-cls_eq,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv_2_per_seq,vstrd-1,batch-4,save-vis-0,dbg-0,dyn-1
 
-<a id="10k6_vid_entire_seq_aug_cls_eq_fbb_b72___mi_d_"></a>
-## 10k6_vid_entire_seq-aug-cls_eq-fbb-b72       @ mid-->p2s_vid-acamp
-python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-72,dbg-0,dyn-1,dist-1,jtr,res-1280,fbb,cls_eq
+<a id="10k6_vid_entire_seq_aug_cls_eq_fbb_b56___mi_d_"></a>
+## 10k6_vid_entire_seq-aug-cls_eq-fbb-b56       @ mid-->p2s_vid-acamp
+python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-56,dbg-0,dyn-1,dist-1,jtr,res-1280,fbb,cls_eq
+<a id="on_inv_2_per_seq___10k6_vid_entire_seq_aug_cls_eq_fbb_b56_mid_"></a>
+### on-inv-2_per_seq       @ 10k6_vid_entire_seq-aug-cls_eq-fbb-b56/mid-->p2s_vid-acamp
+python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_64-jtr-res_1280-fbb-cls_eq,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv_2_per_seq,vstrd-1,batch-6,save-vis-0,dbg-0,dyn-1,dist-1
