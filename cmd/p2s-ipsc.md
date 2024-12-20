@@ -1,5 +1,7 @@
 <!-- MarkdownTOC -->
 
+- [vit_b-640](#vit_b_640_)
+    - [54_126-aug-fbb       @ vit_b-640](#54_126_aug_fbb___vit_b_64_0_)
 - [resnet-640](#resnet_64_0_)
     - [0_1       @ resnet-640](#0_1___resnet_640_)
         - [val-2_3       @ 0_1/resnet-640](#val_2_3___0_1_resnet_640_)
@@ -45,6 +47,12 @@
     - [g2_0_37       @ resnet_c4_1333](#g2_0_37___resnet_c4_1333_)
 
 <!-- /MarkdownTOC -->
+<a id="vit_b_640_"></a>
+# vit_b-640
+<a id="54_126_aug_fbb___vit_b_64_0_"></a>
+## 54_126-aug-fbb       @ vit_b-640-->p2s-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,vit_b-640,ipsc-54_126,batch-24,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280,fbb
+
 <a id="resnet_64_0_"></a>
 # resnet-640 
 <a id="0_1___resnet_640_"></a>
