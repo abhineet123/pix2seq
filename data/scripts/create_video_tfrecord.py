@@ -19,7 +19,7 @@ from data.scripts import tfrecord_lib
 from tasks.visualization import vis_utils
 from tasks import task_utils
 
-from eval_utils import col_bgr, show_labels
+from eval_utils import col_bgr, show_labels, resize_ar, draw_box
 
 
 class Params(paramparse.CFG):
@@ -173,6 +173,8 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
 
     z_gap = 2000
     title_font_size = 64
+    text_img_h, text_img_w = 1000, 600
+    vis_img_size = (1320, 1000)
 
     cols = (
         'green', 'red', 'purple',
@@ -225,7 +227,8 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
         first_fig = False
         view_params = get_camera_view(mlab)
 
-    # vid_len = len(file_paths)
+    vid_len = len(file_paths)
+
     # z = (vid_len - 1) * z_gap
     # containing_box = (
     #     (0, 0, 0), (0, h, 0), (w, h, 0), (w, 0, 0), (0, 0, 0),
@@ -238,7 +241,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
     # box_z = [k[2] for k in containing_box]
 
     # mlab.plot3d(box_x, box_y, box_z, color=(1, 1, 1), line_width=2.0, tube_radius=1.5)
-    text_img = np.full(((1000, 600, 3)), bkg_col, dtype=np.uint8)
+    text_img = np.full((text_img_h, text_img_w, 3), bkg_col, dtype=np.uint8)
 
     n_objs = len(obj_annotations)
 
@@ -288,6 +291,8 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
 
         show_img_rgb(frame, cu_z, mlab)
 
+        frames[frame_id] = frame
+
     # mlab.axes(figure=fig, color=frg_col_rgb,
     #           x_axis_visibility=True,
     #           y_axis_visibility=True,
@@ -313,17 +318,23 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
 
     text_x = text_y = 5
 
+    frame = np.copy(frames[0])
+
     for ann_id, ann in enumerate(obj_annotations):
         bboxes = ann['bboxes']
         col_id = ann_id % len(cols)
-        col = col_bgr[cols[col_id]]
+        col_str = cols[col_id]
+        col = col_bgr[col_str]
 
         prev_bbox = None
 
         col_rgb = to_rgb(col)
 
+
         for bbox_id, bbox in enumerate(bboxes):
             if bbox is not None:
+
+                draw_box(frame, box=bbox, color=col_str, thickness=3, xywh=True)
 
                 (x, y, width, height) = tuple(bbox)
                 xmin, ymin, xmax, ymax = int(x), int(y), int(x + width), int(y + height)
@@ -351,6 +362,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
                 prev_bbox = [xmin, ymin, xmax, ymax, cu_z]
 
                 bbox_txt = f'{int(xmin)}, {int(ymin)}, {int(xmax)}, {int(ymax)}, '
+
             else:
                 prev_bbox = None
                 bbox_txt = f'NA, NA, NA, NA, '
@@ -358,9 +370,15 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
             text_img, text_x, text_y = vis_utils.write_text(
                 text_img, bbox_txt, text_x, text_y, col, show=1, win_name=token_win_name)
 
+            if vid_len == 1:
+                cmb_frame = resize_ar(frame, height=text_img_h)
+                cmb_frame = np.concatenate((cmb_frame, text_img), axis=1)
+                cv2.imshow('cmb_frame', cmb_frame)
+
             k = cv2.waitKey(100)
             if k == 27:
                 sys.exit()
+
 
         class_id = int(ann['category_id'])
         class_name = id_to_name_map[class_id]

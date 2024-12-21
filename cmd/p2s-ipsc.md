@@ -1,7 +1,10 @@
 <!-- MarkdownTOC -->
 
 - [vit_b-640](#vit_b_640_)
+    - [16_53-aug-fbb       @ vit_b-640](#16_53_aug_fbb___vit_b_64_0_)
+        - [on-0_15       @ 16_53-aug-fbb/vit_b-640](#on_0_15___16_53_aug_fbb_vit_b_64_0_)
     - [54_126-aug-fbb       @ vit_b-640](#54_126_aug_fbb___vit_b_64_0_)
+        - [on-0_15       @ 54_126-aug-fbb/vit_b-640](#on_0_15___54_126_aug_fbb_vit_b_640_)
 - [resnet-640](#resnet_64_0_)
     - [0_1       @ resnet-640](#0_1___resnet_640_)
         - [val-2_3       @ 0_1/resnet-640](#val_2_3___0_1_resnet_640_)
@@ -49,9 +52,21 @@
 <!-- /MarkdownTOC -->
 <a id="vit_b_640_"></a>
 # vit_b-640
+<a id="16_53_aug_fbb___vit_b_64_0_"></a>
+## 16_53-aug-fbb       @ vit_b-640-->p2s-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,vit_b-640,ipsc-16_53,batch-4,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280,fbb
+<a id="on_0_15___16_53_aug_fbb_vit_b_64_0_"></a>
+### on-0_15       @ 16_53-aug-fbb/vit_b-640-->p2s-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-vit_b_640_ext_reorg_roi_g2-16_53-batch_4-jtr-res_1280-fbb,_eval_,ipsc-0_15,batch-2,save-vis-0,dbg-0,dyn-1,x99
+
+
 <a id="54_126_aug_fbb___vit_b_64_0_"></a>
 ## 54_126-aug-fbb       @ vit_b-640-->p2s-ipsc
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,vit_b-640,ipsc-54_126,batch-24,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280,fbb
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=train,vit_b-640,ipsc-54_126,batch-4,dbg-0,dyn-1,dist-0,pt-1,jtr,res-1280,fbb
+<a id="on_0_15___54_126_aug_fbb_vit_b_640_"></a>
+### on-0_15       @ 54_126-aug-fbb/vit_b-640-->p2s-ipsc
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py  --j5=m-vit_b_640_ext_reorg_roi_g2-54_126-batch_4-jtr-res_1280-fbb,_eval_,ipsc-0_15,batch-2,save-vis-0,dbg-0,dyn-1,x99
+
 
 <a id="resnet_64_0_"></a>
 # resnet-640 
