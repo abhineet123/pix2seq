@@ -177,11 +177,11 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
 
     # text_img_h, text_img_w = 1000, 600
     # cmb_concat_axis = 1
-    text_img_h, text_img_w = 100, 1200
+    text_img_h, text_img_w = 100, 1150
     cmb_concat_axis = 0
 
     vis_img_size = (1320, 1000)
-    txt_line_gap = 5
+    txt_line_gap = 10
     show_header = 0
 
     cols = (
@@ -378,15 +378,13 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
                 prev_bbox = None
                 bbox_txt = f'NA, NA, NA, NA, '
 
-            text_img, text_x, text_y, text_bb = vis_utils.write_text(
+            text_img, text_x, text_y, text_bbs = vis_utils.write_text(
                 text_img, bbox_txt, text_x, text_y, col, show=1, win_name=token_win_name,
-                bb=1, line_gap=txt_line_gap)
+                bb=2, line_gap=txt_line_gap)
 
             if vid_len == 1:
-                bb = (text_bb, bbox, col)
+                bb = (text_bbs, bbox, col)
                 bbs.append(bb)
-                cmb_frame = show_cmb(frame, text_img, arrow, [bb, ], cmb_concat_axis)
-                cv2.imwrite(f'log/{base_file_names[0]}_obj_{ann_id:03d}.png', cmb_frame)
 
             k = cv2.waitKey(100)
             if k == 27:
@@ -395,16 +393,23 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
         class_id = int(ann['category_id'])
         class_name = id_to_name_map[class_id]
 
-        text_img, text_x, text_y, text_bb = vis_utils.write_text(
+        text_img, text_x, text_y, text_bbs = vis_utils.write_text(
             text_img, f'{class_name}, ', text_x, text_y, col,
-            show=1, win_name=token_win_name, bb=1, line_gap=txt_line_gap)
+            show=1, win_name=token_win_name, bb=2, line_gap=txt_line_gap)
+
+        if vid_len == 1:
+            text_bbs_, bbox_, col_ = bbs[-1]
+            text_bbs_+= text_bbs
+            bbs[-1] = (text_bbs_, bbox_, col_)
+            cmb_frame = show_cmb(frame, text_img, arrow, [bbs[-1], ], cmb_concat_axis)
+            cv2.imwrite(f'log/{base_file_names[0]}_obj_{ann_id:03d}.png', cmb_frame)
 
         k = cv2.waitKey(500)
         if k == 27:
             sys.exit()
 
-    text_img, text_x, text_y, text_bb = vis_utils.write_text(
-        text_img, 'EOS', text_x, text_y, frg_col, show=1, win_name=token_win_name, bb=1,line_gap=txt_line_gap)
+    text_img, text_x, text_y, text_bbs = vis_utils.write_text(
+        text_img, 'EOS', text_x, text_y, frg_col, show=1, win_name=token_win_name, bb=2, line_gap=txt_line_gap)
     if vid_len == 1:
         cmb_frame = show_cmb(frame, text_img, arrow, bbs, cmb_concat_axis)
         cv2.imwrite(f'log/{base_file_names[0]}.png', cmb_frame)
@@ -428,14 +433,23 @@ def show_cmb(frame, text_img, arrow, bbs, axis):
         cmb_frame = np.concatenate((text_img, vis_frame), axis=0)
 
     if arrow:
-        for text_bb, bb, col in bbs:
-            left, top, right, bottom = text_bb
+        for text_bbs, bb, col in bbs:
+
+            left1, top1, right1, bottom1 = text_bbs[0]
+            left2, top2, right2, bottom2 = text_bbs[-1]
+
+            text_bb_x, text_bb_y = int((left1 + right2) / 2), int(bottom1)
+
+            # if top1 == top2:
+            #     text_bb_x, text_bb_y = int((left1 + right2) / 2), int(bottom1)
+            # else:
+            #     text_bb_x, text_bb_y = int((left1 + right1) / 2), int(bottom1)
+
             (x, y, width, height) = tuple(bb)
             # bb_x, bb_y = int(x + width / 2), int(y if axis == 1 else y + height)
             # text_bb_x, text_bb_y = int((left + right) / 2), int(bottom if axis == 1 else top)
 
             bb_x, bb_y = int(x + width / 2), int(y)
-            text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
 
             """vis_frame has been resized"""
             bb_x = int(bb_x * resize_factor + start_col)

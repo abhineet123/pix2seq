@@ -114,7 +114,7 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
         # left, top, right, bottom = text_bb
         # left, top, right, bottom = 5, top + textheight, right - left + 5, bottom + textheight
         # text_bb = (left, top, right, bottom)
-        return img_np, x_, y_, text_bbs[-1]
+        return img_np, x_, y_, text_bbs[-1] if bb==1 else text_bbs
 
     return img_np, x_, y_
 
