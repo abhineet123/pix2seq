@@ -330,7 +330,7 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:rot-15_345_4:s
 ### p-640-aug       @ r-640/54_126-->tf_seg-ipsc
 <a id="lac_2d_sub_2___p_640_aug_r_640_54_126_"></a>
 #### lac-2d-sub-2       @ p-640-aug/r-640/54_126-->tf_seg-ipsc
-python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:r-640:sub-2:rot-15_345_4:flip-1:lac:2d:json
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:r-640:sub-2:rot-15_345_4:flip-1:lac:2d
 
 <a id="p_640___r_640_54_126_"></a>
 ### p-640       @ r-640/54_126-->tf_seg-ipsc

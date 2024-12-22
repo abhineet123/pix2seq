@@ -52,6 +52,7 @@ class Params(paramparse.CFG):
 
         self.vis = 0
         self.show_mask = 0
+        self.arrow = 1
 
 
 def save_dict_to_json(json_dict, json_path, label='ytvis annotations'):
@@ -159,7 +160,7 @@ def set_camera_view(mlab, params_dict):
     # roll = mlab.roll()
 
 
-def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to_col, fig, show_mask):
+def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to_col, fig, show_mask, arrow):
     from mayavi import mlab
 
     file_ids = video['file_ids']
@@ -173,15 +174,22 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
 
     z_gap = 2000
     title_font_size = 64
-    text_img_h, text_img_w = 1000, 600
+
+    # text_img_h, text_img_w = 1000, 600
+    # cmb_concat_axis = 1
+    text_img_h, text_img_w = 100, 1200
+    cmb_concat_axis = 0
+
     vis_img_size = (1320, 1000)
+    txt_line_gap = 5
+    show_header = 0
 
     cols = (
         'green', 'red', 'purple',
-        'yellow', 'forest_green', 'cyan',
-        'magenta', 'deep_sky_blue', 'orange',
-        'maroon', 'peach_puff', 'dark_orange',
-        'slate_gray', 'pale_turquoise', 'green_yellow',
+        'yellow', 'slate_gray', 'cyan',
+        'magenta', 'peach_puff', 'orange',
+        'maroon', 'deep_sky_blue', 'dark_orange',
+        'forest_green', 'pale_turquoise', 'green_yellow',
     )
     if show_mask:
         cols = [col for col in cols if col not in class_id_to_col.values()]
@@ -211,7 +219,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
     if fig is None:
         fig = mlab.figure(
             'Video Clip',
-            size=(1320, 1000),
+            size=vis_img_size,
             bgcolor=bkg_col_rgb
         )
         first_fig = True
@@ -270,12 +278,6 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
     for frame_id, frame in enumerate(frames):
         cu_z = (frame_id + 1) * z_gap
 
-        file_id = int(file_ids[frame_id])
-        file_name = base_file_names[frame_id]
-        # mlab.text(w/2, 0, file_name, z=cu_z, figure=fig, color=frg_col_rgb, line_width=1.0)
-        obj_txt = "object" if n_objs == 1 else "objects"
-        file_txt = f'frame {file_id + 1}: {file_name} :: {n_objs} {obj_txt}'
-
         if show_mask:
             opacity = 0.25
             seg_mask = masks[frame_id]
@@ -285,9 +287,15 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
                 seg_mask_binary = seg_mask == class_id
                 frame[seg_mask_binary] = (frame[seg_mask_binary] * (1. - opacity) +
                                           np.asarray(class_col_bgr) * opacity)
+        file_id = int(file_ids[frame_id])
+        file_name = base_file_names[frame_id]
 
-        frame, _, _ = vis_utils.write_text(frame, file_txt, 5, 5, frg_col, font_size=title_font_size)
-        # show_labels(frame, curr_obj_ids, curr_obj_cols)
+        if show_header:
+            # mlab.text(w/2, 0, file_name, z=cu_z, figure=fig, color=frg_col_rgb, line_width=1.0)
+            obj_txt = "object" if n_objs == 1 else "objects"
+            file_txt = f'frame {file_id + 1}: {file_name} :: {n_objs} {obj_txt}'
+            frame, _, _ = vis_utils.write_text(frame, file_txt, 5, 5, frg_col, font_size=title_font_size)
+            # show_labels(frame, curr_obj_ids, curr_obj_cols)
 
         show_img_rgb(frame, cu_z, mlab)
 
@@ -319,6 +327,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
     text_x = text_y = 5
 
     frame = np.copy(frames[0])
+    bbs = []
 
     for ann_id, ann in enumerate(obj_annotations):
         bboxes = ann['bboxes']
@@ -330,8 +339,10 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
 
         col_rgb = to_rgb(col)
 
-
         for bbox_id, bbox in enumerate(bboxes):
+            if vid_len == 1:
+                assert bbox is not None, "bbox cannot be None for static frames"
+
             if bbox is not None:
 
                 draw_box(frame, box=bbox, color=col_str, thickness=3, xywh=True)
@@ -367,37 +378,84 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
                 prev_bbox = None
                 bbox_txt = f'NA, NA, NA, NA, '
 
-            text_img, text_x, text_y = vis_utils.write_text(
-                text_img, bbox_txt, text_x, text_y, col, show=1, win_name=token_win_name)
+            text_img, text_x, text_y, text_bb = vis_utils.write_text(
+                text_img, bbox_txt, text_x, text_y, col, show=1, win_name=token_win_name,
+                bb=1, line_gap=txt_line_gap)
 
             if vid_len == 1:
-                cmb_frame = resize_ar(frame, height=text_img_h)
-                cmb_frame = np.concatenate((cmb_frame, text_img), axis=1)
-                cv2.imshow('cmb_frame', cmb_frame)
+                bb = (text_bb, bbox, col)
+                bbs.append(bb)
+                cmb_frame = show_cmb(frame, text_img, arrow, [bb, ], cmb_concat_axis)
+                cv2.imwrite(f'log/{base_file_names[0]}_obj_{ann_id:03d}.png', cmb_frame)
 
             k = cv2.waitKey(100)
             if k == 27:
                 sys.exit()
 
-
         class_id = int(ann['category_id'])
         class_name = id_to_name_map[class_id]
 
-        text_img, text_x, text_y = vis_utils.write_text(text_img, f'{class_name}, ', text_x, text_y, col,
-                                                        show=1, win_name=token_win_name)
+        text_img, text_x, text_y, text_bb = vis_utils.write_text(
+            text_img, f'{class_name}, ', text_x, text_y, col,
+            show=1, win_name=token_win_name, bb=1, line_gap=txt_line_gap)
 
         k = cv2.waitKey(500)
         if k == 27:
             sys.exit()
 
-    text_img, text_x, text_y = vis_utils.write_text(text_img, 'EOS', text_x, text_y, frg_col,
-                                                    show=1, win_name=token_win_name)
+    text_img, text_x, text_y, text_bb = vis_utils.write_text(
+        text_img, 'EOS', text_x, text_y, frg_col, show=1, win_name=token_win_name, bb=1,line_gap=txt_line_gap)
+    if vid_len == 1:
+        cmb_frame = show_cmb(frame, text_img, arrow, bbs, cmb_concat_axis)
+        cv2.imwrite(f'log/{base_file_names[0]}.png', cmb_frame)
 
     k = cv2.waitKey(0)
     if k == 27:
         sys.exit()
 
     return fig
+
+
+def show_cmb(frame, text_img, arrow, bbs, axis):
+    if axis == 1:
+        vis_frame, resize_factor, start_row, start_col = resize_ar(
+            frame, height=text_img.shape[0], return_factors=1)
+        cmb_frame = np.concatenate((vis_frame, text_img), axis=1)
+
+    else:
+        vis_frame, resize_factor, start_row, start_col = resize_ar(
+            frame, width=text_img.shape[1], return_factors=1)
+        cmb_frame = np.concatenate((text_img, vis_frame), axis=0)
+
+    if arrow:
+        for text_bb, bb, col in bbs:
+            left, top, right, bottom = text_bb
+            (x, y, width, height) = tuple(bb)
+            # bb_x, bb_y = int(x + width / 2), int(y if axis == 1 else y + height)
+            # text_bb_x, text_bb_y = int((left + right) / 2), int(bottom if axis == 1 else top)
+
+            bb_x, bb_y = int(x + width / 2), int(y)
+            text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
+
+            """vis_frame has been resized"""
+            bb_x = int(bb_x * resize_factor + start_col)
+            bb_y = int(bb_y * resize_factor + start_row)
+
+            if axis == 1:
+                """text_img is to the right of vis_frame"""
+                text_bb_x += int(vis_frame.shape[1])
+            else:
+                """text_img is above vis_frame"""
+                bb_y += int(text_img.shape[0])
+
+            cmb_frame = cv2.arrowedLine(
+                cmb_frame,
+                (text_bb_x, text_bb_y),
+                (bb_x, bb_y),
+                col, 2, tipLength=0.02)
+
+    cv2.imshow('cmb_frame', cmb_frame)
+    return cmb_frame
 
 
 def ytvis_annotations_to_lists(obj_annotations: dict, id_to_name_map: dict, vid_len: int):
@@ -524,7 +582,7 @@ def generate_video_annotations(
         if params.vis == 2:
             fig = show_vid_objs(
                 video, image_dir, object_anns, category_id_to_name_map,
-                class_id_to_col, fig, params.show_mask)
+                class_id_to_col, fig, params.show_mask, params.arrow)
         else:
             yield (
                 video,

@@ -47,3 +47,6 @@ cscope*
 gitu.bat
 gitu.sh
 
+*.sublime-project
+*.sublime-workspace
+*.code-workspace

@@ -114,6 +114,7 @@ update driver:
 ```
 ubuntu-drivers devices
 sudo apt install nvidia-driver-535
+sudo apt install nvidia-driver-560
 ```
 
 CUDA 12.2:
