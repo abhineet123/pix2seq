@@ -8,7 +8,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import numpy as np
+
 import PIL.ImageColor as ImageColor
+from PIL import Image, ImageDraw, ImageFont
+import math
 
 import cv2
 import skvideo.io
@@ -57,39 +60,100 @@ STANDARD_COLORS = [
     'WhiteSmoke', 'Yellow', 'YellowGreen'
 ]
 
-from PIL import Image, ImageDraw, ImageFont
+
+def arrowed_line(im, ptA, ptB, width=1, color=(0, 255, 0)):
+    """Draw line from ptA to ptB with arrowhead at ptB"""
+    im = Image.fromarray(im)
+    # Get drawing context
+    draw = ImageDraw.Draw(im)
+    # Draw the line without arrows
+    draw.line((ptA, ptB), width=width, fill=color)
+
+    # Now work out the arrowhead
+    # = it will be a triangle with one vertex at ptB
+    # - it will start at 95% of the length of the line
+    # - it will extend 8 pixels either side of the line
+    x0, y0 = ptA
+    x1, y1 = ptB
+    # Now we can work out the x,y coordinates of the bottom of the arrowhead triangle
+    xb = 0.95 * (x1 - x0) + x0
+    yb = 0.95 * (y1 - y0) + y0
+
+    # Work out the other two vertices of the triangle
+    # Check if line is vertical
+    if x0 == x1:
+        vtx0 = (xb - 5, yb)
+        vtx1 = (xb + 5, yb)
+    # Check if line is horizontal
+    elif y0 == y1:
+        vtx0 = (xb, yb + 5)
+        vtx1 = (xb, yb - 5)
+    else:
+        alpha = math.atan2(y1 - y0, x1 - x0) - 90 * math.pi / 180
+        a = 8 * math.cos(alpha)
+        b = 8 * math.sin(alpha)
+        vtx0 = (xb + a, yb + b)
+        vtx1 = (xb - a, yb - b)
+
+    # draw.point((xb,yb), fill=(255,0,0))    # DEBUG: draw point of base in red - comment out draw.polygon() below if
+    # using this line
+    # im.save('DEBUG-base.png')              # DEBUG: save
+
+    # Now draw the arrowhead triangle
+    draw.polygon([vtx0, vtx1, ptB], fill=color)
+    im_np = np.array(im)
+    return im_np
 
 
 def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, bb=0, sep=', ',
-               win_name='text img', line_gap=5):
+               win_name='text img', line_gap=5, allow_linebreak=True):
     image = Image.fromarray(img_np)
-    width, height = image.size
-    draw = ImageDraw.Draw(image)
-    font = ImageFont.load_default(font_size)
+    img_w, img_h = image.size
+    # font = ImageFont.load_default(font_size)
+    font = ImageFont.truetype("times.ttf", font_size)
     # font = ImageFont.truetype("arial.ttf", font_size)
     # font = ImageFont.truetype("sans-serif.ttf", font_size)
 
     textheight = font_size
+    draw = ImageDraw.Draw(image)
 
     words = [k for k in text.split(sep) if k]
-
     x_, y_ = x, y
-    line_change = False
     text_bbs = []
+    if not allow_linebreak:
+        # temp_image = np.copy(image)
+        # temp_draw = ImageDraw.Draw(temp_image)
+
+        for word_id, word in enumerate(words):
+            if word_id < len(words) - 1 or text.endswith(sep):
+                word = f'{word}{sep}'
+
+            left, top, right, bottom = draw.textbbox((x_, y_,), word, font=font)
+            if right >= img_w:
+                x_ = 5
+                y_ = y + textheight + line_gap
+                break
+            textwidth = draw.textlength(word, font=font)
+            x_ += textwidth
+        else:
+            x_, y_ = x, y
+
     for word_id, word in enumerate(words):
+        multi_line = False
+
         if word_id < len(words) - 1 or text.endswith(sep):
             word = f'{word}{sep}'
 
         # textwidth = draw.textlength(word, font=font)
         left, top, right, bottom = draw.textbbox((x_, y_,), word, font=font)
-        if right >= width:
+        if right >= img_w:
             x_ = 5
-            if bottom >= height - textheight:
+            if bottom >= img_h - textheight:
                 y_ = 5
                 image.paste((0, 0, 0), (0, 0, image.size[0], image.size[1]))
             else:
                 y_ += textheight + line_gap
-            line_change = True
+            multi_line = True
 
         # _, _, textwidth, textheight = draw.textbbox((0, 0), text=text, font=font)
 
@@ -99,7 +163,7 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
 
         textwidth = draw.textlength(word, font=font)
 
-        text_bbs.append(text_bb)
+        text_bbs.append(list(text_bb) + [multi_line, ])
 
         x_ += textwidth
 
@@ -114,7 +178,7 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
         # left, top, right, bottom = text_bb
         # left, top, right, bottom = 5, top + textheight, right - left + 5, bottom + textheight
         # text_bb = (left, top, right, bottom)
-        return img_np, x_, y_, text_bbs[-1] if bb==1 else text_bbs
+        return img_np, x_, y_, text_bbs[-1] if bb == 1 else text_bbs
 
     return img_np, x_, y_
 
@@ -1463,7 +1527,7 @@ def visualize_boxes_and_labels_on_image_array(
             #                                             len(STANDARD_COLORS)]
             else:
                 box_id_to_color[box_id] = STANDARD_COLORS[classes[box_id] %
-                                                        len(STANDARD_COLORS)]
+                                                          len(STANDARD_COLORS)]
         box_id_to_display_str[box_id].append(display_str)
 
     seq_id = 'generic'
@@ -1541,7 +1605,6 @@ def visualize_boxes_and_labels_on_image_array(
                    unpadded_size=unpadded_size, orig_size=orig_size)
 
         return image
-
 
 
 def visualize_image(config, examples, logits, tokens, label, category_names, mask, vis_out_dir):
@@ -1834,7 +1897,7 @@ def visualize_boxes_and_labels_on_video(
             box_id_to_color[box_id] = 'DarkOrange'
         else:
             box_id_to_color[box_id] = STANDARD_COLORS[classes[box_id] %
-                                                    len(STANDARD_COLORS)]
+                                                      len(STANDARD_COLORS)]
     video_vis = None
 
     if return_vis and out_vis_dir:
@@ -1902,6 +1965,7 @@ def visualize_boxes_and_labels_on_video(
     if return_vis and out_vis_dir is not None:
         video_vis = np.stack(video_vis, axis=0)
         return video_vis
+
 
 def add_cdf_image_summary(values, name):
     """Adds a tf.summary.image for a CDF plot of the values.

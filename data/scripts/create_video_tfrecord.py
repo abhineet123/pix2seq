@@ -4,6 +4,7 @@ import sys
 import pickle
 
 import cv2
+import math
 import numpy as np
 
 dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
@@ -174,28 +175,44 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
 
     z_gap = 2000
     title_font_size = 64
+    txt_font_size = 75
+    allow_linebreak = 0
 
     # text_img_h, text_img_w = 1000, 600
     # cmb_concat_axis = 1
-    text_img_h, text_img_w = 100, 1150
+    text_img_h, text_img_w = 100, 5100
     cmb_concat_axis = 0
 
     vis_img_size = (1320, 1000)
-    txt_line_gap = 10
+    txt_line_gap = 20
     show_header = 0
+    white_bkg = 0
+    only_border = 1
 
-    cols = (
-        'green', 'red', 'purple',
-        'yellow', 'slate_gray', 'cyan',
-        'magenta', 'peach_puff', 'orange',
-        'maroon', 'deep_sky_blue', 'dark_orange',
-        'forest_green', 'pale_turquoise', 'green_yellow',
-    )
+    if white_bkg:
+        cols = (
+            'green', 'red',
+            'purple',
+            'dark_orange', 'peach_puff_4', 'deep_sky_blue',
+            'magenta', 'blue', 'orange',
+            'maroon', 'slate_gray', 'dark_orange',
+            'forest_green', 'cyan', 'green_yellow',
+        )
+    else:
+        cols = (
+            'green', 'red', 'medium_purple',
+            'yellow', 'peach_puff', 'cyan',
+            'magenta', 'dark_orange',
+            'maroon', 'slate_gray',
+            'orange',
+            'deep_sky_blue',
+            'forest_green', 'pale_turquoise', 'green_yellow',
+        )
+
     if show_mask:
         cols = [col for col in cols if col not in class_id_to_col.values()]
 
-    bkg_col = 'black'
-    # bkg_col = 'white'
+    bkg_col = 'white' if white_bkg else 'black'
     frg_col = 'white' if bkg_col == 'black' else 'black'
     token_win_name = 'Token Sequence'
 
@@ -214,7 +231,13 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
                            for file_path in file_paths]
         masks = [np.asarray(Image.open(file_path)) for file_path in mask_file_paths]
 
-    h, w = frames[0].shape[:2]
+    img_h, img_w = frames[0].shape[:2]
+
+    if text_img_w <= 0:
+        text_img_w = img_w
+
+    if text_img_h <= 0:
+        text_img_h = img_h
 
     if fig is None:
         fig = mlab.figure(
@@ -380,7 +403,7 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
 
             text_img, text_x, text_y, text_bbs = vis_utils.write_text(
                 text_img, bbox_txt, text_x, text_y, col, show=1, win_name=token_win_name,
-                bb=2, line_gap=txt_line_gap)
+                bb=2, line_gap=txt_line_gap, font_size=txt_font_size, allow_linebreak=allow_linebreak)
 
             if vid_len == 1:
                 bb = (text_bbs, bbox, col)
@@ -395,13 +418,14 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
 
         text_img, text_x, text_y, text_bbs = vis_utils.write_text(
             text_img, f'{class_name}, ', text_x, text_y, col,
-            show=1, win_name=token_win_name, bb=2, line_gap=txt_line_gap)
+            show=1, win_name=token_win_name, bb=2, line_gap=txt_line_gap,
+            font_size=txt_font_size, allow_linebreak=allow_linebreak)
 
         if vid_len == 1:
             text_bbs_, bbox_, col_ = bbs[-1]
-            text_bbs_+= text_bbs
+            text_bbs_ += text_bbs
             bbs[-1] = (text_bbs_, bbox_, col_)
-            cmb_frame = show_cmb(frame, text_img, arrow, [bbs[-1], ], cmb_concat_axis)
+            cmb_frame = show_cmb(frame, text_img, arrow, [bbs[-1], ], cmb_concat_axis, white_bkg, only_border)
             cv2.imwrite(f'log/{base_file_names[0]}_obj_{ann_id:03d}.png', cmb_frame)
 
         k = cv2.waitKey(500)
@@ -409,10 +433,11 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
             sys.exit()
 
     text_img, text_x, text_y, text_bbs = vis_utils.write_text(
-        text_img, 'EOS', text_x, text_y, frg_col, show=1, win_name=token_win_name, bb=2, line_gap=txt_line_gap)
+        text_img, 'EOS', text_x, text_y, frg_col, show=1, win_name=token_win_name,
+        bb=2, line_gap=txt_line_gap, font_size=txt_font_size, allow_linebreak=allow_linebreak)
     if vid_len == 1:
-        cmb_frame = show_cmb(frame, text_img, arrow, bbs, cmb_concat_axis)
-        cv2.imwrite(f'log/{base_file_names[0]}.png', cmb_frame)
+        cmb_frame = show_cmb(frame, text_img, arrow, bbs, cmb_concat_axis, white_bkg, only_border)
+        cv2.imwrite(f'log/static_det_token_vis.png', cmb_frame)
 
     k = cv2.waitKey(0)
     if k == 27:
@@ -421,24 +446,36 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
     return fig
 
 
-def show_cmb(frame, text_img, arrow, bbs, axis):
+def show_cmb(frame, text_img, arrow, bbs, axis, white_bkg, only_border):
     if axis == 1:
         vis_frame, resize_factor, start_row, start_col = resize_ar(
-            frame, height=text_img.shape[0], return_factors=1)
+            frame, height=text_img.shape[0], return_factors=1, only_border=only_border,
+            white_bkg=white_bkg)
         cmb_frame = np.concatenate((vis_frame, text_img), axis=1)
 
     else:
         vis_frame, resize_factor, start_row, start_col = resize_ar(
-            frame, width=text_img.shape[1], return_factors=1)
+            frame, width=text_img.shape[1], return_factors=1, only_border=only_border,
+            white_bkg=white_bkg)
         cmb_frame = np.concatenate((text_img, vis_frame), axis=0)
 
     if arrow:
+
         for text_bbs, bb, col in bbs:
+            n_words = len(text_bbs)
 
-            left1, top1, right1, bottom1 = text_bbs[0]
-            left2, top2, right2, bottom2 = text_bbs[-1]
+            multi_line_ids = [_id for _id, text_bb in enumerate(text_bbs) if text_bb[-1]]
+            id1, id2 = 0, -1
+            if multi_line_ids:
+                if multi_line_ids[0] >= n_words // 2:
+                    id1 = multi_line_ids[0]
+                else:
+                    id2 = multi_line_ids[0] - 1
 
+            left1, top1, right1, bottom1, _ = text_bbs[id1]
+            left2, top2, right2, bottom2, _ = text_bbs[id2]
             text_bb_x, text_bb_y = int((left1 + right2) / 2), int(bottom1)
+            text_bb_y += 10
 
             # if top1 == top2:
             #     text_bb_x, text_bb_y = int((left1 + right2) / 2), int(bottom1)
@@ -446,29 +483,54 @@ def show_cmb(frame, text_img, arrow, bbs, axis):
             #     text_bb_x, text_bb_y = int((left1 + right1) / 2), int(bottom1)
 
             (x, y, width, height) = tuple(bb)
-            # bb_x, bb_y = int(x + width / 2), int(y if axis == 1 else y + height)
-            # text_bb_x, text_bb_y = int((left + right) / 2), int(bottom if axis == 1 else top)
-
-            bb_x, bb_y = int(x + width / 2), int(y)
 
             """vis_frame has been resized"""
-            bb_x = int(bb_x * resize_factor + start_col)
-            bb_y = int(bb_y * resize_factor + start_row)
+            x = int(x * resize_factor + start_col)
+            y = int(y * resize_factor + start_row)
+            width = int(width * resize_factor)
+            height = int(height * resize_factor)
 
             if axis == 1:
                 """text_img is to the right of vis_frame"""
                 text_bb_x += int(vis_frame.shape[1])
             else:
                 """text_img is above vis_frame"""
-                bb_y += int(text_img.shape[0])
+                y += int(text_img.shape[0])
+
+            bb_pts = [
+                (x, y),
+                (x + width, y),
+                (x + width, y + height),
+                (x, y + height),
+                # (x + width / 2, y),
+            ]
+            bb_dists = np.asarray([
+               math.sqrt( (bb_x - text_bb_x) ** 2 + (bb_y - text_bb_y) ** 2)
+                for (bb_x, bb_y) in bb_pts])
+            nearest_pt_id = np.argmin(bb_dists)
+
+            # bb_x, bb_y = int(x + width / 2), int(y if axis == 1 else y + height)
+            # text_bb_x, text_bb_y = int((left + right) / 2), int(bottom if axis == 1 else top)
+
+            bb_x, bb_y = bb_pts[nearest_pt_id]
+            # bb_x, bb_y = int(x + width / 2), int(y)
+            # bb_y -= 5
 
             cmb_frame = cv2.arrowedLine(
                 cmb_frame,
-                (text_bb_x, text_bb_y),
                 (bb_x, bb_y),
+                (text_bb_x, text_bb_y),
                 col, 2, tipLength=0.02)
 
+            # cmb_frame = vis_utils.arrowed_line(
+            #     cmb_frame,
+            #     (bb_x, bb_y),
+            #     (text_bb_x, text_bb_y),
+            #     width=2,
+            #     color=col)
+
     cv2.imshow('cmb_frame', cmb_frame)
+    cv2.waitKey(1)
     return cmb_frame
 
 

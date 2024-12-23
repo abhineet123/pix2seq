@@ -1061,7 +1061,7 @@ def vis_run(start, length, class_id, run_txt,
     run_x += vis_size
     seg_rle_vis = np.concatenate((vis_image_, vis_mask_), axis=1)
 
-    left, top, right, bottom = text_bb
+    left, top, right, bottom, multiline = text_bb
     text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
     """text_img is to the right of vis_mask_"""
     text_bb_x += int(vis_size * 2)
@@ -1136,7 +1136,7 @@ def vis_video_run_txt(img_to_run_pixs, run_txt, vid_mask_vis, vid_vis,
     vis_image_cat = concat_with_boder(vis_image_cat, text_img_vis, 1, 1)
 
     if arrow:
-        left, top, right, bottom = text_bb
+        left, top, right, bottom, multiline = text_bb
         text_bb_x, text_bb_y = int((left + right) / 2), int(bottom)
         """text_img is to the right of vid_vis_ and vid_masks_vis_"""
         text_bb_x += int(vis_size * vid_len)

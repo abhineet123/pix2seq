@@ -1,4 +1,4 @@
-# Pix2Seq codebase: multi-tasks with generative modeling
+# P2S-Video: Extension of Pix2Seq for Video Detection and Segmentation
 
 This is the official implementation of Pix2Seq in Tensorflow 2 with efficient TPUs/GPUs support.
 **The original Pix2Seq code aims to be a general framework that turns RGB pixels into semantically meaningful sequences**. We now extend it to be a generic codebase, with task-centric organization that supports different tasks as well as their combination, using generative modeling (**both autoregressive and diffusion models**, see below).
@@ -10,20 +10,20 @@ This is the official implementation of Pix2Seq in Tensorflow 2 with efficient TP
   An illustration of Pix2Seq for object detection (from <a href="https://ai.googleblog.com/2022/04/pix2seq-new-language-interface-for.html">our Google AI blog post</a>).
 </div>
 
-## (<span style="color:red">NEW!</span>) FitTransformer (FIT)
+## (<span_style="color:red">NEW!</span>)_FitTransformer_(FIT)       @ P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 We added (official) implementations of [FitTransformer (FIT)](https://arxiv.org/abs/2305.12689) (as an encoder, a diffusion decoder, or an autoregressive decoder) see architectures/transformers.py.
 
-## (<span style="color:red">NEW!</span>) Diffusion models
+## (<span_style="color:red">NEW!</span>)_Diffusion_models       @ P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 We added (official) implementations of diffusion models (such as Bit Diffusion, RIN, see references below) built on top of the original Pix2Seq codebase and they can be found in tasks/, models/, and architectures/.
 
 Please note that we have not yet added proper documentations on training these models.
 
-## Models
+## Models       @ P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 <a href="https://colab.research.google.com/github/google-research/pix2seq/blob/master/colabs/pix2seq_inference_object_detection.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-### Objects365 object detection pretrained checkpoints
+### Objects365_object_detection_pretrained_checkpoints       @ Models/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 Backbone       | Total params (M) | Image size | Google cloud storage location
 -------------: | ---------------: | ---------: | -----------:
@@ -33,7 +33,7 @@ ViT-B          | 115.2            | 640x640    | [gs://pix2seq/obj365_pretrain/v
 ViT-L          | 341.2            | 640x640    | [gs://pix2seq/obj365_pretrain/vit_l_640x640_b256_s400k](https://console.cloud.google.com/storage/browser/pix2seq/obj365_pretrain/vit_l_640x640_b256_s400k)
 
 
-### COCO object detection fine-tuned checkpoints
+### COCO_object_detection_fine-tuned_checkpoints       @ Models/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 Backbone       | Total params (M) | Image size | COCO AP   | Google cloud storage location
 -------------: | ---------------: | ---------: | --------: | -----------:
@@ -50,7 +50,7 @@ ViT-L          | 341.2            | 640x640    | 47.6      | [gs://pix2seq/coco_
 ViT-L          | 341.2            | 1024x1024  | 49.2      | [gs://pix2seq/coco_det_finetune/vit_l_1024x1024](https://console.cloud.google.com/storage/browser/pix2seq/coco_det_finetune/vit_l_1024x1024)
 ViT-L          | 341.2            | 1333x1333  | 50.0      | [gs://pix2seq/coco_det_finetune/vit_l_1333x1333](https://console.cloud.google.com/storage/browser/pix2seq/coco_det_finetune/vit_l_1333x1333)
 
-### Multitask checkpoints
+### Multitask_checkpoints       @ Models/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 Jointly fine-tuned on coco object detection, instance segmentation, captioning and keypoint detection.
 
 Backbone       | Total params (M) | Image size | COCO AP   | Google cloud storage location
@@ -58,14 +58,14 @@ Backbone       | Total params (M) | Image size | COCO AP   | Google cloud storag
 ViT-B          | 115.2            | 640x640    | 44.2      | [gs://pix2seq/multi_task/ckpt/vit_b_640x640](https://console.cloud.google.com/storage/browser/pix2seq/multi_task/ckpt/vit_b_640x640)
 ViT-B          | 115.2            | 1024x1024  | 46.5      | [gs://pix2seq/multi_task/ckpt/vit_b_1024x1024](https://console.cloud.google.com/storage/browser/pix2seq/multi_task/ckpt/vit_b_1024x1024)
 
-## Usage
+## Usage       @ P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
-### Colabs
+### Colabs       @ Usage/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 See [colabs](colabs) for inference and fine-tuning demos. Give [it](https://colab.research.google.com/github/google-research/pix2seq/blob/master/colabs/pix2seq_inference_object_detection.ipynb) a try!
 
 
-### Basic setup before running the code
+### Basic_setup_before_running_the_code       @ Usage/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 The following setup is required before running the code.
 
@@ -90,7 +90,7 @@ wget https://storage.googleapis.com/pix2seq/multi_task/data/coco/json/person_key
 
 (Optional) If training fails at the start (due to NcclAllReduce error), try a different `cross_device_ops` for `tf.distribute.MirroredStrategy` in utils.py:build_strategy function.
 
-### Instructions for training (fine-tuning) of object detection models.
+### Instructions_for_training_(fine-tuning)_of_object_detection_models.       @ Usage/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 Below is the instruction for starting a training job, where we've set up a configuration mainly for fine-tuning the objects365 pretrained models.
 
@@ -102,7 +102,7 @@ Step 2: run `python3 run.py --mode=train --model_dir=/tmp/model_dir --config=con
 
 (Optional) Set `--run_eagerly=True` for interactive debugging (which will be slower).
 
-### Instructions for evaluation of object detection models.
+### Instructions_for_evaluation_of_object_detection_models.       @ Usage/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 Below is the instruction for starting an evaluation job, which monitors the specified directory and perform (continuous) evaluation of the latest and un-evaluated checkpoints. It can be started in parallel to or after the training.
 
@@ -112,11 +112,11 @@ Step 2: run `python3 run.py --mode=eval --model_dir=/tmp/model_dir --config=conf
 
 (Optional) Setup tensorboard for eval curves and detection visualizations with `tensorboard --logdir=/tmp/model_dir`.
 
-### Instructions for evaluation of multi-task models.
+### Instructions_for_evaluation_of_multi-task_models.       @ Usage/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 In `configs/config_multi_task.py` uncomment the line with `checkpoint_dir=get_multi_task_checkpoint_dir(...)`.
 To evaluate for image size `1024x1024` update `image_size` in the config.
 
-#### Object detection
+#### Object_detection       @ Instructions_for_evaluation_of_multi-task_models./Usage/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 ```
 config=configs/config_multi_task.py:object_detection@coco/2017_object_detection,vit-b
@@ -133,7 +133,7 @@ box_tfrecords=/tmp/boxes
 python3 data/scripts/merge_coco_json_tfrecord.py --tfrecord_path=gs://pix2seq/multi_task/data/coco/tfrecord/val* --annotation_path=$boxes_json_path  --output_dir=$box_tfrecords
 ```
 
-#### Instance segmentation
+#### Instance_segmentation       @ Instructions_for_evaluation_of_multi-task_models./Usage/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 ```
 config=configs/config_multi_task.py:instance_segmentation@coco/2017_instance_segmentation,vit-b
@@ -145,7 +145,7 @@ model_dir=/tmp/pix2seq_eval_ins
 python3 run.py --config=$config --model_dir=$model_dir --mode=eval --config.dataset.val_file_pattern=$val_file_pattern --config.task.ensemble_num_samples=$num_samples
 ```
 
-#### Keypoint detection
+#### Keypoint_detection       @ Instructions_for_evaluation_of_multi-task_models./Usage/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 ```
 config="configs/config_multi_task.py:keypoint_detection@coco/2017_keypoint_detection,vit-b"
 val_file_pattern=gs://pix2seq/multi_task/data/coco/det_boxes/vit_b_640x640/*.tfrecord
@@ -154,7 +154,7 @@ model_dir=/tmp/pix2seq_eval_key
 python3 run.py --config=$config --model_dir=$model_dir --mode=eval --config.dataset.val_file_pattern=$val_file_pattern
 ```
 
-#### Captioning
+#### Captioning       @ Instructions_for_evaluation_of_multi-task_models./Usage/P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 ```
 config=configs/config_multi_task.py:captioning@coco/2017_captioning,vit-b
 model_dir=/tmp/pix2seq_eval_cap
@@ -165,7 +165,7 @@ For captioning, the generated captions are written to `$model_dir/coco_result_{s
 
 Note: You can run eval on a subset of images by setting `--config.eval.steps`.
 
-## Cite
+## Cite       @ P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 
 [Pix2seq paper](https://arxiv.org/abs/2109.10852):
 
@@ -244,5 +244,5 @@ Note: You can run eval on a subset of images by setting `--config.eval.steps`.
 }
 ```
 
-## Disclaimer
+## Disclaimer       @ P2S-Video:_Extension_of_Pix2Seq_for_Video_Detection_and_Segmentation-->README
 This is not an officially supported Google product.
