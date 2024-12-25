@@ -425,7 +425,8 @@ def show_vid_objs(video, image_dir, obj_annotations, id_to_name_map, class_id_to
             text_bbs_, bbox_, col_ = bbs[-1]
             text_bbs_ += text_bbs
             bbs[-1] = (text_bbs_, bbox_, col_)
-            cmb_frame = show_cmb(frame, text_img, arrow, [bbs[-1], ], cmb_concat_axis, white_bkg, only_border)
+            cmb_frame = show_cmb(frame, text_img, 2, [bbs[-1], ], cmb_concat_axis,
+                                 white_bkg, only_border)
             cv2.imwrite(f'log/{base_file_names[0]}_obj_{ann_id:03d}.png', cmb_frame)
 
         k = cv2.waitKey(500)
@@ -459,12 +460,56 @@ def show_cmb(frame, text_img, arrow, bbs, axis, white_bkg, only_border):
             white_bkg=white_bkg)
         cmb_frame = np.concatenate((text_img, vis_frame), axis=0)
 
-    if arrow:
+    for text_bbs, bb, col in bbs:
+        n_words = len(text_bbs)
+        (x, y, width, height) = tuple(bb)
+        """vis_frame has been resized"""
+        x = int(x * resize_factor + start_col)
+        y = int(y * resize_factor + start_row)
+        width = int(width * resize_factor)
+        height = int(height * resize_factor)
 
-        for text_bbs, bb, col in bbs:
-            n_words = len(text_bbs)
+        if axis == 1:
+            """text_img is to the right of vis_frame"""
+            for text_bb in text_bbs:
+                text_bb[0] += int(vis_frame.shape[1])
+                text_bb[2] += int(vis_frame.shape[1])
+        else:
+            """text_img is above vis_frame"""
+            y += int(text_img.shape[0])
 
-            multi_line_ids = [_id for _id, text_bb in enumerate(text_bbs) if text_bb[-1]]
+        multi_line_ids = [_id for _id, text_bb in enumerate(text_bbs) if text_bb[-1]]
+
+        if arrow == 2:
+            assert n_words >= 4, "n_words must be >= 4"
+            if multi_line_ids:
+                assert 1 not in multi_line_ids, "second word cannot be on a new line"
+                assert 3 not in multi_line_ids, "fourth word cannot be on a new line"
+
+            left1, top1, right1, bottom1, _ = text_bbs[0]
+            left2, top2, right2, bottom2, _ = text_bbs[1]
+            text_bb1 = [left1, top1, right2, bottom2]
+
+            left3, top3, right3, bottom3, _ = text_bbs[2]
+            left4, top4, right4, bottom4, _ = text_bbs[3]
+            text_bb2 = [left3, top3, right4, bottom4]
+
+            draw_box(frame, box=text_bb1, color=col, thickness=3, xywh=False)
+            draw_box(frame, box=text_bb2, color=col, thickness=3, xywh=False)
+
+            pt1 = [int(x), int(y)]
+            pt2 = [int((text_bb1[0] + text_bb1[2]) / 2), int((text_bb1[1] + text_bb1[3]) / 2)]
+
+            cmb_frame = cv2.arrowedLine(
+                cmb_frame, pt1, pt2, col, 2, tipLength=0.02)
+            
+            pt1 = [int(x + width),int(y + height)]
+            pt2 = [int((text_bb2[0] + text_bb2[2]) / 2), int((text_bb2[1] + text_bb2[3]) / 2)]
+
+            cmb_frame = cv2.arrowedLine(
+                cmb_frame, pt1, pt2, col, 2, tipLength=0.02)
+
+        elif arrow == 1:
             id1, id2 = 0, -1
             if multi_line_ids:
                 if multi_line_ids[0] >= n_words // 2:
@@ -482,22 +527,8 @@ def show_cmb(frame, text_img, arrow, bbs, axis, white_bkg, only_border):
             # else:
             #     text_bb_x, text_bb_y = int((left1 + right1) / 2), int(bottom1)
 
-            (x, y, width, height) = tuple(bb)
-
-            """vis_frame has been resized"""
-            x = int(x * resize_factor + start_col)
-            y = int(y * resize_factor + start_row)
-            width = int(width * resize_factor)
-            height = int(height * resize_factor)
-
-            if axis == 1:
-                """text_img is to the right of vis_frame"""
-                text_bb_x += int(vis_frame.shape[1])
-            else:
-                """text_img is above vis_frame"""
-                y += int(text_img.shape[0])
-
-            bb_pts = [
+            """find corner nearest to text"""
+            bb_corners = [
                 (x, y),
                 (x + width, y),
                 (x + width, y + height),
@@ -505,16 +536,10 @@ def show_cmb(frame, text_img, arrow, bbs, axis, white_bkg, only_border):
                 # (x + width / 2, y),
             ]
             bb_dists = np.asarray([
-               math.sqrt( (bb_x - text_bb_x) ** 2 + (bb_y - text_bb_y) ** 2)
-                for (bb_x, bb_y) in bb_pts])
+                math.sqrt((bb_x - text_bb_x) ** 2 + (bb_y - text_bb_y) ** 2)
+                for (bb_x, bb_y) in bb_corners])
             nearest_pt_id = np.argmin(bb_dists)
-
-            # bb_x, bb_y = int(x + width / 2), int(y if axis == 1 else y + height)
-            # text_bb_x, text_bb_y = int((left + right) / 2), int(bottom if axis == 1 else top)
-
-            bb_x, bb_y = bb_pts[nearest_pt_id]
-            # bb_x, bb_y = int(x + width / 2), int(y)
-            # bb_y -= 5
+            bb_x, bb_y = bb_corners[nearest_pt_id]
 
             cmb_frame = cv2.arrowedLine(
                 cmb_frame,
