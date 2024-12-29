@@ -106,7 +106,7 @@ def arrowed_line(im, ptA, ptB, width=1, color=(0, 255, 0)):
 
 
 def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, bb=0, sep=', ',
-               win_name='text img', line_gap=5, allow_linebreak=True):
+               win_name='text img', line_gap=5, allow_linebreak=True, margin=5):
     image = Image.fromarray(img_np)
     img_w, img_h = image.size
     # font = ImageFont.load_default(font_size)
@@ -129,8 +129,8 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
                 word = f'{word}{sep}'
 
             left, top, right, bottom = draw.textbbox((x_, y_,), word, font=font)
-            if right >= img_w:
-                x_ = 5
+            if right >= img_w - margin:
+                x_ = margin
                 y_ = y + textheight + line_gap
                 break
             textwidth = draw.textlength(word, font=font)
@@ -140,16 +140,17 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
 
     for word_id, word in enumerate(words):
         multi_line = False
+        word_sep = word
 
         if word_id < len(words) - 1 or text.endswith(sep):
-            word = f'{word}{sep}'
+            word_sep = f'{word_sep}{sep}'
 
         # textwidth = draw.textlength(word, font=font)
         left, top, right, bottom = draw.textbbox((x_, y_,), word, font=font)
-        if right >= img_w:
-            x_ = 5
-            if bottom >= img_h - textheight:
-                y_ = 5
+        if right >= img_w - margin:
+            x_ = margin
+            if bottom >= img_h - textheight - margin:
+                y_ = margin
                 image.paste((0, 0, 0), (0, 0, image.size[0], image.size[1]))
             else:
                 y_ += textheight + line_gap
@@ -157,14 +158,12 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
 
         # _, _, textwidth, textheight = draw.textbbox((0, 0), text=text, font=font)
 
-        draw.text((x_, y_), word, font=font, fill=col)
+        draw.text((x_, y_), word_sep, font=font, fill=col)
 
         text_bb = draw.textbbox((x_, y_,), word, font=font)
-
-        textwidth = draw.textlength(word, font=font)
-
         text_bbs.append(list(text_bb) + [multi_line, ])
 
+        textwidth = draw.textlength(word_sep, font=font)
         x_ += textwidth
 
         img_np = np.array(image)
