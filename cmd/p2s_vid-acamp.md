@@ -33,6 +33,7 @@
         - [on-inv-2_per_seq       @ 1k8_vid_entire_seq-aug-cls_eq-fbb/mid](#on_inv_2_per_seq___1k8_vid_entire_seq_aug_cls_eq_fbb_mi_d_)
     - [1k8_vid_entire_seq-aug-cls_eq-fbb-b64       @ mid](#1k8_vid_entire_seq_aug_cls_eq_fbb_b64___mi_d_)
         - [on-inv-2_per_seq       @ 1k8_vid_entire_seq-aug-cls_eq-fbb-b64/mid](#on_inv_2_per_seq___1k8_vid_entire_seq_aug_cls_eq_fbb_b64_mi_d_)
+        - [on-inv       @ 1k8_vid_entire_seq-aug-cls_eq-fbb-b64/mid](#on_inv___1k8_vid_entire_seq_aug_cls_eq_fbb_b64_mi_d_)
     - [10k6_vid_entire_seq-aug-cls_eq-fbb       @ mid](#10k6_vid_entire_seq_aug_cls_eq_fbb___mi_d_)
         - [on-inv-2_per_seq       @ 10k6_vid_entire_seq-aug-cls_eq-fbb/mid](#on_inv_2_per_seq___10k6_vid_entire_seq_aug_cls_eq_fbb_mid_)
     - [10k6_vid_entire_seq-aug-cls_eq-fbb-b64       @ mid](#10k6_vid_entire_seq_aug_cls_eq_fbb_b64___mi_d_)
@@ -157,13 +158,20 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=tra
 <a id="on_inv_2_per_seq___1k8_vid_entire_seq_aug_cls_eq_fbb_mi_d_"></a>
 ### on-inv-2_per_seq       @ 1k8_vid_entire_seq-aug-cls_eq-fbb/mid-->p2s_vid-acamp
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_32-jtr-res_1280-fbb-cls_eq,_eval_,vid_det,acamp-1k8_vid_entire_seq_inv_2_per_seq,vstrd-1,batch-4,save-vis-0,dbg-1,dyn-1
+<a id="on_inv___1k8_vid_entire_seq_aug_cls_eq_fbb_mi_d_"></a>
 
+resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_32-jtr-res_1280-fbb-cls_eq
+resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_64-jtr-res_1280-fbb-cls_eq
 <a id="1k8_vid_entire_seq_aug_cls_eq_fbb_b64___mi_d_"></a>
 ## 1k8_vid_entire_seq-aug-cls_eq-fbb-b64       @ mid-->p2s_vid-acamp
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-1k8_vid_entire_seq,batch-64,dbg-0,dyn-0,dist-1,jtr,res-1280,fbb,cls_eq
 <a id="on_inv_2_per_seq___1k8_vid_entire_seq_aug_cls_eq_fbb_b64_mi_d_"></a>
 ### on-inv-2_per_seq       @ 1k8_vid_entire_seq-aug-cls_eq-fbb-b64/mid-->p2s_vid-acamp
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_64-jtr-res_1280-fbb-cls_eq,_eval_,vid_det,acamp-1k8_vid_entire_seq_inv_2_per_seq,vstrd-1,batch-8,save-vis-0,dbg-1,dyn-1,x99
+<a id="on_inv___1k8_vid_entire_seq_aug_cls_eq_fbb_b64_mi_d_"></a>
+### on-inv       @ 1k8_vid_entire_seq-aug-cls_eq-fbb-b64/mid-->p2s_vid-acamp
+`281976`
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_1k8_vid_entire_seq-length-2-stride-1-batch_64-jtr-res_1280-fbb-cls_eq,_eval_,vid_det,acamp-1k8_vid_entire_seq_inv,vstrd-1,batch-32,save-vis-0,dbg-1,dyn-1,iter-281976
 
 <a id="10k6_vid_entire_seq_aug_cls_eq_fbb___mi_d_"></a>
 ## 10k6_vid_entire_seq-aug-cls_eq-fbb       @ mid-->p2s_vid-acamp

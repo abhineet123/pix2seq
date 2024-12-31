@@ -82,8 +82,7 @@
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-54_126:p-640:r-640:rot-15_345_4:flip-1:sub-2,batch-6,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,lac,2d,seq3k,fbb
 <a id="on_0_15___p_640_aug_lac_2d_sub_2_fbb_r_640_54_12_6_"></a>
 #### on-0_15       @ p-640-aug-lac-2d-sub-2-fbb/r-640/54_126-->p2s_seg-ipsc
-python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-54_126-640_640-640_640-rot_15_345_4-flip-sub_2-2d-lac-batch_8-seq3k-fbb,_eval_,batch-4,save-vis-0,dbg-0,dyn-1,seg-0_15:p-640:r-640:sub-2,lac,2d,seq3k,x99
-
+python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_640-54_126-640_640-640_640-rot_15_345_4-flip-sub_2-2d-lac-batch_6-seq3k-fbb,_eval_,batch-4,save-vis-0,dbg-0,dyn-1,seg-0_15:p-640:r-640:sub-2,lac,2d,seq3k,x99
 
 
 <a id="16_53_"></a>
