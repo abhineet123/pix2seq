@@ -522,7 +522,7 @@ def restore_from_checkpoint(model_dir, allow_partial, ignore_missing=False, **kw
     ckpt_vars_dict = None
     name_to_shape = None
     if latest_ckpt:
-        ckpt_vars_dict, name_to_shape = save_ckpt_vars(model_dir)
+        ckpt_vars_dict, name_to_shape = save_ckpt_vars(model_dir, latest_ckpt)
         logging.info('Restoring from latest checkpoint: %s', latest_ckpt)
         if allow_partial:
             status = checkpoint.restore(latest_ckpt).expect_partial()
@@ -537,7 +537,7 @@ def restore_from_checkpoint(model_dir, allow_partial, ignore_missing=False, **kw
             ckpt_vars_dict, name_to_shape)
 
 
-def save_ckpt_vars(model_dir, latest_ckpt=None):
+def save_ckpt_vars(model_dir, latest_ckpt=None, checkpoint=None):
     if latest_ckpt is None:
         latest_ckpt = tf.train.latest_checkpoint(model_dir)
 
@@ -546,6 +546,20 @@ def save_ckpt_vars(model_dir, latest_ckpt=None):
         name=[ckpt_var[0] for ckpt_var in ckpt_vars],
         shape=[ckpt_var[1] for ckpt_var in ckpt_vars]
     )
+
+    if checkpoint is not None:
+        temp_model_dir = linux_path(model_dir, "temp")
+        os.makedirs(temp_model_dir, exist_ok=True)
+        temp_checkpoint_manager = tf.train.CheckpointManager(
+            checkpoint, temp_model_dir, 1)
+        temp_checkpoint_manager.save(0)
+        latest_ckpt = tf.train.latest_checkpoint(temp_model_dir)
+        curr_ckpt_vars = tf.train.list_variables(latest_ckpt)
+        curr_ckpt_dict = dict(
+            name=[ckpt_var[0] for ckpt_var in curr_ckpt_vars],
+            shape=[ckpt_var[1] for ckpt_var in curr_ckpt_vars]
+        )
+
     import pandas as pd
     ckpt_df = pd.DataFrame.from_dict(ckpt_dict)
 

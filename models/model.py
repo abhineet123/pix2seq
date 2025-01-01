@@ -175,8 +175,8 @@ class Trainer(abc.ABC):
         """Check if the checkpoints are correctly restored."""
         (verify_restored, verify_existing), (verify_restored_p, verify_existing_p) = (
             utils.check_checkpoint_restored(
-                [self._verify_restored, self._verify_existing],
-                [self._verify_restored_p, self._verify_existing_p]))
+                strict_verifiers=[self._verify_restored, self._verify_existing],
+                loose_verifiers=[self._verify_restored_p, self._verify_existing_p]))
 
         self._verify_restored = verify_restored
         self._verify_existing = verify_existing
