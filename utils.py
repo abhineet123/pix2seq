@@ -35,6 +35,7 @@ import tensorflow as tf
 
 import subprocess
 
+from models import model_utils
 
 def get_gpu_memory():
     command = "nvidia-smi --query-gpu=memory.free --format=csv"
@@ -519,10 +520,10 @@ def restore_from_checkpoint(model_dir, allow_partial, ignore_missing=False, **kw
     verify_restored = verify_existing = None
     checkpoint = tf.train.Checkpoint(**kwargs)
     latest_ckpt = tf.train.latest_checkpoint(model_dir)
-    ckpt_vars_dict = None
+    ckpt_vars = None
     name_to_shape = None
     if latest_ckpt:
-        ckpt_vars_dict, name_to_shape = save_ckpt_vars(model_dir, latest_ckpt)
+        ckpt_vars, ckpt_vars_dict, name_to_shape = save_ckpt_vars(model_dir, latest_ckpt)
         logging.info('Restoring from latest checkpoint: %s', latest_ckpt)
         if allow_partial:
             status = checkpoint.restore(latest_ckpt).expect_partial()
@@ -534,10 +535,95 @@ def restore_from_checkpoint(model_dir, allow_partial, ignore_missing=False, **kw
         raise AssertionError(f'No checkpoint found in {model_dir}')
 
     return (latest_ckpt, checkpoint, verify_restored, verify_existing,
-            ckpt_vars_dict, name_to_shape)
+            ckpt_vars, name_to_shape)
 
 
-def save_ckpt_vars(model_dir, latest_ckpt=None, checkpoint=None):
+def check_ckpt_match(model_dir, model, ckpt_vars_p):
+    import shutil
+    import pandas as pd
+
+    from operator import mul
+    from functools import reduce
+
+    temp_model_dir = linux_path(model_dir, "temp")
+    os.makedirs(temp_model_dir, exist_ok=True)
+    checkpoint = tf.train.Checkpoint(model=model)
+    temp_checkpoint_manager = tf.train.CheckpointManager(
+        checkpoint, temp_model_dir, 1)
+    temp_checkpoint_manager.save(0)
+    latest_ckpt = tf.train.latest_checkpoint(temp_model_dir)
+    curr_ckpt_vars = tf.train.list_variables(latest_ckpt)
+    curr_ckpt_dict = {
+        ckpt_var[0]: ckpt_var[1] for ckpt_var in curr_ckpt_vars
+    }
+    pt_ckpt_vars_all = ckpt_vars_p
+
+    pt_ckpt_vars = [k for k in pt_ckpt_vars_all if 'optimizer' not in k[0]]
+    pt_ckpt_dict = {
+        ckpt_var[0]: ckpt_var[1] for ckpt_var in pt_ckpt_vars
+    }
+    pt_ckpt_names = set(pt_ckpt_dict.keys())
+    curr_ckpt_names = set(curr_ckpt_dict.keys())
+
+    not_in_model = list(pt_ckpt_names - curr_ckpt_names)
+    not_in_ckpt = list(curr_ckpt_names - pt_ckpt_names)
+
+    not_in_model = [(reduce(mul, pt_ckpt_dict[k], 1), k, pt_ckpt_dict[k],)
+                    for k in not_in_model]
+    not_in_ckpt = [(reduce(mul, curr_ckpt_dict[k], 1), k, curr_ckpt_dict[k])
+                   for k in not_in_ckpt]
+
+    not_in_model_sum = sum(k[0] for k in not_in_model)
+    not_in_ckpt_sum = sum(k[0] for k in not_in_ckpt)
+
+    print(f'not_in_model_sum: {model_utils.num_to_words(not_in_model_sum)}')
+    print(f'not_in_ckpt_sum: {model_utils.num_to_words(not_in_ckpt_sum)}')
+
+    not_in_model.insert(0, (not_in_model_sum, 'all', None))
+    not_in_ckpt.insert(0, (not_in_ckpt_sum, 'all', None))
+
+    not_in_model_dict = dict(
+        n_params=[k[0] for k in not_in_model],
+        name=[k[1] for k in not_in_model],
+        shape=[k[2] for k in not_in_model],
+    )
+    not_in_ckpt_dict = dict(
+        n_params=[k[0] for k in not_in_ckpt],
+        name=[k[1] for k in not_in_ckpt],
+        shape=[k[2] for k in not_in_ckpt],
+    )
+    not_in_model_df = pd.DataFrame.from_dict(not_in_model_dict)
+    not_in_model_csv = linux_path(model_dir, "not_in_model.csv")
+    not_in_model_df.to_csv(
+        not_in_model_csv,
+        index=False,
+    )
+    not_in_ckpt_df = pd.DataFrame.from_dict(not_in_ckpt_dict)
+    not_in_ckpt_csv = linux_path(model_dir, "not_in_ckpt.csv")
+    not_in_ckpt_df.to_csv(
+        not_in_ckpt_csv,
+        index=False,
+    )
+
+    matching_names = list(pt_ckpt_names.intersection(curr_ckpt_names))
+    mismatching_shapes = [(k, pt_ckpt_dict[k], curr_ckpt_dict[k])
+                          for k in matching_names if pt_ckpt_dict[k] != curr_ckpt_dict[k]]
+    if mismatching_shapes:
+        mismatching_shapes_dict = dict(
+            name=[k[0] for k in mismatching_shapes],
+            pt=[k[1] for k in mismatching_shapes],
+            model=[k[2] for k in mismatching_shapes],
+        )
+        mismatching_shapes_df = pd.DataFrame.from_dict(mismatching_shapes_dict)
+        mismatching_shapes_csv = linux_path(model_dir, "mismatching_shapes.csv")
+        mismatching_shapes_df.to_csv(
+            mismatching_shapes_csv,
+            index=False,
+        )
+
+    shutil.rmtree(temp_model_dir)
+
+def save_ckpt_vars(model_dir, latest_ckpt=None):
     if latest_ckpt is None:
         latest_ckpt = tf.train.latest_checkpoint(model_dir)
 
@@ -546,19 +632,6 @@ def save_ckpt_vars(model_dir, latest_ckpt=None, checkpoint=None):
         name=[ckpt_var[0] for ckpt_var in ckpt_vars],
         shape=[ckpt_var[1] for ckpt_var in ckpt_vars]
     )
-
-    if checkpoint is not None:
-        temp_model_dir = linux_path(model_dir, "temp")
-        os.makedirs(temp_model_dir, exist_ok=True)
-        temp_checkpoint_manager = tf.train.CheckpointManager(
-            checkpoint, temp_model_dir, 1)
-        temp_checkpoint_manager.save(0)
-        latest_ckpt = tf.train.latest_checkpoint(temp_model_dir)
-        curr_ckpt_vars = tf.train.list_variables(latest_ckpt)
-        curr_ckpt_dict = dict(
-            name=[ckpt_var[0] for ckpt_var in curr_ckpt_vars],
-            shape=[ckpt_var[1] for ckpt_var in curr_ckpt_vars]
-        )
 
     import pandas as pd
     ckpt_df = pd.DataFrame.from_dict(ckpt_dict)
@@ -573,7 +646,7 @@ def save_ckpt_vars(model_dir, latest_ckpt=None, checkpoint=None):
     )
     name_to_shape = {name: shape for name, shape in
                      zip(ckpt_dict['name'], ckpt_dict['shape'])}
-    return ckpt_dict, name_to_shape
+    return ckpt_vars, ckpt_dict, name_to_shape
 
 
 def check_checkpoint_restored(strict_verifiers, loose_verifiers=()):

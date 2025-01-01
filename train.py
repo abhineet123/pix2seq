@@ -1,14 +1,10 @@
 import os
 import shutil
-
 from absl import logging
-
 import time
-
 import numpy as np
 
 import utils
-
 
 def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_per_epoch, num_train_examples,
         strategy, model_lib, tf):
@@ -124,27 +120,12 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 #     print(f'total_params: {total_params}')
                 #     print('\n\n')
 
-                if cfg.debug:
-                    if step_id==0 and cfg.train.check_ckpt:
-                        temp_model_dir = utils.linux_path(cfg.model_dir, "temp")
-                        os.makedirs(temp_model_dir, exist_ok=True)
-                        checkpoint = tf.train.Checkpoint(model=trainer._model)
-                        temp_checkpoint_manager = tf.train.CheckpointManager(
-                            checkpoint, temp_model_dir, 1)
-                        temp_checkpoint_manager.save(0)
-                        latest_ckpt = tf.train.latest_checkpoint(temp_model_dir)
-                        curr_ckpt_vars = tf.train.list_variables(latest_ckpt)
-                        curr_ckpt_dict = dict(
-                            name=[ckpt_var[0] for ckpt_var in curr_ckpt_vars],
-                            shape=[ckpt_var[1] for ckpt_var in curr_ckpt_vars]
-                        )
-                        pt_ckpt_vars = trainer.ckpt_vars_p
-                        py_ckpt_dict = dict(
-                            name=[ckpt_var[0] for ckpt_var in pt_ckpt_vars],
-                            shape=[ckpt_var[1] for ckpt_var in pt_ckpt_vars]
-                        )
-                        trainer.check_checkpoint_restored()
+                if step_id == 0 and cfg.train.check_ckpt:
+                    utils.check_ckpt_match(cfg.model_dir, trainer._model,
+                                           trainer.ckpt_vars_p)
+                    # trainer.check_checkpoint_restored()
 
+                if cfg.debug:
                     trainer.sample_to_tb()
 
                 progbar.add(1)
@@ -177,7 +158,7 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
             print(f'best_val_metrics:\n{best_val_metrics}')
 
         from tqdm import tqdm
-        n_epochs = train_steps//steps_per_epoch
+        n_epochs = train_steps // steps_per_epoch
 
         model_name = os.path.basename(cfg.model_dir)
         pbar = tqdm(total=n_epochs, desc=model_name)
@@ -200,8 +181,8 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 which only restores many of the variables after they are created in the first call 
                 when the input shape becomes available
                 """
-                if cfg.train.check_ckpt:
-                    trainer.check_checkpoint_restored()
+                # if cfg.train.check_ckpt:
+                #     trainer.check_checkpoint_restored()
 
                 cur_step = global_step.numpy()
 
