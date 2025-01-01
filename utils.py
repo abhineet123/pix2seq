@@ -867,7 +867,12 @@ def connect_to_remote(info_file, remote, proxy):
         vmtransport = ssh.get_transport()
         dest_addr = (proxy_server, proxy_port)  # edited#
         local_addr = (server, port)  # edited#
-        vmchannel = vmtransport.open_channel("direct-tcpip", dest_addr, local_addr)
+        try:
+            vmchannel = vmtransport.open_channel(
+                "direct-tcpip", dest_addr, local_addr)
+        except paramiko.ssh_exception.ChannelException as e:
+            print(f'\n\nfailed to open_channel:\n{e}\n')
+            return None
 
         proxy_ssh = paramiko.SSHClient()
         proxy_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -881,8 +886,11 @@ def connect_to_remote(info_file, remote, proxy):
 def get_remote_config(checkpoint_dir, info_file, remote, proxy):
     checkpoint_dir = os.path.abspath(checkpoint_dir)
 
-    ssh, ssh_main = connect_to_remote(info_file, remote, proxy)
-
+    ret = connect_to_remote(info_file, remote, proxy)
+    if ret is None:
+        return None
+    ssh, ssh_main = ret
+    
     sftp = ssh.open_sftp()
     config_path = linux_path(checkpoint_dir, 'config.json')
     os.makedirs(checkpoint_dir, exist_ok=True)
@@ -966,7 +974,10 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts, ckpt_iter):
     return ckpt_path
 
 def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
-    ssh, ssh_main = connect_to_remote(info_file, remote, proxy)
+    ret = connect_to_remote(info_file, remote, proxy)
+    if ret is None:
+        return None
+    ssh, ssh_main = ret
 
     # key_file =  linux_path(os.path.expanduser('~'), '.ssh', 'id_rsa')
     # k = paramiko.RSAKey.from_private_key_file(key_file)
