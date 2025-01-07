@@ -456,6 +456,42 @@ def subsample_vid_mask(vid_mask, factor: int, n_classes, is_vis):
     return masks
 
 
+def sub_and_super_sample_mask(mask, factor, n_classes, is_vis=1, shape=None,
+                              check=False, max_diff_rate=5):
+    assert len(mask.shape) == 2, "only grayscale masks are supported"
+    if is_vis:
+        mask = np.copy(mask)
+        mask_vis_to_id(mask, n_classes)
+
+    n_rows, n_cols = mask.shape
+    if shape is not None:
+        assert factor is None, "factor must be None for custom shape"
+        n_rows_out, n_cols_out = shape
+        factor_x, factor_y = n_cols_out / n_cols, n_rows_out / n_rows
+    else:
+        if isinstance(factor, (tuple, list)):
+            factor_x, factor_y = factor
+        else:
+            factor_x = factor_y = factor
+        n_rows_out, n_cols_out = int(n_rows * factor_y), int(n_cols * factor_x)
+
+    mask_out = np.zeros_like(mask, shape=(n_rows_out, n_cols_out))
+
+    for row_id in range(n_rows_out):
+        for col_id in range(n_cols_out):
+            mask_out[row_id, col_id] = mask[int(row_id / factor_y), int(col_id / factor_x)]
+
+    if is_vis:
+        mask_id_to_vis(mask_out, n_classes)
+
+    if check:
+        mask_rec = sub_and_super_sample_mask(
+            mask_out, n_classes=n_classes, factor=None, shape=mask.shape, is_vis=is_vis)
+        labels_diff_rate = check_mask_diff(mask_rec, mask, max_diff_rate)
+        return mask_out, labels_diff_rate
+    return mask_out
+
+
 def supersample_mask(mask, factor, n_classes, is_vis=1, shape=None,
                      check=False, max_diff_rate=5):
     assert len(mask.shape) == 2, "only grayscale masks are supported"

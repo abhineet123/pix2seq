@@ -407,6 +407,9 @@ def create_tf_example(
             image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
         feature_dict.update(image_feature_dict)
 
+    mask_orig = np.copy(mask)
+    mask_orig = task_utils.mask_to_gs(mask_orig)
+
     if not multi_class:
         mask = task_utils.mask_to_binary(mask)
     mask = task_utils.mask_to_gs(mask)
@@ -441,9 +444,19 @@ def create_tf_example(
     # cv2.waitKey(0)
     #
     # return
-
     task_utils.mask_vis_to_id(mask, n_classes=n_classes)
     task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
+
+    if not multi_class:
+        mask_mc = task_utils.mask_vis_to_id(mask_orig, n_classes=3, copy=True)
+        mask_mc[mask_mc > 0] = 1
+        mask_mismatch = np.not_equal(mask, mask_mc)
+        n_mask_mismatch = np.count_nonzero(mask_mismatch)
+        if n_mask_mismatch > 0:
+            print(f'n_mask_mismatch: {n_mask_mismatch}')
+            mask_mismatch_vis = mask_mismatch.astype(np.uint8) * 255
+            cv2.imshow('mask_mismatch', mask_mismatch_vis)
+            cv2.waitKey(0)
 
     starts, lengths = task_utils.mask_to_rle(
         mask=mask_sub,
@@ -628,9 +641,9 @@ def create_tf_example(
             exit()
 
     if params.rle_to_json:
-        image_info['rle'] = rle_tokens
         image_info['rle_len'] = rle_len
         image_info['n_runs'] = n_runs
+        image_info['rle'] = rle_tokens
 
     if not skip_tfrecord:
         seg_feature_dict = {
@@ -748,7 +761,6 @@ def main():
         print(f'RLE check is disabled')
     else:
         print(f'RLE check is enabled')
-
 
     skip_tfrecord = params.stats_only or params.vis or params.rle_to_json and params.json_only
 

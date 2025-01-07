@@ -5,6 +5,7 @@
         - [on-train       @ detrac-0_19/resnet-640](#on_train___detrac_0_19_resnet_640_)
         - [on-49_68       @ detrac-0_19/resnet-640](#on_49_68___detrac_0_19_resnet_640_)
     - [detrac-0_9       @ resnet-640](#detrac_0_9___resnet_640_)
+    - [detrac-0_48       @ resnet-640](#detrac_0_48___resnet_640_)
 
 <!-- /MarkdownTOC -->
 <a id="resnet_64_0_"></a>
@@ -22,4 +23,8 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=eval
 <a id="detrac_0_9___resnet_640_"></a>
 ## detrac-0_9       @ resnet-640-->p2s-isl
 python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detrac-non_empty-0_9,batch-18,dbg-0,dyn-1,dist-0
+
+<a id="detrac_0_48___resnet_640_"></a>
+## detrac-0_48       @ resnet-640-->p2s-isl
+python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detrac-non_empty-0_48,batch-128,dbg-0,dyn-1,dist-1
 

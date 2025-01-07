@@ -3,6 +3,7 @@
 - [detrac       @ tfrecord](#detrac___tfrecord_)
     - [0_19       @ detrac](#0_19___detrac_)
     - [0_9       @ detrac](#0_9___detrac_)
+    - [0_48       @ detrac](#0_48___detrac_)
     - [49_68       @ detrac](#49_68___detrac_)
 - [ipsc       @ tfrecord](#ipsc___tfrecord_)
     - [0_1       @ ipsc](#0_1___ipsc_)
@@ -33,6 +34,9 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-0_19
 <a id="0_9___detrac_"></a>
 ## 0_9       @ detrac-->tf
 python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-0_9
+<a id="0_48___detrac_"></a>
+## 0_48       @ detrac-->tf
+python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-0_48
 <a id="49_68___detrac_"></a>
 ## 49_68       @ detrac-->tf
 python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-49_68
