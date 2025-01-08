@@ -7,6 +7,7 @@
     - [detrac-0_9       @ resnet-640](#detrac_0_9___resnet_640_)
     - [detrac-0_48       @ resnet-640](#detrac_0_48___resnet_640_)
         - [on-49_85       @ detrac-0_48/resnet-640](#on_49_85___detrac_0_48_resnet_640_)
+        - [on-49_85-100_per_seq_random       @ detrac-0_48/resnet-640](#on_49_85_100_per_seq_random___detrac_0_48_resnet_640_)
 
 <!-- /MarkdownTOC -->
 <a id="resnet_64_0_"></a>
@@ -31,4 +32,7 @@ python3 run.py --cfg=configs/config_det_ipsc.py --j5=train,resnet-640,pt-1,detra
 <a id="on_49_85___detrac_0_48_resnet_640_"></a>
 ### on-49_85       @ detrac-0_48/resnet-640-->p2s-isl
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_det_ipsc.py --j5=_eval_,m-resnet_640_detrac-non_empty-seq-0_48-batch_60-fbb,detrac-non_empty-49_85,batch-8,save-vis-0,dbg-0,dyn-1,dist-0,asi-0,grs
+<a id="on_49_85_100_per_seq_random___detrac_0_48_resnet_640_"></a>
+### on-49_85-100_per_seq_random       @ detrac-0_48/resnet-640-->p2s-isl
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_det_ipsc.py --j5=_eval_,m-resnet_640_detrac-non_empty-seq-0_48-batch_60-fbb,detrac-non_empty-100_per_seq_random-49_85,batch-8,save-vis-0,dbg-0,dyn-1,dist-0,asi-0,grs
 

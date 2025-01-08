@@ -254,7 +254,7 @@ def create_tf_example(
 
 def main():
     params: Params = paramparse.process(Params)
-    
+
     assert params.ann_file, "ann_file must be provided"
     assert params.image_dir, "image_dir must be provided"
 
