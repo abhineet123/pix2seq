@@ -407,14 +407,14 @@ def create_tf_example(
             image_height, image_width, filename, image_id, encoded_jpg, 'jpg')
         feature_dict.update(image_feature_dict)
 
-    mask_orig = np.copy(mask)
-    mask_orig = task_utils.mask_to_gs(mask_orig)
+    # mask_orig = np.copy(mask)
+    # mask_orig = task_utils.mask_to_gs(mask_orig)
 
     if not multi_class:
         mask = task_utils.mask_to_binary(mask)
     mask = task_utils.mask_to_gs(mask)
 
-    mask_unique = np.unique(mask)
+    # mask_unique = np.unique(mask)
 
     n_rows, n_cols = mask.shape
     max_length = params.max_length
@@ -447,16 +447,16 @@ def create_tf_example(
     task_utils.mask_vis_to_id(mask, n_classes=n_classes)
     task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
 
-    if not multi_class:
-        mask_mc = task_utils.mask_vis_to_id(mask_orig, n_classes=3, copy=True)
-        mask_mc[mask_mc > 0] = 1
-        mask_mismatch = np.not_equal(mask, mask_mc)
-        n_mask_mismatch = np.count_nonzero(mask_mismatch)
-        if n_mask_mismatch > 0:
-            print(f'n_mask_mismatch: {n_mask_mismatch}')
-            mask_mismatch_vis = mask_mismatch.astype(np.uint8) * 255
-            cv2.imshow('mask_mismatch', mask_mismatch_vis)
-            cv2.waitKey(0)
+    # if not multi_class:
+    #     mask_mc = task_utils.mask_vis_to_id(mask_orig, n_classes=3, copy=True)
+    #     mask_mc[mask_mc > 0] = 1
+    #     mask_mismatch = np.not_equal(mask, mask_mc)
+    #     n_mask_mismatch = np.count_nonzero(mask_mismatch)
+    #     if n_mask_mismatch > 0:
+    #         print(f'n_mask_mismatch: {n_mask_mismatch}')
+    #         mask_mismatch_vis = mask_mismatch.astype(np.uint8) * 255
+    #         cv2.imshow('mask_mismatch', mask_mismatch_vis)
+    #         cv2.waitKey(0)
 
     starts, lengths = task_utils.mask_to_rle(
         mask=mask_sub,
