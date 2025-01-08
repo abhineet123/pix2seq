@@ -27,7 +27,7 @@ class Params(paramparse.CFG):
     def __init__(self):
         paramparse.CFG.__init__(self, cfg_prefix='tf')
         self.ann_file = ''
-        self.ann_suffix = ''
+        self.ann_suffix = []
         self.image_dir = ''
         self.masks_dir = ''
         self.enable_masks = 1
@@ -254,7 +254,7 @@ def create_tf_example(
 
 def main():
     params: Params = paramparse.process(Params)
-
+    
     assert params.ann_file, "ann_file must be provided"
     assert params.image_dir, "image_dir must be provided"
 
@@ -262,9 +262,10 @@ def main():
         print('masks are enabled')
         if not params.masks_dir:
             params.masks_dir = 'masks'
-
-    if params.ann_suffix:
-        params.ann_file = f'{params.ann_file}-{params.ann_suffix}'
+    ann_suffix = params.ann_suffix
+    if ann_suffix:
+        ann_suffix = '-'.join(ann_suffix)
+        params.ann_file = f'{params.ann_file}-{ann_suffix}'
 
     if params.start_seq_id > 0 or params.end_seq_id >= 0:
         assert params.end_seq_id >= params.start_seq_id, "end_seq_id must to be >= start_seq_id"

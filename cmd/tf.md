@@ -6,6 +6,7 @@
     - [0_48       @ detrac](#0_48___detrac_)
     - [49_68       @ detrac](#49_68___detrac_)
     - [49_85       @ detrac](#49_85___detrac_)
+        - [100_per_seq_random       @ 49_85/detrac](#100_per_seq_random___49_85_detrac_)
 - [ipsc       @ tfrecord](#ipsc___tfrecord_)
     - [0_1       @ ipsc](#0_1___ipsc_)
     - [2_3       @ ipsc](#2_3___ipsc_)
@@ -44,6 +45,9 @@ python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-49_68
 <a id="49_85___detrac_"></a>
 ## 49_85       @ detrac-->tf
 python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-49_85
+<a id="100_per_seq_random___49_85_detrac_"></a>
+### 100_per_seq_random       @ 49_85/detrac-->tf
+python3 data/scripts/create_ipsc_tfrecord.py cfg=detrac:non_empty-49_85:100_per_seq_random
 
 <a id="ipsc___tfrecord_"></a>
 # ipsc       @ tfrecord-->p2s_setup
