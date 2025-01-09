@@ -293,7 +293,12 @@ def video_crop(
         raise AssertionError(f'Invalid input: {input_}')
 
     for k in input_keys:
-        example[k] = example[k][:, h_offset:h_offset + h, w_offset:w_offset + w, :]
+        if k == 'video':
+            example[k] = example[k][:, h_offset:h_offset + h, w_offset:w_offset + w, :]
+        elif k == 'frame':
+            example[k] = example[k][h_offset:h_offset + h, w_offset:w_offset + w, :]
+        else:
+            raise AssertionError(f'Invalid input: {k}')
 
     # Record the crop offset.
     if 'crop_offset' not in example:
