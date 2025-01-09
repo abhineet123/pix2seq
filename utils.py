@@ -29,6 +29,7 @@ import matplotlib
 import matplotlib.cm
 import numpy as np
 from tqdm import tqdm
+import shutil
 
 import vocab
 import tensorflow as tf
@@ -941,7 +942,7 @@ def is_ckpt(k):
         # k.endswith('.index')
     )
 
-def get_local_ckpt(checkpoint_dir, excluded_ckpts, ckpt_iter):
+def get_local_ckpt(checkpoint_dir, excluded_ckpts, ckpt_iter, create_copy):
     local_ckpts = [k for k in os.listdir(checkpoint_dir)
                    if os.path.isfile(linux_path(checkpoint_dir, k))
                    and is_ckpt(k) and get_name(k) not in excluded_ckpts]
@@ -971,6 +972,16 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts, ckpt_iter):
         f.write(f'model_checkpoint_path: "{ckpt_name}"')
 
     ckpt_path = linux_path(checkpoint_dir, ckpt_name)
+    if create_copy:
+        ckpt_copy_dir = linux_path(checkpoint_dir, 'eval_ckpts')
+        os.makedirs(ckpt_copy_dir, exist_ok=True)
+        ckpt_idx = f'{ckpt_name}.index'
+        files_to_transfer = [ckpt, ckpt_idx]
+        for f in files_to_transfer:
+            src_path = linux_path(checkpoint_dir, f)
+            dst_path = linux_path(ckpt_copy_dir, f)
+            shutil.copyfile(src_path, dst_path)
+
     return ckpt_path
 
 def get_remote_ckpt(checkpoint_dir, info_file, remote, proxy):
