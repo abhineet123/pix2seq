@@ -3,6 +3,8 @@
 - [static](#stati_c_)
     - [16_53-len-2-aug-fbb       @ static](#16_53_len_2_aug_fbb___static_)
         - [on-0_15       @ 16_53-len-2-aug-fbb/static](#on_0_15___16_53_len_2_aug_fbb_static_)
+    - [54_126-len-2-aug-fbb       @ static](#54_126_len_2_aug_fbb___static_)
+        - [on-0_15       @ 54_126-len-2-aug-fbb/static](#on_0_15___54_126_len_2_aug_fbb_stati_c_)
 - [swin](#swi_n_)
     - [16_53-len-2       @ swin](#16_53_len_2___swin_)
         - [on-train       @ 16_53-len-2/swin](#on_train___16_53_len_2_swin_)
@@ -194,6 +196,15 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_static_video_det.py -
 <a id="on_0_15___16_53_len_2_aug_fbb_static_"></a>
 ### on-0_15       @ 16_53-len-2-aug-fbb/static-->p2s_vid-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_static_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-static-batch_32-jtr-res_1280-fbb,_eval_,static_vid_det,ipsc-0_15,len-2,vstrd-1,batch-4,save-vis-0,dbg-0,dyn-1,sample-0,asi
+
+
+<a id="54_126_len_2_aug_fbb___static_"></a>
+## 54_126-len-2-aug-fbb       @ static-->p2s_vid-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_static_video_det.py --j5=train,resnet-640,static_vid_det,pt-1,ipsc-54_126,len-2,batch-32,dbg-0,dyn-1,dist-0,jtr,res-1280,fbb
+<a id="on_0_15___54_126_len_2_aug_fbb_stati_c_"></a>
+### on-0_15       @ 54_126-len-2-aug-fbb/static-->p2s_vid-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_static_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-54_126-length-2-stride-1-static-batch_32-jtr-res_1280-fbb,_eval_,static_vid_det,ipsc-0_15,len-2,vstrd-1,batch-4,save-vis-0,dbg-0,dyn-1,sample-0,asi
+
 
 <a id="swi_n_"></a>
 # swin 
