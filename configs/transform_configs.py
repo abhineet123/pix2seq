@@ -223,7 +223,7 @@ def get_static_video_detection_train_transforms(
         # print('annoying scale_jitter is enabled')
         train_transforms.append(
             D(name='scale_jitter_video',
-              inputs=['frame'],
+              inputs=['image'],
               length=length,
               target_size=image_size,
               min_scale=cfg.jitter_scale_min,
@@ -233,21 +233,21 @@ def get_static_video_detection_train_transforms(
         # print('equally annoying fixed_size_crop_video is enabled')
         train_transforms.append(
             D(name='fixed_size_crop_video',
-              inputs=['frame'],
+              inputs=['image'],
               target_size=image_size,
               object_coordinate_keys=object_coordinate_keys)
         )
     else:
         train_transforms.append(
             D(name='resize_video',
-              inputs=['frame'],
+              inputs=['image'],
               length=length,
               antialias=[True],
               target_size=image_size)
         )
     train_transforms += [
         D(name='random_horizontal_flip_video',
-          inputs=['frame'],
+          inputs=['image'],
           length=length,
           bbox_keys=['bbox']),
 
@@ -267,7 +267,7 @@ def get_static_video_detection_train_transforms(
           max_instances_per_image=max_instances_per_image),
 
         D(name='pad_video_to_max_size',
-          inputs=['frame'],
+          inputs=['image'],
           length=length,
           target_size=image_size,
           object_coordinate_keys=object_coordinate_keys),
@@ -315,13 +315,13 @@ def get_static_video_detection_eval_transforms(
     return [
         # D(name='record_original_video_size'),
         D(name='resize_video',
-          inputs=['frame'],
+          inputs=['image'],
           length=length,
           antialias=[True],
           target_size=image_size),
         D(name='pad_video_to_max_size',
           length=length,
-          inputs=['frame'],
+          inputs=['image'],
           target_size=image_size,
           object_coordinate_keys=['bbox']),
         D(name='truncate_or_pad_to_max_instances',

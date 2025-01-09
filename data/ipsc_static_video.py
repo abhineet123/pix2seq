@@ -54,17 +54,17 @@ class IPSCStaticVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
         filenames = example['video/file_names']
 
         x = filenames[0]
-        frame = tf.io.decode_image(tf.io.read_file(x), channels=3)
-        length = self.config.length
+        image = tf.io.decode_image(tf.io.read_file(x), channels=3)
+        # length = self.config.length
 
-        frame.set_shape([None, None, 3])
+        image.set_shape([None, None, 3])
 
-        frame = tf.image.convert_image_dtype(frame, tf.float32)
+        image = tf.image.convert_image_dtype(image, tf.float32)
 
         target_size = self.config.target_size
         if target_size is not None:
-            frame = tf.image.resize(
-                frame, target_size, method='bilinear',
+            image = tf.image.resize(
+                image, target_size, method='bilinear',
                 antialias=False, preserve_aspect_ratio=False)
         # area = bbox = None
 
@@ -74,7 +74,7 @@ class IPSCStaticVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
         scale = 1. / utils.tf_float32((h, w))
         bbox = utils.scale_points(bbox, scale)
 
-        resized_vid_size = tf.shape(frame)[:2]
+        resized_vid_size = tf.shape(image)[:2]
 
         new_example = {
             'orig_video_size': [h, w],
@@ -82,7 +82,7 @@ class IPSCStaticVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
             'video/file_names': tf.cast(example['video/file_names'], tf.string),
             'video/file_ids': tf.cast(example['video/file_ids'], tf.int64),
             'video/id': tf.cast(example['video/source_id'], tf.int64),
-            'video/frame': frame,
+            'video/image': image,
             'video/num_frames': tf.cast(num_frames, tf.int32),
             'video/size': tf.cast(example['video/size'], tf.int64),
             'shape': utils.tf_float32((h, w)),
@@ -193,7 +193,7 @@ class IPSCStaticVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         filenames = []
         frame_ids = []
         image_ids = []
-        frame = decode_utils.decode_image(
+        image = decode_utils.decode_image(
             example, f'video/frame-0/encoded')
 
         for _id in range(self.config.length):
@@ -229,10 +229,10 @@ class IPSCStaticVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         mask_vid_path = example['video/mask_path']
         seq = example['video/seq']
 
-        orig_image_size = tf.shape(frame)[:2]
+        orig_image_size = tf.shape(image)[:2]
 
         new_example = {
-            'video': frame,
+            'video': image,
             'vid_id': vid_id,
             'n_runs': n_runs,
             'rle': rle,

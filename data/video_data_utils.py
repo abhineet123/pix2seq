@@ -287,7 +287,7 @@ def video_crop(
     input_ = input_keys[0]
     if input_ == 'video':
         _, h_ori, w_ori, _ = tf.unstack(tf.shape(example[input_]))
-    elif input_ == 'frame':
+    elif input_ == 'image':
         h_ori, w_ori, _ = tf.unstack(tf.shape(example[input_]))
     else:
         raise AssertionError(f'Invalid input: {input_}')
@@ -295,7 +295,7 @@ def video_crop(
     for k in input_keys:
         if k == 'video':
             example[k] = example[k][:, h_offset:h_offset + h, w_offset:w_offset + w, :]
-        elif k == 'frame':
+        elif k == 'image':
             example[k] = example[k][h_offset:h_offset + h, w_offset:w_offset + w, :]
         else:
             raise AssertionError(f'Invalid input: {k}')

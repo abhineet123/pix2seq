@@ -46,7 +46,7 @@ class TaskStaticVideoDetection(task_lib.Task):
                 orig_video_size=example['video/size'],
                 video_id=example['video/id'],
                 num_frames=example['video/num_frames'],
-                frame=example['video/frame'],
+                image=example['video/image'],
                 file_names=example['video/file_names'],
                 file_ids=example['video/file_ids'],
                 bbox=example['bbox'],
@@ -166,7 +166,7 @@ class TaskStaticVideoDetection(task_lib.Task):
         """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
         examples, input_seq, target_seq, token_weights = preprocessed_outputs  # response_seq unused by default
-        frames = examples['frame']
+        images = examples['image']
 
         # videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
         # import cv2
@@ -177,14 +177,14 @@ class TaskStaticVideoDetection(task_lib.Task):
         #         print()
 
         # video = tf.identity(video).gpu()
-        bsz = tf.shape(frames)[0]
+        bsz = tf.shape(images)[0]
 
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id,
             prompt_shape=(bsz, 1))
 
         pred_seq, logits, encoded = model.infer(
-            frames, prompt_seq, encoded=None,
+            images, prompt_seq, encoded=None,
             max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
@@ -205,7 +205,7 @@ class TaskStaticVideoDetection(task_lib.Task):
         gt_classes, gt_bboxes = example['class_id'], example['bbox']
         area, is_crowd = example['area'], example['is_crowd']
 
-        frames, video_ids = example['frame'], example['video_id']
+        images, video_ids = example['image'], example['video_id']
         file_names = example['file_names']
         file_ids = example['file_ids']
         orig_video_size = example['orig_video_size']
@@ -216,7 +216,7 @@ class TaskStaticVideoDetection(task_lib.Task):
             logits, pred_seq, self.vid_len, config.quantization_bins, config.coords_1d, mconfig.coord_vocab_shift)
 
         # Compute coordinate scaling from [0., 1.] to actual pixels in orig image.
-        image_size = frames.shape[1:3].as_list()
+        image_size = images.shape[1:3].as_list()
         if training:
             # scale points to whole image size during train.
             scale = utils.tf_float32(image_size)
@@ -232,7 +232,7 @@ class TaskStaticVideoDetection(task_lib.Task):
         gt_bboxes_rescaled = utils.scale_points(gt_bboxes, scale)
 
         return (
-            frames, video_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
+            images, video_ids, pred_bboxes, pred_bboxes_rescaled, pred_classes,
             scores, gt_classes, gt_bboxes, gt_bboxes_rescaled, area,
             orig_video_size, unpadded_video_size,
             file_names, file_ids
@@ -253,7 +253,7 @@ class TaskStaticVideoDetection(task_lib.Task):
     ):
 
         assert out_vis_dir is None, "visualization is not currently supported in static video detection"
-        
+
         """move to cpu"""
         new_outputs = []
         for i in range(len(outputs)):
