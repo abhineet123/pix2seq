@@ -7,9 +7,7 @@
       "name": "static_video_detection",
     }
   ],
-  {
-  "dataset": {
-    "%mode%_suffix": "static",
-  }
-}
+  "%mode%": {
+	"save_suffix": ["static",],
+	},
 }

@@ -357,11 +357,17 @@ def load(FLAGS):
     elif cfg.task.name == 'video_detection':
         from configs.config_video_det import update_task_config
         update_task_config(cfg)
+    elif cfg.task.name == 'static_video_detection':
+        from configs.config_static_video_det import update_task_config
+        update_task_config(cfg)
     elif cfg.task.name == 'semantic_segmentation':
         from configs.config_seg import update_task_config
         update_task_config(cfg)
     elif cfg.task.name == 'video_segmentation':
         from configs.config_video_seg import update_task_config
+        update_task_config(cfg)
+    elif cfg.task.name == 'static_video_segmentation':
+        from configs.config_static_video_seg import update_task_config
         update_task_config(cfg)
     else:
         raise AssertionError(f'unsupported task: {cfg.task.name}')
