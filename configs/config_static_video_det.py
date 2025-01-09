@@ -41,11 +41,11 @@ def update_task_config(cfg):
         task_config.max_instances_per_image = max_instances_per_image
         task_config.max_instances_per_image_test = max_instances_per_image_test
 
-        task_config.train_transforms = transform_configs.get_video_detection_train_transforms(
+        task_config.train_transforms = transform_configs.get_static_video_detection_train_transforms(
             cfg.dataset.transforms,
             cfg.dataset.target_size,
             image_size, length, max_disp, max_instances_per_image)
-        task_config.eval_transforms = transform_configs.get_video_detection_eval_transforms(
+        task_config.eval_transforms = transform_configs.get_static_video_detection_eval_transforms(
             cfg.dataset.transforms,
             image_size, length, max_instances_per_image_test)
 

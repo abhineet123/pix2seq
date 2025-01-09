@@ -191,6 +191,93 @@ def get_video_detection_train_transforms(
     ]
     return train_transforms
 
+def get_static_video_detection_train_transforms(
+        cfg,
+        target_size,
+        image_size: Tuple[int, int],
+        length: int,
+        max_disp: int,
+        max_instances_per_image: int,
+):
+    # return get_video_detection_eval_transforms(
+    #     image_size, length, max_instances_per_image)
+
+    instance_feature_names = ['bbox', 'class_id', 'class_name',
+                              'area', 'is_crowd']
+    object_coordinate_keys = ['bbox']
+
+    train_transforms = [
+        # D(name='record_original_video_size'),
+    ]
+    # if target_size is not None:
+    #     train_transforms.append(
+    #         D(name='resize_video',
+    #           inputs=['video'],
+    #           length=length,
+    #           antialias=[True],
+    #           target_size=target_size,
+    #           preserve_aspect_ratio=[False],
+    #           )
+    #     )
+    if cfg.scale_jitter:
+        # print('annoying scale_jitter is enabled')
+        train_transforms.append(
+            D(name='scale_jitter_video',
+              inputs=['frame'],
+              length=length,
+              target_size=image_size,
+              min_scale=cfg.jitter_scale_min,
+              max_scale=cfg.jitter_scale_max)
+        )
+    if cfg.fixed_crop:
+        # print('equally annoying fixed_size_crop_video is enabled')
+        train_transforms.append(
+            D(name='fixed_size_crop_video',
+              inputs=['frame'],
+              target_size=image_size,
+              object_coordinate_keys=object_coordinate_keys)
+        )
+    else:
+        train_transforms.append(
+            D(name='resize_video',
+              inputs=['frame'],
+              length=length,
+              antialias=[True],
+              target_size=image_size)
+        )
+    train_transforms += [
+        D(name='random_horizontal_flip_video',
+          inputs=['frame'],
+          length=length,
+          bbox_keys=['bbox']),
+
+        D(name='filter_invalid_objects_video',
+          inputs=instance_feature_names,
+          length=length,
+          filter_keys=['is_crowd']
+          ),
+
+        D(name='reorder_object_instances',
+          inputs=instance_feature_names,
+          order=cfg.object_order),
+
+        D(name='inject_noise_bbox_video',
+          length=length,
+          max_disp=max_disp,
+          max_instances_per_image=max_instances_per_image),
+
+        D(name='pad_video_to_max_size',
+          inputs=['frame'],
+          length=length,
+          target_size=image_size,
+          object_coordinate_keys=object_coordinate_keys),
+
+        D(name='truncate_or_pad_to_max_instances',
+          inputs=instance_feature_names,
+          max_instances=max_instances_per_image),
+    ]
+    return train_transforms
+
 
 def get_video_detection_eval_transforms(
         cfg,
@@ -210,6 +297,31 @@ def get_video_detection_eval_transforms(
         D(name='pad_video_to_max_size',
           length=length,
           inputs=['video'],
+          target_size=image_size,
+          object_coordinate_keys=['bbox']),
+        D(name='truncate_or_pad_to_max_instances',
+          inputs=instance_feature_names,
+          max_instances=max_instances_per_image),
+    ]
+
+def get_static_video_detection_eval_transforms(
+        cfg,
+        image_size: Tuple[int, int],
+        length: int,
+        max_instances_per_image: int,
+):
+    instance_feature_names = ['bbox', 'class_id', 'class_name',
+                              'area', 'is_crowd']
+    return [
+        # D(name='record_original_video_size'),
+        D(name='resize_video',
+          inputs=['frame'],
+          length=length,
+          antialias=[True],
+          target_size=image_size),
+        D(name='pad_video_to_max_size',
+          length=length,
+          inputs=['frame'],
           target_size=image_size,
           object_coordinate_keys=['bbox']),
         D(name='truncate_or_pad_to_max_instances',

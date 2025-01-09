@@ -190,8 +190,10 @@ def main(unused_argv):
     # from tasks import keypoint_detection
     from tasks import object_detection
     from tasks import video_detection
+    from tasks import static_video_detection
     from tasks import semantic_segmentation
     from tasks import video_segmentation
+    from tasks import static_video_segmentation
     # pylint: enable=unused-import
     from tasks import task as task_lib
 

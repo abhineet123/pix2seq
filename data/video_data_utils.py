@@ -284,7 +284,14 @@ def video_crop(
         object_coordinate_keys: Optional[List[str]]):
     """Crop video to region and adjust (normalized) bbox."""
     h_offset, w_offset, h, w = region
-    _, h_ori, w_ori, _ = tf.unstack(tf.shape(example[input_keys[0]]))
+    input_ = input_keys[0]
+    if input_ == 'video':
+        _, h_ori, w_ori, _ = tf.unstack(tf.shape(example[input_]))
+    elif input_ == 'frame':
+        h_ori, w_ori, _ = tf.unstack(tf.shape(example[input_]))
+    else:
+        raise AssertionError(f'Invalid input: {input_}')
+
     for k in input_keys:
         example[k] = example[k][:, h_offset:h_offset + h, w_offset:w_offset + w, :]
 

@@ -25,7 +25,13 @@ class FixedSizeVideoCrop(Transform):
         # input_size_key = self.config.input_size_key
         # input_size = example_out[input_size_key]
 
-        input_size = tf.shape(example[self.config.inputs[0]])[1:3]
+        input_ = self.config.inputs[0]
+        if input_=='video':
+            input_size = tf.shape(example[input_])[1:3]
+        elif input_=='frame':
+            input_size = tf.shape(example[input_])[:2]
+        else:
+            raise AssertionError(f'Invalid input: {input_}')
 
         output_size = tf.stack([target_height, target_width])
 
@@ -80,10 +86,15 @@ class ScaleJitterVideo(Transform):
         # input_size_key = self.config.input_size_key
         # input_size = example_out[input_size_key]
 
-        input_size = tf.cast(tf.shape(example_out[self.config.inputs[0]])[1:3], tf.float32)
+        input_ = self.config.inputs[0]
+        if input_=='video':
+            input_size = tf.cast(tf.shape(example_out[input_])[1:3], tf.float32)
+        elif input_=='frame':
+            input_size = tf.cast(tf.shape(example_out[input_])[:2], tf.float32)
+        else:
+            raise AssertionError(f'Invalid input: {input_}')
 
         min_scale, max_scale = self.config.min_scale, self.config.max_scale
-        # k = self.config.inputs[0]
         output_size = tf.constant([target_height, target_width], tf.float32)
         random_scale = tf.random.uniform([], min_scale, max_scale)
         random_scale_size = tf.multiply(output_size, random_scale)
@@ -210,13 +221,17 @@ class PadVideoToMaxSize(Transform):
         # input_size_key = self.config.input_size_key
         # unpadded_video_size =example_out[input_size_key]
 
-        unpadded_video_size = tf.shape(example_out[self.config.inputs[0]])[1:3]
-
-        unpadded_video_size = tf.cast(unpadded_video_size, tf.float32)
+        input_ = self.config.inputs[0]
+        if input_=='video':
+            unpadded_video_size = tf.cast(tf.shape(example_out[input_])[1:3], tf.float32)
+        elif input_=='frame':
+            unpadded_video_size = tf.cast(tf.shape(example_out[input_])[:2], tf.float32)
+        else:
+            raise AssertionError(f'Invalid input: {input_}')
 
         for k, backgrnd_val_ in zip(self.config.inputs, backgrnd_val):
             unpadded_video = example_out[k]
-            if k == 'video':
+            if k == 'video' or k == 'frame':
                 example_out['unpadded_video_size'] = unpadded_video_size
                 height = unpadded_video_size[0]
                 width = unpadded_video_size[1]
@@ -235,8 +250,8 @@ class PadVideoToMaxSize(Transform):
         object_coordinate_keys = self.config.get('object_coordinate_keys', [])
         if object_coordinate_keys:
 
-            assert 'video' in self.config.inputs, \
-                "video must be in inputs for object_coordinate_keys to be processed"
+            assert 'video' in self.config.inputs or 'frame' in self.config.inputs, \
+                "video or frame must be in inputs for object_coordinate_keys to be processed"
 
             hratio = tf.cast(height, tf.float32) / tf.cast(target_size[0], tf.float32)
             wratio = tf.cast(width, tf.float32) / tf.cast(target_size[1], tf.float32)
