@@ -973,7 +973,7 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts, ckpt_iter, create_copy):
 
     ckpt_path = linux_path(checkpoint_dir, ckpt_name)
     if create_copy:
-        ckpt_copy_dir = linux_path(checkpoint_dir, 'eval_ckpts')
+        ckpt_copy_dir = linux_path(checkpoint_dir, '#ckpt_copies')
         os.makedirs(ckpt_copy_dir, exist_ok=True)
         ckpt_idx = f'{ckpt_name}.index'
         files_to_transfer = [ckpt, ckpt_idx]
