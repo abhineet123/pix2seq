@@ -113,6 +113,12 @@
         - [p-1024-sub-2       @ r-2560/0_126](#p_1024_sub_2___r_2560_0_126_)
         - [p-1024-sub-4       @ r-2560/0_126](#p_1024_sub_4___r_2560_0_126_)
         - [p-1024-sub-8       @ r-2560/0_126](#p_1024_sub_8___r_2560_0_126_)
+    - [r-1024       @ 0_126](#r_1024___0_12_6_)
+        - [p-1024       @ r-1024/0_126](#p_1024___r_1024_0_126_)
+        - [p-1024-sub-2       @ r-1024/0_126](#p_1024_sub_2___r_1024_0_126_)
+        - [p-1024-sub-4       @ r-1024/0_126](#p_1024_sub_4___r_1024_0_126_)
+        - [p-1024-sub-8       @ r-1024/0_126](#p_1024_sub_8___r_1024_0_126_)
+        - [p-1024-sub-16       @ r-1024/0_126](#p_1024_sub_16___r_1024_0_126_)
     - [r-1280       @ 0_126](#r_1280___0_12_6_)
         - [p-1280       @ r-1280/0_126](#p_1280___r_1280_0_126_)
     - [r-640       @ 0_126](#r_640___0_12_6_)
@@ -555,6 +561,35 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-4:r-2560:s
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-8:r-2560:stats-2
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-8:r-2560:stats-2:mc
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-8:r-2560:stats-2:lac
+
+<a id="r_1024___0_12_6_"></a>
+## r-1024       @ 0_126-->tf_seg-ipsc
+<a id="p_1024___r_1024_0_126_"></a>
+### p-1024       @ r-1024/0_126-->tf_seg-ipsc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:r-1024:stats-2
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:r-1024:lac:stats-2
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:r-1024:mc:stats-2
+<a id="p_1024_sub_2___r_1024_0_126_"></a>
+### p-1024-sub-2       @ r-1024/0_126-->tf_seg-ipsc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-2:r-1024:stats-2
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-2:r-1024:stats-2:mc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-2:r-1024:stats-2:lac
+<a id="p_1024_sub_4___r_1024_0_126_"></a>
+### p-1024-sub-4       @ r-1024/0_126-->tf_seg-ipsc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-4:r-1024:stats-2
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-4:r-1024:stats-2:mc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-4:r-1024:stats-2:lac
+<a id="p_1024_sub_8___r_1024_0_126_"></a>
+### p-1024-sub-8       @ r-1024/0_126-->tf_seg-ipsc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-8:r-1024:stats-2
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-8:r-1024:stats-2:mc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-8:r-1024:stats-2:lac
+<a id="p_1024_sub_16___r_1024_0_126_"></a>
+### p-1024-sub-16       @ r-1024/0_126-->tf_seg-ipsc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-16:r-1024:stats-2
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-16:r-1024:stats-2:mc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:0_126:p-1024:sub-16:r-1024:stats-2:lac
+
 
 <a id="r_1280___0_12_6_"></a>
 ## r-1280       @ 0_126-->tf_seg-ipsc

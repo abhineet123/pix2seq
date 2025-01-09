@@ -85,7 +85,7 @@
 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-54_126:p-640:r-2560:rot-15_345_4:flip-1:sub-8,batch-64,dbg-0,dyn-1,dist-1,ep-10000,gz,pt-1,lac,fbb
 <a id="on_0_15___aug_lac_fbb_r_2560_p_640_sub_8_54_12_6_"></a>
 #### on-0_15       @ aug-lac-fbb/r-2560-p-640-sub-8/54_126-->p2s_seg-ipsc
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-54_126-640_640-640_640-rot_15_345_4-sub_8-lac-batch_64-fbb,_eval_,batch-8,save-vis-0,dbg-0,dyn-1,seg-0_15:p-640:r-2560:sub-8,lac
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-54_126-640_640-640_640-rot_15_345_4-flip-sub_8-lac-batch_64-fbb,_eval_,batch-8,save-vis-0,dbg-0,dyn-1,seg-0_15:p-640:r-2560:sub-8,lac,p9
 
 <a id="r_640___54_126_"></a>
 ## r-640       @ 54_126-->p2s_seg-ipsc
