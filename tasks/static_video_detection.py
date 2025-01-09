@@ -154,29 +154,12 @@ class TaskStaticVideoDetection(task_lib.Task):
 
         return batched_examples, input_seq, target_seq, token_weights
 
-        # if training:
-        #     """passed to trainer.compute_loss which calls model.call"""
-        #     return batched_examples, input_seq, target_seq, token_weights
-        # else:
-        #     """passed to task.infer which calls model.infer"""
-        #     return batched_examples, input_seq, target_seq, token_weights
-        #     # return batched_examples['video'], response_seq, batched_examples
-
     def infer(self, model, preprocessed_outputs):
         """Perform inference given the model and preprocessed outputs."""
         config = self.config.task
         examples, input_seq, target_seq, token_weights = preprocessed_outputs  # response_seq unused by default
         images = examples['image']
 
-        # videos_ = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
-        # import cv2
-        # for video_ in videos_:
-        #     for image_ in video_:
-        #         cv2.imshow('image_', image_)
-        #         cv2.waitKey(100)
-        #         print()
-
-        # video = tf.identity(video).gpu()
         bsz = tf.shape(images)[0]
 
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
@@ -187,13 +170,6 @@ class TaskStaticVideoDetection(task_lib.Task):
             images, prompt_seq, encoded=None,
             max_seq_len=config.max_seq_len_test,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
-
-        # if self.config.debug:
-        #     bbox_info_gt_infer, bbox_info_pred_infer = vis_utils.debug_loss(
-        #         self.config, self._category_names, examples, target_seq, logits, y_mask=None, y_pred=pred_seq,
-        #         pred_name='pred_infer', gt_name='gt infer', run_type='eval')
-        #     bboxes_pred_infer, bboxes_rescaled_pred_infer, classes_pred_infer, scores_pred_infer =
-        #     bbox_info_pred_infer
 
         return examples, pred_seq, logits
 

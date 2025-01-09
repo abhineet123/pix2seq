@@ -36,7 +36,7 @@ def update_task_config(cfg):
 def get_config(config_str=None):
     """config_str is either empty or contains task,architecture variants."""
 
-    task_variant = 'video_segmentation@ipsc_video_segmentation'
+    task_variant = 'static_video_segmentation@ipsc_static_video_segmentation'
 
     # encoder_variant = 'vit-b'
     encoder_variant = 'resnet'

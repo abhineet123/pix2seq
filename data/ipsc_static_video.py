@@ -232,7 +232,7 @@ class IPSCStaticVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         orig_image_size = tf.shape(image)[:2]
 
         new_example = {
-            'video': image,
+            'image': image,
             'vid_id': vid_id,
             'n_runs': n_runs,
             'rle': rle,

@@ -1,6 +1,9 @@
 <!-- MarkdownTOC -->
 
 - [16_53-r-2560-p-640-sub-8](#16_53_r_2560_p_640_sub_8_)
+    - [static       @ 16_53-r-2560-p-640-sub-8](#static___16_53_r_2560_p_640_sub_8_)
+        - [mc-ltac-fbb       @ static/16_53-r-2560-p-640-sub-8](#mc_ltac_fbb___static_16_53_r_2560_p_640_sub_8_)
+            - [on-0_15       @ mc-ltac-fbb/static/16_53-r-2560-p-640-sub-8](#on_0_15___mc_ltac_fbb_static_16_53_r_2560_p_640_sub_8_)
     - [len-2       @ 16_53-r-2560-p-640-sub-8](#len_2___16_53_r_2560_p_640_sub_8_)
         - [ltac       @ len-2/16_53-r-2560-p-640-sub-8](#ltac___len_2_16_53_r_2560_p_640_sub_8_)
             - [on-train       @ ltac/len-2/16_53-r-2560-p-640-sub-8](#on_train___ltac_len_2_16_53_r_2560_p_640_sub_8_)
@@ -46,6 +49,15 @@
 <!-- /MarkdownTOC -->
 <a id="16_53_r_2560_p_640_sub_8_"></a>
 # 16_53-r-2560-p-640-sub-8
+
+<a id="static___16_53_r_2560_p_640_sub_8_"></a>
+## static       @ 16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+<a id="mc_ltac_fbb___static_16_53_r_2560_p_640_sub_8_"></a>
+### mc-ltac-fbb       @ static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_seg.py  --j5=train,resnet-640,static_vid_seg-16_53:p-640:r-2560:sub-8,batch-32,dbg-0,dyn-1,dist-0,pt-1,mc,ltac,fbb
+<a id="on_0_15___mc_ltac_fbb_static_16_53_r_2560_p_640_sub_8_"></a>
+#### on-0_15       @ mc-ltac-fbb/static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-2-stride-1-sub_8-ltac-mc-batch_32-fbb,_eval_,batch-4,save-vis-0,dbg-0,dyn-1,vid_seg-0_15:p-640:r-2560:sub-8,mc,ltac,asi,x99
 
 
 <a id="len_2___16_53_r_2560_p_640_sub_8_"></a>

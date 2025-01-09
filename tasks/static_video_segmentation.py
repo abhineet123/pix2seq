@@ -228,12 +228,12 @@ class TaskStaticVideoSegmentation(task_lib.Task):
         config = self.config.task
         mconfig = self.config.model
         examples, input_seq, target_seq, token_weights = preprocessed_outputs
-        video = examples["video"]
-        bsz = tf.shape(video)[0]
+        image = examples["image"]
+        bsz = tf.shape(image)[0]
         prompt_seq = task_utils.build_prompt_seq_from_task_id(
             self.task_vocab_id, prompt_shape=(bsz, 1))
         pred_seq, logits, _ = model.infer(
-            video, prompt_seq, encoded=None,
+            image, prompt_seq, encoded=None,
             max_seq_len=mconfig.max_seq_len + 1,
             temperature=config.temperature, top_k=config.top_k, top_p=config.top_p)
 
@@ -241,7 +241,7 @@ class TaskStaticVideoSegmentation(task_lib.Task):
 
     def postprocess_tpu(self, batched_examples, pred_rle, logits, training=False):
         example = batched_examples
-        videos, image_ids, frame_ids = example['video'], example['image_ids'], example['frame_ids']
+        images, image_ids, frame_ids = example['image'], example['image_ids'], example['frame_ids']
         vid_ids = example['vid_id']
         vid_paths = example['vid_path']
         seqs = example['seq']
@@ -254,31 +254,35 @@ class TaskStaticVideoSegmentation(task_lib.Task):
 
         """goes to postprocess_cpu"""
         return (
-            videos, vid_ids, image_ids, frame_ids, pred_rle, logits,
+            images, vid_ids, image_ids, frame_ids, pred_rle, logits,
             gt_rle, rle_len, n_runs, orig_image_size, seqs,
             vid_paths, mask_vid_paths,
         )
 
-    def postprocess_cpu(self,
-                        outputs,
-                        train_step,
-                        out_vis_dir,
-                        out_mask_dir,
-                        out_mask_logits_dir,
-                        vid_writers=None,
-                        json_vid_info=None,
-                        eval_step=None,
-                        training=False,
-                        show=False,
-                        summary_tag='eval',
-                        ret_results=False,
-                        **kwargs
-                        ):
+    def postprocess_cpu(
+            self,
+            outputs,
+            train_step,
+            out_vis_dir,
+            out_mask_dir,
+            out_mask_logits_dir,
+            vid_writers=None,
+            json_vid_info=None,
+            eval_step=None,
+            training=False,
+            show=False,
+            summary_tag='eval',
+            ret_results=False,
+            **kwargs
+    ):
+
+        assert out_vis_dir is None, "visualization is not currently supported in static video segmentation"
+
         outputs_np = []
         for i in range(len(outputs)):
             outputs_np.append(tf.identity(outputs[i]).numpy())
 
-        (videos, vid_ids, image_ids, frame_ids, rles, logits,
+        (images, vid_ids, image_ids, frame_ids, rles, logits,
          gt_rles, gt_rle_lens, n_runs, orig_sizes, seqs,
          vid_paths, mask_vid_paths) = outputs_np
 
@@ -297,7 +301,7 @@ class TaskStaticVideoSegmentation(task_lib.Task):
         # vid_paths = task_utils.bytes_to_str_list(vid_paths)
         # mask_vid_paths = task_utils.bytes_to_str_list(mask_vid_paths)
 
-        videos = np.copy(tf.image.convert_image_dtype(videos, tf.uint8))
+        images = np.copy(tf.image.convert_image_dtype(images, tf.uint8))
 
         max_length = self.config.dataset.eval.max_length
         subsample = self.config.dataset.eval.subsample
@@ -322,6 +326,8 @@ class TaskStaticVideoSegmentation(task_lib.Task):
         starts_2d = self.config.dataset.starts_2d
         flat_order = self.config.dataset.flat_order
 
+        vid_len = self.config.dataset.length
+
         starts_offset = self.config.model.coord_vocab_shift
         lengths_offset = self.config.model.len_vocab_shift
         class_offset = self.config.model.class_vocab_shift
@@ -332,10 +338,10 @@ class TaskStaticVideoSegmentation(task_lib.Task):
         if subsample > 1:
             max_length = int(max_length / subsample)
 
-        for (image_ids_, frame_ids_, video, vid_id, rle, logits_,
+        for (image_ids_, frame_ids_, image, vid_id, rle, logits_,
              orig_size, gt_rle, gt_rle_len, n_runs_, seq,
              vid_path, mask_vid_path) in (
-                zip(image_ids, frame_ids, videos, vid_ids, rles, logits,
+                zip(image_ids, frame_ids, images, vid_ids, rles, logits,
                     orig_sizes, gt_rles, gt_rle_lens, n_runs, seqs,
                     vid_paths, mask_vid_paths, strict=True)):
 
@@ -355,12 +361,10 @@ class TaskStaticVideoSegmentation(task_lib.Task):
             mask_from_file = mask_from_file_sub = None
             if self.config.debug:
                 vid_masks, vid_masks_sub = self.check_video_rle(
-                    mask_vid_path, video, vid_id, image_ids_, frame_ids_, gt_rle_tokens,
+                    mask_vid_path, image, vid_id, image_ids_, frame_ids_, gt_rle_tokens,
                     gt_rle_len, n_runs_, training=False)
                 mask_from_file = vid_masks[0]
                 mask_from_file_sub = vid_masks_sub[0]
-
-            vid_len = video.shape[0]
 
             rle_tokens = rle[rle != vocab.PADDING_TOKEN]
 
@@ -440,7 +444,7 @@ class TaskStaticVideoSegmentation(task_lib.Task):
                     if not np.array_equal(mask_from_file_sub, vid_mask_gt):
                         print("vid_mask_gt mismatch")
                         task_utils.check_individual_vid_masks(
-                            video, mask_from_file_sub, vid_mask_gt, self.class_id_to_col, n_classes)
+                            image, mask_from_file_sub, vid_mask_gt, self.class_id_to_col, n_classes)
                     # if show:
                     #     vid_mask_vis = task_utils.mask_id_to_vis_bgr(vid_mask_, self.class_id_to_col)
                     #     vid_mask_sub_vis = task_utils.mask_id_to_vis_bgr(vid_mask_sub_, self.class_id_to_col)
@@ -454,8 +458,8 @@ class TaskStaticVideoSegmentation(task_lib.Task):
             else:
                 out_frame_id = 0
 
-            for image_id_, frame_id, image_, mask_rec, mask_logits, mask_gt in zip(
-                    image_ids_, frame_ids_, video, vid_mask_rec, vid_mask_logits, vid_mask_gt, strict=True):
+            for image_id_, frame_id, mask_rec, mask_logits, mask_gt in zip(
+                    image_ids_, frame_ids_, vid_mask_rec, vid_mask_logits, vid_mask_gt, strict=True):
                 out_frame_id += 1
                 img_info = dict(
                     seq=str(seq),
@@ -468,7 +472,7 @@ class TaskStaticVideoSegmentation(task_lib.Task):
                 )
                 vis_utils.visualize_mask(
                     image_id_,
-                    image_,
+                    image,
                     mask_rec,
                     mask_logits,
                     mask_gt,
