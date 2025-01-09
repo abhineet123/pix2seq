@@ -9,9 +9,8 @@ import tensorflow as tf
 
 from tasks import task_utils
 
-
-@dataset_lib.DatasetRegistry.register('ipsc_video_detection')
-class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
+@dataset_lib.DatasetRegistry.register('ipsc_static_video_detection')
+class IPSCStaticVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
 
     def parse_example(self, example, training):
         """Parse the serialized example into a dictionary of tensors.
@@ -54,43 +53,18 @@ class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
 
         filenames = example['video/file_names']
 
-        # print(f'h, w : {h, w}')
-        # print(f'num_frames: {num_frames}')
-        # print(f'filenames: {filenames}')
-        # exit()
-
-        # def read_video_frames(x):
-        #     print(f'x: {x}')
-        #     tf.print(f'x: {x}')
-
-        # root_dir = tf.convert_to_tensor(self.config.root_dir)
-        # file_path = tf.strings.join([root_dir, x], os.path.sep)
-        # print(f'file_path: {file_path}')
-        # tf.print(f'file_path: {file_path}')
-
-        # return tf.io.decode_image(tf.io.read_file(x), channels=3)
-        # exit()
-
-        decode_fn = tf.io.decode_image
-        # decode_fn = tf.io.decode_jpeg
-        frames = tf.map_fn(
-            lambda x: decode_fn(tf.io.read_file(x), channels=3),
-            # read_video_frames,
-            filenames,
-            fn_output_signature=tf.uint8
-        )
+        x = filenames[0]
+        frame = tf.io.decode_image(tf.io.read_file(x), channels=3)
         length = self.config.length
 
-        # frames.set_shape([length, h, w, 3])
-        frames.set_shape([length, None, None, 3])
-        # frames.set_shape([None, None, None, 3])
+        frame.set_shape([None, None, 3])
 
-        frames = tf.image.convert_image_dtype(frames, tf.float32)
+        frame = tf.image.convert_image_dtype(frame, tf.float32)
 
         target_size = self.config.target_size
         if target_size is not None:
-            frames = tf.image.resize(
-                frames, target_size, method='bilinear',
+            frame = tf.image.resize(
+                frame, target_size, method='bilinear',
                 antialias=False, preserve_aspect_ratio=False)
         # area = bbox = None
 
@@ -100,7 +74,7 @@ class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
         scale = 1. / utils.tf_float32((h, w))
         bbox = utils.scale_points(bbox, scale)
 
-        resized_vid_size = tf.shape(frames)[1:3]
+        resized_vid_size = tf.shape(frame)[:2]
 
         new_example = {
             'orig_video_size': [h, w],
@@ -108,7 +82,7 @@ class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
             'video/file_names': tf.cast(example['video/file_names'], tf.string),
             'video/file_ids': tf.cast(example['video/file_ids'], tf.int64),
             'video/id': tf.cast(example['video/source_id'], tf.int64),
-            'video/frames': frames,
+            'video/frame': frame,
             'video/num_frames': tf.cast(num_frames, tf.int32),
             'video/size': tf.cast(example['video/size'], tf.int64),
             'shape': utils.tf_float32((h, w)),
@@ -122,8 +96,8 @@ class IPSCVideoDetectionTFRecordDataset(tf_record.TFRecordDataset):
         return new_example
 
 
-@dataset_lib.DatasetRegistry.register('ipsc_video_segmentation')
-class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
+@dataset_lib.DatasetRegistry.register('ipsc_static_video_segmentation')
+class IPSCStaticVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
     def __init__(self, config):
         super().__init__(config)
         self.vid_id_to_rle = None
@@ -216,23 +190,19 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
 
     def extract(self, example, training):
         h, w = int(example['video/height']), int(example['video/width'])
-        images = []
         filenames = []
         frame_ids = []
         image_ids = []
-        for _id in range(self.config.length):
-            image = decode_utils.decode_image(
-                example, f'video/frame-{_id}/encoded')
-            images.append(image)
+        frame = decode_utils.decode_image(
+            example, f'video/frame-0/encoded')
 
+        for _id in range(self.config.length):
             filename = example[f'video/frame-{_id}/filename']
             image_id = example[f'video/frame-{_id}/image_id']
             frame_id = example[f'video/frame-{_id}/frame_id']
             filenames.append(filename)
             frame_ids.append(frame_id)
             image_ids.append(image_id)
-
-        images = tf.stack(images, axis=0)
 
         vid_id = example['video/id']
         n_runs = example['video/n_runs']
@@ -259,10 +229,10 @@ class IPSCVideoSegmentationTFRecordDataset(tf_record.TFRecordDataset):
         mask_vid_path = example['video/mask_path']
         seq = example['video/seq']
 
-        orig_image_size = tf.shape(images)[1:3]
+        orig_image_size = tf.shape(frame)[:2]
 
         new_example = {
-            'video': images,
+            'video': frame,
             'vid_id': vid_id,
             'n_runs': n_runs,
             'rle': rle,

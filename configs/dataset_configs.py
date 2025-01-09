@@ -89,6 +89,26 @@ def get_ipsc_video_data():
 
     return data
 
+def get_ipsc_static_video_data():
+    root_dir = './datasets/ipsc/well3/all_frames_roi'
+
+    data = D(
+        name='ipsc_static_video_detection',
+        root_dir=root_dir,
+        label_shift=0,
+        compressed=1,
+        max_disp=0.01,
+        length=2,
+        **get_shared_det_data()
+    )
+
+    for mode in ['train', 'eval']:
+        data[f'{mode}_stride'] = 1
+        data[f'{mode}_sample'] = 0
+        data[f'{mode}_frame_gaps'] = []
+
+    return data
+
 
 def get_shared_seg_data():
     root_dir = './datasets/ipsc/well3/all_frames_roi'
@@ -162,6 +182,19 @@ def get_sem_seg_data():
 def get_vid_seg_data():
     data = D(
         name='ipsc_video_segmentation',
+        time_as_class=0,
+        length=2,
+        **get_shared_seg_data()
+    )
+    for mode in ['train', 'eval']:
+        data[f'{mode}_stride'] = 1
+        data[f'{mode}_sample'] = 0
+        data[f'{mode}_frame_gap'] = []
+    return data
+
+def get_static_vid_seg_data():
+    data = D(
+        name='ipsc_static_video_segmentation',
         time_as_class=0,
         length=2,
         **get_shared_seg_data()
@@ -474,6 +507,8 @@ def ipsc_post_process(ds_cfg, task_cfg, model_cfg, training):
 dataset_configs = {
     'ipsc_object_detection': get_ipsc_data(),
     'ipsc_video_detection': get_ipsc_video_data(),
+    'ipsc_static_video_detection': get_ipsc_static_video_data(),
     'ipsc_semantic_segmentation': get_sem_seg_data(),
     'ipsc_video_segmentation': get_vid_seg_data(),
+    'ipsc_static_video_segmentation': get_static_vid_seg_data(),
 }

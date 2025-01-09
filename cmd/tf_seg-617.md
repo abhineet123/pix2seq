@@ -7,6 +7,8 @@
     - [r-640       @ 32_49](#r_640___32_4_9_)
         - [sub-4       @ r-640/32_49](#sub_4___r_640_32_4_9_)
                 - [lac       @ sub-4/r-640/32_49](#lac___sub_4_r_640_32_4_9_)
+    - [r-1280       @ 32_49](#r_1280___32_4_9_)
+        - [p-1024-sub-8-lac       @ r-1280/32_49](#p_1024_sub_8_lac___r_1280_32_49_)
 - [0_3       @ ipsc](#0_3___ipsc_)
     - [orig       @ 0_3](#orig___0_3_)
         - [sub-8-aug       @ orig/0_3](#sub_8_aug___orig_0_3_)
@@ -148,6 +150,12 @@ python3 data/scripts/create_seg_tfrecord.py cfg=617:32_49:p-640:sub-8:lac:json
 ##### lac       @ sub-4/r-640/32_49-->tf_seg-617
 python3 data/scripts/create_seg_tfrecord.py cfg=617:32_49:p-640:sub-4:r-640:lac:segm
 
+<a id="r_1280___32_4_9_"></a>
+## r-1280       @ 32_49-->tf_seg-617
+<a id="p_1024_sub_8_lac___r_1280_32_49_"></a>
+### p-1024-sub-8-lac       @ r-1280/32_49-->tf_seg-617
+python3 data/scripts/create_seg_tfrecord.py cfg=617:32_49:p-1024:sub-8:r-1280:lac
+
 
 <a id="0_3___ipsc_"></a>
 # 0_3       @ ipsc-->p2s_seg_tfrecord
@@ -277,7 +285,6 @@ python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-1024:sub-8:r-1280:rot
 #### sub-8-aug-lac       @ p-1280/r-1280/0_31-->tf_seg-617
 python3 data/scripts/create_seg_tfrecord.py cfg=617:0_31:p-1280:sub-8:r-1280:rot-15_345_16:strd-64_256:flip:lac
 
-a id="r_640___0_31_"></a>
 <a id="r_640___0_31_"></a>
 ## r-640       @ 0_31-->tf_seg-617
 <a id="sub_8_aug___r_640_0_31_"></a>

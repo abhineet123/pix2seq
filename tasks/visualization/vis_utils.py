@@ -1904,7 +1904,8 @@ def visualize_boxes_and_labels_on_video(
 
     for frame_id in range(vid_len):
         start_id = frame_id * 4
-        image_vis = np.copy(video[frame_id, ...])
+        if out_vis_dir is not None:
+            image_vis = np.copy(video[frame_id, ...])
 
         image_path = str(file_names[frame_id])
         image_name = os.path.basename(image_path)

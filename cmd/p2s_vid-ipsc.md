@@ -1,5 +1,7 @@
 <!-- MarkdownTOC -->
 
+- [static](#stati_c_)
+    - [16_53-len-2-aug-fbb       @ static](#16_53_len_2_aug_fbb___static_)
 - [swin](#swi_n_)
     - [16_53-len-2       @ swin](#16_53_len_2___swin_)
         - [on-train       @ 16_53-len-2/swin](#on_train___16_53_len_2_swin_)
@@ -183,6 +185,12 @@
         - [on-0_15       @ 54_126-len-6-aug-fbb/lfn](#on_0_15___54_126_len_6_aug_fbb_lfn_)
 
 <!-- /MarkdownTOC -->
+<a id="stati_c_"></a>
+# static 
+<a id="16_53_len_2_aug_fbb___static_"></a>
+## 16_53-len-2-aug-fbb       @ static-->p2s_vid-ipsc
+python3 run.py --cfg=configs/config_static_video_det.py --j5=train,resnet-640,static_vid_det,pt-1,ipsc-16_53,len-2,batch-2,dbg-1,dyn-1,dist-1,jtr,res-1280,fbb
+
 <a id="swi_n_"></a>
 # swin 
 <a id="16_53_len_2___swin_"></a>

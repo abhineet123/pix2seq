@@ -1,0 +1,15 @@
+{
+  "task": {
+    "name": "static_video_detection",
+  },
+  "tasks": [
+    {
+      "name": "static_video_detection",
+    }
+  ],
+  {
+  "dataset": {
+    "%mode%_suffix": "static",
+  }
+}
+}
