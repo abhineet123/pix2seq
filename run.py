@@ -310,7 +310,7 @@ def main(unused_argv):
             new_ckpt = None
 
             if cfg.eval.run_existing and not is_remote:
-                create_copy = cfg.eval.ckpt_iter > 0
+                create_copy = cfg.eval.ckpt_iter == 0
                 new_ckpt = utils.get_local_ckpt(checkpoint_dir, evaluated_ckpts,
                                                 cfg.eval.ckpt_iter, create_copy)
                 if new_ckpt is not None:

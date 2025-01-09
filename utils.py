@@ -980,6 +980,7 @@ def get_local_ckpt(checkpoint_dir, excluded_ckpts, ckpt_iter, create_copy):
         for f in files_to_transfer:
             src_path = linux_path(checkpoint_dir, f)
             dst_path = linux_path(ckpt_copy_dir, f)
+            print(f'{src_path} --> {dst_path}')
             shutil.copyfile(src_path, dst_path)
 
     return ckpt_path
