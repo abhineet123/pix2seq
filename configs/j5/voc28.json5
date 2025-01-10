@@ -3,4 +3,7 @@
 	defer_vocab: 1,
 	vocab_size: 28000,
   },
+"%mode%": {
+	"save_suffix": ["voc28",],
+  },
 }
