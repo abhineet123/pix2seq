@@ -21,15 +21,15 @@ def update_task_config(cfg):
     cfg.task.image_size = image_size
 
     """"update parameters that depend on image size but inexplicably missing from pretrained config files"""
-    assert cfg.task.name == 'video_segmentation', f"invalid task name: {cfg.task.name}"
+    assert cfg.task.name == 'static_video_segmentation', f"invalid task name: {cfg.task.name}"
 
     for task in cfg.tasks + [cfg.task, ]:
         task.image_size = image_size
 
-        task.eval_transforms = transform_configs.get_video_segmentation_eval_transforms(
+        task.eval_transforms = transform_configs.get_static_video_segmentation_eval_transforms(
             image_size, max_seq_len)
 
-        task.train_transforms = transform_configs.get_video_segmentation_train_transforms(
+        task.train_transforms = transform_configs.get_static_video_segmentation_train_transforms(
             image_size, max_seq_len)
 
 

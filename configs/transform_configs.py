@@ -391,6 +391,37 @@ def get_video_segmentation_eval_transforms(
     ]
 
 
+def get_static_video_segmentation_train_transforms(
+        image_size: Tuple[int, int],
+        max_seq_len,
+):
+    train_transforms = [
+        D(name='resize_video',
+          inputs=['image',],
+          antialias=[True],
+          target_size=image_size),
+        D(name='truncate_or_pad_to_max_instances',
+          inputs=['rle', ],
+          max_instances=max_seq_len),
+    ]
+    return train_transforms
+
+
+def get_static_video_segmentation_eval_transforms(
+        image_size: Tuple[int, int],
+        max_seq_len,
+):
+    return [
+        D(name='resize_video',
+          inputs=['image', ],
+          antialias=[True],
+          target_size=image_size),
+        D(name='truncate_or_pad_to_max_instances',
+          inputs=['rle', ],
+          max_instances=max_seq_len),
+    ]
+
+
 def get_instance_segmentation_train_transforms(
         image_size: Tuple[int, int],
         max_instances_per_image: int,
