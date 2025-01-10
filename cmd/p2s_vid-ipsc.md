@@ -196,6 +196,8 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_static_video_det.py -
 <a id="on_0_15___16_53_len_2_aug_fbb_static_"></a>
 ### on-0_15       @ 16_53-len-2-aug-fbb/static-->p2s_vid-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_static_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-static-batch_32-jtr-res_1280-fbb,_eval_,static_vid_det,ipsc-0_15,len-2,vstrd-1,batch-4,save-vis-0,dbg-0,dyn-1,sample-0,asi
+`vstrd-2`
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_static_video_det.py  --j5=m-resnet_640_ext_reorg_roi_g2-16_53-length-2-stride-1-static-batch_32-jtr-res_1280-fbb,_eval_,static_vid_det,ipsc-0_15,len-2,vstrd-2,batch-4,save-vis-0,dbg-0,dyn-1,sample-0,asi
 
 
 <a id="54_126_len_2_aug_fbb___static_"></a>
