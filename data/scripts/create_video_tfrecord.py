@@ -28,7 +28,7 @@ class Params(paramparse.CFG):
     def __init__(self):
         paramparse.CFG.__init__(self, cfg_prefix='tf_vid')
         self.ann_file = ''
-        self.ann_suffix = ''
+        self.ann_suffix = []
         self.ann_ext = 'json.gz'
         self.class_names_path = ''
 
@@ -866,7 +866,9 @@ def main():
     else:
         ann_files = [params.ann_file, ]
 
-    if params.ann_suffix:
+    ann_suffix = params.ann_suffix
+    if ann_suffix:
+        ann_suffix = '-'.join(ann_suffix)
         ann_files = [f'{ann_file}-{params.ann_suffix}' for ann_file in ann_files]
 
     if params.start_seq_id > 0 or params.end_seq_id >= 0:

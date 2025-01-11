@@ -172,7 +172,7 @@ def load_from_json5(json_list, json_root):
             json_path = os.path.join(json_root, json_path)
 
         assert os.path.isfile(json_path), f"non-existent cfg json: {json_path}"
-        # print(f'loading json cfg from {json_path}')
+        # print(freeloading json cfg from {json_path}')
         with open(json_path, 'r') as f:
             json_str = f.read()
 
