@@ -869,15 +869,17 @@ def main():
     ann_suffix = params.ann_suffix
     if ann_suffix:
         ann_suffix = '-'.join(ann_suffix)
-        ann_files = [f'{ann_file}-{params.ann_suffix}' for ann_file in ann_files]
+        ann_files = [f'{ann_file}-{ann_suffix}' for ann_file in ann_files]
 
     if params.start_seq_id > 0 or params.end_seq_id >= 0:
         assert params.end_seq_id >= params.start_seq_id, "end_seq_id must to be >= start_seq_id"
-        ann_files = [f'{ann_file}-seq-{params.start_seq_id}_{params.end_seq_id}' for ann_file in ann_files]
+        ann_files = [f'{ann_file}-seq-{params.start_seq_id}_{params.end_seq_id}'
+                     for ann_file in ann_files]
 
     # params.ann_file = None
 
-    ann_files = [os.path.join(params.image_dir, 'ytvis19', f'{ann_file}.{params.ann_ext}') for ann_file in ann_files]
+    ann_files = [os.path.join(params.image_dir, 'ytvis19', f'{ann_file}.{params.ann_ext}')
+                 for ann_file in ann_files]
     vid_id_offset = 0
     n_all_vid = 0
     n_all_ann = 0
