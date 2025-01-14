@@ -1,13 +1,12 @@
 <!-- MarkdownTOC -->
 
 - [16_53-r-2560-p-640-sub-8](#16_53_r_2560_p_640_sub_8_)
-    - [static       @ 16_53-r-2560-p-640-sub-8](#static___16_53_r_2560_p_640_sub_8_)
-        - [len-2       @ static/16_53-r-2560-p-640-sub-8](#len_2___static_16_53_r_2560_p_640_sub_8_)
-            - [mc-ltac-fbb       @ len-2/static/16_53-r-2560-p-640-sub-8](#mc_ltac_fbb___len_2_static_16_53_r_2560_p_640_sub_8_)
-                - [on-0_15       @ mc-ltac-fbb/len-2/static/16_53-r-2560-p-640-sub-8](#on_0_15___mc_ltac_fbb_len_2_static_16_53_r_2560_p_640_sub_8_)
-        - [len-8       @ static/16_53-r-2560-p-640-sub-8](#len_8___static_16_53_r_2560_p_640_sub_8_)
-            - [mc-tac-fbb       @ len-8/static/16_53-r-2560-p-640-sub-8](#mc_tac_fbb___len_8_static_16_53_r_2560_p_640_sub_8_)
-                - [on-0_15       @ mc-tac-fbb/len-8/static/16_53-r-2560-p-640-sub-8](#on_0_15___mc_tac_fbb_len_8_static_16_53_r_2560_p_640_sub_8_)
+    - [len-2-static       @ 16_53-r-2560-p-640-sub-8](#len_2_static___16_53_r_2560_p_640_sub_8_)
+        - [mc-ltac-fbb       @ len-2-static/16_53-r-2560-p-640-sub-8](#mc_ltac_fbb___len_2_static_16_53_r_2560_p_640_sub_8_)
+            - [on-0_15       @ mc-ltac-fbb/len-2-static/16_53-r-2560-p-640-sub-8](#on_0_15___mc_ltac_fbb_len_2_static_16_53_r_2560_p_640_sub_8_)
+    - [len-8-static       @ 16_53-r-2560-p-640-sub-8](#len_8_static___16_53_r_2560_p_640_sub_8_)
+        - [mc-tac-fbb       @ len-8-static/16_53-r-2560-p-640-sub-8](#mc_tac_fbb___len_8_static_16_53_r_2560_p_640_sub_8_)
+            - [on-0_15       @ mc-tac-fbb/len-8-static/16_53-r-2560-p-640-sub-8](#on_0_15___mc_tac_fbb_len_8_static_16_53_r_2560_p_640_sub_8_)
     - [len-2       @ 16_53-r-2560-p-640-sub-8](#len_2___16_53_r_2560_p_640_sub_8_)
         - [ltac       @ len-2/16_53-r-2560-p-640-sub-8](#ltac___len_2_16_53_r_2560_p_640_sub_8_)
             - [on-train       @ ltac/len-2/16_53-r-2560-p-640-sub-8](#on_train___ltac_len_2_16_53_r_2560_p_640_sub_8_)
@@ -54,30 +53,27 @@
 <a id="16_53_r_2560_p_640_sub_8_"></a>
 # 16_53-r-2560-p-640-sub-8
 
-<a id="static___16_53_r_2560_p_640_sub_8_"></a>
-## static       @ 16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+<a id="len_2_static___16_53_r_2560_p_640_sub_8_"></a>
+## len-2-static       @ 16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
 
-<a id="len_2___static_16_53_r_2560_p_640_sub_8_"></a>
-### len-2       @ static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
 <a id="mc_ltac_fbb___len_2_static_16_53_r_2560_p_640_sub_8_"></a>
-#### mc-ltac-fbb       @ len-2/static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+### mc-ltac-fbb       @ len-2-static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_static_video_seg.py  --j5=train,resnet-640,static_vid_seg-16_53:p-640:r-2560:sub-8,batch-48,dbg-0,dyn-1,dist-0,pt-1,mc,ltac,fbb
 <a id="on_0_15___mc_ltac_fbb_len_2_static_16_53_r_2560_p_640_sub_8_"></a>
-##### on-0_15       @ mc-ltac-fbb/len-2/static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+#### on-0_15       @ mc-ltac-fbb/len-2-static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_static_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-2-stride-1-sub_8-ltac-mc-static-batch_48-fbb,_eval_,batch-4,save-vis-0,dbg-0,dyn-1,static_vid_seg-0_15:p-640:r-2560:sub-8,mc,ltac,asi,p9
 
-<a id="len_8___static_16_53_r_2560_p_640_sub_8_"></a>
-### len-8       @ static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+<a id="len_8_static___16_53_r_2560_p_640_sub_8_"></a>
+## len-8-static       @ 16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
 <a id="mc_tac_fbb___len_8_static_16_53_r_2560_p_640_sub_8_"></a>
-#### mc-tac-fbb       @ len-8/static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
-CUDA_VISIBLE_DEVICES=0  python3 run.py --cfg=configs/config_static_video_seg.py  --j5=train,resnet-640,static_vid_seg-16_53:p-640:r-2560:sub-8,batch-8,dbg-0,dyn-1,dist-0,pt-1,mc,tac,voc15,seq3k,len-8,fbb
+### mc-tac-fbb       @ len-8-static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+python3 run.py --cfg=configs/config_static_video_seg.py  --j5=train,resnet-640,static_vid_seg-16_53:p-640:r-2560:sub-8,batch-10,dbg-0,dyn-1,dist-1,pt-1,mc,tac,voc15,seq3k,len-8,fbb
 <a id="on_0_15___mc_tac_fbb_len_8_static_16_53_r_2560_p_640_sub_8_"></a>
-##### on-0_15       @ mc-tac-fbb/len-8/static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_static_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-batch_8-seq3k-fbb,_eval_,batch-4,save-vis-0,dbg-0,dyn-1,static_vid_seg-0_15:p-640:r-2560:sub-8,mc,tac,voc15,seq3k,len-8,vstrd-8,asi,vis-0,e5g
+#### on-0_15       @ mc-tac-fbb/len-8-static/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_static_video_seg.py  --j5=m-resnet_640_resize_2560-16_53-640_640-640_640-length-8-stride-1-sub_8-tac-mc-static-batch_10-voc15-seq3k-fbb,_eval_,batch-4,save-vis-0,dbg-0,dyn-1,static_vid_seg-0_15:p-640:r-2560:sub-8,mc,tac,voc15,seq3k,len-8,vstrd-8,asi,vis-0,p9
 
 <a id="len_2___16_53_r_2560_p_640_sub_8_"></a>
 ## len-2       @ 16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc
-
 
 <a id="ltac___len_2_16_53_r_2560_p_640_sub_8_"></a>
 ### ltac       @ len-2/16_53-r-2560-p-640-sub-8-->p2s_vid_seg-ipsc

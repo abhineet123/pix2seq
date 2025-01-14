@@ -157,7 +157,7 @@ def run(cfg, dataset, task, eval_steps, ckpt, strategy, model, checkpoint, tf):
         # cfg.eager = 1
 
         # print(f'min_score_thresh: {cfg.eval.min_score_thresh}')
-        pbar = tqdm(total=eval_steps, ncols=60)
+        pbar = tqdm(total=eval_steps, ncols=120, position=0, leave=True)
 
         while True:
             if eval_steps and cur_step >= eval_steps:
