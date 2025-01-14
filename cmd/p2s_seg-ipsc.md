@@ -2,9 +2,13 @@
 
 - [54_126](#54_12_6_)
     - [r-2560-p-640-sub-8       @ 54_126](#r_2560_p_640_sub_8___54_126_)
+        - [lac-fbb       @ r-2560-p-640-sub-8/54_126](#lac_fbb___r_2560_p_640_sub_8_54_12_6_)
+            - [on-0_15       @ lac-fbb/r-2560-p-640-sub-8/54_126](#on_0_15___lac_fbb_r_2560_p_640_sub_8_54_12_6_)
         - [aug-lac-fbb       @ r-2560-p-640-sub-8/54_126](#aug_lac_fbb___r_2560_p_640_sub_8_54_12_6_)
             - [on-0_15       @ aug-lac-fbb/r-2560-p-640-sub-8/54_126](#on_0_15___aug_lac_fbb_r_2560_p_640_sub_8_54_12_6_)
     - [r-2560-p-1024-sub-8       @ 54_126](#r_2560_p_1024_sub_8___54_126_)
+        - [lac-fbb       @ r-2560-p-1024-sub-8/54_126](#lac_fbb___r_2560_p_1024_sub_8_54_126_)
+            - [on-0_15       @ lac-fbb/r-2560-p-1024-sub-8/54_126](#on_0_15___lac_fbb_r_2560_p_1024_sub_8_54_126_)
         - [aug-lac-fbb       @ r-2560-p-1024-sub-8/54_126](#aug_lac_fbb___r_2560_p_1024_sub_8_54_126_)
             - [on-0_15       @ aug-lac-fbb/r-2560-p-1024-sub-8/54_126](#on_0_15___aug_lac_fbb_r_2560_p_1024_sub_8_54_126_)
     - [r-640       @ 54_126](#r_640___54_126_)
@@ -84,22 +88,45 @@
 
 <a id="54_12_6_"></a>
 # 54_126
+
 <a id="r_2560_p_640_sub_8___54_126_"></a>
 ## r-2560-p-640-sub-8       @ 54_126-->p2s_seg-ipsc
+
+<a id="lac_fbb___r_2560_p_640_sub_8_54_12_6_"></a>
+### lac-fbb       @ r-2560-p-640-sub-8/54_126-->p2s_seg-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-54_126:p-640:r-2560:sub-8,batch-48,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1,lac,fbb
+<a id="on_0_15___lac_fbb_r_2560_p_640_sub_8_54_12_6_"></a>
+#### on-0_15       @ lac-fbb/r-2560-p-640-sub-8/54_126-->p2s_seg-ipsc
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-54_126-640_640-640_640-sub_8-lac-batch_48-fbb,_eval_,batch-2,save-vis-0,dbg-0,dyn-1,seg-0_15:p-640:r-2560:sub-8,lac,x99
+
+
 <a id="aug_lac_fbb___r_2560_p_640_sub_8_54_12_6_"></a>
 ### aug-lac-fbb       @ r-2560-p-640-sub-8/54_126-->p2s_seg-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-640,seg-54_126:p-640:r-2560:rot-15_345_4:flip-1:sub-8,batch-48,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1,lac,fbb
 <a id="on_0_15___aug_lac_fbb_r_2560_p_640_sub_8_54_12_6_"></a>
 #### on-0_15       @ aug-lac-fbb/r-2560-p-640-sub-8/54_126-->p2s_seg-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-54_126-640_640-640_640-rot_15_345_4-flip-sub_8-lac-batch_40-fbb,_eval_,batch-8,save-vis-0,dbg-0,dyn-1,seg-0_15:p-640:r-2560:sub-8,lac,p9
+
+
 <a id="r_2560_p_1024_sub_8___54_126_"></a>
 ## r-2560-p-1024-sub-8       @ 54_126-->p2s_seg-ipsc
+
+<a id="lac_fbb___r_2560_p_1024_sub_8_54_126_"></a>
+### lac-fbb       @ r-2560-p-1024-sub-8/54_126-->p2s_seg-ipsc
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-1024,seg-54_126:p-1024:r-2560:sub-8,batch-24,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1,lac,fbb
+<a id="on_0_15___lac_fbb_r_2560_p_1024_sub_8_54_126_"></a>
+#### on-0_15       @ lac-fbb/r-2560-p-1024-sub-8/54_126-->p2s_seg-ipsc
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_1024_resize_2560-54_126-1024_1024-1024_1024-sub_8-lac-batch_24-fbb,_eval_,batch-2,save-vis-0,dbg-0,dyn-1,seg-0_15:p-1024:r-2560:sub-8,lac,x99
+
 <a id="aug_lac_fbb___r_2560_p_1024_sub_8_54_126_"></a>
 ### aug-lac-fbb       @ r-2560-p-1024-sub-8/54_126-->p2s_seg-ipsc
 CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-1024,seg-54_126:p-1024:r-2560:rot-15_345_4:flip-1:sub-8,batch-24,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1,lac,fbb
 <a id="on_0_15___aug_lac_fbb_r_2560_p_1024_sub_8_54_126_"></a>
 #### on-0_15       @ aug-lac-fbb/r-2560-p-1024-sub-8/54_126-->p2s_seg-ipsc
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_resize_2560-54_126-640_640-640_640-rot_15_345_4-flip-sub_8-lac-batch_48-fbb,_eval_,batch-2,save-vis-0,dbg-0,dyn-1,seg-0_15:p-640:r-2560:sub-8,lac,p9
+
+
+
 
 <a id="r_640___54_126_"></a>
 ## r-640       @ 54_126-->p2s_seg-ipsc
