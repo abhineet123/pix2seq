@@ -113,10 +113,10 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet
 
 <a id="lac_fbb___r_2560_p_1024_sub_8_54_126_"></a>
 ### lac-fbb       @ r-2560-p-1024-sub-8/54_126-->p2s_seg-ipsc
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-1024,seg-54_126:p-1024:r-2560:sub-8,batch-24,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1,lac,fbb
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=train,resnet-1024,seg-54_126:p-1024:r-2560:sub-8,batch-24,dbg-0,dyn-1,dist-0,ep-10000,gz,pt-1,lac,fbb,voc18
 <a id="on_0_15___lac_fbb_r_2560_p_1024_sub_8_54_126_"></a>
 #### on-0_15       @ lac-fbb/r-2560-p-1024-sub-8/54_126-->p2s_seg-ipsc
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_1024_resize_2560-54_126-1024_1024-1024_1024-sub_8-lac-batch_24-fbb,_eval_,batch-2,save-vis-0,dbg-0,dyn-1,seg-0_15:p-1024:r-2560:sub-8,lac,x99
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_1024_resize_2560-54_126-1024_1024-1024_1024-sub_8-lac-batch_24-fbb-voc18,_eval_,batch-2,save-vis-0,dbg-0,dyn-1,seg-0_15:p-1024:r-2560:sub-8,lac,voc18,x99
 
 <a id="aug_lac_fbb___r_2560_p_1024_sub_8_54_126_"></a>
 ### aug-lac-fbb       @ r-2560-p-1024-sub-8/54_126-->p2s_seg-ipsc

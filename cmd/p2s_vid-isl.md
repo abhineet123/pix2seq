@@ -90,9 +90,9 @@ CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_static_video_det.py -
 <a id="on_49_85___detrac_0_48_len_8_fbb_static_"></a>
 ### on-49_85       @ detrac-0_48-len-8-fbb/static-->p2s_vid-isl
 `vstrd-1`
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_static_video_det.py --j5=_eval_,static_vid_det,m-resnet_640_detrac-length-8-stride-1-non_empty-seq-0_48-static-batch_12-seq2k-fbb,detrac-non_empty-49_85,batch-8,save-vis-0,dbg-0,dyn-1,dist-0,len-8,vstrd-1,asi,iter-131952
+python3 run.py --cfg=configs/config_static_video_det.py --j5=_eval_,static_vid_det,m-resnet_640_detrac-length-8-stride-1-non_empty-seq-0_48-static-batch_12-seq2k-fbb,detrac-non_empty-49_85,batch-24,save-vis-0,dbg-0,dyn-1,dist-1,len-8,vstrd-1,asi-0,iter-131952
 `vstrd-8`
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_static_video_det.py --j5=_eval_,static_vid_det,m-resnet_640_detrac-length-8-stride-1-non_empty-seq-0_48-static-batch_12-seq2k-fbb,detrac-non_empty-49_85,batch-8,save-vis-0,dbg-0,dyn-1,dist-0,len-8,vstrd-8,asi,iter-131952
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_static_video_det.py --j5=_eval_,static_vid_det,m-resnet_640_detrac-length-8-stride-1-non_empty-seq-0_48-static-batch_12-seq2k-fbb,detrac-non_empty-49_85,batch-8,save-vis-0,dbg-0,dyn-1,dist-0,len-8,vstrd-8,asi-0,iter-131952
 
 
 <a id="swi_n_"></a>
