@@ -7,6 +7,7 @@
     - [len-3       @ 16_53](#len_3___16_5_3_)
     - [len-4       @ 16_53](#len_4___16_5_3_)
     - [len-6       @ 16_53](#len_6___16_5_3_)
+    - [len-8       @ 16_53](#len_8___16_5_3_)
 - [0_37       @ ipsc](#0_37___ipsc_)
     - [len-2       @ 0_37](#len_2___0_37_)
     - [len-3       @ 0_37](#len_3___0_37_)
@@ -62,6 +63,9 @@ python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-4:asi
 <a id="len_6___16_5_3_"></a>
 ## len-6       @ 16_53-->tf_vid-ipsc
 python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-6:asi-2
+<a id="len_8___16_5_3_"></a>
+## len-8       @ 16_53-->tf_vid-ipsc
+python data/scripts/create_video_tfrecord.py cfg=ipsc:16_53:len-8:asi-0
 
 <a id="0_37___ipsc_"></a>
 # 0_37       @ ipsc-->p2s_vid_tf
