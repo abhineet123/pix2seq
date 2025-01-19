@@ -82,7 +82,9 @@ class TaskObjectDetection(task_lib.Task):
             batched_examples['bbox'], batched_examples['label'],
             config.quantization_bins, config.noise_bbox_weight,
             mconfig.coord_vocab_shift,
-            class_label_corruption=config.class_label_corruption)
+            class_label_corruption=config.class_label_corruption,
+            class_equal_weight=config.class_equal_weight,
+        )
 
         """response_seq_cm has random and noise class labels by default"""
         response_seq, response_seq_cm, token_weights = ret
@@ -281,9 +283,6 @@ class TaskObjectDetection(task_lib.Task):
         if ret_results:
             return ret_images
 
-
-
-
     def evaluate(self, summary_writer, step, eval_tag):
         raise AssertionError('not implemented')
 
@@ -294,12 +293,15 @@ class TaskObjectDetection(task_lib.Task):
         raise AssertionError('not implemented')
 
 
-def build_response_seq_from_bbox(bbox,
-                                 label,
-                                 quantization_bins,
-                                 noise_bbox_weight,
-                                 coord_vocab_shift,
-                                 class_label_corruption='rand_cls'):
+def build_response_seq_from_bbox(
+        bbox,
+        label,
+        quantization_bins,
+        noise_bbox_weight,
+        coord_vocab_shift,
+        class_label_corruption,
+        class_equal_weight,
+):
     """"Build target seq from bounding bboxes for object detection.
 
     Objects are serialized using the format of yxyxc.
@@ -375,6 +377,9 @@ def build_response_seq_from_bbox(bbox,
 
     """noise and real bbox coord tokens have weights 1 and 0 respectively"""
     bbox_weight = tf.tile(is_real, [1, 1, 4])
+    if class_equal_weight:
+        norm_factor = 1. / 4.
+        bbox_weight = bbox_weight * norm_factor
     """
     real bbox class tokens have weight 1
     noise bbox class tokens have weight noise_bbox_weight    

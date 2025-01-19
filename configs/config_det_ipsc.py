@@ -92,9 +92,16 @@ def get_config(config_str=None):
             quantization_bins=1000,
             max_instances_per_image=max_instances_per_image,
             max_instances_per_image_test=max_instances_per_image_test,
+
             # Train on both ground-truth and (augmented) noisy objects.
             noise_bbox_weight=1.0,
             eos_token_weight=0.1,
+
+            # increase weight assigned to class tokens so it is equal to all the coord tokens combined
+            # since no. of coord tokens is n*4 times the number of class tokens, the latter can often be
+            # relatively ignored during training, thus leading to lots of misclassifications during inference
+            class_equal_weight=0,
+
             # Train on just ground-truth objects (with an ending token).
             # noise_bbox_weight=0.0,
             # eos_token_weight=0.1,
