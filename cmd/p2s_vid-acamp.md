@@ -202,4 +202,4 @@ python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,p
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_18-jtr-res_1280-cls_eq,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv_2_per_seq,vstrd-1,batch-2,save-vis-0,dbg-0,dyn-1,e5g
 <a id="on_inv___10k6_vid_entire_seq_aug_cls_eq_mid_"></a>
 ### on-inv       @ 10k6_vid_entire_seq-aug-cls_eq/mid-->p2s_vid-acamp
-CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_18-jtr-res_1280-cls_eq,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv,vstrd-1,batch-6,save-vis-0,dbg-0,dyn-1
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_18-jtr-res_1280-cls_eq,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv,vstrd-1,batch-12,save-vis-0,dbg-0,dyn-1
