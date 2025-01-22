@@ -68,8 +68,10 @@
         - [p-80       @ r-80/16_53](#p_80___r_80_16_53_)
 - [54_126](#54_12_6_)
     - [r-2560       @ 54_126](#r_2560___54_126_)
-        - [p-640-aug       @ r-2560/54_126](#p_640_aug___r_2560_54_12_6_)
-            - [lac-sub-8       @ p-640-aug/r-2560/54_126](#lac_sub_8___p_640_aug_r_2560_54_12_6_)
+        - [p-640-aug-flip       @ r-2560/54_126](#p_640_aug_flip___r_2560_54_12_6_)
+            - [lac-sub-8       @ p-640-aug-flip/r-2560/54_126](#lac_sub_8___p_640_aug_flip_r_2560_54_126_)
+        - [p-640-aug-strd       @ r-2560/54_126](#p_640_aug_strd___r_2560_54_12_6_)
+            - [lac-sub-8       @ p-640-aug-strd/r-2560/54_126](#lac_sub_8___p_640_aug_strd_r_2560_54_126_)
         - [p-640-sub-8-strd-160       @ r-2560/54_126](#p_640_sub_8_strd_160___r_2560_54_12_6_)
             - [lac       @ p-640-sub-8-strd-160/r-2560/54_126](#lac___p_640_sub_8_strd_160_r_2560_54_126_)
         - [p-640-sub-8       @ r-2560/54_126](#p_640_sub_8___r_2560_54_12_6_)
@@ -82,8 +84,10 @@
         - [p-640-sub-4-aug       @ r-2560/54_126](#p_640_sub_4_aug___r_2560_54_12_6_)
         - [p-1024-sub-8       @ r-2560/54_126](#p_1024_sub_8___r_2560_54_12_6_)
             - [lac       @ p-1024-sub-8/r-2560/54_126](#lac___p_1024_sub_8_r_2560_54_126_)
-        - [p-1024-sub-8-aug       @ r-2560/54_126](#p_1024_sub_8_aug___r_2560_54_12_6_)
-            - [lac       @ p-1024-sub-8-aug/r-2560/54_126](#lac___p_1024_sub_8_aug_r_2560_54_126_)
+        - [p-1024-sub-8-aug-flip       @ r-2560/54_126](#p_1024_sub_8_aug_flip___r_2560_54_12_6_)
+            - [lac       @ p-1024-sub-8-aug-flip/r-2560/54_126](#lac___p_1024_sub_8_aug_flip_r_2560_54_12_6_)
+        - [p-1024-sub-8-aug-strd       @ r-2560/54_126](#p_1024_sub_8_aug_strd___r_2560_54_12_6_)
+            - [lac       @ p-1024-sub-8-aug-strd/r-2560/54_126](#lac___p_1024_sub_8_aug_strd_r_2560_54_12_6_)
     - [r-640       @ 54_126](#r_640___54_126_)
         - [p-640-aug       @ r-640/54_126](#p_640_aug___r_640_54_126_)
             - [lac-2d-sub-2       @ p-640-aug/r-640/54_126](#lac_2d_sub_2___p_640_aug_r_640_54_126_)
@@ -395,11 +399,16 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:16_53:p-80:r-80:stats-2
 # 54_126
 <a id="r_2560___54_126_"></a>
 ## r-2560       @ 54_126-->tf_seg-ipsc
-<a id="p_640_aug___r_2560_54_12_6_"></a>
-### p-640-aug       @ r-2560/54_126-->tf_seg-ipsc
-<a id="lac_sub_8___p_640_aug_r_2560_54_12_6_"></a>
-#### lac-sub-8       @ p-640-aug/r-2560/54_126-->tf_seg-ipsc
+<a id="p_640_aug_flip___r_2560_54_12_6_"></a>
+### p-640-aug-flip       @ r-2560/54_126-->tf_seg-ipsc
+<a id="lac_sub_8___p_640_aug_flip_r_2560_54_126_"></a>
+#### lac-sub-8       @ p-640-aug-flip/r-2560/54_126-->tf_seg-ipsc
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:r-2560:sub-8:rot-15_345_4:flip-1:lac
+<a id="p_640_aug_strd___r_2560_54_12_6_"></a>
+### p-640-aug-strd       @ r-2560/54_126-->tf_seg-ipsc
+<a id="lac_sub_8___p_640_aug_strd_r_2560_54_126_"></a>
+#### lac-sub-8       @ p-640-aug-strd/r-2560/54_126-->tf_seg-ipsc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:r-2560:sub-8:rot-15_345_1:strd-160_320:lac
 
 <a id="p_640_sub_8_strd_160___r_2560_54_12_6_"></a>
 ### p-640-sub-8-strd-160       @ r-2560/54_126-->tf_seg-ipsc
@@ -449,11 +458,16 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-640:rot-15_345_4:s
 #### lac       @ p-1024-sub-8/r-2560/54_126-->tf_seg-ipsc
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-1024:r-2560:sub-8:lac
 
-<a id="p_1024_sub_8_aug___r_2560_54_12_6_"></a>
-### p-1024-sub-8-aug       @ r-2560/54_126-->tf_seg-ipsc
-<a id="lac___p_1024_sub_8_aug_r_2560_54_126_"></a>
-#### lac       @ p-1024-sub-8-aug/r-2560/54_126-->tf_seg-ipsc
+<a id="p_1024_sub_8_aug_flip___r_2560_54_12_6_"></a>
+### p-1024-sub-8-aug-flip       @ r-2560/54_126-->tf_seg-ipsc
+<a id="lac___p_1024_sub_8_aug_flip_r_2560_54_12_6_"></a>
+#### lac       @ p-1024-sub-8-aug-flip/r-2560/54_126-->tf_seg-ipsc
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-1024:r-2560:sub-8:rot-15_345_4:flip-1:lac
+<a id="p_1024_sub_8_aug_strd___r_2560_54_12_6_"></a>
+### p-1024-sub-8-aug-strd       @ r-2560/54_126-->tf_seg-ipsc
+<a id="lac___p_1024_sub_8_aug_strd_r_2560_54_12_6_"></a>
+#### lac       @ p-1024-sub-8-aug-strd/r-2560/54_126-->tf_seg-ipsc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-1024:r-2560:sub-8:rot-15_345_1:strd-256_512:lac
 
 
 <a id="r_640___54_126_"></a>
