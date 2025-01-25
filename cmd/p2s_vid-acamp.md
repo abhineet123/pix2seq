@@ -201,7 +201,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-
 python3 run.py --cfg=configs/config_video_det.py --j5=train,resnet-640,vid_det,pt-1,acamp-10k6_vid_entire_seq,batch-128,dbg-0,dyn-1,dist-2,jtr,res-1280,fbb,cls_eq,px
 <a id="on_inv_2_per_seq___10k6_vid_entire_seq_aug_cls_eq_fbb_b128_mi_d_"></a>
 ### on-inv-2_per_seq       @ 10k6_vid_entire_seq-aug-cls_eq-fbb-b128/mid-->p2s_vid-acamp
-python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_64-jtr-res_1280-fbb-cls_eq,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv_2_per_seq,vstrd-1,batch-6,save-vis-0,dbg-0,dyn-1,dist-1
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py  --j5=m-resnet_640_10k6_vid_entire_seq-length-2-stride-1-batch_128-jtr-res_1280-fbb-cls_eq-px,_eval_,vid_det,acamp-10k6_vid_entire_seq_inv_2_per_seq,vstrd-1,batch-4,save-vis-0,dbg-0,dyn-1,dist-0,p9
 
 <a id="10k6_vid_entire_seq_aug_cls_eq___mi_d_"></a>
 ## 10k6_vid_entire_seq-aug-cls_eq       @ mid-->p2s_vid-acamp
