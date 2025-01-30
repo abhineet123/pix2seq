@@ -249,7 +249,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eva
 CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-8-stride-1-non_empty-seq-0_48-batch_24-jtr-res_1280-fbb,detrac-non_empty-49_85,batch-3,save-vis-0,dbg-0,dyn-1,dist-0,len-8,vstrd-1,asi-0,iter-24741
 <a id="on_49_85_vstrd_1_109960___detrac_0_48_len_8_aug_fbb_mi_d_"></a>
 ### on-49_85-vstrd-1-109960       @ detrac-0_48-len-8-aug-fbb/mid-->p2s_vid-isl
-CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-8-stride-1-non_empty-seq-0_48-batch_24-jtr-res_1280-fbb,detrac-non_empty-49_85,batch-3,save-vis-0,dbg-0,dyn-1,dist-0,len-8,vstrd-1,asi-0,iter-109960
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_video_det.py --j5=eval,vid_det,m-resnet_640_detrac-length-8-stride-1-non_empty-seq-0_48-batch_24-jtr-res_1280-fbb,detrac-non_empty-49_85,batch-6,save-vis-0,dbg-0,dyn-1,dist-0,len-8,vstrd-1,asi-0,iter-109960
 
 <a id="detrac_0_48_len_8_fbb___mi_d_"></a>
 ## detrac-0_48-len-8-fbb       @ mid-->p2s_vid-isl
