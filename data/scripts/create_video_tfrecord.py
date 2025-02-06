@@ -114,6 +114,11 @@ def load_ytvis_annotations(annotation_path, vid_id_offset):
         vid_id = ann['video_id']
         vid_to_ann[vid_id].append(ann)
 
+    for video_ in video_info:
+        file_ids = video_['file_ids']
+        assert all(i < j for i, j in zip(file_ids, file_ids[1:])), \
+            "file_ids should be strictly increasing"
+
     return video_info, category_id_to_name_map, vid_to_ann, json_data
 
 
