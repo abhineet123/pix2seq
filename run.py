@@ -355,6 +355,9 @@ def main(unused_argv):
             ckpt_name = utils.get_name(new_ckpt_from_tf)
             evaluated_ckpts.append(ckpt_name)
 
+            if cfg.eval.ckpt_iter:
+                break
+                
             if is_remote:
                 utils.sleep_with_pbar(hrs=cfg.eval.sleep_eval, start=start_t)
 
