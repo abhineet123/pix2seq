@@ -357,7 +357,7 @@ def main(unused_argv):
 
             if cfg.eval.ckpt_iter:
                 break
-                
+
             if is_remote:
                 utils.sleep_with_pbar(hrs=cfg.eval.sleep_eval, start=start_t)
 
