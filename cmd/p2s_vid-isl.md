@@ -1,6 +1,8 @@
 <!-- MarkdownTOC -->
 
 - [static](#stati_c_)
+    - [detrac-0_48-len-2-fbb       @ static](#detrac_0_48_len_2_fbb___static_)
+        - [on-49_85-80_per_seq_random_len_2       @ detrac-0_48-len-2-fbb/static](#on_49_85_80_per_seq_random_len_2___detrac_0_48_len_2_fbb_static_)
     - [detrac-0_48-len-4-fbb       @ static](#detrac_0_48_len_4_fbb___static_)
         - [on-49_85-80_per_seq_random_len_4       @ detrac-0_48-len-4-fbb/static](#on_49_85_80_per_seq_random_len_4___detrac_0_48_len_4_fbb_static_)
     - [detrac-0_48-len-8-fbb       @ static](#detrac_0_48_len_8_fbb___static_)
@@ -88,6 +90,13 @@
 
 <a id="stati_c_"></a>
 # static
+<a id="detrac_0_48_len_2_fbb___static_"></a>
+## detrac-0_48-len-2-fbb       @ static-->p2s_vid-isl
+python3 run.py --cfg=configs/config_static_video_det.py --j5=_train_,resnet-640,static_vid_det,pt-1,detrac-non_empty-0_48,batch-96,dbg-0,dyn-1,dist-1,len-2,fbb
+<a id="on_49_85_80_per_seq_random_len_2___detrac_0_48_len_2_fbb_static_"></a>
+### on-49_85-80_per_seq_random_len_2       @ detrac-0_48-len-2-fbb/static-->p2s_vid-isl
+CUDA_VISIBLE_DEVICES=1 python3 run.py --cfg=configs/config_static_video_det.py --j5=_eval_,static_vid_det,m-resnet_640_detrac-length-4-stride-1-non_empty-seq-0_48-static-batch_96-fbb,detrac-non_empty-80_per_seq_random_len_4-49_85,batch-8,save-vis-0,dbg-0,dyn-1,dist-0,len-4,vstrd-4,asi-0,e5g
+
 <a id="detrac_0_48_len_4_fbb___static_"></a>
 ## detrac-0_48-len-4-fbb       @ static-->p2s_vid-isl
 python3 run.py --cfg=configs/config_static_video_det.py --j5=_train_,resnet-640,static_vid_det,pt-1,detrac-non_empty-0_48,batch-96,dbg-0,dyn-1,dist-1,len-4,fbb

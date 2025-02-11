@@ -52,7 +52,7 @@
     - [49_85-strd-same       @ detrac](#49_85_strd_same___detrac_)
         - [len-2       @ 49_85-strd-same/detrac](#len_2___49_85_strd_same_detrac_)
         - [len-4       @ 49_85-strd-same/detrac](#len_4___49_85_strd_same_detrac_)
-            - [80_per_seq_random_len_8       @ len-4/49_85-strd-same/detrac](#80_per_seq_random_len_8___len_4_49_85_strd_same_detrac_)
+            - [80_per_seq_random_len_4       @ len-4/49_85-strd-same/detrac](#80_per_seq_random_len_4___len_4_49_85_strd_same_detrac_)
         - [len-8       @ 49_85-strd-same/detrac](#len_8___49_85_strd_same_detrac_)
             - [80_per_seq_random_len_8       @ len-8/49_85-strd-same/detrac](#80_per_seq_random_len_8___len_8_49_85_strd_same_detrac_)
         - [len-12       @ 49_85-strd-same/detrac](#len_12___49_85_strd_same_detrac_)
@@ -237,9 +237,9 @@ python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-2:st
 <a id="len_4___49_85_strd_same_detrac_"></a>
 ### len-4       @ 49_85-strd-same/detrac-->tf_vid-isl
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-4:strd-4:asi-0
-<a id="80_per_seq_random_len_8___len_4_49_85_strd_same_detrac_"></a>
-#### 80_per_seq_random_len_8       @ len-4/49_85-strd-same/detrac-->tf_vid-isl
-python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-8:80_per_seq_random_len_8:strd-8:asi-0
+<a id="80_per_seq_random_len_4___len_4_49_85_strd_same_detrac_"></a>
+#### 80_per_seq_random_len_4       @ len-4/49_85-strd-same/detrac-->tf_vid-isl
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-4:80_per_seq_random_len_4:strd-4:asi-0
 
 <a id="len_8___49_85_strd_same_detrac_"></a>
 ### len-8       @ 49_85-strd-same/detrac-->tf_vid-isl
