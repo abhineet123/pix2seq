@@ -553,7 +553,13 @@ def create_tf_example(
     #         cv2.waitKey(0)
 
     if params.instance_wise:
-        instance_to_target_id = image_info['instance_to_target_id']
+        instance_to_target_id: dict = image_info['instance_to_target_id']
+        instance_to_target_id = {
+            int(instance_id_): (int(target_id_), int(class_id_))
+            for instance_id_, (target_id_, class_id_) in
+            instance_to_target_id.items()
+        }
+
         instance_ids = np.unique(mask_sub)
         rle_tokens = []
         n_runs = rle_len = 0
@@ -777,6 +783,9 @@ def main():
 
         if params.enable_flip:
             db_suffixes.append('flip')
+
+        if params.instance_wise:
+            db_suffixes.append('inst')
 
         params.db_suffix = '-'.join(db_suffixes)
 
