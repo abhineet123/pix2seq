@@ -135,6 +135,82 @@ def mask_to_gs(mask, check=True, copy=True):
     return mask_b.copy() if copy else mask_b
 
 
+def check_instance_wise_rle_tokens(
+        image, mask, mask_sub, rle_tokens, n_classes,
+        length_as_class,
+        starts_2d,
+        starts_offset, lengths_offset, class_offset,
+        max_length, subsample, multi_class,
+        flat_order,
+        class_to_col, is_vis):
+    mask_gt = mask_to_gs(mask, copy=True)
+    mask_gt_sub = mask_to_gs(mask_sub, copy=True)
+
+    if len(rle_tokens) == 0:
+        assert np.all(mask_gt == 0), "non-zero mask found for empty rle_tokens"
+        return
+
+    if is_vis:
+        mask_vis_to_id(mask_gt, n_classes)
+        mask_vis_to_id(mask_gt_sub, n_classes)
+
+    n_rows, n_cols = mask_gt.shape
+
+    if subsample > 1:
+        max_length = int(max_length / subsample)
+        n_rows, n_cols = int(n_rows / subsample), int(n_cols / subsample)
+
+    mask_rec, rle_rec_cmp = mask_from_instance_wise_tokens(
+        rle_tokens, (n_rows, n_cols),
+        n_classes,
+        allow_extra=False,
+        starts_offset=starts_offset,
+        lengths_offset=lengths_offset,
+        class_offset=class_offset,
+        starts_2d=starts_2d,
+        flat_order=flat_order,
+        ignore_invalid=False,
+
+    )
+    starts, lengths, class_ids = rle_rec_cmp[:2]
+    assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
+    assert np.all(lengths > 0), "run length cannot be 0"
+
+    n_rows, n_cols = mask_gt_sub.shape
+    n_pix = n_rows * n_cols
+    assert np.all(starts <= n_pix - 1), f"starts cannot be > {n_pix - 1}"
+
+    if len(rle_rec_cmp) == 3:
+        class_ids = rle_rec_cmp[2]
+        assert 0 not in class_ids, "class_ids must be non-zero"
+        assert np.all(np.asarray(class_ids) <= n_classes), "class_ids must be <= n_classes"
+
+    if not np.array_equal(mask_gt_sub, mask_rec):
+        print("mask_rec mismatch")
+
+        # if subsample > 1:
+        #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
+
+        # import eval_utils
+        mask_gt_vis = mask_id_to_vis_bgr(mask_gt, class_to_col)
+        mask_rec_vis = mask_id_to_vis_bgr(mask_rec, class_to_col)
+
+        cv2.imshow('mask_rec_vis', mask_rec_vis)
+
+        mask_gt_vis = resize_mask(mask_gt_vis, image.shape, n_classes, is_vis=1)
+        mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
+
+        masks_all = np.concatenate([image, mask_gt_vis, mask_rec_vis], axis=1)
+        # vis_txt = ' '.join(vis_txt)
+        # masks_all = eval_utils.annotate(masks_all, vis_txt)
+        # cv2.imshow('mask_gt_vis', mask_gt_vis)
+        # cv2.imshow('mask_rec_vis', mask_rec_vis)
+        cv2.imshow('masks_all', masks_all)
+        k = cv2.waitKey(0)
+        if k == 27:
+            exit()
+
+
 def check_rle_tokens(
         image, mask, mask_sub, rle_tokens, n_classes,
         length_as_class,
@@ -2012,6 +2088,66 @@ def rle_from_logits(
         rle_cmp = [starts, lengths, class_ids]
 
     return rle_cmp
+
+
+def mask_from_instance_wise_tokens(
+        rle_tokens, shape,
+        n_classes,
+        allow_extra,
+        starts_offset, lengths_offset, class_offset,
+        starts_2d, flat_order,
+        ignore_invalid=False,
+
+):
+    mask = np.zeros(tuple(shape), dtype=np.uint8)
+    rle_cmp = [[], [], []]
+
+    if len(rle_tokens) == 0:
+        return mask, rle_cmp
+
+    class_tokens = np.asarray(list(range(1, n_classes)))
+
+    instance_start_idxs = np.nonzero(np.in1d(rle_tokens, class_tokens))[0]
+
+    assert 0 in instance_start_idxs, \
+        "instance_wise_tokens must start with a valid class token"
+
+    n_instances = len(instance_start_idxs)
+    for instance_id in range(n_instances):
+        instance_start_idx = instance_start_idxs[instance_id]
+        instance_end_idx = instance_start_idxs[instance_id + 1] if instance_id < n_instances - 1 else -1
+        instance_rle_tokens = rle_tokens[instance_start_idx+1:instance_end_idx]
+        instance_class_token = rle_tokens[instance_start_idx]
+        instance_class_id = instance_class_token - class_offset
+
+        instance_rle_cmp = rle_from_tokens(
+            instance_rle_tokens,
+            shape,
+            allow_extra=allow_extra,
+            length_as_class=False,
+            starts_offset=starts_offset,
+            lengths_offset=lengths_offset,
+            class_offset=class_offset,
+            starts_2d=starts_2d,
+            multi_class=False,
+            flat_order=flat_order,
+            ignore_invalid=ignore_invalid,
+        )
+        starts, lengths = instance_rle_cmp
+        class_ids = [1, ] * len(starts)
+
+        instance_mask = rle_to_mask(
+            starts, lengths, class_ids,
+            shape,
+        )
+        instance_mask = instance_mask.astype(bool)
+        mask[instance_mask] = instance_class_id
+
+        rle_cmp[0] += starts
+        rle_cmp[1] += lengths
+        rle_cmp[2] += class_ids
+
+    return mask, rle_cmp
 
 
 def mask_from_tokens(

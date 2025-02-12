@@ -577,6 +577,21 @@ def create_tf_example(
             rle_tokens += [class_id + params.class_offset, ] + obj_rle_tokens
             n_runs += obj_n_runs
             rle_len += obj_rle_len + 1
+
+        if params.check:
+            task_utils.check_instance_wise_rle_tokens(
+                image, mask, mask_sub, rle_tokens, n_classes,
+                params.length_as_class,
+                params.starts_2d,
+                params.starts_offset,
+                params.lengths_offset,
+                params.class_offset,
+                max_length,
+                params.subsample,
+                multi_class,
+                params.flat_order,
+                class_id_to_col,
+                is_vis=False)
     else:
         rle_tokens, n_runs, rle_len = get_rle_tokens(
             params, image, mask, mask_sub,
