@@ -216,7 +216,7 @@ python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-8:st
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-16:strd-1:asi:strds-16
 <a id="len_32___49_85_strd_1_detra_c_"></a>
 ### len-32       @ 49_85-strd-1/detrac-->tf_vid-isl
-python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-32:strd-1:asi-0
+python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-32:strd-1:asi:strds-32
 <a id="len_40___49_85_strd_1_detra_c_"></a>
 ### len-40       @ 49_85-strd-1/detrac-->tf_vid-isl
 python data/scripts/create_video_tfrecord.py cfg=detrac:non_empty-49_85:len-40:strd-1:asi-0

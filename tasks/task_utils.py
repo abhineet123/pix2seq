@@ -610,7 +610,10 @@ def mask_id_to_vis(mask_id, n_classes, to_rgb=0, copy=False):
         # labels_img[labels_img == 0] = 0
         mask_vis[mask_id == 1] = 255
     else:
-        raise AssertionError('unsupported number of classes: {}'.format(n_classes))
+        cols = get_cols_gs(n_classes)
+        for class_id in range(1, n_classes):
+            mask_vis[mask_id == class_id] = cols[class_id]
+
     if to_rgb and len(mask_vis.shape) == 2:
         mask_vis = np.stack((mask_vis,) * 3, axis=2)
     if to_rgb or copy:
@@ -645,7 +648,10 @@ def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
             mask_id[mask_vis < 128] = 0
             mask_id[mask_vis >= 128] = 1
     else:
-        raise AssertionError('unsupported number of classes: {}'.format(n_classes))
+        cols = get_cols_gs(n_classes)
+        for class_id in range(1, n_classes):
+            mask_vis[mask_id == cols[class_id]] = class_id
+
     if check:
         mask_vis_rec = mask_id_to_vis(mask_id, n_classes, copy=True)
         labels_diff_rate = check_mask_diff(mask_vis_rec, mask_vis, max_diff_rate)
@@ -819,7 +825,18 @@ def mask_vis_bgr_to_id(mask, class_id_to_col, check=0):
     return mask_id
 
 
-def get_cols(n_runs):
+def get_cols_gs(n_runs):
+    min_col, max_col = 100, 200
+    n_col_levels = int(n_runs + 1)
+    col_range = max_col - min_col
+    assert n_col_levels <= col_range, "n_col_levels exceeds col_range"
+    cols = [int(x) for x in np.linspace(
+        min_col, max_col,
+        n_col_levels, dtype=int)]
+    return cols
+
+
+def get_cols_rgb(n_runs):
     min_col, max_col = 100, 200
     n_col_levels = int(n_runs ** (1. / 3) + 1)
     col_range = max_col - min_col
