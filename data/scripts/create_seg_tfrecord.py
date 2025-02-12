@@ -98,6 +98,7 @@ class Params(paramparse.CFG):
         self.class_offset = 0
         self.subsample = 1
         self.subsample_method = 2
+        self.instance_wise = 0
 
         self.show = 0
 
@@ -181,7 +182,7 @@ def eval_mask(pred_mask, gt_mask, rle_len):
     )
 
 
-def get_vid_infos(db_path, image_infos):
+def get_vid_infos(db_path, image_infos, instance_wise):
     vid_infos = {}
 
     # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
@@ -190,7 +191,11 @@ def get_vid_infos(db_path, image_infos):
         # assert 'patch_info' in image_info, "patch_info not found in image_info"
 
         seq = image_info['seq']
-        mask_filename = image_info['mask_file_name']
+        if instance_wise:
+            mask_filename = image_info['instance_file_name']
+        else:
+            mask_filename = image_info['mask_file_name']
+
         vid_path = linux_path(db_path, f'{seq}.mp4')
         mask_dir = os.path.dirname(mask_filename)
         mask_vid_path = linux_path(db_path, f'{mask_dir}.mp4')
@@ -335,6 +340,89 @@ def generate_annotations(
         )
 
 
+def get_rle_tokens(
+        params, image, mask, mask_sub,
+        max_length, max_length_sub, n_classes, subsample_method,
+        n_rows, n_cols,
+        class_id_to_col, class_id_to_name,
+):
+    starts, lengths = task_utils.mask_to_rle(
+        mask=mask_sub,
+        max_length=max_length_sub,
+        n_classes=n_classes,
+        order=params.flat_order,
+    )
+    if subsample_method == 1:
+        """subsample RLE of high-res mask"""
+        starts, lengths = task_utils.subsample_rle(
+            starts, lengths,
+            subsample=params.subsample,
+            shape=(n_rows, n_cols),
+            max_length=max_length,
+            flat_order=params.flat_order,
+        )
+
+    rle_cmp = [starts, lengths]
+
+    n_runs = len(starts)
+
+    multi_class = n_classes > 2
+
+    if multi_class:
+        assert params.class_offset > 0, "class_offset must be > 0"
+        class_ids = task_utils.get_rle_class_ids(mask_sub, starts, lengths, class_id_to_col,
+                                                 order=params.flat_order)
+        rle_cmp.append(class_ids)
+
+        if params.length_as_class:
+            rle_cmp = task_utils.rle_to_lac(rle_cmp, max_length_sub)
+
+    if params.vis and n_runs > 0:
+        task_utils.vis_rle(
+            rle_cmp,
+            params.length_as_class,
+            max_length_sub,
+            class_id_to_col, class_id_to_name,
+            image, mask, mask_sub,
+            flat_order=params.flat_order)
+
+    rle_tokens = task_utils.rle_to_tokens(
+        rle_cmp, mask_sub.shape,
+        params.length_as_class,
+        params.starts_offset,
+        params.lengths_offset,
+        params.class_offset,
+        params.starts_2d,
+        params.flat_order,
+    )
+    rle_len = len(rle_tokens)
+
+    n_tokens_per_run = 2
+    if params.starts_2d:
+        n_tokens_per_run += 1
+    if multi_class and not params.length_as_class:
+        n_tokens_per_run += 1
+
+    assert rle_len % n_tokens_per_run == 0, f"rle_len must be divisible by {n_tokens_per_run}"
+    assert n_runs * n_tokens_per_run == rle_len, f"mismatch between n_runs and rle_len"
+
+    if params.check:
+        task_utils.check_rle_tokens(
+            image, mask, mask_sub, rle_tokens, n_classes,
+            params.length_as_class,
+            params.starts_2d,
+            params.starts_offset,
+            params.lengths_offset,
+            params.class_offset,
+            max_length,
+            params.subsample,
+            multi_class,
+            params.flat_order,
+            class_id_to_col,
+            is_vis=False)
+    return rle_tokens, n_runs, rle_len
+
+
 def create_tf_example(
         params: Params,
         class_id_to_col: dict,
@@ -353,14 +441,18 @@ def create_tf_example(
     image_id = image_info['img_id']
     seq = image_info['seq']
     frame_id = int(image_info['frame_id'])
-    mask_filename = image_info['mask_file_name']
 
     subsample_method = params.subsample_method
     if params.subsample <= 1:
         subsample_method = 0
 
     image_path = linux_path(params.db_path, filename)
-    mask_image_path = linux_path(params.db_path, mask_filename)
+    if params.instance_wise:
+        mask_filename = image_info['instance_file_name']
+        mask_image_path = linux_path(params.db_path, mask_filename)
+    else:
+        mask_filename = image_info['mask_file_name']
+        mask_image_path = linux_path(params.db_path, mask_filename)
 
     if not image_id.startswith('seq'):
         image_id = f'{seq}/{image_id}'
@@ -410,8 +502,10 @@ def create_tf_example(
     # mask_orig = np.copy(mask)
     # mask_orig = task_utils.mask_to_gs(mask_orig)
 
-    if not multi_class:
-        mask = task_utils.mask_to_binary(mask)
+    if not params.instance_wise:
+        if not multi_class:
+            mask = task_utils.mask_to_binary(mask)
+
     mask = task_utils.mask_to_gs(mask)
 
     # mask_unique = np.unique(mask)
@@ -458,78 +552,39 @@ def create_tf_example(
     #         cv2.imshow('mask_mismatch', mask_mismatch_vis)
     #         cv2.waitKey(0)
 
-    starts, lengths = task_utils.mask_to_rle(
-        mask=mask_sub,
-        max_length=max_length_sub,
-        n_classes=n_classes,
-        order=params.flat_order,
-    )
-    if subsample_method == 1:
-        """subsample RLE of high-res mask"""
-        starts, lengths = task_utils.subsample_rle(
-            starts, lengths,
-            subsample=params.subsample,
-            shape=(n_rows, n_cols),
-            max_length=max_length,
-            flat_order=params.flat_order,
-        )
+    if params.instance_wise:
+        instance_to_target_id = image_info['instance_to_target_id']
+        instance_ids = np.unique(mask_sub)
+        rle_tokens = []
+        n_runs = rle_len = 0
+        for instance_id in instance_ids:
+            if instance_id == 0:
+                continue
+            target_id, class_id = instance_to_target_id[instance_id]
+            obj_mask = np.zeros_like(mask)
+            obj_mask_sub = np.zeros_like(mask_sub)
 
-    rle_cmp = [starts, lengths]
+            obj_mask[mask == instance_id] = 1
+            obj_mask_sub[mask_sub == instance_id] = 1
 
-    n_runs = len(starts)
-
-    class_ids = None
-    if multi_class:
-        assert params.class_offset > 0, "class_offset must be > 0"
-        class_ids = task_utils.get_rle_class_ids(mask_sub, starts, lengths, class_id_to_col, order=params.flat_order)
-        rle_cmp.append(class_ids)
-
-        if params.length_as_class:
-            rle_cmp = task_utils.rle_to_lac(rle_cmp, max_length_sub)
-
-    if params.vis and n_runs > 0:
-        task_utils.vis_rle(
-            rle_cmp,
-            params.length_as_class,
-            max_length_sub,
+            obj_rle_tokens, obj_n_runs, obj_rle_len = get_rle_tokens(
+                params, image, obj_mask, obj_mask_sub,
+                max_length, max_length_sub, 2,
+                subsample_method,
+                n_rows, n_cols,
+                class_id_to_col, class_id_to_name,
+            )
+            rle_tokens += [class_id + params.class_offset, ] + obj_rle_tokens
+            n_runs += obj_n_runs
+            rle_len += obj_rle_len + 1
+    else:
+        rle_tokens, n_runs, rle_len = get_rle_tokens(
+            params, image, mask, mask_sub,
+            max_length, max_length_sub, n_classes,
+            subsample_method,
+            n_rows, n_cols,
             class_id_to_col, class_id_to_name,
-            image, mask, mask_sub,
-            flat_order=params.flat_order)
-
-    rle_tokens = task_utils.rle_to_tokens(
-        rle_cmp, mask_sub.shape,
-        params.length_as_class,
-        params.starts_offset,
-        params.lengths_offset,
-        params.class_offset,
-        params.starts_2d,
-        params.flat_order,
-    )
-    rle_len = len(rle_tokens)
-
-    n_tokens_per_run = 2
-    if params.starts_2d:
-        n_tokens_per_run += 1
-    if multi_class and not params.length_as_class:
-        n_tokens_per_run += 1
-
-    assert rle_len % n_tokens_per_run == 0, f"rle_len must be divisible by {n_tokens_per_run}"
-    assert n_runs * n_tokens_per_run == rle_len, f"mismatch between n_runs and rle_len"
-
-    if params.check:
-        task_utils.check_rle_tokens(
-            image, mask, mask_sub, rle_tokens, n_classes,
-            params.length_as_class,
-            params.starts_2d,
-            params.starts_offset,
-            params.lengths_offset,
-            params.class_offset,
-            max_length,
-            params.subsample,
-            multi_class,
-            params.flat_order,
-            class_id_to_col,
-            is_vis=False)
+        )
 
     if rle_len > 0:
         append_metrics(
@@ -545,7 +600,7 @@ def create_tf_example(
             polygon_len = sum(polygon.size for polygon in polygons_sub)
             append_metrics(dict(len=polygon_len), metrics[f'polygons'])
 
-        if params.seg_metrics and params.subsample > 1:
+        if not params.instance_wise and params.seg_metrics and params.subsample > 1:
             from densenet.evaluation.eval_segm import Metrics
 
             mask_sub_rec = task_utils.supersample_mask(mask_sub, params.subsample, n_classes, is_vis=0)
@@ -744,7 +799,7 @@ def main():
 
     os.makedirs(params.output_dir, exist_ok=True)
 
-    vid_infos = get_vid_infos(params.db_path, image_infos)
+    vid_infos = get_vid_infos(params.db_path, image_infos, params.instance_wise)
 
     metrics = dict(
         db={},
