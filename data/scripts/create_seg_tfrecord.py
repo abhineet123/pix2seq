@@ -7,6 +7,11 @@ import math
 import cv2
 from tqdm import tqdm
 
+dproc_path = os.path.join(os.path.expanduser("~"), "ipsc/ipsc_data_processing")
+sys.path.append(dproc_path)
+
+from eval_utils import mask_rle_to_img
+
 
 def linux_path(*args, **kwargs):
     """
@@ -100,7 +105,9 @@ class Params(paramparse.CFG):
         self.class_offset = 0
         self.subsample = 1
         self.subsample_method = 2
+
         self.instance_wise = 0
+        self.instance_coco_rle = 0
 
         self.show = 0
 
@@ -184,7 +191,7 @@ def eval_mask(pred_mask, gt_mask, rle_len):
     )
 
 
-def get_vid_infos(db_path, image_infos, instance_wise):
+def get_vid_infos(db_path, image_infos, instance_wise, instance_coco_rle):
     vid_infos = {}
 
     # frame_ids = set([int(image_info['frame_id']) for image_info in image_infos])
@@ -214,7 +221,7 @@ def get_vid_infos(db_path, image_infos, instance_wise):
                 'vid': (vid_reader, vid_path, num_frames, vid_width, vid_height),
                 'mask': (mask_reader, mask_vid_path),
             }
-            if instance_wise:
+            if instance_wise and not instance_coco_rle:
                 instance_filename = image_info['instance_file_name']
                 instance_dir = os.path.dirname(instance_filename)
                 instance_vid_path = linux_path(db_path, f'{instance_dir}.mp4')
@@ -466,32 +473,6 @@ def create_tf_example(
         subsample_method = 0
 
     image_path = linux_path(params.db_path, filename)
-    if params.instance_wise:
-        instance_filename = image_info['instance_file_name']
-        instance_image_path = linux_path(params.db_path, instance_filename)
-
-        instance_to_target_id: dict = image_info['instance_to_target_id']
-        instance_id_to_col: dict = image_info['instance_id_to_col']
-
-        instance_to_target_id = {
-            int(instance_id_): (int(target_id_), int(class_id_))
-            for instance_id_, (target_id_, class_id_) in
-            instance_to_target_id.items()
-        }
-        instance_id_to_col = {
-            int(instance_id_): int(col)
-            for instance_id_, col in
-            instance_id_to_col.items()
-        }
-        instance_ids_1 = sorted(list(instance_to_target_id.keys()))
-        instance_ids_2 = sorted(list(instance_id_to_col.keys()))
-
-        assert instance_ids_1 == instance_ids_2, "instance_ids_2 mismatch"
-
-        instance_col_to_id = {v: k for k, v in instance_id_to_col.items()}
-
-        n_instances = len(instance_to_target_id)
-
     mask_filename = image_info['mask_file_name']
     mask_image_path = linux_path(params.db_path, mask_filename)
 
@@ -504,6 +485,41 @@ def create_tf_example(
 
     if not skip_tfrecord:
         feature_dict = {}
+
+    if params.instance_wise:
+        instance_to_target_id: dict = image_info['instance_to_target_id']
+        instance_to_target_id = {
+            int(instance_id_): (int(target_id_), int(class_id_))
+            for instance_id_, (target_id_, class_id_) in
+            instance_to_target_id.items()
+        }
+        instance_ids_1 = sorted(list(instance_to_target_id.keys()))
+        n_instances = len(instance_to_target_id)
+
+        if params.instance_coco_rle:
+            instance_to_rle_coco = image_info['instance_to_rle_coco']
+            instance_to_rle_coco = {
+                int(instance_id_): rle_coco
+                for instance_id_, rle_coco in
+                instance_to_rle_coco.items()
+            }
+        else:
+            instance_filename = image_info['instance_file_name']
+            instance_image_path = linux_path(params.db_path, instance_filename)
+            instance_id_to_col: dict = image_info['instance_id_to_col']
+
+            instance_id_to_col = {
+                int(instance_id_): int(col)
+                for instance_id_, col in
+                instance_id_to_col.items()
+            }
+
+            instance_ids_2 = sorted(list(instance_id_to_col.keys()))
+            instance_cols = sorted(list(instance_id_to_col.values()))
+
+            assert instance_ids_1 == instance_ids_2, "instance_ids_2 mismatch"
+
+            instance_col_to_id = {v: k for k, v in instance_id_to_col.items()}
 
     if vid_info is not None:
         vid_reader, vid_path, num_frames, vid_width, vid_height = vid_info['vid']
@@ -527,11 +543,6 @@ def create_tf_example(
             # encoded_png = cv2.imencode('.png', mask)[1].tobytes()
 
         mask = task_utils.read_frame(mask_vid_reader, frame_id - 1, mask_vid_path)
-
-        if params.instance_wise:
-            instance_vid_reader, instance_vid_path = vid_info['instance']
-            instance_mask = task_utils.read_frame(instance_vid_reader, frame_id - 1, instance_vid_path)
-
     else:
         if not skip_tfrecord:
             with tf.io.gfile.GFile(image_path, 'rb') as fid:
@@ -541,8 +552,6 @@ def create_tf_example(
                 image = cv2.imread(image_path)
 
         mask = cv2.imread(mask_image_path)
-        if params.instance_wise:
-            instance_mask = cv2.imread(instance_image_path)
 
     if not skip_tfrecord:
         image_feature_dict = tfrecord_lib.image_info_to_feature_dict(
@@ -555,9 +564,6 @@ def create_tf_example(
     if not multi_class:
         mask = task_utils.mask_to_binary(mask)
     mask = task_utils.mask_to_gs(mask)
-
-    if params.instance_wise:
-        instance_mask = task_utils.mask_to_gs(instance_mask)
 
     # mask_unique = np.unique(mask)
 
@@ -573,35 +579,58 @@ def create_tf_example(
 
         mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub))
         # mask_sub = task_utils.subsample_mask(mask, params.subsample, n_mask_classes, is_vis=1)
-        if params.instance_wise:
-            instance_mask_sub = task_utils.resize_mask(instance_mask, (n_rows_sub, n_cols_sub))
     else:
         mask_sub = np.copy(mask)
         n_rows_sub, n_cols_sub = n_rows, n_cols
         max_length_sub = max_length
-        if params.instance_wise:
-            instance_mask_sub = np.copy(instance_mask)
-
-    if params.instance_wise:
-        unique_cols = np.unique(instance_mask)
-        unique_cols_sub = np.unique(instance_mask_sub)
-        n_unique_cols = len(unique_cols)
-        n_unique_cols_sub = len(unique_cols_sub)
-        assert n_unique_cols == n_unique_cols_sub, "n_unique_cols_sub mismatch"
-        assert n_unique_cols == n_instances, "n_unique_cols mismatch"
-
-    # mask_vis = np.copy(mask)
-    # mask_sub_vis = np.copy(mask_sub)
 
     mask = task_utils.mask_vis_to_id(mask, n_classes=n_classes)
     mask_sub = task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
 
     if params.instance_wise:
-        instance_mask = task_utils.mask_vis_to_id(instance_mask, col_to_id=instance_col_to_id)
-        instance_mask_sub = task_utils.mask_vis_to_id(instance_mask_sub, col_to_id=instance_col_to_id)
+        if params.instance_coco_rle:
+            # instance_mask = np.zeros_like(mask)
+            instance_ids = sorted(list(instance_to_rle_coco.keys()))
+            # for instance_id, rle_coco in instance_to_rle_coco.items():
+            #     instance_binary_mask = mask_rle_to_img(rle_coco)
+            #     instance_mask[instance_binary_mask] = instance_id
+            # if subsample_method == 2:
+            #     instance_mask_sub = task_utils.resize_mask(instance_mask, (n_rows_sub, n_cols_sub))
+            # else:
+            #     instance_mask_sub = np.copy(instance_mask)
 
-        instance_ids = np.unique(instance_mask_sub).tolist()
-        assert instance_ids == instance_ids_2, "instance_ids mismatch"
+        else:
+            if vid_info is not None:
+                instance_vid_reader, instance_vid_path = vid_info['instance']
+                instance_mask = task_utils.read_frame(instance_vid_reader, frame_id - 1, instance_vid_path)
+                feature_dict.update({
+                    'image/instance_vid_path': tfrecord_lib.convert_to_feature(instance_vid_path.encode('utf8')),
+                })
+            else:
+                instance_mask = cv2.imread(instance_image_path)
+
+            instance_cols_from_mask = np.unique(instance_mask).tolist()
+            assert instance_cols == instance_cols_from_mask, "instance_cols_from_mask mismatch"
+            instance_mask = task_utils.mask_to_gs(instance_mask)
+            if subsample_method == 2:
+                instance_mask_sub = task_utils.resize_mask(instance_mask, (n_rows_sub, n_cols_sub))
+            else:
+                instance_mask_sub = np.copy(instance_mask)
+
+            instance_mask = task_utils.mask_vis_to_id(instance_mask, col_to_id=instance_col_to_id)
+            instance_mask_sub = task_utils.mask_vis_to_id(instance_mask_sub, col_to_id=instance_col_to_id)
+            instance_ids = np.unique(instance_mask_sub).tolist()
+
+            if params.check:
+                unique_cols = np.unique(instance_mask)
+                unique_cols_sub = np.unique(instance_mask_sub)
+
+                n_unique_cols = len(unique_cols)
+                n_unique_cols_sub = len(unique_cols_sub)
+
+                assert n_unique_cols == n_unique_cols_sub, "n_unique_cols_sub mismatch"
+                assert n_unique_cols == n_instances, "n_unique_cols mismatch"
+                assert instance_ids == instance_ids_2, "instance_ids mismatch"
 
         rle_tokens = []
         n_runs = rle_len = 0
@@ -609,11 +638,19 @@ def create_tf_example(
             if instance_id == 0:
                 continue
             target_id, class_id = instance_to_target_id[instance_id]
-            obj_mask = np.zeros_like(mask)
-            obj_mask_sub = np.zeros_like(instance_mask_sub)
-
-            obj_mask[mask == instance_id] = 1
-            obj_mask_sub[instance_mask_sub == instance_id] = 1
+            if params.instance_coco_rle:
+                rle_coco = instance_to_rle_coco[instance_id]
+                instance_binary_mask = mask_rle_to_img(rle_coco)
+                obj_mask = instance_binary_mask.astype(np.uint8)
+                if subsample_method == 2:
+                    obj_mask_sub = task_utils.resize_mask(obj_mask, (n_rows_sub, n_cols_sub))
+                else:
+                    obj_mask_sub = np.copy(obj_mask)
+            else:
+                obj_mask = np.zeros_like(mask)
+                obj_mask_sub = np.zeros_like(instance_mask_sub)
+                obj_mask[mask == instance_id] = 1
+                obj_mask_sub[instance_mask_sub == instance_id] = 1
 
             obj_rle_tokens, obj_n_runs, obj_rle_len = get_rle_tokens(
                 params, image, obj_mask, obj_mask_sub,
