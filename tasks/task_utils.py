@@ -2112,11 +2112,13 @@ def mask_from_instance_wise_tokens(
     assert 0 in instance_start_idxs, \
         "instance_wise_tokens must start with a valid class token"
 
+    n_rle_tokens = len(rle_tokens)
+
     n_instances = len(instance_start_idxs)
     for instance_id in range(n_instances):
         instance_start_idx = instance_start_idxs[instance_id]
-        instance_end_idx = instance_start_idxs[instance_id + 1] if instance_id < n_instances - 1 else -1
-        instance_rle_tokens = rle_tokens[instance_start_idx+1:instance_end_idx]
+        instance_end_idx = instance_start_idxs[instance_id + 1] if instance_id < n_instances - 1 else n_rle_tokens
+        instance_rle_tokens = rle_tokens[instance_start_idx + 1:instance_end_idx]
         instance_class_token = rle_tokens[instance_start_idx]
         instance_class_id = instance_class_token - class_offset
 
@@ -2143,9 +2145,9 @@ def mask_from_instance_wise_tokens(
         instance_mask = instance_mask.astype(bool)
         mask[instance_mask] = instance_class_id
 
-        rle_cmp[0] += starts
-        rle_cmp[1] += lengths
-        rle_cmp[2] += class_ids
+        rle_cmp[0] += list(starts)
+        rle_cmp[1] += list(lengths)
+        rle_cmp[2] += list(class_ids)
 
     return mask, rle_cmp
 

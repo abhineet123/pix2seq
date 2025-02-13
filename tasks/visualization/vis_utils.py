@@ -109,8 +109,12 @@ def write_text(img_np, text, x, y, col, font_size=24, wait=10, fill=0, show=0, b
                win_name='text img', line_gap=5, allow_linebreak=True, margin=5):
     image = Image.fromarray(img_np)
     img_w, img_h = image.size
-    # font = ImageFont.load_default(font_size)
-    font = ImageFont.truetype("times.ttf", font_size)
+    try:
+        font = ImageFont.truetype("times.ttf", font_size)
+    except OSError:
+        print('font not found')
+        font = ImageFont.load_default(font_size)
+        
     # font = ImageFont.truetype("arial.ttf", font_size)
     # font = ImageFont.truetype("sans-serif.ttf", font_size)
 
@@ -1297,7 +1301,7 @@ def visualize_mask(
 ):
     n_classes = len(class_to_col)
 
-    enable_vis =  out_vis_dir is not None or show
+    enable_vis = out_vis_dir is not None or show
 
     n_rows, n_cols = orig_size
 
