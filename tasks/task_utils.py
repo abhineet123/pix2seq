@@ -139,7 +139,8 @@ def check_instance_wise_rle_tokens(
         image, mask, mask_sub, rle_tokens, n_classes,
         starts_2d,
         starts_offset, lengths_offset, class_offset,
-        max_length, subsample, multi_class,
+        max_length,
+        subsample,
         flat_order,
         class_to_col, is_vis):
     mask_gt = mask_to_gs(mask, copy=True)
@@ -714,37 +715,47 @@ def mask_id_to_vis(mask_id, n_classes, to_rgb=0, copy=False, return_class_id_to_
             return mask_vis
 
 
-def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
-                   max_diff_rate=0.1, precise=False, spurious_mids=False):
-    if spurious_mids or copy or check:
+def mask_vis_to_id(mask_vis, n_classes=None, copy=False, check=False,
+                   max_diff_rate=0.1, precise=False, spurious_mids=False,
+                   col_to_id=None):
+    if col_to_id is not None:
         mask_id = np.zeros_like(mask_vis)
+        for col, _id in col_to_id.items():
+            mask_id[mask_vis == col] = _id
+        return mask_id
     else:
-        mask_id = mask_vis
 
-    if n_classes == 3:
-        if precise:
-            mask_id[np.logical_and(mask_vis != 128, mask_vis != 255)] = 0
-            mask_id[mask_vis == 128] = 1
-            mask_id[mask_vis == 255] = 2
+        assert n_classes is not None, "n_classes and col_to_id cannot both be None"
+
+        if spurious_mids or copy or check:
+            mask_id = np.zeros_like(mask_vis)
         else:
-            mask_id[mask_vis < 64] = 0
-            mask_id[np.logical_and(mask_vis >= 64, mask_vis < 192)] = 1
-            mask_id[mask_vis >= 192] = 2
+            mask_id = mask_vis
 
-        if spurious_mids:
-            remove_spurious_mids_with_edges(mask_id, max_iters=1)
-            remove_spurious_mids_with_cc(mask_id, min_area=5)
+        if n_classes == 3:
+            if precise:
+                mask_id[np.logical_and(mask_vis != 128, mask_vis != 255)] = 0
+                mask_id[mask_vis == 128] = 1
+                mask_id[mask_vis == 255] = 2
+            else:
+                mask_id[mask_vis < 64] = 0
+                mask_id[np.logical_and(mask_vis >= 64, mask_vis < 192)] = 1
+                mask_id[mask_vis >= 192] = 2
 
-    elif n_classes == 2:
-        if precise:
-            mask_id[mask_vis != 0] = 1
+            if spurious_mids:
+                remove_spurious_mids_with_edges(mask_id, max_iters=1)
+                remove_spurious_mids_with_cc(mask_id, min_area=5)
+
+        elif n_classes == 2:
+            if precise:
+                mask_id[mask_vis != 0] = 1
+            else:
+                mask_id[mask_vis < 128] = 0
+                mask_id[mask_vis >= 128] = 1
         else:
-            mask_id[mask_vis < 128] = 0
-            mask_id[mask_vis >= 128] = 1
-    else:
-        cols = get_class_cols_gs(n_classes)
-        for class_id in range(1, n_classes):
-            mask_vis[mask_id == cols[class_id]] = class_id
+            cols = get_class_cols_gs(n_classes)
+            for class_id in range(1, n_classes):
+                mask_vis[mask_id == cols[class_id]] = class_id
 
     if check:
         mask_vis_rec = mask_id_to_vis(mask_id, n_classes, copy=True)
