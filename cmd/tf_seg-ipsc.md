@@ -85,7 +85,8 @@
         - [p-1024-sub-8       @ r-2560/54_126](#p_1024_sub_8___r_2560_54_12_6_)
             - [lac       @ p-1024-sub-8/r-2560/54_126](#lac___p_1024_sub_8_r_2560_54_126_)
         - [p-1024-sub-8-inst       @ r-2560/54_126](#p_1024_sub_8_inst___r_2560_54_12_6_)
-            - [dbg       @ p-1024-sub-8-inst/r-2560/54_126](#dbg___p_1024_sub_8_inst_r_2560_54_12_6_)
+            - [mc       @ p-1024-sub-8-inst/r-2560/54_126](#mc___p_1024_sub_8_inst_r_2560_54_12_6_)
+                - [dbg       @ mc/p-1024-sub-8-inst/r-2560/54_126](#dbg___mc_p_1024_sub_8_inst_r_2560_54_126_)
         - [p-1024-sub-8-aug-flip       @ r-2560/54_126](#p_1024_sub_8_aug_flip___r_2560_54_12_6_)
             - [lac       @ p-1024-sub-8-aug-flip/r-2560/54_126](#lac___p_1024_sub_8_aug_flip_r_2560_54_12_6_)
         - [p-1024-sub-8-aug-strd       @ r-2560/54_126](#p_1024_sub_8_aug_strd___r_2560_54_12_6_)
@@ -473,9 +474,11 @@ python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-1024:r-2560:sub-8:
 <a id="p_1024_sub_8_inst___r_2560_54_12_6_"></a>
 ### p-1024-sub-8-inst       @ r-2560/54_126-->tf_seg-ipsc
 python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_126:p-1024:r-2560:sub-8:inst
-<a id="dbg___p_1024_sub_8_inst_r_2560_54_12_6_"></a>
-#### dbg       @ p-1024-sub-8-inst/r-2560/54_126-->tf_seg-ipsc
-python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_55:p-1024:r-2560:sub-8:inst:chk
+<a id="mc___p_1024_sub_8_inst_r_2560_54_12_6_"></a>
+#### mc       @ p-1024-sub-8-inst/r-2560/54_126-->tf_seg-ipsc
+<a id="dbg___mc_p_1024_sub_8_inst_r_2560_54_126_"></a>
+##### dbg       @ mc/p-1024-sub-8-inst/r-2560/54_126-->tf_seg-ipsc
+python3 data/scripts/create_seg_tfrecord.py cfg=ipsc:54_55:p-1024:r-2560:sub-8:inst:mc:chk
 
 <a id="p_1024_sub_8_aug_flip___r_2560_54_12_6_"></a>
 ### p-1024-sub-8-aug-flip       @ r-2560/54_126-->tf_seg-ipsc

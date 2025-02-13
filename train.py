@@ -5,6 +5,8 @@ import time
 import numpy as np
 
 import utils
+from models import model_utils
+
 
 def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_per_epoch, num_train_examples,
         strategy, model_lib, tf):
@@ -121,8 +123,8 @@ def run(cfg, train_datasets, val_datasets, tasks, train_steps, val_steps, steps_
                 #     print('\n\n')
 
                 if step_id == 0 and cfg.train.check_ckpt:
-                    utils.check_ckpt_match(cfg.model_dir, trainer._model,
-                                           trainer.ckpt_vars_p)
+                    model_utils.check_ckpt_match(cfg.model_dir, trainer._model,
+                                                 trainer.ckpt_vars_p)
                     # trainer.check_checkpoint_restored()
 
                 if cfg.debug:

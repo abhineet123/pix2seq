@@ -137,7 +137,6 @@ def mask_to_gs(mask, check=True, copy=True):
 
 def check_instance_wise_rle_tokens(
         image, mask, mask_sub, rle_tokens, n_classes,
-        length_as_class,
         starts_2d,
         starts_offset, lengths_offset, class_offset,
         max_length, subsample, multi_class,
@@ -172,7 +171,7 @@ def check_instance_wise_rle_tokens(
         ignore_invalid=False,
 
     )
-    starts, lengths, class_ids = rle_rec_cmp[:2]
+    starts, lengths, class_ids = rle_rec_cmp
     assert np.all(lengths <= max_length), f"run length cannot be > {max_length}"
     assert np.all(lengths > 0), "run length cannot be 0"
 
@@ -192,19 +191,22 @@ def check_instance_wise_rle_tokens(
         #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
 
         # import eval_utils
-        mask_gt_vis = mask_id_to_vis_bgr(mask_gt, class_to_col)
+        mask_gt_vis = mask_id_to_vis_bgr(mask_gt_sub, class_to_col)
         mask_rec_vis = mask_id_to_vis_bgr(mask_rec, class_to_col)
 
-        cv2.imshow('mask_rec_vis', mask_rec_vis)
+        mask_gt_vis_res = resize_mask(mask_gt_vis, image.shape)
+        mask_rec_vis_res = resize_mask(mask_rec_vis, image.shape)
 
-        mask_gt_vis = resize_mask(mask_gt_vis, image.shape, n_classes, is_vis=1)
-        mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
-
-        masks_all = np.concatenate([image, mask_gt_vis, mask_rec_vis], axis=1)
+        masks_all = np.concatenate([image, mask_gt_vis_res, mask_rec_vis_res], axis=1)
         # vis_txt = ' '.join(vis_txt)
         # masks_all = eval_utils.annotate(masks_all, vis_txt)
         # cv2.imshow('mask_gt_vis', mask_gt_vis)
         # cv2.imshow('mask_rec_vis', mask_rec_vis)
+
+        masks_all = resize_ar(masks_all, 640, 480)
+
+        cv2.imshow('mask_gt_vis', mask_gt_vis)
+        cv2.imshow('mask_rec_vis', mask_rec_vis)
         cv2.imshow('masks_all', masks_all)
         k = cv2.waitKey(0)
         if k == 27:
@@ -270,20 +272,22 @@ def check_rle_tokens(
         #     mask_rec = resize_mask(mask_rec, mask.shape, n_classes, is_vis=1)
 
         # import eval_utils
-        mask_gt_vis = mask_id_to_vis_bgr(mask_gt, class_to_col)
+        mask_gt_vis = mask_id_to_vis_bgr(mask_gt_sub, class_to_col)
         mask_rec_vis = mask_id_to_vis_bgr(mask_rec, class_to_col)
 
-        cv2.imshow('mask_rec_vis', mask_rec_vis)
-
-        mask_gt_vis = resize_mask(mask_gt_vis, image.shape, n_classes, is_vis=1)
-        mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
+        mask_gt_vis = resize_mask(mask_gt_vis, image.shape)
+        mask_rec_vis = resize_mask(mask_rec_vis, image.shape)
 
         masks_all = np.concatenate([image, mask_gt_vis, mask_rec_vis], axis=1)
         # vis_txt = ' '.join(vis_txt)
         # masks_all = eval_utils.annotate(masks_all, vis_txt)
         # cv2.imshow('mask_gt_vis', mask_gt_vis)
         # cv2.imshow('mask_rec_vis', mask_rec_vis)
+
+        # masks_all = resize_ar(masks_all, 640, 480)
+
         cv2.imshow('masks_all', masks_all)
+        cv2.imshow('mask_rec_vis', mask_rec_vis)
         k = cv2.waitKey(0)
         if k == 27:
             exit()
@@ -299,8 +303,8 @@ def check_individual_vid_masks(video, vid_mask_gt_sub, vid_mask_rec, class_id_to
             mask_gt_sub_vis = mask_id_to_vis_bgr(mask_gt_sub, class_id_to_col)
             mask_rec_vis = mask_id_to_vis_bgr(mask_rec, class_id_to_col)
 
-            mask_gt_sub_vis = resize_mask(mask_gt_sub_vis, image.shape, n_classes, is_vis=1)
-            mask_rec_vis = resize_mask(mask_rec_vis, image.shape, n_classes, is_vis=1)
+            mask_gt_sub_vis = resize_mask(mask_gt_sub_vis, image.shape)
+            mask_rec_vis = resize_mask(mask_rec_vis, image.shape)
 
             masks_all = np.concatenate([image, mask_gt_sub_vis, mask_rec_vis], axis=1)
             masks_all = cv2.resize(masks_all, (960, 540))
@@ -469,8 +473,8 @@ def check_video_rle_tokens(
                 print("tac_masks mismatch")
                 tac_mask_sub_vis = mask_id_to_vis_bgr(tac_mask_sub, tac_id_to_col)
                 tac_mask_rec_vis = mask_id_to_vis_bgr(tac_mask_rec, tac_id_to_col)
-                tac_mask_sub_vis = resize_mask(tac_mask_sub_vis, (640, 640), n_classes, is_vis=1)
-                tac_mask_rec_vis = resize_mask(tac_mask_rec_vis, (640, 640), n_classes, is_vis=1)
+                tac_mask_sub_vis = resize_mask(tac_mask_sub_vis, (640, 640))
+                tac_mask_rec_vis = resize_mask(tac_mask_rec_vis, (640, 640))
 
                 masks_all = np.concatenate([tac_mask_sub_vis, tac_mask_rec_vis], axis=1)
                 masks_all = cv2.resize(masks_all, (960, 540))
@@ -645,55 +649,69 @@ def subsample_mask(mask, factor, n_classes, is_vis=1, shape=None,
     return mask_out
 
 
-def resize_video_mask(vid_mask, shape, n_classes=None, is_vis=1):
-    masks = [resize_mask(mask, shape, n_classes, is_vis) for mask in vid_mask]
+def resize_video_mask(vid_mask, shape):
+    masks = [resize_mask(mask, shape) for mask in vid_mask]
     masks = np.stack(masks, axis=0)
     return masks
 
 
-def resize_mask(mask, shape, n_classes=None, is_vis=1, check=False, max_diff_rate=5):
+def resize_mask(mask, shape, check=False, max_diff_rate=5):
     n_rows, n_cols = shape[:2]
-    if not is_vis:
-        assert n_classes is not None, "n_classes must be provided if mask is not vis"
-        mask_out = mask_id_to_vis(mask, n_classes, copy=True)
-    else:
-        mask_out = mask
+    mask_out = mask
 
-    mask_out = cv2.resize(mask_out, (n_cols, n_rows))
+    # if not is_vis:
+    #     assert n_classes is not None, "n_classes must be provided if mask is not vis"
+    #     mask_out = mask_id_to_vis(mask, n_classes, copy=True)
 
-    if not is_vis:
-        mask_vis_to_id(mask_out, n_classes)
+    mask_out = cv2.resize(mask_out, (n_cols, n_rows), interpolation=cv2.INTER_NEAREST)
+
+    # if not is_vis:
+    #     mask_vis_to_id(mask_out, n_classes)
 
     if check:
-        mask_rec = resize_mask(
-            mask_out, n_classes=n_classes, shape=mask.shape, is_vis=is_vis)
+        mask_rec = resize_mask(mask_out, shape=mask.shape)
         labels_diff_rate = check_mask_diff(mask_rec, mask, max_diff_rate)
         return mask_out, labels_diff_rate
 
     return mask_out
 
 
-def mask_id_to_vis(mask_id, n_classes, to_rgb=0, copy=False):
+def mask_id_to_vis(mask_id, n_classes, to_rgb=0, copy=False, return_class_id_to_col=False, class_id_to_col=None):
     if to_rgb or copy:
         mask_vis = np.zeros_like(mask_id)
     else:
         mask_vis = mask_id
-    if n_classes == 3:
-        # labels_img[labels_img == 0] = 0
-        mask_vis[mask_id == 1] = 128
-        mask_vis[mask_id == 2] = 255
-    elif n_classes == 2:
-        # labels_img[labels_img == 0] = 0
-        mask_vis[mask_id == 1] = 255
-    else:
-        cols = get_cols_gs(n_classes)
-        for class_id in range(1, n_classes):
-            mask_vis[mask_id == class_id] = cols[class_id]
+
+    if class_id_to_col is None:
+        if n_classes == 3:
+            class_id_to_col = {
+                0: 0,
+                1: 128,
+                2: 255,
+            }
+        elif n_classes == 2:
+            class_id_to_col = {
+                0: 0,
+                1: 255,
+                2: 255,
+            }
+        else:
+            cols = get_class_cols_gs(n_classes)
+            class_id_to_col = {
+                class_id: cols[class_id] for class_id in range(n_classes)
+            }
+
+    for class_id, class_col in class_id_to_col.items():
+        mask_vis[mask_id == class_id] = class_col
 
     if to_rgb and len(mask_vis.shape) == 2:
         mask_vis = np.stack((mask_vis,) * 3, axis=2)
+
     if to_rgb or copy:
-        return mask_vis
+        if return_class_id_to_col:
+            return mask_vis, class_id_to_col
+        else:
+            return mask_vis
 
 
 def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
@@ -724,7 +742,7 @@ def mask_vis_to_id(mask_vis, n_classes, copy=False, check=False,
             mask_id[mask_vis < 128] = 0
             mask_id[mask_vis >= 128] = 1
     else:
-        cols = get_cols_gs(n_classes)
+        cols = get_class_cols_gs(n_classes)
         for class_id in range(1, n_classes):
             mask_vis[mask_id == cols[class_id]] = class_id
 
@@ -741,12 +759,13 @@ def check_mask_diff(mask_vis_rec, mask_vis, max_diff_rate):
     n_diff = np.count_nonzero(diff_bool)
     labels_diff_rate = float(n_diff) / mask_vis.size * 100.
     if labels_diff_rate > max_diff_rate:
+        print(f"\nlabels_diff_rate is too high: {labels_diff_rate:.3f}\n")
         diff_img = diff_bool.astype(np.uint8) * 255
         cv2.imshow('mask_vis', mask_vis)
-        cv2.imshow('mask_vis_rec', mask_vis_rec)
+        cv2.imshow('mas6k_vis_rec', mask_vis_rec)
         cv2.imshow('diff_img', diff_img)
         cv2.waitKey(0)
-        raise AssertionError(f"labels_diff_rate is too high: {labels_diff_rate:.3f}")
+        raise AssertionError()
     return labels_diff_rate
 
 
@@ -901,9 +920,9 @@ def mask_vis_bgr_to_id(mask, class_id_to_col, check=0):
     return mask_id
 
 
-def get_cols_gs(n_runs):
-    min_col, max_col = 100, 200
-    n_col_levels = int(n_runs + 1)
+def get_class_cols_gs(n_classes):
+    min_col, max_col = 0, 255
+    n_col_levels = int(n_classes + 1)
     col_range = max_col - min_col
     assert n_col_levels <= col_range, "n_col_levels exceeds col_range"
     cols = [int(x) for x in np.linspace(
@@ -2106,6 +2125,7 @@ def mask_from_instance_wise_tokens(
         return mask, rle_cmp
 
     class_tokens = np.asarray(list(range(1, n_classes)))
+    class_tokens += class_offset
 
     instance_start_idxs = np.nonzero(np.in1d(rle_tokens, class_tokens))[0]
 
@@ -2148,6 +2168,8 @@ def mask_from_instance_wise_tokens(
         rle_cmp[0] += list(starts)
         rle_cmp[1] += list(lengths)
         rle_cmp[2] += list(class_ids)
+
+    rle_cmp = [np.asarray(k) for k in rle_cmp]
 
     return mask, rle_cmp
 
@@ -2473,7 +2495,7 @@ def get_rle_class_ids(mask, starts, lengths, class_id_to_col, order):
         zero_idxs = np.nonzero(class_ids == 0)[0]
         mask_vis_rgb = mask_id_to_vis_bgr(mask, class_id_to_col)
         mask_vis = mask_id_to_vis(mask, n_classes, copy=True)
-        mask_vis_res = resize_mask(mask_vis, (640, 640), n_classes, is_vis=True)
+        mask_vis_res = resize_mask(mask_vis, (640, 640))
         cv2.imshow('mask_vis', mask_vis_res)
 
         for idx in zero_idxs:
@@ -2485,7 +2507,7 @@ def get_rle_class_ids(mask, starts, lengths, class_id_to_col, order):
             col = (255, 255, 255)
 
             mask_vis_rgb[mask_bool] = col
-            mask_vis_rgb_res = resize_mask(mask_vis_rgb, (640, 640), n_classes, is_vis=True)
+            mask_vis_rgb_res = resize_mask(mask_vis_rgb, (640, 640))
 
             cv2.imshow('mask_vis_rgb', mask_vis_rgb_res)
 

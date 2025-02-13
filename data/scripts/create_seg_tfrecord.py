@@ -450,9 +450,27 @@ def create_tf_example(
     if params.instance_wise:
         mask_filename = image_info['instance_file_name']
         mask_image_path = linux_path(params.db_path, mask_filename)
+
+        instance_to_target_id: dict = image_info['instance_to_target_id']
+        instance_id_to_col: dict = image_info['instance_id_to_col']
+
+        instance_to_target_id = {
+            int(instance_id_): (int(target_id_), int(class_id_))
+            for instance_id_, (target_id_, class_id_) in
+            instance_to_target_id.items()
+        }
+        instance_id_to_col = {
+            int(instance_id_): int(col)
+            for instance_id_, col in
+            instance_id_to_col.items()
+        }
+
+        n_instances = len(instance_to_target_id)
+        n_mask_classes = n_instances
     else:
         mask_filename = image_info['mask_file_name']
         mask_image_path = linux_path(params.db_path, mask_filename)
+        n_mask_classes = n_classes
 
     if not image_id.startswith('seq'):
         image_id = f'{seq}/{image_id}'
@@ -502,9 +520,8 @@ def create_tf_example(
     # mask_orig = np.copy(mask)
     # mask_orig = task_utils.mask_to_gs(mask_orig)
 
-    if not params.instance_wise:
-        if not multi_class:
-            mask = task_utils.mask_to_binary(mask)
+    if not params.instance_wise and not multi_class:
+        mask = task_utils.mask_to_binary(mask)
 
     mask = task_utils.mask_to_gs(mask)
 
@@ -520,14 +537,22 @@ def create_tf_example(
         max_length_sub = int(max_length / params.subsample)
         n_rows_sub, n_cols_sub = int(n_rows / params.subsample), int(n_cols / params.subsample)
 
-        # mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub), n_classes, is_vis=1)
-        mask_sub = task_utils.subsample_mask(mask, params.subsample, n_classes, is_vis=1)
+        mask_sub = task_utils.resize_mask(mask, (n_rows_sub, n_cols_sub))
+        # mask_sub = task_utils.subsample_mask(mask, params.subsample, n_mask_classes, is_vis=1)
     else:
         mask_sub = np.copy(mask)
         n_rows_sub, n_cols_sub = n_rows, n_cols
         max_length_sub = max_length
 
-    # mask_sub_vis = task_utils.resize_mask(mask_sub, mask.shape, n_classes)
+    if params.instance_wise:
+        unique_cols = np.unique(mask)
+        unique_cols_sub = np.unique(mask_sub)
+        n_unique_cols = len(unique_cols)
+        n_unique_cols_sub = len(unique_cols_sub)
+        assert n_unique_cols == n_unique_cols_sub, "n_unique_cols_sub mismatch"
+        assert n_unique_cols == n_instances, "n_unique_cols mismatch"
+
+    # mask_sub_vis = task_utils.resize_mask(mask_sub, mask.shape, n_mask_classes)
     # mask_sub_vis = np.stack((mask_sub_vis,) * 3, axis=2)
     # mask_vis = np.stack((mask,) * 3, axis=2)
     # file_txt = f'{image_id}'
@@ -538,11 +563,15 @@ def create_tf_example(
     # cv2.waitKey(0)
     #
     # return
-    task_utils.mask_vis_to_id(mask, n_classes=n_classes)
-    task_utils.mask_vis_to_id(mask_sub, n_classes=n_classes)
+
+    mask_vis = np.copy(mask)
+    mask_sub_vis = np.copy(mask_sub)
+
+    task_utils.mask_vis_to_id(mask, n_classes=n_mask_classes, check=params.check)
+    task_utils.mask_vis_to_id(mask_sub, n_classes=n_mask_classes, check=params.check)
 
     # if not multi_class:
-    #     mask_mc = task_utils.mask_vis_to_id(mask_orig, n_classes=3, copy=True)
+    #     mask_mc = task_utils.mask_vis_to_id(mask_orig, n_classes=n_mask_classes, copy=True)
     #     mask_mc[mask_mc > 0] = 1
     #     mask_mismatch = np.not_equal(mask, mask_mc)
     #     n_mask_mismatch = np.count_nonzero(mask_mismatch)
@@ -553,13 +582,6 @@ def create_tf_example(
     #         cv2.waitKey(0)
 
     if params.instance_wise:
-        instance_to_target_id: dict = image_info['instance_to_target_id']
-        instance_to_target_id = {
-            int(instance_id_): (int(target_id_), int(class_id_))
-            for instance_id_, (target_id_, class_id_) in
-            instance_to_target_id.items()
-        }
-
         instance_ids = np.unique(mask_sub)
         rle_tokens = []
         n_runs = rle_len = 0
@@ -580,14 +602,14 @@ def create_tf_example(
                 n_rows, n_cols,
                 class_id_to_col, class_id_to_name,
             )
-            rle_tokens += [class_id + params.class_offset, ] + obj_rle_tokens
+            obj_class_token = [class_id + params.class_offset, ]
+            rle_tokens += obj_class_token + obj_rle_tokens
             n_runs += obj_n_runs
             rle_len += obj_rle_len + 1
 
         if params.check:
             task_utils.check_instance_wise_rle_tokens(
                 image, mask, mask_sub, rle_tokens, n_classes,
-                params.length_as_class,
                 params.starts_2d,
                 params.starts_offset,
                 params.lengths_offset,
